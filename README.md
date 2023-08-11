@@ -1,2 +1,2 @@
-# nimbus-bluesky-client
-Native Android Client for Bluesky
+# Nimbus
+Fast, flexible native Android client for Bluesky (and possibly other ATProto applications)
