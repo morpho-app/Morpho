@@ -42,6 +42,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
@@ -49,6 +50,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import app.bsky.actor.GetProfileQueryParams
 import app.bsky.feed.FeedViewPost
 import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import radiant.nimbus.MainViewModel
 import radiant.nimbus.extensions.activityViewModel
 import com.ramcosta.composedestinations.annotation.Destination
@@ -87,10 +89,12 @@ fun ProfileScreen(
     if (actor != null) {
         viewModel.state.actor = actor
     }
-    if (viewModel.state.profile == null) {
+    if (viewModel.state.profile.did.did.length < 2) {
        LaunchedEffect(viewModel.state) {
            when (val result = viewModel.client.getProfile(GetProfileQueryParams(viewModel.state.actor))) {
-               is AtpResponse.Failure -> Log.e("Profile Load error", result.error.toString())
+               is AtpResponse.Failure -> {
+                   viewModel.state.profile.description = result.response.toString()
+               }
                is AtpResponse.Success -> {
                    viewModel.state.profile = result.response.toProfile() 
 
@@ -107,7 +111,7 @@ fun ProfileScreen(
                         .fillMaxWidth()
                 ){
                     val myProfile = true//(viewModel.state.profile?.did ?: false) == viewModel.user?.did
-                    viewModel.state.profile?.let { DetailedProfileFragment(profile = it, myProfile = myProfile) }
+                    viewModel.state.profile.let { DetailedProfileFragment(profile = it, myProfile = myProfile) }
                     ScrollableTabRow(
                         selectedTabIndex = 0,
                         edgePadding = 4.dp,
@@ -215,8 +219,8 @@ fun ProfileView(
                 modifier = Modifier
                     .fillMaxWidth()
             ){
-                val myProfile = (state.profile?.did ?: false) == user?.did
-                state.profile?.let { DetailedProfileFragment(profile = it, myProfile = myProfile) }
+                val myProfile = (user?.did ?: false) == state.profile.did
+                state.profile.let { DetailedProfileFragment(profile = it, myProfile = myProfile) }
                 ScrollableTabRow(
                     selectedTabIndex = 0,
                     edgePadding = 4.dp,
@@ -305,6 +309,8 @@ fun ProfileView(
 @Composable
 public fun DetailedProfileFragment(
     profile: DetailedProfile,
+    //onValueChange: (DetailedProfile) -> Unit,
+    modifier: Modifier = Modifier,
     myProfile: Boolean = false,
 ) {
 
@@ -320,7 +326,10 @@ public fun DetailedProfileFragment(
             ) {
                 val (appbar, userStats, banner, labels) = createRefs()
                 AsyncImage(
-                    model = profile.banner.orEmpty(),
+                    model = ImageRequest.Builder(LocalContext.current)
+                        .data(profile.banner.orEmpty())
+                        .crossfade(true)
+                        .build(),
                     placeholder = painterResource(R.drawable.test_banner),
                     contentDescription = "Profile Banner for ${profile.displayName} ${profile.handle}",
                     contentScale = ContentScale.Crop,

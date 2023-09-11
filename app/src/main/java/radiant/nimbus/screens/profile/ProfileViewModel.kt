@@ -28,13 +28,18 @@ import sh.christian.ozone.api.AtIdentifier
 import sh.christian.ozone.api.Handle
 import sh.christian.ozone.api.response.AtpResponse
 import android.util.Log
+import androidx.lifecycle.MutableLiveData
 import io.ktor.client.*
 import io.ktor.client.engine.cio.*
+import kotlinx.collections.immutable.immutableListOf
+import io.ktor.client.engine.okhttp.*
+import radiant.nimbus.screens.skyline.SkylineState
 
 
 data class ProfileState(
-    var actor: AtIdentifier = AtIdentifier(""),
-    var profile: DetailedProfile? = null,
+    val actor: AtIdentifier? = null,
+    val profile: DetailedProfile? = null,
+    val isLoading : Boolean = false
 ) {
 }
 
@@ -45,40 +50,9 @@ data class ProfileState(
 class ProfileViewModel @Inject constructor(
     app: Application,
 ) : BaseViewModel(app), DefaultLifecycleObserver {
-
     var state by mutableStateOf(ProfileState())
         private set
 
-    var client = XrpcBlueskyApi(httpClient = HttpClient(CIO))
+    var client = XrpcBlueskyApi(HttpClient(OkHttp))
 
-    suspend fun getProfile(actor: AtIdentifier? = null): DetailedProfile? {
-        if (actor != null) {
-            state.actor = actor
-        }
-        return when (val result = client.getProfile(GetProfileQueryParams(state.actor))) {
-            is AtpResponse.Failure -> null
-            is AtpResponse.Success -> {
-                state.profile = result.response.toProfile()
-                state.profile
-            }
-        }
-    }
-
-
-    suspend fun getProfilePosts(): ImmutableList<FeedViewPost>? {
-
-        Log.i("Feed", "getting feed")
-        return when (val result = client.getAuthorFeed(GetAuthorFeedQueryParams(state.actor, 100))) {
-            is AtpResponse.Failure -> {
-                Log.e("Feed", "Failed to get feed:" + result.error.toString())
-                null
-            }
-
-            is AtpResponse.Success -> {
-                Log.i("Feed", result.response.feed.toString())
-                result.response.feed
-            }
-        }
-
-    }
 }

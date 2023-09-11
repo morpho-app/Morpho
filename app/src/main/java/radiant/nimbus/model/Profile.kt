@@ -49,7 +49,7 @@ data class DetailedProfile(
     override val did: Did,// = Did(""),
     override val handle: Handle,// = Handle(""),
     override val displayName: String?,
-    @Size(max = 2560) val description: String?,
+    @Size(max = 2560) var description: String?,
     override val avatar: String?,
     val banner: String?,
     val followersCount: Long,

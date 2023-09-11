@@ -16,7 +16,8 @@ android {
     defaultConfig {
         applicationId "radiant.nimbus"
         minSdk 24
-        targetSdk 34
+        //noinspection OldTargetApi
+        targetSdk 33
         versionCode 1
         versionName "1.0"
 
@@ -54,8 +55,11 @@ android {
 
 dependencies {
 
-    implementation 'androidx.core:core-ktx:1.10.1'
-    implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.6.1'
+    implementation 'org.slf4j:slf4j-api:2.0.7'
+    implementation 'uk.uuid.slf4j:slf4j-android:2.0.7-0'
+
+    implementation 'androidx.core:core-ktx:1.12.0'
+    implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.6.2'
     implementation 'androidx.activity:activity-compose:1.7.2'
     implementation platform('androidx.compose:compose-bom:2023.05.01')
     implementation 'androidx.compose.ui:ui'
@@ -67,6 +71,8 @@ dependencies {
     implementation "androidx.compose.material3:material3-window-size-class:1.1.1"
     api("sh.christian.ozone:bluesky:0.0.2")
     implementation("androidx.palette:palette-ktx:1.0.0")
+    implementation 'androidx.datastore:datastore-core:1.0.0'
+    implementation 'androidx.datastore:datastore-preferences-core:1.0.0'
 
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test.ext:junit:1.1.5'
@@ -78,6 +84,9 @@ dependencies {
 
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0")
 
+    implementation("androidx.lifecycle:lifecycle-livedata-core-ktx:2.6.2")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.6.2")
+    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.6.2")
 
     // Kotlin + coroutines
     implementation("androidx.work:work-runtime-ktx:$work_version")
@@ -91,11 +100,18 @@ dependencies {
     // optional - Multiprocess support
     implementation "androidx.work:work-multiprocess:$work_version"
 
+    // logging
+    implementation("io.ktor:ktor-client-logging:2.3.3")
+
+
+    implementation("io.github.xxfast:kstore:0.6.0")
+    implementation("io.github.xxfast:kstore-file:0.6.0")
+
 
     // Compose dependencies
-    implementation "androidx.lifecycle:lifecycle-viewmodel-compose:2.6.1"
-    implementation "androidx.navigation:navigation-compose:2.7.0"
-    implementation 'com.google.accompanist:accompanist-flowlayout:0.30.0'
+    implementation "androidx.lifecycle:lifecycle-viewmodel-compose:2.6.2"
+    implementation "androidx.navigation:navigation-compose:2.7.2"
+    implementation 'com.google.accompanist:accompanist-flowlayout:0.30.1'
     implementation "androidx.constraintlayout:constraintlayout-compose:1.0.1"
 
     // Coroutines
@@ -106,14 +122,15 @@ dependencies {
     implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:$coroutine_lifecycle_version"
     implementation "androidx.lifecycle:lifecycle-runtime-ktx:$coroutine_lifecycle_version"
 
+    //noinspection GradleDependency
     implementation("com.google.guava:guava:31.0.1-android")
 
     // To use CallbackToFutureAdapter
     implementation("androidx.concurrent:concurrent-futures:1.1.0")
 
     // Kotlin
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-guava:1.6.0")
-
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-guava:1.7.3")
+    implementation("org.jetbrains.kotlin:kotlin-reflect:1.9.10")
 
     //Dagger - Hilt
     implementation("androidx.hilt:hilt-work:1.0.0")
@@ -130,8 +147,11 @@ dependencies {
 
     // Coil
     implementation 'io.coil-kt:coil-compose:2.3.0'
+
+
     implementation("io.ktor:ktor-client-cio:2.3.3")
     implementation 'androidx.security:security-crypto-ktx:1.1.0-alpha06'
+    implementation("io.ktor:ktor-client-okhttp:2.3.3")
 
     implementation 'com.google.code.gson:gson:2.10.1'
 
