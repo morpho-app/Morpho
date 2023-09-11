@@ -1,6 +1,5 @@
 package radiant.nimbus.screens.profile
 
-import android.util.Log
 import android.view.Menu
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
@@ -35,9 +34,6 @@ import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -47,7 +43,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.hilt.navigation.compose.hiltViewModel
-import app.bsky.actor.GetProfileQueryParams
 import app.bsky.feed.FeedViewPost
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
@@ -56,13 +51,12 @@ import radiant.nimbus.extensions.activityViewModel
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import kotlinx.collections.immutable.ImmutableList
-import kotlinx.collections.immutable.PersistentList
 import radiant.nimbus.R
 import kotlinx.collections.immutable.persistentListOf
-import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.Instant
+import radiant.nimbus.api.ApiProvider
+import radiant.nimbus.api.auth.AuthInfo
 import radiant.nimbus.ui.common.OutlinedAvatar
 import sh.christian.ozone.api.AtIdentifier
 import sh.christian.ozone.api.Did
@@ -70,13 +64,10 @@ import sh.christian.ozone.api.Handle
 import radiant.nimbus.model.BskyLabel
 import radiant.nimbus.model.DetailedProfile
 import radiant.nimbus.model.Moment
-import radiant.nimbus.model.toProfile
-import radiant.nimbus.session.BlueskySession
 import radiant.nimbus.ui.common.SkylineFragment
 import radiant.nimbus.ui.common.UserStatsFragment
 import radiant.nimbus.ui.elements.RichText
 import radiant.nimbus.ui.utils.*
-import sh.christian.ozone.api.response.AtpResponse
 
 @Destination
 @Composable
@@ -84,116 +75,14 @@ fun ProfileScreen(
     navigator: DestinationsNavigator,
     mainViewModel: MainViewModel = activityViewModel(),
     viewModel: ProfileViewModel = hiltViewModel(),
-    actor: AtIdentifier? = null
+    actor: AtIdentifier? = null,
+    apiProvider: ApiProvider? = null,
 ) {
-    if (actor != null) {
-        viewModel.state.actor = actor
-    }
-    if (viewModel.state.profile.did.did.length < 2) {
-       LaunchedEffect(viewModel.state) {
-           when (val result = viewModel.client.getProfile(GetProfileQueryParams(viewModel.state.actor))) {
-               is AtpResponse.Failure -> {
-                   viewModel.state.profile.description = result.response.toString()
-               }
-               is AtpResponse.Success -> {
-                   viewModel.state.profile = result.response.toProfile() 
+    if (viewModel.state.isAuthenticated) {
 
-               }
-           }
-       }
     } else {
-        var selectedTab: ProfileTabs = ProfileTabs.Posts
-        Scaffold (
-            topBar = {
 
-                Column (
-                    modifier = Modifier
-                        .fillMaxWidth()
-                ){
-                    val myProfile = true//(viewModel.state.profile?.did ?: false) == viewModel.user?.did
-                    viewModel.state.profile.let { DetailedProfileFragment(profile = it, myProfile = myProfile) }
-                    ScrollableTabRow(
-                        selectedTabIndex = 0,
-                        edgePadding = 4.dp,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                    ) {
-                        val tabModifier = Modifier
-                            .padding(
-                                bottom = 12.dp,
-                                top = 6.dp,
-                                start = 6.dp,
-                                end = 6.dp)
-                        Tab(selected = true,
-                            onClick = { /*TODO*/ },
-
-                            ) {
-                            Text(
-                                text = "Posts",
-                                modifier = tabModifier
-                            )
-                        }
-
-                        Tab(selected = false,
-                            onClick = { /*TODO*/ },
-
-                            ) {
-                            Text(
-                                text = "Posts & Replies",
-                                modifier = tabModifier
-                            )
-                        }
-                        //Spacer(modifier = Modifier.width(2.dp))
-                        Tab(selected = false,
-                            onClick = { /*TODO*/ },
-                        ) {
-                            Text(
-                                text = "Media",
-                                modifier = tabModifier
-                            )
-                        }
-
-                        Tab(selected = false,
-                            onClick = { /*TODO*/ },
-                        ) {
-                            Text(
-                                text = "Feeds",
-                                modifier = tabModifier
-                            )
-                        }
-
-                        Tab(selected = false,
-                            onClick = { /*TODO*/ },
-                        ) {
-                            Text(
-                                text = "Lists",
-                                modifier = tabModifier
-                            )
-                        }
-                    }
-                }
-
-            }
-        ) {contentPadding ->
-
-
-            when (selectedTab) {
-                ProfileTabs.Posts ->{
-
-                    SkylineFragment(
-                        postList = persistentListOf(),
-                        modifier = Modifier.padding(contentPadding)
-                    )
-                }
-                ProfileTabs.PostsReplies -> TODO()
-                ProfileTabs.Media -> TODO()
-                ProfileTabs.Feeds -> TODO()
-                ProfileTabs.Lists -> TODO()
-            }
-
-        }
     }
-
 }
 
 enum class ProfileTabs {
@@ -207,8 +96,9 @@ enum class ProfileTabs {
 @Composable
 fun ProfileView(
     state: ProfileState,
+    modifier: Modifier = Modifier,
     feed: ImmutableList<FeedViewPost> = persistentListOf(),
-    user: BlueskySession? = null,
+    apiProvider: ApiProvider? = null,
     navigator: DestinationsNavigator? = null,
 ){
     var selectedTab: ProfileTabs = ProfileTabs.Posts
@@ -219,8 +109,19 @@ fun ProfileView(
                 modifier = Modifier
                     .fillMaxWidth()
             ){
-                val myProfile = (user?.did ?: false) == state.profile.did
-                state.profile.let { DetailedProfileFragment(profile = it, myProfile = myProfile) }
+                var myProfile = false
+                if (apiProvider != null) {
+                    runBlocking {
+                        apiProvider.auth().collect {
+                            if (it != null) {
+                                if (it.did.equals(state.actor) || it.handle.equals(state.actor)) {
+                                    myProfile = true
+                                }
+                            }
+                        }
+                    }
+                }
+                state.profile.let { it?.let { it1 -> DetailedProfileFragment(profile = it1, myProfile = myProfile) } }
                 ScrollableTabRow(
                     selectedTabIndex = 0,
                     edgePadding = 4.dp,

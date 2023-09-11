@@ -39,7 +39,8 @@ import radiant.nimbus.screens.skyline.SkylineState
 data class ProfileState(
     val actor: AtIdentifier? = null,
     val profile: DetailedProfile? = null,
-    val isLoading : Boolean = false
+    val isLoading: Boolean = false,
+    val isAuthenticated: Boolean = false,
 ) {
 }
 
@@ -53,6 +54,7 @@ class ProfileViewModel @Inject constructor(
     var state by mutableStateOf(ProfileState())
         private set
 
-    var client = XrpcBlueskyApi(HttpClient(OkHttp))
+    init {
 
+    }
 }
