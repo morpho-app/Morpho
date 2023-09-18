@@ -10,6 +10,7 @@ import kotlinx.serialization.serializer
 import kotlin.reflect.KClass
 import kotlin.reflect.full.createType
 
+
 internal abstract class KStorePersistentStorage : PersistentStorage {
   private val stores: MutableMap<String, KStore<*>> = mutableMapOf()
 

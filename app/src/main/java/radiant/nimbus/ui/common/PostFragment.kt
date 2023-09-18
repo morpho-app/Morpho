@@ -1,12 +1,11 @@
 package radiant.nimbus.ui.common
 
-import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.IntrinsicSize
-import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -16,60 +15,71 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import app.bsky.feed.FeedViewPost
-import app.bsky.feed.Post
-import app.bsky.feed.PostView
-import kotlinx.collections.immutable.ImmutableList
-import sh.christian.ozone.api.AtUri
-import sh.christian.ozone.api.Cid
-import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.draw.drawWithCache
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import radiant.nimbus.model.Profile
-import coil.compose.AsyncImage
-import com.atproto.label.Label
 import dev.jeziellago.compose.markdowntext.MarkdownText
 import kotlinx.collections.immutable.persistentListOf
-import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import radiant.nimbus.model.BasicProfile
 import radiant.nimbus.model.BskyLabel
 import radiant.nimbus.model.BskyPost
 import radiant.nimbus.model.BskyPostFeature
+import radiant.nimbus.model.BskyPostReply
 import radiant.nimbus.model.EmbedImage
 import radiant.nimbus.model.Moment
 import radiant.nimbus.ui.theme.NimbusTheme
 import radiant.nimbus.ui.utils.DevicePreviews
 import radiant.nimbus.ui.utils.FontScalePreviews
+import radiant.nimbus.util.getFormattedDateTimeSince
+import sh.christian.ozone.api.AtUri
+import sh.christian.ozone.api.Cid
 import sh.christian.ozone.api.Did
 import sh.christian.ozone.api.Handle
-import sh.christian.ozone.api.Uri
 
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun PostFragment(
-    modifier: Modifier = Modifier,
     post: BskyPost,
+    modifier: Modifier = Modifier,
+    onItemClicked: OnPostClicked,
 ) {
-    val delta = Moment(Clock.System.now()).minus(post.createdAt).duration
+    val delta = remember { getFormattedDateTimeSince(post.createdAt) }
+    val lineColour = MaterialTheme.colorScheme.primary
     Surface (
         shape = MaterialTheme.shapes.extraSmall,
         shadowElevation = 1.dp,
         modifier = modifier
             .fillMaxWidth()
-            .padding(10.dp)
+            //.padding(2.dp)
+
     ) {
-        Row (modifier = Modifier.padding(12.dp)){
+        Row (modifier = Modifier
+            .padding(vertical = 12.dp, horizontal = 10.dp)
+            .drawWithCache {
+                val path = Path()
+                if (post.reply != null) {
+                    path.moveTo(20f, 50f)
+                    path.lineTo(-30f, 50f)
+                    path.close()
+                }
+                onDrawBehind {
+                    drawPath(path, lineColour, style = Stroke(width = 10f))
+                }
+            }
+            .fillMaxWidth()
+
+        ){
             OutlinedAvatar(
                 url = post.author.avatar.orEmpty(),
                 contentDescription = "Avatar for ${post.author.handle}",
@@ -80,9 +90,11 @@ fun PostFragment(
             Column (
             ) {
 
-                Row (
+                FlowRow (
                     modifier = Modifier
-                        .padding(horizontal = 4.dp)
+                        .padding(horizontal = 4.dp),
+                    horizontalArrangement = Arrangement.End
+
                 ){
                     Text(
                         text = buildAnnotatedString {
@@ -107,12 +119,12 @@ fun PostFragment(
                             }
 
                         },
-                        maxLines = 1,
+                        maxLines = 2,
                         style = MaterialTheme.typography.labelLarge,
                         overflow = TextOverflow.Ellipsis,
                         modifier = Modifier
                             .wrapContentWidth(Alignment.Start)
-                            .weight(10.0F)
+                            //.weight(10.0F)
                             .alignByBaseline(),
 
                     )
@@ -122,20 +134,18 @@ fun PostFragment(
                             .weight(0.1F),
                     )
                     Text(
-                        text = "$delta",
+                        text = delta,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         style = MaterialTheme.typography.labelLarge,
                         fontSize = MaterialTheme.typography.labelLarge
                             .fontSize.div(1.2F),
                         modifier = Modifier
                             .wrapContentWidth(Alignment.End)
-                            .weight(2.0F)
+                            //.weight(3.0F)
                             .alignByBaseline(),
                         maxLines = 1,
                         overflow = TextOverflow.Visible,
                         softWrap = false,
-
-
                         )
                 }
 
@@ -153,6 +163,11 @@ fun PostFragment(
     }
 }
 
+@Composable
+fun PostReplyFragment() {
+
+}
+
 @DevicePreviews
 @FontScalePreviews
 @Composable
@@ -160,7 +175,9 @@ fun PreviewPostFragment() {
     NimbusTheme(darkTheme = true) {
         Row (modifier = Modifier.fillMaxWidth()){
             PostFragment(
-                post = testPost
+                post = testPost,
+                onItemClicked = {},
+                modifier = Modifier.fillMaxWidth()
             )
         }
 
@@ -208,5 +225,134 @@ val testPost = BskyPost(
         BskyLabel(value = "testLabel")
     ),
     reply = null,
+    reason = null
+)
+
+
+
+
+val testThreadRoot = BskyPost(
+    uri = AtUri( "at://did:plc:yfvwmnlztr4dwkb7hwz55r2g/app.bsky.feed.post/3jt3tt6wrfm2a"),
+    cid = Cid("bafyreigndfgfzibrqazcddj3lx3ivvnfzq3keqzfrtw5dltkc6l6l4wgsi"),
+    author = BasicProfile(
+        did = Did("did:plc:yfvwmnlztr4dwkb7hwz55r2g"),
+        handle = Handle("nonbinary.computer"),
+        displayName = "Orual",
+        avatar = "https://av-cdn.bsky.app/img/avatar/plain/did:plc:yfvwmnlztr4dwkb7hwz55r2g/bafkreifpzcenp6rhmxohv3kkez4uv4ldjphiysmju6scwgne34nb245wra@jpeg",
+        mutedByMe = false,
+        followingMe = false,
+        followedByMe = false,
+        labels = persistentListOf(
+            BskyLabel(value = "testLabel")
+        )
+
+    ),
+    text = "This small terrorist (pictured, indignant about not being fed in the last hour) managed to knock over a chair in the night.",
+    textLinks = persistentListOf(),
+    createdAt = Moment(instant = Instant.parse("2023-04-11T12:15:26.077Z")),
+    feature = BskyPostFeature.ImagesFeature(
+        images = persistentListOf(
+            EmbedImage(
+                thumb = "bafkreig3peejkdukuqnc3plrbqoz7kemh74c345hxpry7uxuftfp57wyai",
+                fullsize = "bafkreig3peejkdukuqnc3plrbqoz7kemh74c345hxpry7uxuftfp57wyai",
+                alt = "alt text"
+            )
+        )
+
+    ),
+    replyCount = 0,
+    repostCount = 2,
+    likeCount = 5,
+    indexedAt = Moment(instant = Instant.parse("2023-04-11T12:36:26.077Z")),
+    reposted = false,
+    liked = false,
+    labels = persistentListOf(
+        BskyLabel(value = "testLabel")
+    ),
+    reply = null,
+    reason = null
+)
+
+val testReply1 = BskyPost(
+    uri = AtUri( "at://did:plc:yfvwmnlztr4dwkb7hwz55r2g/app.bsky.feed.post/3jt3tt6wrfm2a"),
+    cid = Cid("bafyreigndfgfzibrqazcddj3lx3ivvnfzq3keqzfrtw5dltkc6l6l4wgsi"),
+    author = BasicProfile(
+        did = Did("did:plc:yfvwmnlztr4dwkb7hwz55r2g"),
+        handle = Handle("nonbinary.computer"),
+        displayName = "Orual",
+        avatar = "https://av-cdn.bsky.app/img/avatar/plain/did:plc:yfvwmnlztr4dwkb7hwz55r2g/bafkreifpzcenp6rhmxohv3kkez4uv4ldjphiysmju6scwgne34nb245wra@jpeg",
+        mutedByMe = false,
+        followingMe = false,
+        followedByMe = false,
+        labels = persistentListOf(
+            BskyLabel(value = "testLabel")
+        )
+
+    ),
+    text = "This small terrorist (pictured, indignant about not being fed in the last hour) managed to knock over a chair in the night.",
+    textLinks = persistentListOf(),
+    createdAt = Moment(instant = Instant.parse("2023-04-11T12:15:26.077Z")),
+    feature = BskyPostFeature.ImagesFeature(
+        images = persistentListOf(
+            EmbedImage(
+                thumb = "bafkreig3peejkdukuqnc3plrbqoz7kemh74c345hxpry7uxuftfp57wyai",
+                fullsize = "bafkreig3peejkdukuqnc3plrbqoz7kemh74c345hxpry7uxuftfp57wyai",
+                alt = "alt text"
+            )
+        )
+
+    ),
+    replyCount = 0,
+    repostCount = 2,
+    likeCount = 5,
+    indexedAt = Moment(instant = Instant.parse("2023-04-11T12:36:26.077Z")),
+    reposted = false,
+    liked = false,
+    labels = persistentListOf(
+        BskyLabel(value = "testLabel")
+    ),
+    reply = BskyPostReply(root = testThreadRoot, parent = testThreadRoot),
+    reason = null
+)
+
+val testReply2 = BskyPost(
+    uri = AtUri( "at://did:plc:yfvwmnlztr4dwkb7hwz55r2g/app.bsky.feed.post/3jt3tt6wrfm2a"),
+    cid = Cid("bafyreigndfgfzibrqazcddj3lx3ivvnfzq3keqzfrtw5dltkc6l6l4wgsi"),
+    author = BasicProfile(
+        did = Did("did:plc:yfvwmnlztr4dwkb7hwz55r2g"),
+        handle = Handle("nonbinary.computer"),
+        displayName = "Orual",
+        avatar = "https://av-cdn.bsky.app/img/avatar/plain/did:plc:yfvwmnlztr4dwkb7hwz55r2g/bafkreifpzcenp6rhmxohv3kkez4uv4ldjphiysmju6scwgne34nb245wra@jpeg",
+        mutedByMe = false,
+        followingMe = false,
+        followedByMe = false,
+        labels = persistentListOf(
+            BskyLabel(value = "testLabel")
+        )
+
+    ),
+    text = "This small terrorist (pictured, indignant about not being fed in the last hour) managed to knock over a chair in the night.",
+    textLinks = persistentListOf(),
+    createdAt = Moment(instant = Instant.parse("2023-04-11T12:15:26.077Z")),
+    feature = BskyPostFeature.ImagesFeature(
+        images = persistentListOf(
+            EmbedImage(
+                thumb = "bafkreig3peejkdukuqnc3plrbqoz7kemh74c345hxpry7uxuftfp57wyai",
+                fullsize = "bafkreig3peejkdukuqnc3plrbqoz7kemh74c345hxpry7uxuftfp57wyai",
+                alt = "alt text"
+            )
+        )
+
+    ),
+    replyCount = 0,
+    repostCount = 2,
+    likeCount = 5,
+    indexedAt = Moment(instant = Instant.parse("2023-04-11T12:36:26.077Z")),
+    reposted = false,
+    liked = false,
+    labels = persistentListOf(
+        BskyLabel(value = "testLabel")
+    ),
+    reply = BskyPostReply(root = testThreadRoot, parent = testReply1),
     reason = null
 )

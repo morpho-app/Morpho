@@ -1,5 +1,6 @@
 package radiant.nimbus.storage
 
+import dagger.Component
 import io.github.xxfast.kstore.KStore
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.Serializable

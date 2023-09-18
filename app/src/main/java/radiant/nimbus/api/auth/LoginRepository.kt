@@ -1,24 +1,20 @@
 package radiant.nimbus.api.auth
 
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.coroutineScope
+import android.app.Application
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
-import kotlinx.serialization.decodeFromString
-import radiant.nimbus.security.DataStoreUtil
-import kotlinx.serialization.json.Json
-import radiant.nimbus.app.SingleInApp
-import radiant.nimbus.storage.PersistentStorage
 import radiant.nimbus.storage.getValue
 import radiant.nimbus.storage.preference
 import radiant.nimbus.storage.setValue
+import radiant.nimbus.storage.storage
+import javax.inject.Inject
+import javax.inject.Singleton
 
-@SingleInApp
-class LoginRepository(
-    storage: PersistentStorage,
+//@SingleInApp
+@Singleton
+class LoginRepository @Inject constructor(
+    app: Application
 ) {
-    private val authPreference = storage.preference<AuthInfo>("auth-info", null)
+    private val authPreference = app.storage.preference<AuthInfo>("auth-info", null)
 
     var auth by authPreference
     fun auth(): Flow<AuthInfo?> = authPreference.updates

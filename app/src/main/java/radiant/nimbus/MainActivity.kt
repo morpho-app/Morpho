@@ -8,27 +8,18 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
 import androidx.compose.ui.Modifier
-import app.bsky.actor.ProfileViewDetailed
-import com.atproto.label.Label
-import radiant.nimbus.extensions.lifecycleViewModels
-import radiant.nimbus.ui.theme.NimbusTheme
+import androidx.lifecycle.lifecycleScope
 import com.ramcosta.composedestinations.DestinationsNavHost
-import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.collections.immutable.persistentListOf
-import kotlinx.datetime.Instant
-import radiant.nimbus.model.BskyLabel
-import radiant.nimbus.model.DetailedProfile
-import radiant.nimbus.model.Moment
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import radiant.nimbus.extensions.lifecycleViewModels
 import radiant.nimbus.screens.NavGraphs
+import radiant.nimbus.screens.destinations.LoginScreenDestination
 import radiant.nimbus.screens.destinations.ProfileScreenDestination
-import radiant.nimbus.screens.profile.ProfileScreen
-import radiant.nimbus.screens.profile.ProfileState
-import radiant.nimbus.screens.profile.ProfileView
-import sh.christian.ozone.api.AtIdentifier
-import sh.christian.ozone.api.Did
-import sh.christian.ozone.api.Handle
-import sh.christian.ozone.api.Uri
+import radiant.nimbus.ui.theme.NimbusTheme
 
 @OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
 @AndroidEntryPoint
@@ -38,6 +29,17 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        viewModel.supervisors.plus(viewModel.apiProvider)
+        viewModel.supervisors.forEach { supervisor ->
+            with(supervisor) {
+                lifecycleScope.launch(SupervisorJob()) {
+                    onStart()
+                }
+            }
+        }
+
+        val authInfo = runBlocking { viewModel.apiProvider.auth().first() }
+
         setContent {
             NimbusTheme {
                 // A surface container using the 'background' color from the theme
@@ -45,7 +47,14 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    DestinationsNavHost(navGraph = NavGraphs.root)
+
+                    if (authInfo != null) {
+                        DestinationsNavHost(navGraph = NavGraphs.root, startRoute = LoginScreenDestination)
+
+                    } else {
+                        //viewModel.currentUser = AtIdentifier(authInfo.did.did)
+                        DestinationsNavHost(navGraph = NavGraphs.root, startRoute = ProfileScreenDestination)
+                    }
 
                 }
             }

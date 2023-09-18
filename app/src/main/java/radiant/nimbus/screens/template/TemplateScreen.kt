@@ -13,8 +13,6 @@ import radiant.nimbus.MainViewModel
 import radiant.nimbus.components.Center
 import radiant.nimbus.components.ScreenBody
 import radiant.nimbus.extensions.activityViewModel
-import radiant.nimbus.screens.destinations.ProfileScreenDestination
-import sh.christian.ozone.api.AtIdentifier
 
 @RootNavGraph(start = true)
 @Destination
@@ -24,17 +22,18 @@ fun TemplateScreen(
     mainViewModel: MainViewModel = activityViewModel(),
     viewModel: TemplateViewModel = hiltViewModel()
 ) {
-    navigator.navigate(ProfileScreenDestination(AtIdentifier("nonbinary.computer")))
-    TemplateView()
+
+
+    TemplateView("Please Sign In")
 }
 
 @Composable
-fun TemplateView(
+fun TemplateView(text:String
 ){
 
     ScreenBody(modifier = Modifier.fillMaxSize()) {
         Center {
-            Text("Template Screen")
+            Text(text)
         }
     }
 }
@@ -42,5 +41,5 @@ fun TemplateView(
 @Composable
 @Preview(showBackground = true)
 fun TemplatePreview(){
-    TemplateView()
+    TemplateView("Test Text")
 }

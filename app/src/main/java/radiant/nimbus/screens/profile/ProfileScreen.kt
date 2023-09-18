@@ -20,6 +20,7 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
@@ -34,6 +35,10 @@ import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -46,28 +51,29 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import app.bsky.feed.FeedViewPost
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
-import radiant.nimbus.MainViewModel
-import radiant.nimbus.extensions.activityViewModel
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import kotlinx.collections.immutable.ImmutableList
-import radiant.nimbus.R
 import kotlinx.collections.immutable.persistentListOf
-import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.Instant
+import radiant.nimbus.MainViewModel
+import radiant.nimbus.R
 import radiant.nimbus.api.ApiProvider
-import radiant.nimbus.api.auth.AuthInfo
-import radiant.nimbus.ui.common.OutlinedAvatar
-import sh.christian.ozone.api.AtIdentifier
-import sh.christian.ozone.api.Did
-import sh.christian.ozone.api.Handle
+import radiant.nimbus.components.Center
+import radiant.nimbus.components.ScreenBody
+import radiant.nimbus.extensions.activityViewModel
 import radiant.nimbus.model.BskyLabel
 import radiant.nimbus.model.DetailedProfile
 import radiant.nimbus.model.Moment
+import radiant.nimbus.ui.common.OutlinedAvatar
 import radiant.nimbus.ui.common.SkylineFragment
 import radiant.nimbus.ui.common.UserStatsFragment
 import radiant.nimbus.ui.elements.RichText
-import radiant.nimbus.ui.utils.*
+import radiant.nimbus.ui.utils.DevicePreviews
+import radiant.nimbus.ui.utils.FontScalePreviews
+import sh.christian.ozone.api.AtIdentifier
+import sh.christian.ozone.api.Did
+import sh.christian.ozone.api.Handle
 
 @Destination
 @Composable
@@ -76,13 +82,58 @@ fun ProfileScreen(
     mainViewModel: MainViewModel = activityViewModel(),
     viewModel: ProfileViewModel = hiltViewModel(),
     actor: AtIdentifier? = null,
-    apiProvider: ApiProvider? = null,
 ) {
-    if (viewModel.state.isAuthenticated) {
-
-    } else {
-
+    var myProfile by rememberSaveable { mutableStateOf(false) }
+    var profileUIState by rememberSaveable { mutableStateOf(ProfileUIState.Loading)}
+    if (viewModel.state.isLoading) {
+        if (actor == null) {
+            if (mainViewModel.currentUser != null) {
+                myProfile = true
+                viewModel.getProfile(
+                    mainViewModel.apiProvider,
+                    mainViewModel.currentUser!!,
+                    {profileUIState = ProfileUIState.Done},
+                    {profileUIState = ProfileUIState.Error})
+            }
+        } else {
+            myProfile = actor == mainViewModel.currentUser
+            viewModel.getProfile(
+                mainViewModel.apiProvider,
+                actor,
+                {profileUIState = ProfileUIState.Done},
+                {profileUIState = ProfileUIState.Error})
+        }
     }
+    when (profileUIState) {
+        ProfileUIState.Error -> {
+            ScreenBody {
+                Center {
+                    Text("Error Loading Profile")
+                }
+            }
+        }
+        ProfileUIState.Done -> ProfileView(
+            state = viewModel.state,
+            apiProvider = mainViewModel.apiProvider,
+            myProfile = myProfile
+        )
+        ProfileUIState.Loading -> {
+            ScreenBody {
+                Center {
+                    CircularProgressIndicator(
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
+
+                }
+            }
+        }
+    }
+}
+
+enum class ProfileUIState {
+    Error,
+    Done,
+    Loading
 }
 
 enum class ProfileTabs {
@@ -100,107 +151,119 @@ fun ProfileView(
     feed: ImmutableList<FeedViewPost> = persistentListOf(),
     apiProvider: ApiProvider? = null,
     navigator: DestinationsNavigator? = null,
+    myProfile: Boolean = false,
 ){
     var selectedTab: ProfileTabs = ProfileTabs.Posts
-    Scaffold (
-        topBar = {
+    if (!state.isLoading) {
+        Scaffold(
+            topBar = {
 
-            Column (
-                modifier = Modifier
-                    .fillMaxWidth()
-            ){
-                var myProfile = false
-                if (apiProvider != null) {
-                    runBlocking {
-                        apiProvider.auth().collect {
-                            if (it != null) {
-                                if (it.did.equals(state.actor) || it.handle.equals(state.actor)) {
-                                    myProfile = true
-                                }
-                            }
-                        }
-                    }
-                }
-                state.profile.let { it?.let { it1 -> DetailedProfileFragment(profile = it1, myProfile = myProfile) } }
-                ScrollableTabRow(
-                    selectedTabIndex = 0,
-                    edgePadding = 4.dp,
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
                 ) {
-                    val tabModifier = Modifier
-                        .padding(
-                            bottom = 12.dp,
-                            top = 6.dp,
-                            start = 6.dp,
-                            end = 6.dp)
-                    Tab(selected = true,
-                        onClick = { /*TODO*/ },
-
-                    ) {
-                        Text(
-                            text = "Posts",
-                            modifier = tabModifier
-                        )
+                    state.profile.let {
+                        it?.let { it1 ->
+                            DetailedProfileFragment(
+                                profile = it1,
+                                myProfile = myProfile
+                            )
+                        }
                     }
-
-                    Tab(selected = false,
-                        onClick = { /*TODO*/ },
-
+                    ScrollableTabRow(
+                        selectedTabIndex = 0,
+                        edgePadding = 4.dp,
+                        modifier = Modifier
+                            .fillMaxWidth()
                     ) {
-                        Text(
-                            text = "Posts & Replies",
-                            modifier = tabModifier
-                        )
-                    }
-                    //Spacer(modifier = Modifier.width(2.dp))
-                    Tab(selected = false,
-                        onClick = { /*TODO*/ },
-                    ) {
-                        Text(
-                            text = "Media",
-                            modifier = tabModifier
-                        )
-                    }
+                        val tabModifier = Modifier
+                            .padding(
+                                bottom = 12.dp,
+                                top = 6.dp,
+                                start = 6.dp,
+                                end = 6.dp
+                            )
+                        Tab(
+                            selected = true,
+                            onClick = { /*TODO*/ },
 
-                    Tab(selected = false,
-                        onClick = { /*TODO*/ },
-                    ) {
-                        Text(
-                            text = "Feeds",
-                            modifier = tabModifier
-                        )
-                    }
+                            ) {
+                            Text(
+                                text = "Posts",
+                                modifier = tabModifier
+                            )
+                        }
 
-                    Tab(selected = false,
-                        onClick = { /*TODO*/ },
-                    ) {
-                        Text(
-                            text = "Lists",
-                            modifier = tabModifier
-                        )
+                        Tab(
+                            selected = false,
+                            onClick = { /*TODO*/ },
+
+                            ) {
+                            Text(
+                                text = "Posts & Replies",
+                                modifier = tabModifier
+                            )
+                        }
+                        //Spacer(modifier = Modifier.width(2.dp))
+                        Tab(
+                            selected = false,
+                            onClick = { /*TODO*/ },
+                        ) {
+                            Text(
+                                text = "Media",
+                                modifier = tabModifier
+                            )
+                        }
+
+                        Tab(
+                            selected = false,
+                            onClick = { /*TODO*/ },
+                        ) {
+                            Text(
+                                text = "Feeds",
+                                modifier = tabModifier
+                            )
+                        }
+
+                        Tab(
+                            selected = false,
+                            onClick = { /*TODO*/ },
+                        ) {
+                            Text(
+                                text = "Lists",
+                                modifier = tabModifier
+                            )
+                        }
                     }
                 }
+
+            }
+        ) { contentPadding ->
+
+
+            when (selectedTab) {
+                ProfileTabs.Posts -> {
+
+                    SkylineFragment(
+                        postList = persistentListOf(),
+                        modifier = Modifier.padding(contentPadding),
+                        onItemClicked = {}
+                    )
+                }
+
+                ProfileTabs.PostsReplies -> {
+                    SkylineFragment(
+                        postList = persistentListOf(),
+                        modifier = Modifier.padding(contentPadding),
+                        onItemClicked = {}
+                    )
+                }
+                ProfileTabs.Media -> TODO()
+                ProfileTabs.Feeds -> TODO()
+                ProfileTabs.Lists -> TODO()
             }
 
         }
-    ) {contentPadding ->
-
-
-        when (selectedTab) {
-            ProfileTabs.Posts ->{
-
-                SkylineFragment(
-                    postList = persistentListOf(),
-                    modifier = Modifier.padding(contentPadding)
-                )
-            }
-            ProfileTabs.PostsReplies -> TODO()
-            ProfileTabs.Media -> TODO()
-            ProfileTabs.Feeds -> TODO()
-            ProfileTabs.Lists -> TODO()
-        }
-
     }
 }
 
@@ -327,8 +390,9 @@ public fun DetailedProfileFragment(
             modifier = Modifier
                 .padding(horizontal = 20.dp, vertical = 0.dp)
         ){
+            val name = profile.displayName ?: profile.handle.handle
             Text(
-                text = "${profile.displayName}",
+                text = name,
                 style = MaterialTheme.typography.headlineMedium,
                 color = MaterialTheme.colorScheme.onSurface
             )
@@ -531,8 +595,8 @@ fun ProfilePreview(){
                 mutedByMe = false,
                 followingMe = false,
                 followedByMe = false,
-            )
+            ),
+            isLoading = false
         ),
-        //BlueskySession(Did("did:plc:yfvwmnlztr4dwkb7hwz55r2g"))
     )
 }

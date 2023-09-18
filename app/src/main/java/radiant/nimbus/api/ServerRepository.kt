@@ -1,5 +1,8 @@
 package radiant.nimbus.api
 
+import android.app.Application
+import dagger.Component
+import dagger.Provides
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.filterNotNull
@@ -13,13 +16,17 @@ import radiant.nimbus.api.auth.Server
 import radiant.nimbus.security.DataStoreUtil
 import radiant.nimbus.storage.*
 import radiant.nimbus.app.SingleInApp
+import javax.inject.Inject
+import javax.inject.Singleton
 
 
-@SingleInApp
-class ServerRepository(
-  storage: PersistentStorage,
+//@SingleInApp
+@Singleton
+class ServerRepository @Inject constructor(
+  app: Application,
 ) {
-  private val serverPreference = storage.preference<Server>("servers", Server.BlueskySocial)
+
+  private val serverPreference = app.storage.preference<Server>("servers", Server.BlueskySocial)
 
   var server by serverPreference
   fun server(): Flow<Server> = serverPreference.updates.filterNotNull()

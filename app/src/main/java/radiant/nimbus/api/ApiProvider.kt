@@ -1,5 +1,6 @@
 package radiant.nimbus.api
 
+import com.atproto.server.CreateSessionRequest
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.cio.CIO
 import io.ktor.client.plugins.DefaultRequest
@@ -17,17 +18,21 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.yield
 import radiant.nimbus.api.auth.AuthInfo
+import radiant.nimbus.api.auth.Credentials
 import radiant.nimbus.api.auth.LoginRepository
+import radiant.nimbus.app.Supervisor
 import sh.christian.ozone.BlueskyApi
 import sh.christian.ozone.XrpcBlueskyApi
+import sh.christian.ozone.api.response.AtpResponse
+import javax.inject.Inject
 import javax.inject.Singleton
-import radiant.nimbus.app.Supervisor
 
-
+//@SingleInApp
 @Singleton
-class ApiProvider(
+class ApiProvider @Inject constructor(
   private val apiRepository: ServerRepository,
   private val loginRepository: LoginRepository,
 ) : Supervisor {
@@ -88,6 +93,7 @@ class ApiProvider(
     }
   }
 
+
   fun auth(): Flow<AuthInfo?> = auth
 
   private fun AuthInfo.toTokens() = Tokens(accessJwt, refreshJwt)
@@ -96,4 +102,25 @@ class ApiProvider(
     accessJwt = tokens.auth,
     refreshJwt = tokens.refresh,
   )
+
+  suspend fun makeLoginRequest(credentials: Credentials): AtpResponse<AuthInfo> {
+    return withContext(Dispatchers.IO) {
+      val request = CreateSessionRequest(credentials.username.handle, credentials.password)
+      val response = api.createSession(request).map { response ->
+        AuthInfo(
+          accessJwt = response.accessJwt,
+          refreshJwt = response.refreshJwt,
+          handle = response.handle,
+          did = response.did,
+        )
+      }
+      when(response) {
+        is AtpResponse.Failure -> response
+        is AtpResponse.Success -> {
+          loginRepository.auth = response.response
+          response
+        }
+      }
+    }
+  }
 }
