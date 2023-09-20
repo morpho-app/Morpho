@@ -36,14 +36,13 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import radiant.nimbus.R
 import radiant.nimbus.ui.theme.NimbusTheme
-import sh.christian.ozone.XrpcBlueskyApi
 
 
 @Composable
 fun OutlinedAvatar(
     url: String,
     modifier: Modifier = Modifier,
-    outlineSize: Dp = 2.dp,
+    outlineSize: Dp = 1.dp,
     outlineColor: Color = MaterialTheme.colorScheme.surface,
     contentDescription: String = "",
 ) {

@@ -16,13 +16,16 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import radiant.nimbus.components.ScreenBody
 import radiant.nimbus.model.BskyPost
+import radiant.nimbus.model.SkylineItem
 import radiant.nimbus.ui.theme.NimbusTheme
 
 typealias OnPostClicked = (BskyPost) -> Unit
 
+
+
 @Composable
 fun SkylineFragment (
-    postList: List<BskyPost>,
+    postList: List<SkylineItem>,
     onItemClicked: OnPostClicked,
     modifier: Modifier = Modifier,
     listState: LazyListState = rememberLazyListState()
@@ -36,13 +39,15 @@ fun SkylineFragment (
             Column(
                 modifier = Modifier
                     .fillParentMaxWidth()
-                    .padding(vertical = 1.dp)
+                    .padding(0.dp)
             ) {
-                PostFragment(
-                    modifier = Modifier.fillParentMaxWidth(),
-                    post = skylineItem,
-                    onItemClicked = onItemClicked,
-                )
+                skylineItem.post?.let {
+                    PostFragment(
+                        modifier = Modifier.fillParentMaxWidth(),
+                        post = it,
+                        onItemClicked = onItemClicked,
+                    )
+                }
             }
         }
     }
@@ -55,9 +60,9 @@ fun SkylineFragment (
 fun PreviewSkyline() {
     NimbusTheme {
         ScreenBody(modifier = Modifier.height(1000.dp)) {
-            var posts = mutableListOf<BskyPost>()
+            var posts = mutableListOf<SkylineItem>()
             for (i in 1..10) {
-                posts.add(testPost)
+                posts.add(SkylineItem(testPost))
             }
             SkylineFragment(postList = posts, {})
         }

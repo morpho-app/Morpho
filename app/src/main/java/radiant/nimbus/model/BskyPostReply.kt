@@ -3,7 +3,9 @@ package radiant.nimbus.model
 import app.bsky.feed.ReplyRef
 import app.bsky.feed.ReplyRefParentUnion
 import app.bsky.feed.ReplyRefRootUnion
+import kotlinx.serialization.Serializable
 
+@Serializable
 data class BskyPostReply(
     val root: BskyPost?,
     val parent: BskyPost?,

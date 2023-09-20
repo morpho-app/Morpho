@@ -18,8 +18,8 @@ import kotlinx.coroutines.runBlocking
 import radiant.nimbus.extensions.lifecycleViewModels
 import radiant.nimbus.screens.NavGraphs
 import radiant.nimbus.screens.destinations.LoginScreenDestination
-import radiant.nimbus.screens.destinations.ProfileScreenDestination
 import radiant.nimbus.ui.theme.NimbusTheme
+import sh.christian.ozone.api.AtIdentifier
 
 @OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
 @AndroidEntryPoint
@@ -38,7 +38,8 @@ class MainActivity : ComponentActivity() {
             }
         }
 
-        val authInfo = runBlocking { viewModel.apiProvider.auth().first() }
+        val authInfo = runBlocking { viewModel.apiProvider.loginRepository.auth().first() }
+        viewModel.apiProvider.loginRepository.auth = authInfo
 
         setContent {
             NimbusTheme {
@@ -48,12 +49,12 @@ class MainActivity : ComponentActivity() {
                     color = MaterialTheme.colorScheme.background
                 ) {
 
-                    if (authInfo != null) {
+                    if (authInfo == null) {
                         DestinationsNavHost(navGraph = NavGraphs.root, startRoute = LoginScreenDestination)
 
                     } else {
-                        //viewModel.currentUser = AtIdentifier(authInfo.did.did)
-                        DestinationsNavHost(navGraph = NavGraphs.root, startRoute = ProfileScreenDestination)
+                        viewModel.currentUser = AtIdentifier(authInfo.did.did)
+                        DestinationsNavHost(navGraph = NavGraphs.root)//, startRoute = ProfileScreenDestination)
                     }
 
                 }

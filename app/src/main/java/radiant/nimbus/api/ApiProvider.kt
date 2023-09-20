@@ -34,7 +34,7 @@ import javax.inject.Singleton
 @Singleton
 class ApiProvider @Inject constructor(
   private val apiRepository: ServerRepository,
-  private val loginRepository: LoginRepository,
+  val loginRepository: LoginRepository,
 ) : Supervisor {
 
   private val apiHost = MutableStateFlow(apiRepository.server!!.host)

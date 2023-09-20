@@ -1,5 +1,6 @@
 package radiant.nimbus.ui.elements
 
+import android.content.res.Resources
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
@@ -57,3 +58,7 @@ val MaterialTheme.dimens
     @Composable
     @ReadOnlyComposable
     get() = LocalDimensions.current
+
+fun dpToPx(size: Dp) : Float {
+    return size.value * Resources.getSystem().displayMetrics.density
+}

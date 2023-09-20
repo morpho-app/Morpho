@@ -9,6 +9,7 @@ import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.viewModelScope
 import app.bsky.actor.GetProfileQueryParams
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import radiant.nimbus.api.ApiProvider
 import radiant.nimbus.base.BaseViewModel
@@ -44,7 +45,7 @@ class ProfileViewModel @Inject constructor(
         actor: AtIdentifier,
         onSuccess: () -> Unit,
         onFailure: () -> Unit
-    ) = viewModelScope.launch {
+    ) = viewModelScope.launch(Dispatchers.IO) {
         when(val result = apiProvider.api.getProfile(GetProfileQueryParams(actor))) {
             is AtpResponse.Failure -> {
                 Log.e("P Load Err", result.toString())

@@ -35,6 +35,7 @@ import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -49,6 +50,8 @@ import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.hilt.navigation.compose.hiltViewModel
 import app.bsky.feed.FeedViewPost
+import app.bsky.feed.GetPostThreadQueryParams
+import app.bsky.feed.GetPostThreadResponse
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.ramcosta.composedestinations.annotation.Destination
@@ -56,6 +59,8 @@ import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.datetime.Instant
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import radiant.nimbus.MainViewModel
 import radiant.nimbus.R
 import radiant.nimbus.api.ApiProvider
@@ -72,8 +77,10 @@ import radiant.nimbus.ui.elements.RichText
 import radiant.nimbus.ui.utils.DevicePreviews
 import radiant.nimbus.ui.utils.FontScalePreviews
 import sh.christian.ozone.api.AtIdentifier
+import sh.christian.ozone.api.AtUri
 import sh.christian.ozone.api.Did
 import sh.christian.ozone.api.Handle
+import sh.christian.ozone.api.response.AtpResponse
 
 @Destination
 @Composable
@@ -83,8 +90,8 @@ fun ProfileScreen(
     viewModel: ProfileViewModel = hiltViewModel(),
     actor: AtIdentifier? = null,
 ) {
-    var myProfile by rememberSaveable { mutableStateOf(false) }
-    var profileUIState by rememberSaveable { mutableStateOf(ProfileUIState.Loading)}
+    var myProfile by rememberSaveable(viewModel.state) { mutableStateOf(false) }
+    var profileUIState: ProfileUIState by rememberSaveable(viewModel.state) { mutableStateOf(ProfileUIState.Loading)}
     if (viewModel.state.isLoading) {
         if (actor == null) {
             if (mainViewModel.currentUser != null) {
@@ -92,8 +99,9 @@ fun ProfileScreen(
                 viewModel.getProfile(
                     mainViewModel.apiProvider,
                     mainViewModel.currentUser!!,
-                    {profileUIState = ProfileUIState.Done},
-                    {profileUIState = ProfileUIState.Error})
+                    { profileUIState = ProfileUIState.Done },
+                    { profileUIState = ProfileUIState.Error }
+                )
             }
         } else {
             myProfile = actor == mainViewModel.currentUser
@@ -101,7 +109,8 @@ fun ProfileScreen(
                 mainViewModel.apiProvider,
                 actor,
                 {profileUIState = ProfileUIState.Done},
-                {profileUIState = ProfileUIState.Error})
+                {profileUIState = ProfileUIState.Error}
+            )
         }
     }
     when (profileUIState) {
@@ -153,7 +162,7 @@ fun ProfileView(
     navigator: DestinationsNavigator? = null,
     myProfile: Boolean = false,
 ){
-    var selectedTab: ProfileTabs = ProfileTabs.Posts
+    var selectedTab: ProfileTabs = ProfileTabs.Media
     if (!state.isLoading) {
         Scaffold(
             topBar = {
@@ -240,7 +249,6 @@ fun ProfileView(
             }
         ) { contentPadding ->
 
-
             when (selectedTab) {
                 ProfileTabs.Posts -> {
 
@@ -258,7 +266,17 @@ fun ProfileView(
                         onItemClicked = {}
                     )
                 }
-                ProfileTabs.Media -> TODO()
+                ProfileTabs.Media -> {
+                    val params = GetPostThreadQueryParams(
+                        AtUri("at://bitdizzy.bsky.social/app.bsky.feed.post/3k7kimkoejx27"),
+                        10, 10)
+                    var postThread: AtpResponse<GetPostThreadResponse>? = null
+                    LaunchedEffect(selectedTab) {
+                        postThread = apiProvider?.api?.getPostThread(params)
+
+                    }
+                    Text(text = Json.encodeToString(value = postThread?.maybeResponse()?.thread))
+                }
                 ProfileTabs.Feeds -> TODO()
                 ProfileTabs.Lists -> TODO()
             }

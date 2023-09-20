@@ -1,18 +1,18 @@
 package radiant.nimbus.model
 
 import androidx.compose.runtime.Immutable
-
 import app.bsky.feed.FeedViewPost
 import app.bsky.feed.Post
 import app.bsky.feed.PostView
-
 import kotlinx.collections.immutable.ImmutableList
-import sh.christian.ozone.api.AtUri
-import sh.christian.ozone.api.Cid
+import kotlinx.serialization.Serializable
 import radiant.nimbus.util.deserialize
 import radiant.nimbus.util.mapImmutable
+import sh.christian.ozone.api.AtUri
+import sh.christian.ozone.api.Cid
 
 @Immutable
+@Serializable
 data class BskyPost (
     val uri: AtUri,
     val cid: Cid,
@@ -31,6 +31,7 @@ data class BskyPost (
     val reply: BskyPostReply?,
     val reason: BskyPostReason?,
 )
+
 
 fun FeedViewPost.toPost(): BskyPost {
     return post.toPost(

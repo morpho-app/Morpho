@@ -2,10 +2,12 @@ package radiant.nimbus.model
 
 import app.bsky.richtext.Facet
 import app.bsky.richtext.FacetFeatureUnion
+import kotlinx.serialization.Serializable
 import sh.christian.ozone.api.Did
 import sh.christian.ozone.api.Handle
 import sh.christian.ozone.api.Uri
 
+@Serializable
 data class BskyPostLink(
     val start: Int,
     val end: Int,
@@ -13,14 +15,17 @@ data class BskyPostLink(
 )
 
 sealed interface LinkTarget {
+    @Serializable
     data class UserHandleMention(
         val handle: Handle,
     ) : LinkTarget
 
+    @Serializable
     data class UserDidMention(
         val did: Did,
     ) : LinkTarget
 
+    @Serializable
     data class ExternalLink(
         val uri: Uri,
     ) : LinkTarget
