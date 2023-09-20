@@ -19,6 +19,10 @@ fun <T : Any> KSerializer<T>.deserialize(jsonElement: JsonElement): T {
     return json.decodeFromString(this, json.encodeToString(jsonElement))
 }
 
+fun <T : Any> KSerializer<T>.deserialize(string: String): T {
+    return json.decodeFromString(this, string)
+}
+
 fun <T : Any> KSerializer<T>.serialize(value: T): JsonElement {
     return json.parseToJsonElement(json.encodeToString(this, value))
 }

@@ -41,9 +41,8 @@ inline fun <reified T : Any> valueClassSerializer(): KSerializer<T> {
     return SealedValueClassSerialNameKSerializer(T::class)
 }
 
-@PublishedApi
 @OptIn(ExperimentalSerializationApi::class)
-internal class SealedValueClassSerialNameKSerializer<T : Any>(
+class SealedValueClassSerialNameKSerializer<T : Any>(
     kClass: KClass<T>,
 ) : KSerializer<T> {
     private val constructor = kClass.primaryConstructor!!
@@ -71,8 +70,7 @@ internal class SealedValueClassSerialNameKSerializer<T : Any>(
     }
 }
 
-@PublishedApi
-internal class OverrideDescriptorEncoder(
+class OverrideDescriptorEncoder(
     private val descriptorMapping: Map<SerialDescriptor, SerialDescriptor>,
     private val base: Encoder,
 ) : Encoder by base {
@@ -81,8 +79,7 @@ internal class OverrideDescriptorEncoder(
     }
 }
 
-@PublishedApi
-internal class OverrideDescriptorDecoder(
+class OverrideDescriptorDecoder(
     private val descriptorMapping: Map<SerialDescriptor, SerialDescriptor>,
     private val base: Decoder,
 ) : Decoder by base {

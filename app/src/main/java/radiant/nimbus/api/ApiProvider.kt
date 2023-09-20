@@ -44,7 +44,7 @@ class ApiProvider @Inject constructor(
   private val client = HttpClient(CIO) {
     install(Logging) {
       logger = Logger.DEFAULT
-      level = LogLevel.INFO
+      level = LogLevel.ALL
     }
 
     install(XrpcAuthPlugin) {

@@ -1,6 +1,5 @@
 package radiant.nimbus.ui.common
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -29,6 +28,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.max
 import app.bsky.feed.BlockedPost
 import app.bsky.feed.NotFoundPost
 import dev.jeziellago.compose.markdowntext.MarkdownText
@@ -60,6 +60,10 @@ enum class PostFragmentRole {
     ThreadRootUnfocused,
 }
 
+fun indentLevel(level:Int) : Float {
+    return (1 - (level.toFloat() / 100))
+}
+
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun PostFragment(
@@ -72,138 +76,152 @@ fun PostFragment(
 ) {
     val delta = remember { getFormattedDateTimeSince(post.createdAt) }
     val lineColour = MaterialTheme.colorScheme.onSurfaceVariant
-    Surface (
-        //shape = MaterialTheme.shapes.extraSmall,
+    Column(
+        Modifier.fillMaxWidth().padding(2.dp)
     ) {
-        Row(modifier = Modifier
-            .padding(vertical = 4.dp)
-            .padding(start = 6.dp, end = 2.dp)
-            .drawWithCache {
-                val path = Path()
-                if (true) {
-                    path.moveTo(dpToPx(8.dp), dpToPx(29.dp))
-                    path.lineTo(-dpToPx(8.dp), dpToPx(29.dp))
-                    path.close()
-                }
-                onDrawBehind {
-                    drawPath(path, lineColour, style = Stroke(width = 5f))
-                }
-            }
-            .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.background)
+        Surface (
+            shadowElevation = max((indentLevel-1).dp, 0.dp),
+            tonalElevation = indentLevel.dp,
+            shape = MaterialTheme.shapes.extraSmall,
+            modifier = Modifier
+                .fillMaxWidth(indentLevel(indentLevel))
+                .align(Alignment.End)
 
         ) {
+            Row(modifier = Modifier
+                .padding(vertical = 4.dp)
+                .padding(start = 6.dp, end = 6.dp)
+                .drawWithCache {
+                    val path = Path()
+                    if (false) {
+                        path.moveTo(dpToPx(8.dp), dpToPx(29.dp))
+                        path.lineTo(-dpToPx(8.dp), dpToPx(29.dp))
+                        path.close()
+                    }
+                    onDrawBehind {
+                        drawPath(path, lineColour, style = Stroke(width = 5f))
+                    }
+                }
+                .fillMaxWidth(indentLevel(indentLevel))
+                //.background(MaterialTheme.colorScheme.background)
 
-
-            OutlinedAvatar(
-                url = post.author.avatar.orEmpty(),
-                contentDescription = "Avatar for ${post.author.handle}",
-                modifier = Modifier.size(50.dp).offset(y = 4.dp),
-                outlineColor = MaterialTheme.colorScheme.background,
-            )
-            //Spacer(modifier = Modifier.width(8.dp))
-            Surface(
-                shape = MaterialTheme.shapes.extraSmall,
-                shadowElevation = 1.dp,
-                tonalElevation = 0.01.dp,
-                modifier = Modifier.padding(start = 4.dp)
             ) {
-                Column(
-                    Modifier.padding(vertical = 6.dp, horizontal = 6.dp)
+
+
+                OutlinedAvatar(
+                    url = post.author.avatar.orEmpty(),
+                    contentDescription = "Avatar for ${post.author.handle}",
+                    modifier = Modifier
+                        .size(50.dp)
+                        .offset(y = 4.dp),
+                    outlineColor = MaterialTheme.colorScheme.background,
+                )
+                //Spacer(modifier = Modifier.width(8.dp))
+                Surface(
+                    shape = MaterialTheme.shapes.extraSmall,
+                    //shadowElevation = (1 + indentLevel).dp,
+                    //tonalElevation = (0.01 + indentLevel.toFloat() / 20).dp,
+                    //modifier = Modifier.padding(start = 4.dp)
                 ) {
-
-                    FlowRow(
-                        modifier = Modifier
-                            .padding(horizontal = 4.dp),
-                        horizontalArrangement = Arrangement.End
-
+                    Column(
+                        Modifier.padding(vertical = 6.dp, horizontal = 6.dp).fillMaxWidth(indentLevel(indentLevel)),
                     ) {
-                        Text(
-                            text = buildAnnotatedString {
-                                withStyle(
-                                    style = SpanStyle(
-                                        color = MaterialTheme.colorScheme.onSurface,
-                                        fontSize = MaterialTheme.typography.labelLarge.fontSize
-                                            .times(1.2f),
-                                        fontWeight = FontWeight.Medium
-                                    )
-                                ) {
-                                    append(post.author.displayName.orEmpty())
-                                }
-                                withStyle(
-                                    style = SpanStyle(
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        fontSize = MaterialTheme.typography.labelLarge.fontSize
-                                            .times(1.0f)
-                                    )
-                                ) {
-                                    append(" @${post.author.handle}")
-                                }
 
-                            },
-                            maxLines = 2,
-                            style = MaterialTheme.typography.labelLarge,
-                            overflow = TextOverflow.Ellipsis,
+                        FlowRow(
                             modifier = Modifier
-                                .wrapContentWidth(Alignment.Start)
-                                //.weight(10.0F)
-                                .alignByBaseline(),
+                                .padding(horizontal = 4.dp),
+                            horizontalArrangement = Arrangement.End
 
+                        ) {
+                            Text(
+                                text = buildAnnotatedString {
+                                    withStyle(
+                                        style = SpanStyle(
+                                            color = MaterialTheme.colorScheme.onSurface,
+                                            fontSize = MaterialTheme.typography.labelLarge.fontSize
+                                                .times(1.2f),
+                                            fontWeight = FontWeight.Medium
+                                        )
+                                    ) {
+                                        append(post.author.displayName.orEmpty())
+                                    }
+                                    withStyle(
+                                        style = SpanStyle(
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            fontSize = MaterialTheme.typography.labelLarge.fontSize
+                                                .times(1.0f)
+                                        )
+                                    ) {
+                                        append(" @${post.author.handle}")
+                                    }
+
+                                },
+                                maxLines = 2,
+                                style = MaterialTheme.typography.labelLarge,
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier
+                                    .wrapContentWidth(Alignment.Start)
+                                    //.weight(10.0F)
+                                    .alignByBaseline(),
+
+                                )
+                            Spacer(
+                                modifier = Modifier
+                                    .width(1.dp)
+                                    .weight(0.1F),
                             )
-                        Spacer(
-                            modifier = Modifier
-                                .width(1.dp)
-                                .weight(0.1F),
+                            Text(
+                                text = delta,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                style = MaterialTheme.typography.labelLarge,
+                                fontSize = MaterialTheme.typography.labelLarge
+                                    .fontSize.div(1.2F),
+                                modifier = Modifier
+                                    .wrapContentWidth(Alignment.End)
+                                    //.weight(3.0F)
+                                    .alignByBaseline(),
+                                maxLines = 1,
+                                overflow = TextOverflow.Visible,
+                                softWrap = false,
+                            )
+                        }
+
+
+
+                        MarkdownText(
+                            markdown = post.text.replace("\n", "  \n"),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.padding(start = 4.dp)
                         )
-                        Text(
-                            text = delta,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            style = MaterialTheme.typography.labelLarge,
-                            fontSize = MaterialTheme.typography.labelLarge
-                                .fontSize.div(1.2F),
-                            modifier = Modifier
-                                .wrapContentWidth(Alignment.End)
-                                //.weight(3.0F)
-                                .alignByBaseline(),
-                            maxLines = 1,
-                            overflow = TextOverflow.Visible,
-                            softWrap = false,
-                        )
+
                     }
 
-
-
-                    MarkdownText(
-                        markdown = post.text.replace("\n", "  \n"),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.padding(start = 4.dp)
-                    )
-
                 }
-
             }
         }
     }
+
 }
 
 
 @Composable
 fun BlockedPostFragment(
-    post: BlockedPost,
     modifier: Modifier = Modifier,
+    post: BlockedPost? = null,
     indentLevel: Int = 0,
     role: PostFragmentRole = PostFragmentRole.Solo,
-    ) {
+) {
 
 }
 
 @Composable
-fun NotFoundPostFragment(modifier: Modifier = Modifier,
-                         post: NotFoundPost? = null,
-                         indentLevel: Int = 0,
-                         role: PostFragmentRole = PostFragmentRole.Solo,
-                         ) {
+fun NotFoundPostFragment(
+    modifier: Modifier = Modifier,
+     post: NotFoundPost? = null,
+     indentLevel: Int = 0,
+     role: PostFragmentRole = PostFragmentRole.Solo,
+ ) {
 
 }
 

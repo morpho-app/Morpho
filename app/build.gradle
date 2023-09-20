@@ -55,6 +55,8 @@ android {
 
 dependencies {
 
+    api("sh.christian.ozone:bluesky:0.0.2")
+
     implementation 'org.slf4j:slf4j-api:2.0.7'
     implementation 'uk.uuid.slf4j:slf4j-android:2.0.7-0'
 
@@ -69,7 +71,7 @@ dependencies {
 
     implementation "androidx.window:window:1.1.0"
     implementation "androidx.compose.material3:material3-window-size-class:1.1.1"
-    api("sh.christian.ozone:bluesky:0.0.2")
+
     implementation("androidx.palette:palette-ktx:1.0.0")
     implementation 'androidx.datastore:datastore-core:1.0.0'
     implementation 'androidx.datastore:datastore-preferences-core:1.0.0'

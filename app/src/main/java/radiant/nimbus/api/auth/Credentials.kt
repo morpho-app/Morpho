@@ -2,7 +2,8 @@ package radiant.nimbus.api.auth
 
 import sh.christian.ozone.api.Handle
 
-data class Credentials(
+
+data class Credentials constructor(
   val email: String?,
   val username: Handle,
   val password: String,

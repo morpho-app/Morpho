@@ -25,10 +25,12 @@ import sh.christian.ozone.api.response.AtpErrorDescription
 internal class XrpcAuthPlugin(
   private val json: Json,
   private val authTokens: MutableStateFlow<Tokens?>,
+  //private val credentials: Credentials? = null,
 ) {
   class Config(
     var json: Json = Json { ignoreUnknownKeys = true },
     var authTokens: MutableStateFlow<Tokens?> = MutableStateFlow(null),
+    //var credentials: Credentials? = null,
   )
 
   companion object : HttpClientPlugin<Config, XrpcAuthPlugin> {
@@ -36,7 +38,7 @@ internal class XrpcAuthPlugin(
 
     override fun prepare(block: Config.() -> Unit): XrpcAuthPlugin {
       val config = Config().apply(block)
-      return XrpcAuthPlugin(config.json, config.authTokens)
+      return XrpcAuthPlugin(config.json, config.authTokens) //, config.credentials)
     }
 
     override fun install(
@@ -69,7 +71,6 @@ internal class XrpcAuthPlugin(
               val newRefreshToken = refreshed.refreshJwt
 
               plugin.authTokens.value = Tokens(newAccessToken, newRefreshToken)
-
               context.headers.remove(Authorization)
               context.bearerAuth(newAccessToken)
               result = execute(context)
