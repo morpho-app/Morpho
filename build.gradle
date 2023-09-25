@@ -2,9 +2,9 @@
 
 buildscript {
     ext {
-        coroutine_version = '1.7.1'
+        coroutine_version = '1.7.3'
         coroutine_android_version = '1.7.3'
-        coroutine_lifecycle_version = '2.6.1'
+        coroutine_lifecycle_version = '2.6.2'
         work_version = "2.8.1"
         agp_version = '8.2.0-beta02'
     }

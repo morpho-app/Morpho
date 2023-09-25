@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
@@ -59,8 +60,6 @@ import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.datetime.Instant
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
 import radiant.nimbus.MainViewModel
 import radiant.nimbus.R
 import radiant.nimbus.api.ApiProvider
@@ -162,7 +161,7 @@ fun ProfileView(
     navigator: DestinationsNavigator? = null,
     myProfile: Boolean = false,
 ){
-    var selectedTab: ProfileTabs = ProfileTabs.Media
+    var selectedTab = rememberSaveable { mutableStateOf(ProfileTabs.Posts) }
     if (!state.isLoading) {
         Scaffold(
             topBar = {
@@ -180,7 +179,7 @@ fun ProfileView(
                         }
                     }
                     ScrollableTabRow(
-                        selectedTabIndex = 0,
+                        selectedTabIndex = selectedTab.value.ordinal,
                         edgePadding = 4.dp,
                         modifier = Modifier
                             .fillMaxWidth()
@@ -194,7 +193,7 @@ fun ProfileView(
                             )
                         Tab(
                             selected = true,
-                            onClick = { /*TODO*/ },
+                            onClick = { selectedTab.value = ProfileTabs.Posts },
 
                             ) {
                             Text(
@@ -205,7 +204,7 @@ fun ProfileView(
 
                         Tab(
                             selected = false,
-                            onClick = { /*TODO*/ },
+                            onClick = { selectedTab.value = ProfileTabs.PostsReplies },
 
                             ) {
                             Text(
@@ -216,7 +215,7 @@ fun ProfileView(
                         //Spacer(modifier = Modifier.width(2.dp))
                         Tab(
                             selected = false,
-                            onClick = { /*TODO*/ },
+                            onClick = { selectedTab.value = ProfileTabs.Media },
                         ) {
                             Text(
                                 text = "Media",
@@ -226,7 +225,7 @@ fun ProfileView(
 
                         Tab(
                             selected = false,
-                            onClick = { /*TODO*/ },
+                            onClick = { selectedTab.value = ProfileTabs.Feeds },
                         ) {
                             Text(
                                 text = "Feeds",
@@ -236,7 +235,7 @@ fun ProfileView(
 
                         Tab(
                             selected = false,
-                            onClick = { /*TODO*/ },
+                            onClick = { selectedTab.value = ProfileTabs.Lists },
                         ) {
                             Text(
                                 text = "Lists",
@@ -249,7 +248,7 @@ fun ProfileView(
             }
         ) { contentPadding ->
 
-            when (selectedTab) {
+            when (selectedTab.value) {
                 ProfileTabs.Posts -> {
 
                     SkylineFragment(
@@ -272,10 +271,10 @@ fun ProfileView(
                         10, 10)
                     var postThread: AtpResponse<GetPostThreadResponse>? = null
                     LaunchedEffect(selectedTab) {
-                        postThread = apiProvider?.api?.getPostThread(params)
+                        //postThread = apiProvider?.api?.getPostThread(params)
 
                     }
-                    Text(text = Json.encodeToString(value = postThread?.maybeResponse()?.thread))
+                    //Text(text = Json.encodeToString(value = postThread?.maybeResponse()?.thread))
                 }
                 ProfileTabs.Feeds -> TODO()
                 ProfileTabs.Lists -> TODO()
@@ -325,14 +324,16 @@ public fun DetailedProfileFragment(
                         }
 
                 )
-                ProfileLabels(
-                    labels = profile.labels,
-                    modifier = Modifier
-                        .constrainAs(labels) {
-                            top.linkTo(anchor = parent.top, margin = 12.dp)
-                            end.linkTo(anchor = parent.end, margin = 8.dp)
-                        }
-                )
+                SelectionContainer {
+                    ProfileLabels(
+                        labels = profile.labels,
+                        modifier = Modifier
+                            .constrainAs(labels) {
+                                top.linkTo(anchor = parent.top, margin = 12.dp)
+                                end.linkTo(anchor = parent.end, margin = 8.dp)
+                            }
+                    )
+                }
                 val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
                 LargeTopAppBar(
                     title = {
@@ -392,37 +393,40 @@ public fun DetailedProfileFragment(
 
                     }
                 )
-                UserStatsFragment(
-                    profile = profile,
-                    modifier = Modifier
-                        .padding(end = 10.dp)
-                        .widthIn(max = 250.dp)
-                        .constrainAs(userStats) {
-                            bottom.linkTo(appbar.bottom, (-15).dp)
-                            end.linkTo(parent.end)
-                        }
-                )
+                SelectionContainer {
+                    UserStatsFragment(
+                        profile = profile,
+                        modifier = Modifier
+                            .padding(end = 10.dp)
+                            .widthIn(max = 250.dp)
+                            .constrainAs(userStats) {
+                                bottom.linkTo(appbar.bottom, (-15).dp)
+                                end.linkTo(parent.end)
+                            }
+                    )
+                }
 
             }
-        Column (
-            modifier = Modifier
-                .padding(horizontal = 20.dp, vertical = 0.dp)
-        ){
-            val name = profile.displayName ?: profile.handle.handle
-            Text(
-                text = name,
-                style = MaterialTheme.typography.headlineMedium,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-            Text(
-                text = " @${profile.handle}",
-                color = MaterialTheme.colorScheme.primary,
-                style = MaterialTheme.typography.labelMedium,
-            )
-            Spacer(modifier = Modifier.height(10.dp))
-            RichText(profile)
+        SelectionContainer {
+            Column(
+                modifier = Modifier
+                    .padding(horizontal = 20.dp, vertical = 0.dp)
+            ) {
+                val name = profile.displayName ?: profile.handle.handle
+                Text(
+                    text = name,
+                    style = MaterialTheme.typography.headlineMedium,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    text = " @${profile.handle}",
+                    color = MaterialTheme.colorScheme.primary,
+                    style = MaterialTheme.typography.labelMedium,
+                )
+                Spacer(modifier = Modifier.height(10.dp))
+                RichText(profile)
+            }
         }
-
     }
 }
 

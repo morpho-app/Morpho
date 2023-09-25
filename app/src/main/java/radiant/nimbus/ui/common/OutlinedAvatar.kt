@@ -16,12 +16,12 @@ package radiant.nimbus.ui.common
  * limitations under the License.
  */
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -45,12 +45,13 @@ fun OutlinedAvatar(
     outlineSize: Dp = 1.dp,
     outlineColor: Color = MaterialTheme.colorScheme.surface,
     contentDescription: String = "",
+    onClicked: () -> Unit = {},
 ) {
-    Box(
-        modifier = modifier.background(
-            color = outlineColor,
-            shape = CircleShape
-        )
+    Surface(
+        shape = CircleShape,
+        color = outlineColor,
+        onClick = onClicked,
+        modifier = modifier
     ) {
         AsyncImage(
             model = ImageRequest.Builder(LocalContext.current)
@@ -76,6 +77,8 @@ fun OutlinedAvatar(
 @Composable
 private fun OutlinedAvatarPreview() {
     NimbusTheme {
-        OutlinedAvatar(url = "")
+        Box {
+            OutlinedAvatar(url = "")
+        }
     }
 }
