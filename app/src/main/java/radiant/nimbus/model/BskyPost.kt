@@ -1,6 +1,7 @@
 package radiant.nimbus.model
 
-import androidx.compose.runtime.Immutable
+import androidx.room.Entity
+import androidx.room.Fts4
 import app.bsky.feed.FeedViewPost
 import app.bsky.feed.Post
 import app.bsky.feed.PostView
@@ -10,9 +11,29 @@ import radiant.nimbus.util.deserialize
 import radiant.nimbus.util.mapImmutable
 import sh.christian.ozone.api.AtUri
 import sh.christian.ozone.api.Cid
+import javax.annotation.concurrent.Immutable
 
-@Immutable
+enum class PostType {
+    BlockedThread,
+    NotFoundThread,
+    VisibleThread,
+    BskyPost,
+}
+
+@Fts4
+@Entity(tableName = "post_cache")
+data class CachePost(
+    val uri: String,
+    val cid: String,
+    val type: PostType,
+    val authorDid: String,
+    val timestamp: Long,
+    val cacheEntry: String,
+)
+
+
 @Serializable
+@Immutable
 data class BskyPost (
     val uri: AtUri,
     val cid: Cid,

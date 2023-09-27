@@ -1,13 +1,19 @@
 package radiant.nimbus.ui.common
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.LazyScopeMarker
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -15,9 +21,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import androidx.constraintlayout.compose.ConstraintLayout
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -71,80 +79,85 @@ fun ThreadFragmentFrame(
         }},
     listState: LazyListState = rememberLazyListState()
 ) {
-    ConstraintLayout {
+    Surface (
+        tonalElevation = 0.dp,
+        shape = MaterialTheme.shapes.extraSmall
+    ) {
         LazyColumn(
-            modifier = modifier,
+            modifier = modifier.heightIn(0.dp, 20000.dp),
             contentPadding = WindowInsets.navigationBars.asPaddingValues(),
             state = listState
         ) {
-            items(thread.parents.size + thread.replies.size + 1) {
-                if(thread.parents.isNotEmpty()) {
-                    when(val root = thread.parents[0] ) {
-                        is ThreadPost.ViewablePost -> {
-                            if (root.post.uri == thread.post.uri) {
-                                PostFragment(
-                                    post = root.post,
-                                    role = PostFragmentRole.PrimaryThreadRoot,
-                                    indentLevel = 0,
-                                )
-                            } else {
-                                PostFragment(
-                                    post = root.post,
-                                    role = PostFragmentRole.ThreadRootUnfocused,
-                                    indentLevel = 1,
-                                )
-                            }
-                        }
-                        is ThreadPost.BlockedPost -> {
-                            BlockedPostFragment(
-                                role = PostFragmentRole.Solo,
-                                indentLevel = 0,
-                            )
-                        }
-                        is ThreadPost.NotFoundPost -> {
-                            NotFoundPostFragment(
-                                role = PostFragmentRole.Solo,
-                                indentLevel = 0,
-                            )
-                        }
-                        else -> {
-                            NotFoundPostFragment(
-                                role = PostFragmentRole.Solo,
-                                indentLevel = 0,
-                            )
+            val threadPost = ThreadPost.ViewablePost(thread.post, thread.replies)
+            if (thread.parents.isNotEmpty()) {
+                when (val root = thread.parents[thread.parents.lastIndex]) {
+                    is ThreadPost.ViewablePost -> {
+                        if (root.post.uri == thread.post.uri) {
+                            item {
+                            FullPostFragment(
+                                post = root.post,
+                            )}
+                        } else {
+                            item {
+                            PostFragment(
+                                post = root.post,
+                                role = PostFragmentRole.ThreadRootUnfocused,
+                                indentLevel = 1,
+                            )}
+                            item {
+                            ThreadItem(
+                                item = threadPost,
+                                role = PostFragmentRole.PrimaryThreadRoot,
+                                reason = thread.post.reason,
+                            )}
                         }
                     }
-                }
-                val threadPost = ThreadPost.ViewablePost(thread.post, thread.replies)
-                ThreadItem(
-                    item = threadPost,
-                    role = PostFragmentRole.PrimaryThreadRoot,
-                    reason = thread.post.reason,
-                )
 
-                threadPost.replies.forEach {
-                    if(it is ThreadPost.ViewablePost) {
-                        if (it.replies.isEmpty()) {
-                            ThreadReply(item = it, role = PostFragmentRole.ThreadBranchEnd, indentLevel = 1)
-                        } else {
-                            ThreadReply(item = it, role = PostFragmentRole.ThreadBranchStart, indentLevel = 1)
-                            it.replies.sortedWith(comparator).forEach {
-                                ThreadTree(reply = it,
-                                    indentLevel = 2,
-                                    //comparator = comparator,
-                                )
+                    is ThreadPost.BlockedPost -> {
+                        item {
+                        BlockedPostFragment(
+                            role = PostFragmentRole.Solo,
+                            indentLevel = 0,
+                        )}
+                    }
+
+                    is ThreadPost.NotFoundPost -> {
+                        item {
+                        NotFoundPostFragment(
+                            role = PostFragmentRole.Solo,
+                            indentLevel = 0,
+                        )}
+                    }
+
+                }
+            } else {
+                item {
+                    ThreadItem(
+                        item = threadPost,
+                        role = PostFragmentRole.PrimaryThreadRoot,
+                        reason = thread.post.reason,
+                    )
+                }
+            }
+            threadPost.replies.forEach { it ->
+                if(it is ThreadPost.ViewablePost) {
+                    item { ThreadReply(item = it, role = PostFragmentRole.ThreadBranchEnd, indentLevel = 1) }
+                    if (it.replies.isNotEmpty()) {
+                        items(it.replies.sortedWith(comparator),
+                            key = {
+                                it.hashCode()
                             }
+                        ) {reply ->
+                            ThreadTree(reply = reply, indentLevel = 2)
                         }
                     }
                 }
             }
-
         }
     }
-
-
 }
 
+@LazyScopeMarker
 @Composable
 fun ThreadTree(
     reply: ThreadPost,
@@ -161,23 +174,48 @@ fun ThreadTree(
         if (reply.replies.isEmpty()) {
             ThreadReply(item = reply, role = PostFragmentRole.ThreadBranchEnd, indentLevel = indentLevel)
         } else {
+            Column(
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                val lineColour = MaterialTheme.colorScheme.onSurfaceVariant
             Surface (
-                tonalElevation = indentLevel.dp
-            ){
+                //shadowElevation = if (indentLevel > 0) 1.dp else 0.dp,
+                tonalElevation = 4.dp,
+                shape = MaterialTheme.shapes.small,
+                color = Color.Transparent,
+                modifier = Modifier
+                    .fillMaxWidth(indentLevel(indentLevel/2.0f))
+                    .align(Alignment.End)
+                    .background(
+                        Brush.horizontalGradient(
+                        listOf(MaterialTheme.colorScheme.primary.copy(0.2f),
+                            MaterialTheme.colorScheme.surface,
+                        ),
+                        endX = 10f
+                    ),MaterialTheme.shapes.small)
+
+            ) {
                 Column(
-                    Modifier.padding(vertical = 2.dp)
+                    modifier = Modifier.padding(vertical = 2.dp)
                 ) {
-                    ThreadReply(item = reply, role = PostFragmentRole.ThreadBranchStart, indentLevel = indentLevel)
+                    ThreadReply(
+                        item = reply,
+                        role = PostFragmentRole.ThreadBranchStart,
+                        indentLevel = indentLevel + 1
+                    )
+
+                    val nextIndent = indentLevel + 1
                     reply.replies.sortedWith(comparator).forEach {
-                        val nextIndent = indentLevel + 1
                         ThreadTree(reply = it, indentLevel = nextIndent)
                     }
                 }
+            }
             }
 
         }
     }
 }
+
 
 @Composable
 fun ThreadItem(
@@ -189,11 +227,17 @@ fun ThreadItem(
 ) {
     when(item) {
         is ThreadPost.ViewablePost -> {
-            PostFragment(
-                post = item.post,
-                role = role,
-                indentLevel = indentLevel,
+            if (role == PostFragmentRole.PrimaryThreadRoot) {
+                FullPostFragment(
+                    post = item.post,
                 )
+            } else {
+                PostFragment(
+                    post = item.post,
+                    role = role,
+                    indentLevel = indentLevel,
+                )
+            }
         }
         is ThreadPost.BlockedPost -> {
             BlockedPostFragment(

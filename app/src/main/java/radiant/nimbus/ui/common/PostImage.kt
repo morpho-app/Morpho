@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredHeightIn
 import androidx.compose.foundation.layout.requiredWidthIn
@@ -41,7 +42,8 @@ fun PostImages(imagesFeature: BskyPostFeature.ImagesFeature) {
     LazyVerticalStaggeredGrid(
         columns = StaggeredGridCells.Adaptive(140.dp),
         contentPadding = PaddingValues(2.dp),
-        modifier = Modifier.padding(vertical = 6.dp)) {
+        modifier = Modifier.padding(vertical = 6.dp).heightIn(10.dp, 2000.dp)
+    ) {
         items(imagesFeature.images) {image ->
             PostImageThumb(image = image)
         }

@@ -69,6 +69,7 @@ import radiant.nimbus.extensions.activityViewModel
 import radiant.nimbus.model.BskyLabel
 import radiant.nimbus.model.DetailedProfile
 import radiant.nimbus.model.Moment
+import radiant.nimbus.ui.common.NimbusNavBar
 import radiant.nimbus.ui.common.OutlinedAvatar
 import radiant.nimbus.ui.common.SkylineFragment
 import radiant.nimbus.ui.common.UserStatsFragment
@@ -245,6 +246,14 @@ fun ProfileView(
                     }
                 }
 
+            },
+            bottomBar = {
+                NimbusNavBar(profilePic = {
+                    OutlinedAvatar(
+                        url = state.profile?.avatar.orEmpty(),
+                        modifier = Modifier.size(30.dp)
+                    )
+                })
             }
         ) { contentPadding ->
 
@@ -301,132 +310,136 @@ public fun DetailedProfileFragment(
             .background(MaterialTheme.colorScheme.background)
             .padding(bottom = 12.dp)
     ){
-            ConstraintLayout(
+        ConstraintLayout(
+            modifier = Modifier
+                .fillMaxWidth()
+        ) {
+            val (appbar, userStats, banner, labels) = createRefs()
+            AsyncImage(
+                model = ImageRequest.Builder(LocalContext.current)
+                    .data(profile.banner.orEmpty())
+                    .crossfade(true)
+                    .build(),
+                placeholder = painterResource(R.drawable.test_banner),
+                contentDescription = "Profile Banner for ${profile.displayName} ${profile.handle}",
+                contentScale = ContentScale.Crop,
+                alignment = Alignment.TopCenter,
                 modifier = Modifier
+                    // Set image size to 40 dp
                     .fillMaxWidth()
-            ) {
-                val (appbar, userStats, banner, labels) = createRefs()
-                AsyncImage(
-                    model = ImageRequest.Builder(LocalContext.current)
-                        .data(profile.banner.orEmpty())
-                        .crossfade(true)
-                        .build(),
-                    placeholder = painterResource(R.drawable.test_banner),
-                    contentDescription = "Profile Banner for ${profile.displayName} ${profile.handle}",
-                    contentScale = ContentScale.Crop,
-                    alignment = Alignment.TopCenter,
-                    modifier = Modifier
-                        // Set image size to 40 dp
-                        .fillMaxWidth()
-                        .height(120.dp)
-                        .constrainAs(banner) {
-                            top.linkTo(parent.top)
-                        }
-
-                )
-                SelectionContainer {
-                    ProfileLabels(
-                        labels = profile.labels,
-                        modifier = Modifier
-                            .constrainAs(labels) {
-                                top.linkTo(anchor = parent.top, margin = 12.dp)
-                                end.linkTo(anchor = parent.end, margin = 8.dp)
-                            }
-                    )
-                }
-                val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
-                LargeTopAppBar(
-                    title = {
-                        ConstraintLayout(//constraintSet = ,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(0.dp)
-                        ){
-                            val (avatar,buttons) = createRefs()
-                            val avatarGuide = createGuidelineFromStart(.1f)
-                            val centreGuide =createGuidelineFromTop(.6f)
-
-                            OutlinedAvatar(
-                                url = profile.avatar.orEmpty(),
-                                contentDescription = "Avatar for ${profile.displayName} ${profile.handle}",
-                                modifier = Modifier
-                                    .size(80.dp)
-                                    .constrainAs(avatar) {
-                                        centerAround(avatarGuide)
-
-                                    }
-                            )
-                            ProfileButtons(
-                                myProfile = myProfile,
-                                modifier = Modifier
-                                    .constrainAs(buttons) {
-                                        centerAround(centreGuide)
-                                        end.linkTo(parent.end, 12.dp)
-                                    }
-                            )
-                        }
-                    },
-                    navigationIcon = {
-
-                        IconButton(
-                            onClick = { /* doSomething() */ },
-                            modifier = Modifier
-                                .size(30.dp)
-
-
-                        ) {
-                            Icon(
-                                imageVector = Icons.Filled.ArrowBack,
-                                contentDescription = "Back",
-                                //tint =
-                            )
-                        }
-                    },
-                    actions = {
-
-                    },
-                    scrollBehavior = scrollBehavior,
-                    colors = TopAppBarDefaults.largeTopAppBarColors(
-                        containerColor = Color.Transparent
-                    ),
-                    modifier = Modifier.constrainAs(appbar) {
-
+                    .height(120.dp)
+                    .constrainAs(banner) {
+                        top.linkTo(parent.top)
                     }
-                )
-                SelectionContainer {
-                    UserStatsFragment(
-                        profile = profile,
-                        modifier = Modifier
-                            .padding(end = 10.dp)
-                            .widthIn(max = 250.dp)
-                            .constrainAs(userStats) {
-                                bottom.linkTo(appbar.bottom, (-15).dp)
-                                end.linkTo(parent.end)
-                            }
-                    )
-                }
 
-            }
-        SelectionContainer {
-            Column(
+            )
+            ProfileLabels(
+                labels = profile.labels,
                 modifier = Modifier
-                    .padding(horizontal = 20.dp, vertical = 0.dp)
+                    .constrainAs(labels) {
+                        top.linkTo(anchor = parent.top, margin = 12.dp)
+                        end.linkTo(anchor = parent.end, margin = 8.dp)
+                    }
+            )
+
+            val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+            LargeTopAppBar(
+                title = {
+                    ConstraintLayout(//constraintSet = ,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(0.dp)
+                    ){
+                        val (avatar,buttons) = createRefs()
+                        val avatarGuide = createGuidelineFromStart(.1f)
+                        val centreGuide =createGuidelineFromTop(.6f)
+
+                        OutlinedAvatar(
+                            url = profile.avatar.orEmpty(),
+                            contentDescription = "Avatar for ${profile.displayName} ${profile.handle}",
+                            modifier = Modifier
+                                .size(80.dp)
+                                .constrainAs(avatar) {
+                                    centerAround(avatarGuide)
+
+                                }
+                        )
+                        ProfileButtons(
+                            myProfile = myProfile,
+                            modifier = Modifier
+                                .constrainAs(buttons) {
+                                    centerAround(centreGuide)
+                                    end.linkTo(parent.end, 12.dp)
+                                }
+                        )
+                    }
+                },
+                navigationIcon = {
+
+                    IconButton(
+                        onClick = { /* doSomething() */ },
+                        modifier = Modifier
+                            .size(30.dp)
+
+
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.ArrowBack,
+                            contentDescription = "Back",
+                            //tint =
+                        )
+                    }
+                },
+                actions = {
+
+                },
+                scrollBehavior = scrollBehavior,
+                colors = TopAppBarDefaults.largeTopAppBarColors(
+                    containerColor = Color.Transparent
+                ),
+                modifier = Modifier.constrainAs(appbar) {
+
+                }
+            )
+            SelectionContainer(
+                modifier = Modifier
+                    .padding(end = 10.dp)
+                    .constrainAs(userStats) {
+                        bottom.linkTo(appbar.bottom, (-15).dp)
+                        end.linkTo(parent.end)
+                    }
             ) {
-                val name = profile.displayName ?: profile.handle.handle
-                Text(
-                    text = name,
-                    style = MaterialTheme.typography.headlineMedium,
-                    color = MaterialTheme.colorScheme.onSurface
+                UserStatsFragment(
+                    profile = profile,
+                    modifier = Modifier
+                        .widthIn(max = 250.dp)
                 )
-                Text(
-                    text = " @${profile.handle}",
-                    color = MaterialTheme.colorScheme.primary,
-                    style = MaterialTheme.typography.labelMedium,
-                )
-                Spacer(modifier = Modifier.height(10.dp))
-                RichText(profile)
             }
+
         }
+
+        Column(
+            modifier = Modifier
+                .padding(horizontal = 20.dp, vertical = 0.dp)
+        ) {
+            val name = profile.displayName ?: profile.handle.handle
+            SelectionContainer {
+            Text(
+                text = name,
+                style = MaterialTheme.typography.headlineMedium,
+                color = MaterialTheme.colorScheme.onSurface
+            )}
+            SelectionContainer {
+            Text(
+                text = " @${profile.handle}",
+                color = MaterialTheme.colorScheme.primary,
+                style = MaterialTheme.typography.labelMedium,
+            )}
+            Spacer(modifier = Modifier.height(10.dp))
+            SelectionContainer {
+            RichText(profile)}
+        }
+
     }
 }
 

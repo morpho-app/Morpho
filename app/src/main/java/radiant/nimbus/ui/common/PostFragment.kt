@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentWidth
+import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ChatBubble
@@ -81,8 +82,8 @@ enum class PostFragmentRole {
     ThreadRootUnfocused,
 }
 
-fun indentLevel(level:Int) : Float {
-    return (1 - (level.toFloat() / 100))
+fun indentLevel(level:Float) : Float {
+    return (1 - (level / 100))
 }
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -342,17 +343,57 @@ fun PostFragment(
 ) {
     val delta = remember { getFormattedDateTimeSince(post.createdAt) }
     val lineColour = MaterialTheme.colorScheme.onSurfaceVariant
+    val padding = remember { when(role) {
+        PostFragmentRole.Solo -> Modifier.padding(2.dp)
+        PostFragmentRole.PrimaryThreadRoot -> Modifier.padding(2.dp)
+        PostFragmentRole.ThreadBranchStart -> Modifier.padding(start = 2.dp, top = 2.dp, end = 2.dp, bottom = 0.dp)
+        PostFragmentRole.ThreadBranchMiddle -> Modifier.padding(start = 2.dp, top = 0.dp, end = 2.dp, bottom = 0.dp)
+        PostFragmentRole.ThreadBranchEnd -> Modifier.padding(start = 2.dp, top = 0.dp, end = 2.dp, bottom = 2.dp)
+        PostFragmentRole.ThreadRootUnfocused -> Modifier.padding(2.dp)
+    }}
+    val indent = remember { when(role) {
+        PostFragmentRole.Solo -> indentLevel.toFloat()
+        PostFragmentRole.PrimaryThreadRoot -> indentLevel.toFloat()
+        PostFragmentRole.ThreadBranchStart -> 0.0f//indentLevel.toFloat()
+        PostFragmentRole.ThreadBranchMiddle -> 0.0f//indentLevel.toFloat()-1
+        PostFragmentRole.ThreadBranchEnd -> 0.0f//indentLevel.toFloat()-1
+        PostFragmentRole.ThreadRootUnfocused -> indentLevel.toFloat()
+    }}
     Column(
-        Modifier
+        modifier = Modifier.padding(4.dp)
             .fillMaxWidth()
-            .padding(2.dp)
     ) {
+        val shape = when(role) {
+            PostFragmentRole.Solo -> MaterialTheme.shapes.small
+            PostFragmentRole.PrimaryThreadRoot -> MaterialTheme.shapes.small
+            PostFragmentRole.ThreadBranchStart -> {
+                MaterialTheme.shapes.small.copy(
+                    bottomEnd = CornerSize(0.dp),
+                    bottomStart = CornerSize(0.dp),
+                )
+            }
+            PostFragmentRole.ThreadBranchMiddle -> {
+                MaterialTheme.shapes.small.copy(
+                    topEnd = CornerSize(0.dp),
+                    topStart = CornerSize(0.dp),
+                    bottomEnd = CornerSize(0.dp),
+                    bottomStart = CornerSize(0.dp),
+                )
+            }
+            PostFragmentRole.ThreadBranchEnd -> {
+                MaterialTheme.shapes.small.copy(
+                    topEnd = CornerSize(0.dp),
+                    topStart = CornerSize(0.dp),
+                )
+            }
+            PostFragmentRole.ThreadRootUnfocused -> MaterialTheme.shapes.small
+        }
         Surface (
-            shadowElevation = max((indentLevel-1).dp, 0.dp),
-            tonalElevation = indentLevel.dp,
+            shadowElevation = if (indentLevel > 0) 1.dp else 0.dp,
+            tonalElevation = if (indentLevel > 0) 2.dp else 0.dp,
             shape = MaterialTheme.shapes.small,
             modifier = Modifier
-                .fillMaxWidth(indentLevel(indentLevel))
+                .fillMaxWidth(indentLevel(indent))
                 .align(Alignment.End)
 
         ) {
@@ -370,24 +411,26 @@ fun PostFragment(
                         drawPath(path, lineColour, style = Stroke(width = 5f))
                     }
                 }
-                .fillMaxWidth(indentLevel(indentLevel))
+                .fillMaxWidth(indentLevel(indent))
 
             ) {
 
+                if(indent < 2) {
+                    OutlinedAvatar(
+                        url = post.author.avatar.orEmpty(),
+                        contentDescription = "Avatar for ${post.author.handle}",
+                        modifier = Modifier
+                            .size(40.dp)
+                            .offset(y = 4.dp),
+                        outlineColor = MaterialTheme.colorScheme.background,
+                        onClicked = onProfileClicked
+                    )
+                }
 
-                OutlinedAvatar(
-                    url = post.author.avatar.orEmpty(),
-                    contentDescription = "Avatar for ${post.author.handle}",
-                    modifier = Modifier
-                        .size(40.dp)
-                        .offset(y = 4.dp),
-                    outlineColor = MaterialTheme.colorScheme.background,
-                    onClicked = onProfileClicked
-                )
                 Column(
                     Modifier
                         .padding(vertical = 6.dp, horizontal = 6.dp)
-                        .fillMaxWidth(indentLevel(indentLevel)),
+                        .fillMaxWidth(indentLevel(indent)),
                 ) {
                     SelectionContainer {
                         FlowRow(
@@ -396,7 +439,18 @@ fun PostFragment(
                             horizontalArrangement = Arrangement.End
 
                         ) {
+                            if(indent >= 2) {
+                                OutlinedAvatar(
+                                    url = post.author.avatar.orEmpty(),
+                                    contentDescription = "Avatar for ${post.author.handle}",
+                                    modifier = Modifier
+                                        //.offset(y = 4.dp)
+                                        .size(30.dp),
 
+                                    outlineColor = MaterialTheme.colorScheme.background,
+                                    onClicked = onProfileClicked
+                                )
+                            }
                             Text(
                                 text = buildAnnotatedString {
                                     withStyle(
@@ -510,7 +564,7 @@ fun BlockedPostFragment(
             tonalElevation = indentLevel.dp,
             shape = MaterialTheme.shapes.small,
             modifier = Modifier
-                .fillMaxWidth(indentLevel(indentLevel))
+                .fillMaxWidth(indentLevel(indentLevel.toFloat()))
 
         ) {
             Column {
@@ -544,7 +598,7 @@ fun NotFoundPostFragment(
             tonalElevation = indentLevel.dp,
             shape = MaterialTheme.shapes.small,
             modifier = Modifier
-                .fillMaxWidth(indentLevel(indentLevel))
+                .fillMaxWidth(indentLevel(indentLevel.toFloat()))
 
         ) {
             Column {

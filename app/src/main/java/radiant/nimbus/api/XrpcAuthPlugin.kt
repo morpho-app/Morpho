@@ -16,6 +16,7 @@ import io.ktor.http.HttpStatusCode.Companion.BadRequest
 import io.ktor.util.AttributeKey
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.serialization.json.Json
+import radiant.nimbus.api.auth.Credentials
 import sh.christian.ozone.api.response.AtpErrorDescription
 
 /**
@@ -25,12 +26,11 @@ import sh.christian.ozone.api.response.AtpErrorDescription
 internal class XrpcAuthPlugin(
   private val json: Json,
   private val authTokens: MutableStateFlow<Tokens?>,
-  //private val credentials: Credentials? = null,
+  private val credentials: Credentials? = null,
 ) {
   class Config(
     var json: Json = Json { ignoreUnknownKeys = true },
     var authTokens: MutableStateFlow<Tokens?> = MutableStateFlow(null),
-    //var credentials: Credentials? = null,
   )
 
   companion object : HttpClientPlugin<Config, XrpcAuthPlugin> {
@@ -63,18 +63,22 @@ internal class XrpcAuthPlugin(
         }
 
         if (response.getOrNull()?.error == "ExpiredToken") {
-          val refreshResponse = scope.post("/xrpc/com.atproto.server.refreshSession") {
-            plugin.authTokens.value?.refresh?.let { bearerAuth(it) }
-          }
-          runCatching { refreshResponse.body<RefreshSessionResponse>() }.getOrNull()?.let { refreshed ->
-              val newAccessToken = refreshed.accessJwt
-              val newRefreshToken = refreshed.refreshJwt
+          if (response.getOrNull()?.message?.contains("revoked") == true) {
 
-              plugin.authTokens.value = Tokens(newAccessToken, newRefreshToken)
-              context.headers.remove(Authorization)
-              context.bearerAuth(newAccessToken)
-              result = execute(context)
+          } else {
+            val refreshResponse = scope.post("/xrpc/com.atproto.server.refreshSession") {
+              plugin.authTokens.value?.refresh?.let { bearerAuth(it) }
             }
+            runCatching { refreshResponse.body<RefreshSessionResponse>() }.getOrNull()?.let { refreshed ->
+                val newAccessToken = refreshed.accessJwt
+                val newRefreshToken = refreshed.refreshJwt
+
+                plugin.authTokens.value = Tokens(newAccessToken, newRefreshToken)
+                context.headers.remove(Authorization)
+                context.bearerAuth(newAccessToken)
+                result = execute(context)
+              }
+          }
         }
 
         result

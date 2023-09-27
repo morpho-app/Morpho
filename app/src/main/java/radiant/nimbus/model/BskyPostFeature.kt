@@ -5,8 +5,10 @@ import app.bsky.embed.ImagesView
 import app.bsky.embed.RecordViewRecordUnion
 import app.bsky.embed.RecordWithMediaViewMediaUnion
 import app.bsky.feed.Post
+import app.bsky.feed.PostEmbedUnion
 import app.bsky.feed.PostViewEmbedUnion
 import kotlinx.collections.immutable.ImmutableList
+import kotlinx.serialization.Serializable
 import radiant.nimbus.util.deserialize
 import radiant.nimbus.util.mapImmutable
 import sh.christian.ozone.api.AtUri
@@ -14,10 +16,12 @@ import sh.christian.ozone.api.Cid
 import sh.christian.ozone.api.Uri
 
 sealed interface BskyPostFeature {
+    @Serializable
     data class ImagesFeature(
         val images: ImmutableList<EmbedImage>,
     ) : BskyPostFeature, TimelinePostMedia
 
+    @Serializable
     data class ExternalFeature(
         val uri: Uri,
         val title: String,
@@ -25,10 +29,12 @@ sealed interface BskyPostFeature {
         val thumb: String?,
     ) : BskyPostFeature, TimelinePostMedia
 
+    @Serializable
     data class PostFeature(
         val post: EmbedPost,
     ) : BskyPostFeature
 
+    @Serializable
     data class MediaPostFeature(
         val post: EmbedPost,
         val media: TimelinePostMedia,
@@ -37,6 +43,7 @@ sealed interface BskyPostFeature {
 
 sealed interface TimelinePostMedia
 
+@Serializable
 data class EmbedImage(
     val thumb: String,
     val fullsize: String,
@@ -44,6 +51,8 @@ data class EmbedImage(
 )
 
 sealed interface EmbedPost {
+
+    @Serializable
     data class VisibleEmbedPost(
         val uri: AtUri,
         val cid: Cid,
@@ -53,10 +62,12 @@ sealed interface EmbedPost {
         val reference: Reference = Reference(uri, cid)
     }
 
+    @Serializable
     data class InvisibleEmbedPost(
         val uri: AtUri,
     ) : EmbedPost
 
+    @Serializable
     data class BlockedEmbedPost(
         val uri: AtUri,
     ) : EmbedPost
@@ -144,4 +155,42 @@ private fun RecordViewRecordUnion.toEmbedPost(): EmbedPost {
             )
         }
     }
+}
+
+public fun PostEmbedUnion.toFeature(): BskyPostFeature? {
+    return when (this) {
+        is PostEmbedUnion.Images -> {
+            this.toEmbedImagesFeature()
+        }
+        is PostEmbedUnion.External -> {
+            this.toEmbedExternalFeature()
+        }
+        is PostEmbedUnion.Record -> {
+            null // Don't nest embeds too hard
+        }
+        is PostEmbedUnion.RecordWithMedia -> {
+            null // Don't nest embeds too hard
+        }
+    }
+}
+
+private fun PostEmbedUnion.External.toEmbedExternalFeature(): BskyPostFeature.ExternalFeature {
+    return BskyPostFeature.ExternalFeature(
+        uri = this.value.external.uri,
+        title = this.value.external.title,
+        description = this.value.external.description,
+        thumb = this.value.external.thumb.toString(),
+    )
+}
+
+private fun PostEmbedUnion.Images.toEmbedImagesFeature(): BskyPostFeature.ImagesFeature {
+    return BskyPostFeature.ImagesFeature(
+        images = this.value.images.mapImmutable {
+            EmbedImage(
+                thumb = it.image.toString(),
+                fullsize = it.image.toString(),
+                alt = it.alt,
+            )
+        }
+    )
 }

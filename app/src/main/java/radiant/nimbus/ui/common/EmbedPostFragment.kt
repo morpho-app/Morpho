@@ -18,6 +18,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -28,8 +29,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import dev.jeziellago.compose.markdowntext.MarkdownText
+import radiant.nimbus.model.BskyPostFeature
 import radiant.nimbus.model.EmbedPost
-import radiant.nimbus.model.LinkTarget
 import radiant.nimbus.util.getFormattedDateTimeSince
 import sh.christian.ozone.api.AtUri
 
@@ -44,6 +45,10 @@ fun EmbedPostFragment(
 ) {
     val delta = remember { getFormattedDateTimeSince(post.litePost.createdAt) }
     val lineColour = MaterialTheme.colorScheme.onSurfaceVariant
+
+    LaunchedEffect(Unit) {
+
+    }
     Column(
         Modifier
             .fillMaxWidth()
@@ -151,14 +156,12 @@ fun EmbedPostFragment(
                             modifier = Modifier.padding(start = 4.dp, top = 4.dp, bottom = 4.dp)
                         )
                     }
-                    if (post.litePost.links.size > 0) {
-                        post.litePost.links.forEach {link ->
-                            when(link.target) {
-                                is LinkTarget.ExternalLink -> {}
-                                is LinkTarget.UserDidMention -> {}
-                                is LinkTarget.UserHandleMention -> {}
-                            }
-                        }
+                    when (post.litePost.feature) {
+                        is BskyPostFeature.ExternalFeature -> PostLinkEmbed(linkData = post.litePost.feature)
+                        is BskyPostFeature.ImagesFeature -> PostImages(imagesFeature = post.litePost.feature)
+                        is BskyPostFeature.MediaPostFeature -> {}
+                        is BskyPostFeature.PostFeature -> {}
+                        null -> {}
                     }
                 }
             }

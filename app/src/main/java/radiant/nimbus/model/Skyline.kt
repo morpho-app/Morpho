@@ -1,12 +1,11 @@
 package radiant.nimbus.model
 
 import app.bsky.feed.FeedViewPost
-import kotlinx.collections.immutable.ImmutableList
 import radiant.nimbus.util.mapImmutable
 
 
 data class Skyline(
-    val posts: ImmutableList<BskyPost>,
+    val posts: List<SkylineItem>,
     val cursor: String?,
 ) {
     companion object {
@@ -15,7 +14,7 @@ data class Skyline(
             cursor: String?,
         ): Skyline {
             return Skyline(
-                posts = posts.mapImmutable { it.toPost() },
+                posts = posts.mapImmutable { SkylineItem(it.toPost()) },
                 cursor = cursor,
             )
         }
