@@ -1,6 +1,6 @@
 package radiant.nimbus.ui.common
 
-import androidx.compose.foundation.background
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
@@ -23,6 +23,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
@@ -78,10 +79,13 @@ fun ThreadFragmentFrame(
             it.hashCode()
         }},
     listState: LazyListState = rememberLazyListState()
-) {
+) {val lineColour = MaterialTheme.colorScheme.secondary.copy(0.3f)
     Surface (
         tonalElevation = 0.dp,
-        shape = MaterialTheme.shapes.extraSmall
+        //shape = MaterialTheme.shapes.extraSmall,
+        border = BorderStroke(1.dp, Brush.horizontalGradient(
+            listOf(lineColour, Color.Transparent), endX = 40f
+        )),
     ) {
         LazyColumn(
             modifier = modifier.heightIn(0.dp, 20000.dp),
@@ -136,19 +140,21 @@ fun ThreadFragmentFrame(
                         item = threadPost,
                         role = PostFragmentRole.PrimaryThreadRoot,
                         reason = thread.post.reason,
+                        modifier = Modifier.padding(vertical = 4.dp)
                     )
                 }
             }
+
             threadPost.replies.forEach { it ->
                 if(it is ThreadPost.ViewablePost) {
-                    item { ThreadReply(item = it, role = PostFragmentRole.ThreadBranchEnd, indentLevel = 1) }
+                    item { ThreadReply(item = it, role = PostFragmentRole.ThreadBranchEnd, indentLevel = 1, modifier = Modifier.padding(vertical = 4.dp)) }
                     if (it.replies.isNotEmpty()) {
                         items(it.replies.sortedWith(comparator),
                             key = {
                                 it.hashCode()
                             }
                         ) {reply ->
-                            ThreadTree(reply = reply, indentLevel = 2)
+                            ThreadTree(reply = reply, indentLevel = 2, modifier = Modifier.padding(vertical = 4.dp))
                         }
                     }
                 }
@@ -172,36 +178,44 @@ fun ThreadTree(
 ) {
     if(reply is ThreadPost.ViewablePost) {
         if (reply.replies.isEmpty()) {
-            ThreadReply(item = reply, role = PostFragmentRole.ThreadBranchEnd, indentLevel = indentLevel)
+            ThreadReply(item = reply, role = PostFragmentRole.ThreadBranchEnd, indentLevel = indentLevel,modifier = Modifier.padding(vertical = 2.dp))
         } else {
             Column(
-                modifier = Modifier.fillMaxWidth()
+                modifier = modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 2.dp)
             ) {
-                val lineColour = MaterialTheme.colorScheme.onSurfaceVariant
+                val lineColour = if (indentLevel % 4 == 0) {
+                    MaterialTheme.colorScheme.tertiary.copy(0.7f)
+                } else if (indentLevel % 2 == 0){
+                    MaterialTheme.colorScheme.secondary.copy(0.7f)
+                } else {
+                    MaterialTheme.colorScheme.primary.copy(0.7f)
+                }
             Surface (
                 //shadowElevation = if (indentLevel > 0) 1.dp else 0.dp,
-                tonalElevation = 4.dp,
+                border = BorderStroke(1.dp, Brush.sweepGradient(
+                    0.0f to Color.Transparent, 0.2f to Color.Transparent,
+                    0.4f to lineColour, 0.7f to lineColour,
+                    0.9f to Color.Transparent,
+                    center = Offset(100f, 500f)
+                )),
+                tonalElevation = 2.dp,
                 shape = MaterialTheme.shapes.small,
-                color = Color.Transparent,
                 modifier = Modifier
-                    .fillMaxWidth(indentLevel(indentLevel/2.0f))
+                    .fillMaxWidth(indentLevel(indentLevel / 2.0f))
                     .align(Alignment.End)
-                    .background(
-                        Brush.horizontalGradient(
-                        listOf(MaterialTheme.colorScheme.primary.copy(0.2f),
-                            MaterialTheme.colorScheme.surface,
-                        ),
-                        endX = 10f
-                    ),MaterialTheme.shapes.small)
+
 
             ) {
                 Column(
-                    modifier = Modifier.padding(vertical = 2.dp)
+                    modifier = Modifier
                 ) {
                     ThreadReply(
                         item = reply,
                         role = PostFragmentRole.ThreadBranchStart,
-                        indentLevel = indentLevel + 1
+                        indentLevel = indentLevel + 1,
+                        modifier = Modifier.padding(vertical = 2.dp)
                     )
 
                     val nextIndent = indentLevel + 1
@@ -279,7 +293,8 @@ fun ThreadReply(
             PostFragment(
                 post = item.post,
                 role = r,
-                indentLevel = indentLevel
+                indentLevel = indentLevel,
+                modifier = modifier,
             )
         }
         is ThreadPost.BlockedPost -> {

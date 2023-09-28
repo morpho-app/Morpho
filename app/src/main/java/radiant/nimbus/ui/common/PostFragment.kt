@@ -360,8 +360,7 @@ fun PostFragment(
         PostFragmentRole.ThreadRootUnfocused -> indentLevel.toFloat()
     }}
     Column(
-        modifier = Modifier.padding(4.dp)
-            .fillMaxWidth()
+        modifier = modifier.fillMaxWidth()
     ) {
         val shape = when(role) {
             PostFragmentRole.Solo -> MaterialTheme.shapes.small
@@ -389,8 +388,8 @@ fun PostFragment(
             PostFragmentRole.ThreadRootUnfocused -> MaterialTheme.shapes.small
         }
         Surface (
-            shadowElevation = if (indentLevel > 0) 1.dp else 0.dp,
-            tonalElevation = if (indentLevel > 0) 2.dp else 0.dp,
+            shadowElevation = if (indentLevel > 0) 2.dp else 0.dp,
+            tonalElevation = if (indentLevel > 0) 3.dp else 0.dp,
             shape = MaterialTheme.shapes.small,
             modifier = Modifier
                 .fillMaxWidth(indentLevel(indent))
