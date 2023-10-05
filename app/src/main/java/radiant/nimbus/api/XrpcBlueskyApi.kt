@@ -1,4 +1,4 @@
-package radiant.nimbus
+package radiant.nimbus.api
 
 import app.bsky.actor.GetPreferencesResponse
 import app.bsky.actor.GetProfileQueryParams
@@ -159,6 +159,7 @@ import io.ktor.client.HttpClient
 import kotlin.ByteArray
 import kotlin.Unit
 import kotlinx.coroutines.flow.Flow
+import radiant.nimbus.BlueskyApi
 import radiant.nimbus.api.response.AtpResponse
 import radiant.nimbus.api.xrpc.procedure
 import radiant.nimbus.api.xrpc.query

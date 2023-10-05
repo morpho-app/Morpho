@@ -26,7 +26,6 @@ import radiant.nimbus.api.auth.Credentials
 import radiant.nimbus.api.auth.LoginRepository
 import radiant.nimbus.app.Supervisor
 import radiant.nimbus.BlueskyApi
-import radiant.nimbus.XrpcBlueskyApi
 import radiant.nimbus.api.response.AtpResponse
 import javax.inject.Inject
 import javax.inject.Singleton
