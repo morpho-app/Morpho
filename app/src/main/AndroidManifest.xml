@@ -3,7 +3,7 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <application
-        android:name=".api.NimbusApplication"
+        android:name=".NimbusApplication"
         android:allowBackup="true"
         android:appCategory="social"
         android:dataExtractionRules="@xml/data_extraction_rules"

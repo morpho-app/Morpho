@@ -1,4 +1,4 @@
-package radiant.nimbus.api
+package radiant.nimbus
 
 import android.app.Application
 import androidx.hilt.work.HiltWorkerFactory
