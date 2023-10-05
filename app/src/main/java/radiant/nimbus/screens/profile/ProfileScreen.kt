@@ -35,8 +35,8 @@ import androidx.compose.material3.SmallFloatingActionButton
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -50,16 +50,12 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.hilt.navigation.compose.hiltViewModel
-import app.bsky.feed.FeedViewPost
-import app.bsky.feed.GetPostThreadQueryParams
-import app.bsky.feed.GetPostThreadResponse
+import androidx.navigation.compose.rememberNavController
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import kotlinx.collections.immutable.ImmutableList
-import kotlinx.collections.immutable.persistentListOf
-import kotlinx.datetime.Instant
 import radiant.nimbus.MainViewModel
 import radiant.nimbus.R
 import radiant.nimbus.api.ApiProvider
@@ -68,19 +64,15 @@ import radiant.nimbus.components.ScreenBody
 import radiant.nimbus.extensions.activityViewModel
 import radiant.nimbus.model.BskyLabel
 import radiant.nimbus.model.DetailedProfile
-import radiant.nimbus.model.Moment
-import radiant.nimbus.ui.common.NimbusNavBar
+import radiant.nimbus.ui.common.NimbusBottomNavBar
+import radiant.nimbus.ui.common.NimbusNavRail
 import radiant.nimbus.ui.common.OutlinedAvatar
 import radiant.nimbus.ui.common.SkylineFragment
 import radiant.nimbus.ui.common.UserStatsFragment
 import radiant.nimbus.ui.elements.RichText
 import radiant.nimbus.ui.utils.DevicePreviews
 import radiant.nimbus.ui.utils.FontScalePreviews
-import sh.christian.ozone.api.AtIdentifier
-import sh.christian.ozone.api.AtUri
-import sh.christian.ozone.api.Did
-import sh.christian.ozone.api.Handle
-import sh.christian.ozone.api.response.AtpResponse
+import radiant.nimbus.api.AtIdentifier
 
 @Destination
 @Composable
@@ -90,53 +82,65 @@ fun ProfileScreen(
     viewModel: ProfileViewModel = hiltViewModel(),
     actor: AtIdentifier? = null,
 ) {
-    var myProfile by rememberSaveable(viewModel.state) { mutableStateOf(false) }
-    var profileUIState: ProfileUIState by rememberSaveable(viewModel.state) { mutableStateOf(ProfileUIState.Loading)}
-    if (viewModel.state.isLoading) {
+    var showLoadingScreen by rememberSaveable { mutableStateOf(true)}
+    var profileUIState: ProfileUIState by rememberSaveable { mutableStateOf(ProfileUIState.Loading)}
+    if (showLoadingScreen) {
+        ScreenBody {
+            Center {
+                CircularProgressIndicator(
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+
+            }
+        }
         if (actor == null) {
             if (mainViewModel.currentUser != null) {
-                myProfile = true
                 viewModel.getProfile(
                     mainViewModel.apiProvider,
-                    mainViewModel.currentUser!!,
-                    { profileUIState = ProfileUIState.Done },
-                    { profileUIState = ProfileUIState.Error }
+                    AtIdentifier(mainViewModel.currentUser!!.did.did),
+                    {
+                        profileUIState = ProfileUIState.Done
+                        showLoadingScreen = false
+                    },
+                    {
+                        profileUIState = ProfileUIState.Error
+                        showLoadingScreen = false
+                    }
                 )
             }
         } else {
-            myProfile = actor == mainViewModel.currentUser
             viewModel.getProfile(
                 mainViewModel.apiProvider,
                 actor,
-                {profileUIState = ProfileUIState.Done},
-                {profileUIState = ProfileUIState.Error}
+                {
+                    profileUIState = ProfileUIState.Done
+                    showLoadingScreen = false
+                },
+                {
+                    profileUIState = ProfileUIState.Error
+                    showLoadingScreen = false
+                }
             )
         }
-    }
-    when (profileUIState) {
-        ProfileUIState.Error -> {
-            ScreenBody {
-                Center {
-                    Text("Error Loading Profile")
-                }
-            }
-        }
-        ProfileUIState.Done -> ProfileView(
-            state = viewModel.state,
-            apiProvider = mainViewModel.apiProvider,
-            myProfile = myProfile
-        )
-        ProfileUIState.Loading -> {
-            ScreenBody {
-                Center {
-                    CircularProgressIndicator(
-                        color = MaterialTheme.colorScheme.onSurface,
-                    )
 
+    } else {
+        if(profileUIState == ProfileUIState.Error) {
+                ScreenBody {
+                    Center {
+                        Text("Error Loading Profile")
+                    }
                 }
-            }
+        } else  if (profileUIState == ProfileUIState.Done){
+
+            ProfileView(
+                model = viewModel,
+                apiProvider = mainViewModel.apiProvider,
+                currentUser = mainViewModel.currentUser,
+            )
+
         }
     }
+
 }
 
 enum class ProfileUIState {
@@ -145,42 +149,38 @@ enum class ProfileUIState {
     Loading
 }
 
-enum class ProfileTabs {
-    Posts,
-    PostsReplies,
-    Media,
-    Feeds,
-    Lists,
-}
+
 
 @Composable
 fun ProfileView(
-    state: ProfileState,
+    model: ProfileViewModel,
     modifier: Modifier = Modifier,
-    feed: ImmutableList<FeedViewPost> = persistentListOf(),
     apiProvider: ApiProvider? = null,
     navigator: DestinationsNavigator? = null,
-    myProfile: Boolean = false,
+    currentUser: DetailedProfile? = null,
+    isTopLevel: Boolean = true,
 ){
-    var selectedTab = rememberSaveable { mutableStateOf(ProfileTabs.Posts) }
-    if (!state.isLoading) {
-        Scaffold(
-            topBar = {
+    var selectedTab by rememberSaveable { mutableStateOf(ProfileTabs.Posts) }
 
+    val navController = rememberNavController()
+    Scaffold(
+        topBar = {
+            if (isTopLevel) {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
                 ) {
-                    state.profile.let {
+                    model.state.profile.let {
                         it?.let { it1 ->
                             DetailedProfileFragment(
                                 profile = it1,
-                                myProfile = myProfile
+                                myProfile = currentUser?.did?.did == model.state.actor.toString(),
+                                isTopLevel = true,
                             )
                         }
                     }
                     ScrollableTabRow(
-                        selectedTabIndex = selectedTab.value.ordinal,
+                        selectedTabIndex = selectedTab.ordinal,
                         edgePadding = 4.dp,
                         modifier = Modifier
                             .fillMaxWidth()
@@ -194,7 +194,12 @@ fun ProfileView(
                             )
                         Tab(
                             selected = true,
-                            onClick = { selectedTab.value = ProfileTabs.Posts },
+                            onClick = {
+                                selectedTab = ProfileTabs.Posts
+                                if (apiProvider != null) {
+                                    model.getProfileFeed(selectedTab, apiProvider)
+                                }
+                            },
 
                             ) {
                             Text(
@@ -205,7 +210,12 @@ fun ProfileView(
 
                         Tab(
                             selected = false,
-                            onClick = { selectedTab.value = ProfileTabs.PostsReplies },
+                            onClick = {
+                                selectedTab = ProfileTabs.PostsReplies
+                                if (apiProvider != null) {
+                                    model.getProfileFeed(selectedTab, apiProvider)
+                                }
+                            },
 
                             ) {
                             Text(
@@ -216,7 +226,12 @@ fun ProfileView(
                         //Spacer(modifier = Modifier.width(2.dp))
                         Tab(
                             selected = false,
-                            onClick = { selectedTab.value = ProfileTabs.Media },
+                            onClick = {
+                                selectedTab = ProfileTabs.Media
+                                if (apiProvider != null) {
+                                    model.getProfileFeed(selectedTab, apiProvider)
+                                }
+                            },
                         ) {
                             Text(
                                 text = "Media",
@@ -226,7 +241,12 @@ fun ProfileView(
 
                         Tab(
                             selected = false,
-                            onClick = { selectedTab.value = ProfileTabs.Feeds },
+                            onClick = {
+                                selectedTab = ProfileTabs.Feeds
+                                if (apiProvider != null) {
+                                    model.getProfileFeed(selectedTab, apiProvider)
+                                }
+                            },
                         ) {
                             Text(
                                 text = "Feeds",
@@ -236,7 +256,12 @@ fun ProfileView(
 
                         Tab(
                             selected = false,
-                            onClick = { selectedTab.value = ProfileTabs.Lists },
+                            onClick = {
+                                selectedTab = ProfileTabs.Lists
+                                if (apiProvider != null) {
+                                    model.getProfileFeed(selectedTab, apiProvider)
+                                }
+                            },
                         ) {
                             Text(
                                 text = "Lists",
@@ -245,23 +270,139 @@ fun ProfileView(
                         }
                     }
                 }
-
-            },
-            bottomBar = {
-                NimbusNavBar(profilePic = {
+            }
+        },
+        bottomBar = {
+            if (isTopLevel) {
+                NimbusBottomNavBar(profilePic = {
                     OutlinedAvatar(
-                        url = state.profile?.avatar.orEmpty(),
+                        url = model.state.profile?.avatar.orEmpty(),
                         modifier = Modifier.size(30.dp)
                     )
-                })
+                }, navController = navController,
+                    actor = currentUser?.did?.did?.let { AtIdentifier(it) }
+                )
             }
-        ) { contentPadding ->
+        }
+    ) { contentPadding ->
+        Row {
+            if(!isTopLevel){
+                NimbusNavRail(profilePic = {
+                    OutlinedAvatar(
+                        url = model.state.profile?.avatar.orEmpty(),
+                        modifier = Modifier.size(30.dp)
+                    )
+                }, navController = navController,
+                    actor = currentUser?.did?.did?.let { AtIdentifier(it) }
+                )
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                ) {
+                    model.state.profile.let {
+                        it?.let { it1 ->
+                            DetailedProfileFragment(
+                                profile = it1,
+                                myProfile = currentUser?.did?.did == model.state.actor.toString()
+                            )
+                        }
+                    }
+                    ScrollableTabRow(
+                        selectedTabIndex = selectedTab.ordinal,
+                        edgePadding = 4.dp,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                    ) {
+                        val tabModifier = Modifier
+                            .padding(
+                                bottom = 12.dp,
+                                top = 6.dp,
+                                start = 6.dp,
+                                end = 6.dp
+                            )
+                        Tab(
+                            selected = true,
+                            onClick = {
+                                selectedTab = ProfileTabs.Posts
+                                if (apiProvider != null) {
+                                    model.getProfileFeed(selectedTab, apiProvider)
+                                }
+                                      },
 
-            when (selectedTab.value) {
+                            ) {
+                            Text(
+                                text = "Posts",
+                                modifier = tabModifier
+                            )
+                        }
+
+                        Tab(
+                            selected = false,
+                            onClick = {
+                                selectedTab = ProfileTabs.PostsReplies
+                                if (apiProvider != null) {
+                                    model.getProfileFeed(selectedTab, apiProvider)
+                                }
+                                      },
+
+                            ) {
+                            Text(
+                                text = "Posts & Replies",
+                                modifier = tabModifier
+                            )
+                        }
+                        //Spacer(modifier = Modifier.width(2.dp))
+                        Tab(
+                            selected = false,
+                            onClick = {
+                                selectedTab = ProfileTabs.Media
+                                if (apiProvider != null) {
+                                    model.getProfileFeed(selectedTab, apiProvider)
+                                }
+                                      },
+                        ) {
+                            Text(
+                                text = "Media",
+                                modifier = tabModifier
+                            )
+                        }
+
+                        Tab(
+                            selected = false,
+                            onClick = {
+                                selectedTab = ProfileTabs.Feeds
+                                if (apiProvider != null) {
+                                    model.getProfileFeed(selectedTab, apiProvider)
+                                }
+                                      },
+                        ) {
+                            Text(
+                                text = "Feeds",
+                                modifier = tabModifier
+                            )
+                        }
+
+                        Tab(
+                            selected = false,
+                            onClick = {
+                                selectedTab = ProfileTabs.Lists
+                                if (apiProvider != null) {
+                                    model.getProfileFeed(selectedTab, apiProvider)
+                                }
+                                      },
+                        ) {
+                            Text(
+                                text = "Lists",
+                                modifier = tabModifier
+                            )
+                        }
+                    }
+                }
+            }
+            when (selectedTab) {
                 ProfileTabs.Posts -> {
-
                     SkylineFragment(
-                        postList = persistentListOf(),
+                        postFlow = model.profilePosts,
                         modifier = Modifier.padding(contentPadding),
                         onItemClicked = {}
                     )
@@ -269,28 +410,27 @@ fun ProfileView(
 
                 ProfileTabs.PostsReplies -> {
                     SkylineFragment(
-                        postList = persistentListOf(),
+                        postFlow = model.profilePostsReplies,
                         modifier = Modifier.padding(contentPadding),
                         onItemClicked = {}
                     )
                 }
                 ProfileTabs.Media -> {
-                    val params = GetPostThreadQueryParams(
-                        AtUri("at://bitdizzy.bsky.social/app.bsky.feed.post/3k7kimkoejx27"),
-                        10, 10)
-                    var postThread: AtpResponse<GetPostThreadResponse>? = null
-                    LaunchedEffect(selectedTab) {
-                        //postThread = apiProvider?.api?.getPostThread(params)
-
-                    }
-                    //Text(text = Json.encodeToString(value = postThread?.maybeResponse()?.thread))
+                    SkylineFragment(
+                        postFlow = model.profileMedia,
+                        modifier = Modifier.padding(contentPadding),
+                        onItemClicked = {}
+                    )
                 }
-                ProfileTabs.Feeds -> TODO()
-                ProfileTabs.Lists -> TODO()
+                ProfileTabs.Feeds -> {}
+                ProfileTabs.Lists -> {}
             }
-
         }
+
+
+
     }
+
 }
 
 
@@ -302,6 +442,7 @@ public fun DetailedProfileFragment(
     //onValueChange: (DetailedProfile) -> Unit,
     modifier: Modifier = Modifier,
     myProfile: Boolean = false,
+    isTopLevel:Boolean = false,
 ) {
 
     Column (
@@ -352,7 +493,7 @@ public fun DetailedProfileFragment(
                     ){
                         val (avatar,buttons) = createRefs()
                         val avatarGuide = createGuidelineFromStart(.1f)
-                        val centreGuide =createGuidelineFromTop(.6f)
+                        val centreGuide = createGuidelineFromTop(.6f)
 
                         OutlinedAvatar(
                             url = profile.avatar.orEmpty(),
@@ -375,19 +516,18 @@ public fun DetailedProfileFragment(
                     }
                 },
                 navigationIcon = {
-
-                    IconButton(
-                        onClick = { /* doSomething() */ },
-                        modifier = Modifier
-                            .size(30.dp)
-
-
-                    ) {
-                        Icon(
-                            imageVector = Icons.Filled.ArrowBack,
-                            contentDescription = "Back",
-                            //tint =
-                        )
+                    if (isTopLevel) {
+                        IconButton(
+                            onClick = { /* doSomething() */ },
+                            modifier = Modifier
+                                .size(30.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.ArrowBack,
+                                contentDescription = "Back",
+                                //tint =
+                            )
+                        }
                     }
                 },
                 actions = {
@@ -605,11 +745,12 @@ fun FollowButton(
     )
 }
 
+@OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
 @Composable
 @DevicePreviews
 @FontScalePreviews
 fun ProfilePreview(){
-    ProfileView(
+   /* ProfileView(
         ProfileState(
             AtIdentifier("nonbinary.computer"),
             DetailedProfile(
@@ -633,5 +774,5 @@ fun ProfilePreview(){
             ),
             isLoading = false
         ),
-    )
+    )*/
 }

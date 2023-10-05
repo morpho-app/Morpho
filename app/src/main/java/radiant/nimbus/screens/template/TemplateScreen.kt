@@ -12,7 +12,7 @@ import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import radiant.nimbus.MainViewModel
 import radiant.nimbus.components.ScreenBody
 import radiant.nimbus.extensions.activityViewModel
-import sh.christian.ozone.api.AtUri
+import radiant.nimbus.api.AtUri
 
 @RootNavGraph(start = true)
 @Destination

@@ -8,15 +8,22 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.viewModelScope
 import app.bsky.actor.GetProfileQueryParams
+import app.bsky.feed.GetActorFeedsQueryParams
+import app.bsky.feed.GetAuthorFeedQueryParams
+import app.bsky.graph.GetListsQueryParams
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import radiant.nimbus.api.ApiProvider
 import radiant.nimbus.base.BaseViewModel
 import radiant.nimbus.model.DetailedProfile
+import radiant.nimbus.model.Skyline
 import radiant.nimbus.model.toProfile
-import sh.christian.ozone.api.AtIdentifier
-import sh.christian.ozone.api.response.AtpResponse
+import radiant.nimbus.api.AtIdentifier
+import radiant.nimbus.api.response.AtpResponse
 import javax.inject.Inject
 
 
@@ -28,6 +35,13 @@ data class ProfileState(
 ) {
 }
 
+enum class ProfileTabs {
+    Posts,
+    PostsReplies,
+    Media,
+    Feeds,
+    Lists,
+}
 
 
 
@@ -38,6 +52,14 @@ class ProfileViewModel @Inject constructor(
 
     var state by mutableStateOf(ProfileState())
         private set
+
+    private val _profilePosts = MutableStateFlow(Skyline(emptyList(), null))
+    private val _profilePostsReplies = MutableStateFlow(Skyline(emptyList(), null))
+    private val _profileMedia = MutableStateFlow(Skyline(emptyList(), null))
+
+    val profilePosts: StateFlow<Skyline> = _profilePosts.asStateFlow()
+    val profilePostsReplies: StateFlow<Skyline> = _profilePostsReplies.asStateFlow()
+    val profileMedia: StateFlow<Skyline> = _profileMedia.asStateFlow()
 
 
     fun getProfile(
@@ -55,10 +77,55 @@ class ProfileViewModel @Inject constructor(
 
             is AtpResponse.Success -> {
                 val profile = result.response.toProfile()
-                Log.e("P Load Success", result.toString())
+                Log.i("P Load Success", result.toString())
                 state = ProfileState(actor,profile,false)
+                getProfileFeed(ProfileTabs.Posts, apiProvider)
                 onSuccess()
             }
         }
+    }
+
+    fun getProfileFeed(feed: ProfileTabs, apiProvider: ApiProvider) = viewModelScope.launch(Dispatchers.IO) {
+        if (state.actor != null) {
+            when (feed) {
+                ProfileTabs.Posts -> {
+                    val result = apiProvider.api.getAuthorFeed(GetAuthorFeedQueryParams(state.actor!!, 100, profilePosts.value.cursor))
+                    if (result is AtpResponse.Success) {
+                        Log.i("Feeds", result.response.feed.toString())
+                        _profilePosts.value = Skyline.from(result.response.feed, profilePosts.value.cursor)
+                    }
+
+                }
+                ProfileTabs.PostsReplies -> {
+                    val result = apiProvider.api.getAuthorFeed(GetAuthorFeedQueryParams(state.actor!!, 100, profilePostsReplies.value.cursor))
+                    if (result is AtpResponse.Success) {
+                        Log.i("Feeds", result.response.feed.toString())
+                        _profilePostsReplies.value = Skyline.from(result.response.feed, profilePostsReplies.value.cursor)
+                    }
+                }
+                ProfileTabs.Media -> {
+                    val result = apiProvider.api.getAuthorFeed(GetAuthorFeedQueryParams(state.actor!!, 100, profileMedia.value.cursor))
+                    if (result is AtpResponse.Success) {
+                        Log.i("Feeds", result.response.feed.toString())
+                        _profileMedia.value = Skyline.from(result.response.feed, profileMedia.value.cursor)
+                    }
+                }
+                ProfileTabs.Feeds -> {
+                    val result = apiProvider.api.getActorFeeds(GetActorFeedsQueryParams(state.actor!!, 100))
+                    if (result is AtpResponse.Success) {
+                        Log.i("Feeds", result.response.feeds.toString())
+                        //_profileMedia.value = Skyline.from(result.response.feed, profileMedia.value.cursor)
+                    }
+                }
+                ProfileTabs.Lists -> {
+                    val result = apiProvider.api.getLists(GetListsQueryParams(state.actor!!, 100))
+                    if (result is AtpResponse.Success) {
+                        Log.i("Lists", result.response.lists.toString())
+                        //_profileMedia.value = Skyline.from(result.response.feed, profileMedia.value.cursor)
+                    }
+                }
+            }
+        }
+
     }
 }

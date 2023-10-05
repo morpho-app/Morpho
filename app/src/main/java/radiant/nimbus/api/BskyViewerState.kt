@@ -1,6 +1,6 @@
 package radiant.nimbus.api
 
-import sh.christian.ozone.api.AtUri
+import radiant.nimbus.api.AtUri
 
 data class BskyViewerState (
     val muted: Boolean?,

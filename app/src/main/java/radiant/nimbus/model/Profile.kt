@@ -6,10 +6,9 @@ import app.bsky.actor.ProfileViewBasic
 import app.bsky.actor.ProfileViewDetailed
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.serialization.Serializable
-import sh.christian.ozone.api.Did
-import sh.christian.ozone.api.Handle
-import sh.christian.ozone.api.runtime.ImmutableListSerializer
 import radiant.nimbus.util.mapImmutable
+import radiant.nimbus.api.Did
+import radiant.nimbus.api.Handle
 
 
 enum class ProfileType {

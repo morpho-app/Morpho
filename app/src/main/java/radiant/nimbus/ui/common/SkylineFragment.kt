@@ -12,14 +12,21 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import radiant.nimbus.components.ScreenBody
 import radiant.nimbus.model.BskyPost
 import radiant.nimbus.model.BskyPostThread
+import radiant.nimbus.model.Skyline
 import radiant.nimbus.model.SkylineItem
 import radiant.nimbus.model.ThreadPost
 import radiant.nimbus.ui.theme.NimbusTheme
@@ -32,28 +39,29 @@ class SkylineFragmentState(
 
 @Composable
 fun SkylineFragment (
-    postList: List<SkylineItem>,
+    postFlow: StateFlow<Skyline>,
     onItemClicked: OnPostClicked,
     modifier: Modifier = Modifier,
     listState: LazyListState = rememberLazyListState()
 ) {
-    //val mainViewModel:MainViewModel = activityViewModel()
+    val postList by postFlow.collectAsStateWithLifecycle()
+
     LazyColumn(
         modifier = modifier,
         contentPadding = WindowInsets.navigationBars.asPaddingValues(),
         state = listState
     ) {
-        items(postList) { skylineItem ->
+        items(postList.posts) { skylineItem ->
             if( skylineItem.post != null) {
                 val post = skylineItem.post
-                var threadLoaded = remember { mutableStateOf(false) }
+                var threadLoaded by remember { mutableStateOf(false) }
                 if (post != null) {
                     if (post.reply != null) {
                         LaunchedEffect(Unit) {
                             //skylineItem.postToThread(mainViewModel.apiProvider, depth = 1).join()
                             //threadLoaded.value = true
                         }
-                        when (threadLoaded.value) {
+                        when (threadLoaded) {
                             true -> skylineItem.thread?.let {
                                 SkylineThreadFragment(
                                     thread = it,
@@ -119,11 +127,12 @@ fun SkylineThreadFragment(
 fun PreviewSkyline() {
     NimbusTheme {
         ScreenBody(modifier = Modifier.height(1000.dp)) {
-            var posts = mutableListOf<SkylineItem>()
+            val posts = mutableListOf<SkylineItem>()
             for (i in 1..10) {
                 posts.add(SkylineItem(testPost))
             }
-            SkylineFragment(postList = posts, {})
+            val postsFlow = MutableStateFlow(Skyline(posts, null))
+            SkylineFragment(postFlow = postsFlow.asStateFlow(), {})
         }
     }
 

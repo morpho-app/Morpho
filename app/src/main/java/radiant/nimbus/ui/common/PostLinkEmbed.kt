@@ -26,6 +26,7 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import dev.jeziellago.compose.markdowntext.MarkdownText
+import radiant.nimbus.api.Uri
 import radiant.nimbus.R
 import radiant.nimbus.model.BskyPostFeature
 
@@ -111,7 +112,7 @@ fun PostLinkEmbed(
 
 
 val testLinkEmbed = BskyPostFeature.ExternalFeature(
-    uri = sh.christian.ozone.api.Uri("https://www.youtube.com/watch?v=_q85LZqY5Ok"),
+    uri = Uri("https://www.youtube.com/watch?v=_q85LZqY5Ok"),
     title = "(Hearthstone) Big Ol' Tendies - Yogg Rogue",
     description = "\n" +
             "14,866 views  Sep 24, 2023\n" +

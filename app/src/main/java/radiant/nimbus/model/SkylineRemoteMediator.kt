@@ -3,8 +3,8 @@ package radiant.nimbus.model
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.serialization.Serializable
-import sh.christian.ozone.api.AtIdentifier
-import sh.christian.ozone.api.AtUri
+import radiant.nimbus.api.AtIdentifier
+import radiant.nimbus.api.AtUri
 
 @Serializable
 sealed interface SkylineQuery {

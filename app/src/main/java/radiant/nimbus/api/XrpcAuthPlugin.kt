@@ -1,5 +1,6 @@
 package radiant.nimbus.api
 
+import com.atproto.server.CreateSessionResponse
 import com.atproto.server.RefreshSessionResponse
 import io.ktor.client.HttpClient
 import io.ktor.client.call.HttpClientCall
@@ -17,7 +18,7 @@ import io.ktor.util.AttributeKey
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.serialization.json.Json
 import radiant.nimbus.api.auth.Credentials
-import sh.christian.ozone.api.response.AtpErrorDescription
+import radiant.nimbus.api.response.AtpErrorDescription
 
 /**
  * Appends the `Authorization` header to XRPC requests, as well as automatically refreshing and
@@ -26,11 +27,12 @@ import sh.christian.ozone.api.response.AtpErrorDescription
 internal class XrpcAuthPlugin(
   private val json: Json,
   private val authTokens: MutableStateFlow<Tokens?>,
-  private val credentials: Credentials? = null,
+  private val authCredentials: MutableStateFlow<Credentials?> = MutableStateFlow(null),
 ) {
   class Config(
     var json: Json = Json { ignoreUnknownKeys = true },
     var authTokens: MutableStateFlow<Tokens?> = MutableStateFlow(null),
+    var authCredentials: MutableStateFlow<Credentials?> = MutableStateFlow(null),
   )
 
   companion object : HttpClientPlugin<Config, XrpcAuthPlugin> {
@@ -38,7 +40,7 @@ internal class XrpcAuthPlugin(
 
     override fun prepare(block: Config.() -> Unit): XrpcAuthPlugin {
       val config = Config().apply(block)
-      return XrpcAuthPlugin(config.json, config.authTokens) //, config.credentials)
+      return XrpcAuthPlugin(config.json, config.authTokens, config.authCredentials)
     }
 
     override fun install(
@@ -63,7 +65,26 @@ internal class XrpcAuthPlugin(
         }
 
         if (response.getOrNull()?.error == "ExpiredToken") {
-          if (response.getOrNull()?.message?.contains("revoked") == true) {
+          if (response.getOrNull()?.message?.contains("Token has been revoked") == true && plugin.authCredentials.value != null) {
+            val newSessionResponse = scope.post("/xrpc/com.atproto.server.newSession") {
+              if(plugin.authCredentials.value?.username?.handle != null) {
+                plugin.authCredentials.value?.username?.handle
+                plugin.authCredentials.value?.password
+              } else if(plugin.authCredentials.value?.email != null) {
+                plugin.authCredentials.value?.email
+                plugin.authCredentials.value?.password
+              }
+            }
+
+            runCatching { newSessionResponse.body<CreateSessionResponse>() }.getOrNull()?.let { new ->
+              val newAccessToken = new.accessJwt
+              val newRefreshToken = new.refreshJwt
+
+              plugin.authTokens.value = Tokens(newAccessToken, newRefreshToken)
+              context.headers.remove(Authorization)
+              context.bearerAuth(newAccessToken)
+              result = execute(context)
+            }
 
           } else {
             val refreshResponse = scope.post("/xrpc/com.atproto.server.refreshSession") {

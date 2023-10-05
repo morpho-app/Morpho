@@ -1,5 +1,6 @@
 package radiant.nimbus.api
 
+import android.util.Log
 import com.atproto.server.CreateSessionRequest
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.cio.CIO
@@ -24,9 +25,9 @@ import radiant.nimbus.api.auth.AuthInfo
 import radiant.nimbus.api.auth.Credentials
 import radiant.nimbus.api.auth.LoginRepository
 import radiant.nimbus.app.Supervisor
-import sh.christian.ozone.BlueskyApi
-import sh.christian.ozone.XrpcBlueskyApi
-import sh.christian.ozone.api.response.AtpResponse
+import radiant.nimbus.BlueskyApi
+import radiant.nimbus.XrpcBlueskyApi
+import radiant.nimbus.api.response.AtpResponse
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -40,8 +41,9 @@ class ApiProvider @Inject constructor(
   private val apiHost = MutableStateFlow(apiRepository.server!!.host)
   private val auth = MutableStateFlow(loginRepository.auth)
   private val tokens = MutableStateFlow(loginRepository.auth?.toTokens())
+  private val userCredentials: MutableStateFlow<Credentials?> = MutableStateFlow(null)
 
-  private val client = HttpClient(CIO) {
+  private var client = HttpClient(CIO) {
     install(Logging) {
       logger = Logger.DEFAULT
       level = LogLevel.ALL
@@ -49,6 +51,7 @@ class ApiProvider @Inject constructor(
 
     install(XrpcAuthPlugin) {
       authTokens = tokens
+      authCredentials = userCredentials
     }
 
     install(DefaultRequest) {
@@ -61,7 +64,7 @@ class ApiProvider @Inject constructor(
     expectSuccess = false
   }
 
-  val api: BlueskyApi = XrpcBlueskyApi(client)
+  var api: BlueskyApi = XrpcBlueskyApi(client)
 
   override suspend fun CoroutineScope.onStart() {
     coroutineScope {
@@ -118,6 +121,9 @@ class ApiProvider @Inject constructor(
         is AtpResponse.Failure -> response
         is AtpResponse.Success -> {
           loginRepository.auth = response.response
+          userCredentials.value = credentials
+          Log.i("Login: ", loginRepository.auth.toString())
+          Log.i("Login: ", userCredentials.value.toString())
           response
         }
       }

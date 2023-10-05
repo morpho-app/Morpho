@@ -3,9 +3,9 @@ package radiant.nimbus.model
 import app.bsky.richtext.Facet
 import app.bsky.richtext.FacetFeatureUnion
 import kotlinx.serialization.Serializable
-import sh.christian.ozone.api.Did
-import sh.christian.ozone.api.Handle
-import sh.christian.ozone.api.Uri
+import radiant.nimbus.api.Did
+import radiant.nimbus.api.Handle
+import radiant.nimbus.api.Uri
 
 @Serializable
 data class BskyPostLink(

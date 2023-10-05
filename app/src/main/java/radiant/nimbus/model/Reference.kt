@@ -1,8 +1,8 @@
 package radiant.nimbus.model
 
 import kotlinx.serialization.Serializable
-import sh.christian.ozone.api.AtUri
-import sh.christian.ozone.api.Cid
+import radiant.nimbus.api.AtUri
+import radiant.nimbus.api.Cid
 
 @Serializable
 data class Reference(

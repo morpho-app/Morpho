@@ -14,7 +14,7 @@ import radiant.nimbus.api.auth.AuthInfo
 import radiant.nimbus.api.auth.Credentials
 import radiant.nimbus.api.auth.ServerInfo
 import radiant.nimbus.base.BaseViewModel
-import sh.christian.ozone.api.response.AtpResponse
+import radiant.nimbus.api.response.AtpResponse
 import javax.inject.Inject
 
 enum class LoginScreenMode {

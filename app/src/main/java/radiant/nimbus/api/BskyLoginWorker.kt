@@ -13,7 +13,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import radiant.nimbus.api.auth.AuthInfo
 import radiant.nimbus.api.auth.Credentials
-import sh.christian.ozone.api.response.AtpResponse
+import radiant.nimbus.api.response.AtpResponse
 
 @HiltWorker
 class BskyLoginWorker @AssistedInject constructor(

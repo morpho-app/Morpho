@@ -32,7 +32,7 @@ import dev.jeziellago.compose.markdowntext.MarkdownText
 import radiant.nimbus.model.BskyPostFeature
 import radiant.nimbus.model.EmbedPost
 import radiant.nimbus.util.getFormattedDateTimeSince
-import sh.christian.ozone.api.AtUri
+import radiant.nimbus.api.AtUri
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable

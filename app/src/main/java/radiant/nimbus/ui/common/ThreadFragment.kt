@@ -80,13 +80,13 @@ fun ThreadFragmentFrame(
         }},
     listState: LazyListState = rememberLazyListState()
 ) {val lineColour = MaterialTheme.colorScheme.secondary.copy(0.3f)
-    Surface (
+    /*Surface (
         tonalElevation = 0.dp,
         //shape = MaterialTheme.shapes.extraSmall,
         border = BorderStroke(1.dp, Brush.horizontalGradient(
             listOf(lineColour, Color.Transparent), endX = 40f
         )),
-    ) {
+    ) {*/
         LazyColumn(
             modifier = modifier.heightIn(0.dp, 20000.dp),
             contentPadding = WindowInsets.navigationBars.asPaddingValues(),
@@ -147,20 +147,20 @@ fun ThreadFragmentFrame(
 
             threadPost.replies.forEach { it ->
                 if(it is ThreadPost.ViewablePost) {
-                    item { ThreadReply(item = it, role = PostFragmentRole.ThreadBranchEnd, indentLevel = 1, modifier = Modifier.padding(vertical = 4.dp)) }
+                    item { ThreadReply(item = it, role = PostFragmentRole.ThreadBranchEnd, indentLevel = 1, modifier = Modifier.padding(4.dp)) }
                     if (it.replies.isNotEmpty()) {
                         items(it.replies.sortedWith(comparator),
                             key = {
                                 it.hashCode()
                             }
                         ) {reply ->
-                            ThreadTree(reply = reply, indentLevel = 2, modifier = Modifier.padding(vertical = 4.dp))
+                            ThreadTree(reply = reply, indentLevel = 2, modifier = Modifier.padding(4.dp))
                         }
                     }
                 }
             }
         }
-    }
+    //}
 }
 
 @LazyScopeMarker

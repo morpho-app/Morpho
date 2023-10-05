@@ -9,8 +9,8 @@ import kotlinx.collections.immutable.ImmutableList
 import kotlinx.serialization.Serializable
 import radiant.nimbus.util.deserialize
 import radiant.nimbus.util.mapImmutable
-import sh.christian.ozone.api.AtUri
-import sh.christian.ozone.api.Cid
+import radiant.nimbus.api.AtUri
+import radiant.nimbus.api.Cid
 import javax.annotation.concurrent.Immutable
 
 enum class PostType {

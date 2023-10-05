@@ -8,24 +8,22 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
+import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.lifecycleScope
-import app.bsky.feed.GetPostsQueryParams
+import app.bsky.actor.GetProfileQueryParams
+import com.ramcosta.composedestinations.DestinationsNavHost
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import radiant.nimbus.api.auth.Credentials
 import radiant.nimbus.extensions.lifecycleViewModels
-import radiant.nimbus.model.SkylineItem
-import radiant.nimbus.model.toPost
-import radiant.nimbus.ui.common.ThreadFragmentFrame
+import radiant.nimbus.model.toProfile
+import radiant.nimbus.screens.NavGraphs
+import radiant.nimbus.screens.destinations.ProfileScreenDestination
 import radiant.nimbus.ui.theme.NimbusTheme
-import sh.christian.ozone.api.AtIdentifier
-import sh.christian.ozone.api.AtUri
-import sh.christian.ozone.api.Handle
+import radiant.nimbus.api.AtIdentifier
+import radiant.nimbus.api.AtUri
 
 @OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
 @AndroidEntryPoint
@@ -33,8 +31,10 @@ class MainActivity : ComponentActivity() {
 
     val viewModel: MainViewModel by lifecycleViewModels()
 
+    @OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
         viewModel.supervisors.plus(viewModel.apiProvider)
         viewModel.supervisors.forEach { supervisor ->
             with(supervisor) {
@@ -44,25 +44,12 @@ class MainActivity : ComponentActivity() {
             }
         }
 
-        val authInfo = runBlocking {
-            //
-            viewModel.apiProvider.makeLoginRequest(
-                Credentials(
-                    email = "aeiluindae@gmail.com",
-                    username = Handle("testenby.bsky.social"),
-                    password = "5hrz-kzs2-cgqg-v5jw",
-                    inviteCode = null
-                )
-            ).maybeResponse()
-        }
-        viewModel.apiProvider.loginRepository.auth = authInfo
-        Log.i("Auth", authInfo.toString())
         val response = runBlocking {
-            viewModel.apiProvider.loginRepository.auth().first()
+            viewModel.apiProvider.api.getProfile(GetProfileQueryParams(AtIdentifier("nonbinary.computer")))
         }
-        viewModel.apiProvider.loginRepository.auth = response
+        //viewModel.apiProvider.loginRepository.auth = response
         Log.i("Response", response.toString())
-
+        /*
         val post = runBlocking {
             viewModel.apiProvider.api.getPosts(GetPostsQueryParams(persistentListOf<AtUri>().add(0,testThreadUri)))
         }.requireResponse().posts[0]
@@ -75,9 +62,10 @@ class MainActivity : ComponentActivity() {
         //Log.i("Thread", item.thread?.post.toString())
         //Log.i("ThreadParents", item.thread?.parents.toString())
         //Log.i("ThreadReplies", item.thread?.replies.toString())
-
+        */
 
         setContent {
+            viewModel.windowSizeClass = calculateWindowSizeClass(this)
             NimbusTheme {
                 // A surface container using the 'background' color from the theme
                 Surface(
@@ -85,15 +73,15 @@ class MainActivity : ComponentActivity() {
                     color = MaterialTheme.colorScheme.background
                 ) {
 
-                    if (authInfo == null) {
+                    if (response.maybeResponse() == null) {
                         //DestinationsNavHost(navGraph = NavGraphs.root, startRoute = LoginScreenDestination)
 
                     } else {
-                        viewModel.currentUser = AtIdentifier(authInfo.did.did)
-                        //DestinationsNavHost(navGraph = NavGraphs.root)//, startRoute = ProfileScreenDestination)
+                        viewModel.currentUser = response.requireResponse().toProfile()
+                        DestinationsNavHost(navGraph = NavGraphs.root, startRoute = ProfileScreenDestination)
                     }
 
-                    item.thread?.let { ThreadFragmentFrame(thread = it) }
+                    //item.thread?.let { ThreadFragmentFrame(thread = it) }
 
                 }
             }

@@ -5,8 +5,9 @@ plugins {
     id 'kotlin-kapt'
     id 'dagger.hilt.android.plugin'
     id 'kotlin-parcelize'
-    id 'com.google.devtools.ksp' version '1.8.10-1.0.9'
-    id "org.jetbrains.kotlin.plugin.serialization" version "1.8.10"
+    id("com.google.devtools.ksp")
+    id("org.jetbrains.kotlin.plugin.serialization")
+    id("org.jetbrains.kotlinx.binary-compatibility-validator")
 }
 
 android {
@@ -20,6 +21,8 @@ android {
         targetSdk 33
         versionCode 1
         versionName "1.0"
+
+        multiDexEnabled true
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -37,14 +40,11 @@ android {
         sourceCompatibility JavaVersion.VERSION_17
         targetCompatibility JavaVersion.VERSION_17
     }
-    kotlinOptions {
-        jvmTarget = '17'
-    }
     buildFeatures {
         compose true
     }
     composeOptions {
-        kotlinCompilerExtensionVersion '1.4.4'
+        kotlinCompilerExtensionVersion "1.5.2"
     }
     packagingOptions {
         resources {
@@ -57,10 +57,9 @@ dependencies {
     def room_version = "2.5.2"
 
 
-    api("sh.christian.ozone:bluesky:0.0.2")
 
-    implementation 'org.slf4j:slf4j-api:2.0.9'
-    implementation 'uk.uuid.slf4j:slf4j-android:2.0.9-0'
+    implementation libs.slf4j.api
+    implementation libs.slf4j.android
 
     implementation 'androidx.core:core-ktx:1.12.0'
     implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.6.2'
@@ -71,110 +70,120 @@ dependencies {
     implementation 'androidx.compose.ui:ui-tooling-preview'
     implementation 'androidx.compose.material3:material3'
 
-    implementation "androidx.window:window:1.1.0"
+    implementation libs.androidx.window
     implementation "androidx.compose.material3:material3-window-size-class:1.1.2"
 
-    implementation("androidx.palette:palette-ktx:1.0.0")
-    implementation 'androidx.datastore:datastore-core:1.0.0'
-    implementation 'androidx.datastore:datastore-preferences-core:1.0.0'
-    implementation 'androidx.compose.material:material-icons-extended:1.6.0-alpha06'
-    implementation "androidx.paging:paging-compose:$paging_version"
-    implementation "androidx.paging:paging-runtime-ktx:$paging_version"
-    testImplementation "androidx.paging:paging-common-ktx:$paging_version"
+    implementation(libs.androidx.palette.ktx)
+    implementation libs.androidx.datastore.core
+    implementation libs.androidx.datastore.preferences.core
+    implementation libs.androidx.material.icons.extended.v160alpha06
+    implementation libs.androidx.paging.compose
+    implementation libs.androidx.paging.runtime.ktx
+    testImplementation libs.androidx.paging.common.ktx
 
 
-    testImplementation 'junit:junit:4.13.2'
-    androidTestImplementation 'androidx.test.ext:junit:1.1.5'
-    androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
+    testImplementation libs.junit
+    androidTestImplementation libs.androidx.junit
+    androidTestImplementation libs.androidx.espresso.core
     androidTestImplementation platform('androidx.compose:compose-bom:2023.09.01')
     androidTestImplementation 'androidx.compose.ui:ui-test-junit4'
     debugImplementation 'androidx.compose.ui:ui-tooling'
     debugImplementation 'androidx.compose.ui:ui-test-manifest'
 
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0")
 
-    implementation("androidx.lifecycle:lifecycle-livedata-core-ktx:2.6.2")
-    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.6.2")
-    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.6.2")
+    implementation 'androidx.multidex:multidex:2.0.1'
+
+    implementation(libs.androidx.lifecycle.livedata.core.ktx)
+    implementation(libs.androidx.lifecycle.lifecycle.viewmodel.compose)
+    implementation(libs.androidx.lifecycle.runtime.compose)
 
     // Kotlin + coroutines
-    implementation("androidx.work:work-runtime-ktx:$work_version")
+    implementation(libs.androidx.work.runtime.ktx)
 
     // optional - GCMNetworkManager support
-    implementation("androidx.work:work-gcm:$work_version")
+    implementation(libs.androidx.work.gcm)
 
     // optional - Test helpers
-    androidTestImplementation("androidx.work:work-testing:$work_version")
+    androidTestImplementation(libs.androidx.work.testing)
 
     // optional - Multiprocess support
-    implementation "androidx.work:work-multiprocess:$work_version"
+    implementation libs.androidx.work.multiprocess
 
     // logging
-    implementation('io.ktor:ktor-client-logging:2.3.4')
+    implementation(libs.ktor.logging)
 
 
     implementation("io.github.xxfast:kstore:0.6.0")
-    implementation("io.github.xxfast:kstore-file:0.6.0")
+    implementation(libs.kstore.file)
 
 
     // Compose dependencies
-    implementation "androidx.lifecycle:lifecycle-viewmodel-compose:2.6.2"
-    implementation "androidx.navigation:navigation-compose:2.7.3"
-    implementation 'com.google.accompanist:accompanist-flowlayout:0.32.0'
-    implementation "androidx.constraintlayout:constraintlayout-compose:1.0.1"
+    implementation libs.androidx.lifecycle.lifecycle.viewmodel.compose
+    implementation libs.androidx.navigation.compose
+    implementation libs.accompanist.flowlayout
+    implementation libs.androidx.constraintlayout.compose
 
     // Coroutines
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutine_version"
-    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:$coroutine_android_version"
+    implementation libs.kotlinx.coroutines.android
 
     // Coroutine Lifecycle Scopes
-    implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:$coroutine_lifecycle_version"
-    implementation "androidx.lifecycle:lifecycle-runtime-ktx:$coroutine_lifecycle_version"
+    implementation(libs.androidx.lifecycle.viewmodel.ktx)
+    implementation(libs.androidx.lifecycle.lifecycle.runtime.ktx)
 
     //noinspection GradleDependency
-    implementation("com.google.guava:guava:31.0.1-android")
+    implementation(libs.guava)
 
     // To use CallbackToFutureAdapter
-    implementation("androidx.concurrent:concurrent-futures:1.1.0")
+    implementation(libs.androidx.concurrent.futures)
 
     // Kotlin
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-guava:1.7.3")
-    implementation("org.jetbrains.kotlin:kotlin-reflect:1.9.10")
+    implementation(libs.kotlinx.coroutines.guava)
+    implementation(libs.kotlin.reflect)
 
     //Dagger - Hilt
-    implementation("androidx.hilt:hilt-work:1.0.0")
-    implementation 'com.google.dagger:hilt-android:2.48'
-    kapt 'com.google.dagger:hilt-android-compiler:2.48'
-    kapt "androidx.hilt:hilt-compiler:1.0.0"
-    implementation 'androidx.hilt:hilt-navigation-compose:1.1.0-alpha01'
-    implementation 'androidx.hilt:hilt-navigation-fragment:1.0.0'
+    implementation(libs.androidx.hilt.work)
+    implementation("com.google.dagger:hilt-android:2.48")
+    kapt(libs.hilt.android.compiler)
+    kapt(libs.androidx.hilt.compiler)
+    implementation(libs.androidx.hilt.navigation.compose)
+    implementation(libs.androidx.hilt.navigation.fragment)
 
 
     // Destinations library for easy navigation
-    implementation 'io.github.raamcosta.compose-destinations:animations-core:1.9.53'
-    ksp 'io.github.raamcosta.compose-destinations:ksp:1.9.53'
+    implementation(libs.animations.core)
+    ksp(libs.ksp)
 
     // Coil
-    implementation 'io.coil-kt:coil-compose:2.4.0'
+    implementation(libs.coil.compose)
 
 
-    implementation('io.ktor:ktor-client-cio:2.3.4')
-    implementation 'androidx.security:security-crypto-ktx:1.1.0-alpha06'
-    implementation('io.ktor:ktor-client-okhttp:2.3.4')
+    implementation(libs.ktor.cio)
+    implementation(libs.androidx.security.crypto.ktx)
+    implementation(libs.ktor.client.okhttp)
 
-    implementation 'com.google.code.gson:gson:2.10.1'
+    implementation(libs.gson)
+    implementation(libs.kotlinx.datetime)
+    implementation(libs.kotlinx.immutable)
+    implementation(libs.kotlinx.serialization.cbor)
+    implementation(libs.kotlinx.serialization.json)
+    implementation(libs.ktor.contentnegotiation)
+    implementation(libs.ktor.serialization.json)
+    implementation(libs.ktor.websockets)
 
     //Markdown text
-    implementation 'com.github.jeziellago:compose-markdown:0.3.5'
+    implementation libs.compose.markdown
 
-    implementation "androidx.room:room-runtime:$room_version"
-    annotationProcessor "androidx.room:room-compiler:$room_version"
-    implementation("androidx.room:room-ktx:$room_version")
+    implementation libs.androidx.room.runtime
+    ksp("androidx.room:room-compiler:$room_version")
+    implementation(libs.androidx.room.ktx)
 
 
-    ksp "androidx.room:room-compiler:$room_version"
+    ksp("androidx.room:room-compiler:$room_version")
 
-    implementation "androidx.room:room-paging:$room_version"
+    implementation(libs.androidx.room.paging)
+
+
 
 
 }

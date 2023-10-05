@@ -1,0 +1,13 @@
+package com.atproto.sync
+
+import kotlin.Long
+import kotlinx.serialization.Serializable
+import radiant.nimbus.api.Did
+import radiant.nimbus.api.model.Timestamp
+
+@Serializable
+public data class SubscribeReposTombstone(
+  public val seq: Long,
+  public val did: Did,
+  public val time: Timestamp,
+)

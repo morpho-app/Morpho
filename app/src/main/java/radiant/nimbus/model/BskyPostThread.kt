@@ -14,7 +14,7 @@ import radiant.nimbus.model.ThreadPost.BlockedPost
 import radiant.nimbus.model.ThreadPost.NotFoundPost
 import radiant.nimbus.model.ThreadPost.ViewablePost
 import radiant.nimbus.util.mapImmutable
-import sh.christian.ozone.api.AtUri
+import radiant.nimbus.api.AtUri
 
 
 @Entity(tableName = "threads")
@@ -41,12 +41,12 @@ sealed interface ThreadPost {
 
     @Serializable
     data class NotFoundPost(
-        val uri:AtUri? = null,
+        val uri: AtUri? = null,
     ) :ThreadPost
 
     @Serializable
     data class BlockedPost(
-        val uri:AtUri? = null,
+        val uri: AtUri? = null,
     ) : ThreadPost
 }
 

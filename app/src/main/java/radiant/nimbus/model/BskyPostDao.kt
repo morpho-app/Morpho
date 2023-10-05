@@ -17,7 +17,7 @@ import kotlinx.coroutines.flow.flowOf
 import radiant.nimbus.util.deserialize
 import radiant.nimbus.util.mapImmutable
 import radiant.nimbus.util.serialize
-import sh.christian.ozone.api.AtUri
+import radiant.nimbus.api.AtUri
 
 @Dao
 interface BskyPostDao {

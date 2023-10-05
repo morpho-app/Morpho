@@ -36,8 +36,8 @@ import radiant.nimbus.api.auth.Credentials
 import radiant.nimbus.components.ScreenBody
 import radiant.nimbus.extensions.activityViewModel
 import radiant.nimbus.screens.destinations.ProfileScreenDestination
-import sh.christian.ozone.api.AtIdentifier
-import sh.christian.ozone.api.Handle
+import radiant.nimbus.api.AtIdentifier
+import radiant.nimbus.api.Handle
 
 @Destination
 @Composable

@@ -1,6 +1,6 @@
 package radiant.nimbus.session
 
-import sh.christian.ozone.api.Did;
+import radiant.nimbus.api.Did;
 
 data class BlueskySession(
     val did: Did

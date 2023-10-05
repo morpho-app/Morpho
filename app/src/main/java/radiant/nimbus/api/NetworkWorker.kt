@@ -5,7 +5,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
-import sh.christian.ozone.api.response.AtpResponse
+import radiant.nimbus.api.response.AtpResponse
 
 abstract class NetworkWorker<T> {
   fun run(): Flow<AtpResponse<T>> = flow {
@@ -16,7 +16,7 @@ abstract class NetworkWorker<T> {
 
   companion object {
     operator fun <T> invoke(
-      block: suspend () -> AtpResponse<T>,
+        block: suspend () -> AtpResponse<T>,
     ): NetworkWorker<T> = object : NetworkWorker<T>() {
       override suspend fun execute(): AtpResponse<T> = block()
     }

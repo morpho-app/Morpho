@@ -68,10 +68,10 @@ import radiant.nimbus.ui.theme.NimbusTheme
 import radiant.nimbus.ui.utils.DevicePreviews
 import radiant.nimbus.ui.utils.FontScalePreviews
 import radiant.nimbus.util.getFormattedDateTimeSince
-import sh.christian.ozone.api.AtUri
-import sh.christian.ozone.api.Cid
-import sh.christian.ozone.api.Did
-import sh.christian.ozone.api.Handle
+import radiant.nimbus.api.AtUri
+import radiant.nimbus.api.Cid
+import radiant.nimbus.api.Did
+import radiant.nimbus.api.Handle
 
 enum class PostFragmentRole {
     Solo,
@@ -118,11 +118,17 @@ fun FullPostFragment(
                 url = post.author.avatar.orEmpty(),
                 contentDescription = "Avatar for ${post.author.handle}",
                 modifier = Modifier
-                    .size(50.dp),
+                    .size(50.dp)
+                    .align(Alignment.CenterVertically),
                 outlineColor = MaterialTheme.colorScheme.background,
                 onClicked = onProfileClicked
             )
-            SelectionContainer {
+            SelectionContainer (
+                modifier = Modifier
+                    //.padding(bottom = 12.dp
+                    .align(Alignment.CenterVertically)
+                    .padding(start = 16.dp),
+            ){
                 Text(
                     text = buildAnnotatedString {
                         withStyle(
@@ -163,9 +169,10 @@ fun FullPostFragment(
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier
                         .wrapContentWidth(Alignment.Start)
-                        .padding(bottom = 12.dp)
+                        //.padding(bottom = 12.dp)
                         .alignByBaseline()
-                        .padding(start = 16.dp),
+                        .align(Alignment.CenterVertically)
+                        //.padding(start = 16.dp),
 
                     )
             }
@@ -181,12 +188,14 @@ fun FullPostFragment(
         }
 
 
-        SelectionContainer {
+        SelectionContainer (
+            modifier = Modifier.padding(start = 4.dp, top = 4.dp, bottom = 4.dp)
+        ){
             MarkdownText(
                 markdown = post.text.replace("\n", "  \n"),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.padding(start = 4.dp, top = 4.dp, bottom = 4.dp)
+
             )
         }
         val postTimestamp = remember {
@@ -226,15 +235,17 @@ fun FullPostFragment(
                     .width(1.dp)
                     .weight(0.1F),
             )
-            SelectionContainer {
+            SelectionContainer(
+                modifier = Modifier
+                    .padding(horizontal = 4.dp, vertical = 6.dp),
+            ) {
                 Text(
                     text = "$postDate at $postTimestamp",
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     style = MaterialTheme.typography.labelLarge,
                     fontSize = MaterialTheme.typography.labelLarge
                         .fontSize.div(1.2F),
-                    modifier = Modifier
-                        .padding(horizontal = 4.dp, vertical = 6.dp),
+
                     maxLines = 1,
                     overflow = TextOverflow.Visible,
                     softWrap = false,
@@ -473,12 +484,12 @@ fun PostFragment(
                                     }
 
                                 },
-                                maxLines = 2,
+                                maxLines = 1,
                                 style = MaterialTheme.typography.labelLarge,
                                 overflow = TextOverflow.Ellipsis,
                                 modifier = Modifier
                                     .wrapContentWidth(Alignment.Start)
-                                    //.weight(10.0F)
+                                    .weight(10.0F)
                                     .alignByBaseline(),
 
                             )
