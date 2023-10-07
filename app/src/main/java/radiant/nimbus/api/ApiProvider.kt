@@ -21,12 +21,12 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.yield
+import radiant.nimbus.BlueskyApi
 import radiant.nimbus.api.auth.AuthInfo
 import radiant.nimbus.api.auth.Credentials
 import radiant.nimbus.api.auth.LoginRepository
-import radiant.nimbus.app.Supervisor
-import radiant.nimbus.BlueskyApi
 import radiant.nimbus.api.response.AtpResponse
+import radiant.nimbus.app.Supervisor
 import javax.inject.Inject
 import javax.inject.Singleton
 

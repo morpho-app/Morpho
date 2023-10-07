@@ -20,9 +20,10 @@ import androidx.compose.material3.NavigationRailItem
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.navigation.NavController
+import androidx.navigation.NavHostController
 import com.ramcosta.composedestinations.navigation.navigate
 import com.ramcosta.composedestinations.navigation.popUpTo
+import radiant.nimbus.api.AtIdentifier
 import radiant.nimbus.components.NavBarLocation
 import radiant.nimbus.screens.NavGraphs
 import radiant.nimbus.screens.appCurrentDestinationAsState
@@ -32,12 +33,11 @@ import radiant.nimbus.screens.destinations.NotificationsScreenDestination
 import radiant.nimbus.screens.destinations.ProfileScreenDestination
 import radiant.nimbus.screens.destinations.SkylineScreenDestination
 import radiant.nimbus.screens.startAppDestination
-import radiant.nimbus.api.AtIdentifier
 
 
 @Composable
 fun NimbusNavigation(
-    navController: NavController,
+    navController: NavHostController,
     modifier: Modifier = Modifier,
     location: NavBarLocation = NavBarLocation.BottomFull,
     profilePic: (@Composable () -> Unit)? = null,
@@ -60,7 +60,7 @@ fun NimbusNavigation(
 
 @Composable
 fun NimbusBottomNavBar(
-    navController: NavController,
+    navController: NavHostController,
     modifier: Modifier = Modifier,
     profilePic: (@Composable () -> Unit)? = null,
     actor: AtIdentifier? = null,
@@ -72,8 +72,8 @@ fun NimbusBottomNavBar(
     NavigationBar(
         
     ) {
-        NavigationBarItem(selected = currentDestination == SkylineScreenDestination.invoke(),
-            onClick = { navController.navigate(SkylineScreenDestination.invoke()) {
+        NavigationBarItem(selected = currentDestination == SkylineScreenDestination,
+            onClick = { navController.navigate(SkylineScreenDestination) {
                 popUpTo(NavGraphs.root) {
                     saveState = true
                 }
@@ -86,8 +86,8 @@ fun NimbusBottomNavBar(
             //label = {Text("Home")},
             alwaysShowLabel = false,
         )
-        NavigationBarItem(selected = currentDestination == SkylineScreenDestination.invoke(),
-            onClick = { navController.navigate(SkylineScreenDestination.invoke()) {
+        NavigationBarItem(selected = currentDestination == SkylineScreenDestination,
+            onClick = { navController.navigate(SkylineScreenDestination) {
                 popUpTo(NavGraphs.root) {
                     saveState = true
                 }
@@ -100,8 +100,8 @@ fun NimbusBottomNavBar(
             //label = {Text("Search")},
             alwaysShowLabel = false,
         )
-        NavigationBarItem(selected = currentDestination == FeedListScreenDestination.invoke(),
-            onClick = { navController.navigate(FeedListScreenDestination.invoke()) {
+        NavigationBarItem(selected = currentDestination == FeedListScreenDestination,
+            onClick = { navController.navigate(FeedListScreenDestination) {
                 popUpTo(NavGraphs.root) {
                     saveState = true
                 }
@@ -114,8 +114,8 @@ fun NimbusBottomNavBar(
             //label = {Text("Feeds")},
             alwaysShowLabel = false,
         )
-        NavigationBarItem(selected = currentDestination == NotificationsScreenDestination.invoke(),
-            onClick = { navController.navigate(NotificationsScreenDestination.invoke()) {
+        NavigationBarItem(selected = currentDestination == NotificationsScreenDestination,
+            onClick = { navController.navigate(NotificationsScreenDestination) {
                 popUpTo(NavGraphs.root) {
                     saveState = true
                 }
@@ -129,7 +129,7 @@ fun NimbusBottomNavBar(
             alwaysShowLabel = false,
         )
         NavigationBarItem(
-            selected = currentDestination == ProfileScreenDestination.invoke(actor),
+            selected = currentDestination == ProfileScreenDestination,
             onClick = { navController.navigate(ProfileScreenDestination.invoke(actor)) {
                 popUpTo(NavGraphs.root) {
                     saveState = true
@@ -155,7 +155,7 @@ fun NimbusBottomNavBar(
 
 @Composable
 fun NimbusNavRail(
-    navController: NavController,
+    navController: NavHostController,
     modifier: Modifier = Modifier,
     profilePic: (@Composable () -> Unit)? = null,
     actor: AtIdentifier? = null,

@@ -59,6 +59,7 @@ import kotlinx.collections.immutable.ImmutableList
 import radiant.nimbus.MainViewModel
 import radiant.nimbus.R
 import radiant.nimbus.api.ApiProvider
+import radiant.nimbus.api.AtIdentifier
 import radiant.nimbus.components.Center
 import radiant.nimbus.components.ScreenBody
 import radiant.nimbus.extensions.activityViewModel
@@ -72,7 +73,6 @@ import radiant.nimbus.ui.common.UserStatsFragment
 import radiant.nimbus.ui.elements.RichText
 import radiant.nimbus.ui.utils.DevicePreviews
 import radiant.nimbus.ui.utils.FontScalePreviews
-import radiant.nimbus.api.AtIdentifier
 
 @Destination
 @Composable
@@ -136,6 +136,7 @@ fun ProfileScreen(
                 model = viewModel,
                 apiProvider = mainViewModel.apiProvider,
                 currentUser = mainViewModel.currentUser,
+                navigator = navigator,
             )
 
         }
@@ -161,7 +162,6 @@ fun ProfileView(
     isTopLevel: Boolean = true,
 ){
     var selectedTab by rememberSaveable { mutableStateOf(ProfileTabs.Posts) }
-
     val navController = rememberNavController()
     Scaffold(
         topBar = {
@@ -325,7 +325,7 @@ fun ProfileView(
                             onClick = {
                                 selectedTab = ProfileTabs.Posts
                                 if (apiProvider != null) {
-                                    model.getProfileFeed(selectedTab, apiProvider)
+                                    model.getProfileFeed(selectedTab, apiProvider) //, model.profilePosts.value.cursor)
                                 }
                                       },
 
@@ -341,7 +341,7 @@ fun ProfileView(
                             onClick = {
                                 selectedTab = ProfileTabs.PostsReplies
                                 if (apiProvider != null) {
-                                    model.getProfileFeed(selectedTab, apiProvider)
+                                    model.getProfileFeed(selectedTab, apiProvider)//, model.profilePostsReplies.value.cursor)
                                 }
                                       },
 
@@ -357,7 +357,7 @@ fun ProfileView(
                             onClick = {
                                 selectedTab = ProfileTabs.Media
                                 if (apiProvider != null) {
-                                    model.getProfileFeed(selectedTab, apiProvider)
+                                    model.getProfileFeed(selectedTab, apiProvider)//, model.profileMedia.value.cursor)
                                 }
                                       },
                         ) {
@@ -404,7 +404,12 @@ fun ProfileView(
                     SkylineFragment(
                         postFlow = model.profilePosts,
                         modifier = Modifier.padding(contentPadding),
-                        onItemClicked = {}
+                        onItemClicked = {},
+                        refresh = {cursor ->
+                            if (apiProvider != null) {
+                                model.getProfileFeed(selectedTab,apiProvider, cursor)
+                            }
+                        }
                     )
                 }
 
@@ -412,14 +417,24 @@ fun ProfileView(
                     SkylineFragment(
                         postFlow = model.profilePostsReplies,
                         modifier = Modifier.padding(contentPadding),
-                        onItemClicked = {}
+                        onItemClicked = {},
+                        refresh = {cursor ->
+                            if (apiProvider != null) {
+                                model.getProfileFeed(selectedTab,apiProvider, cursor)
+                            }
+                        }
                     )
                 }
                 ProfileTabs.Media -> {
                     SkylineFragment(
                         postFlow = model.profileMedia,
                         modifier = Modifier.padding(contentPadding),
-                        onItemClicked = {}
+                        onItemClicked = {},
+                        refresh = {cursor ->
+                            if (apiProvider != null) {
+                                model.getProfileFeed(selectedTab,apiProvider, cursor)
+                            }
+                        }
                     )
                 }
                 ProfileTabs.Feeds -> {}

@@ -32,6 +32,7 @@ lifecycle-viewmodel-ktx = "2.6.2"
 material-icons-extended = "1.6.0-alpha06"
 maven-publish = "0.25.3"
 moshi = "1.15.0"
+multidex = "2.0.1"
 navigation-compose = "2.7.3"
 paging-common-ktx = "3.2.1"
 palette-ktx = "1.0.0"
@@ -68,6 +69,7 @@ androidx-lifecycle-livedata-core-ktx = { module = "androidx.lifecycle:lifecycle-
 androidx-lifecycle-runtime-compose = { module = "androidx.lifecycle:lifecycle-runtime-compose", version.ref = "lifecycle-viewmodel-ktx" }
 androidx-lifecycle-viewmodel-ktx = { module = "androidx.lifecycle:lifecycle-viewmodel-ktx", version.ref = "lifecycle-viewmodel-ktx" }
 androidx-material-icons-extended-v160alpha06 = { module = "androidx.compose.material:material-icons-extended", version.ref = "material-icons-extended" }
+androidx-multidex = { module = "androidx.multidex:multidex", version.ref = "multidex" }
 androidx-navigation-compose = { module = "androidx.navigation:navigation-compose", version.ref = "navigation-compose" }
 androidx-paging-common-ktx = { module = "androidx.paging:paging-common-ktx", version.ref = "paging-common-ktx" }
 androidx-paging-compose = { module = "androidx.paging:paging-compose", version.ref = "paging-common-ktx" }
@@ -87,6 +89,7 @@ coil-compose = { module = "io.coil-kt:coil-compose", version.ref = "coil-compose
 compose-markdown = { module = "com.github.jeziellago:compose-markdown", version.ref = "compose-markdown" }
 gson = { module = "com.google.code.gson:gson", version.ref = "gson" }
 guava = { module = "com.google.guava:guava", version.ref = "guava" }
+hilt-android = { module = "com.google.dagger:hilt-android", version.ref = "hilt-android-compiler" }
 hilt-android-compiler = { module = "com.google.dagger:hilt-android-compiler", version.ref = "hilt-android-compiler" }
 hilt-android-gradle-plugin = { module = "com.google.dagger:hilt-android-gradle-plugin", version.ref = "hilt-android-gradle-plugin" }
 junit = { module = "junit:junit", version.ref = "junit" }

@@ -9,6 +9,7 @@ import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.viewModelScope
 import app.bsky.actor.GetProfileQueryParams
 import app.bsky.feed.GetActorFeedsQueryParams
+import app.bsky.feed.GetAuthorFeedFilter
 import app.bsky.feed.GetAuthorFeedQueryParams
 import app.bsky.graph.GetListsQueryParams
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -16,14 +17,15 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import radiant.nimbus.api.ApiProvider
+import radiant.nimbus.api.AtIdentifier
+import radiant.nimbus.api.response.AtpResponse
 import radiant.nimbus.base.BaseViewModel
 import radiant.nimbus.model.DetailedProfile
 import radiant.nimbus.model.Skyline
 import radiant.nimbus.model.toProfile
-import radiant.nimbus.api.AtIdentifier
-import radiant.nimbus.api.response.AtpResponse
 import javax.inject.Inject
 
 
@@ -81,33 +83,73 @@ class ProfileViewModel @Inject constructor(
                 state = ProfileState(actor,profile,false)
                 getProfileFeed(ProfileTabs.Posts, apiProvider)
                 onSuccess()
+                getProfileFeed(ProfileTabs.PostsReplies, apiProvider)
+                getProfileFeed(ProfileTabs.Media, apiProvider)
+
             }
         }
     }
 
-    fun getProfileFeed(feed: ProfileTabs, apiProvider: ApiProvider) = viewModelScope.launch(Dispatchers.IO) {
+    fun getProfileFeed(feed: ProfileTabs, apiProvider: ApiProvider, cursor: String? = null) = viewModelScope.launch(Dispatchers.IO) {
         if (state.actor != null) {
             when (feed) {
                 ProfileTabs.Posts -> {
-                    val result = apiProvider.api.getAuthorFeed(GetAuthorFeedQueryParams(state.actor!!, 100, profilePosts.value.cursor))
+                    val result = apiProvider.api.getAuthorFeed(GetAuthorFeedQueryParams(state.actor!!, 100,cursor, GetAuthorFeedFilter.POSTS_NO_REPLIES))
                     if (result is AtpResponse.Success) {
-                        Log.i("Feeds", result.response.feed.toString())
-                        _profilePosts.value = Skyline.from(result.response.feed, profilePosts.value.cursor)
+                        val newPosts = Skyline.from(result.response.feed, result.response.cursor)
+                        newPosts.posts.forEach { item ->
+                            if(item.thread == null) {
+                                item.postToThread(apiProvider, depth = 1, parentHeight = 2)
+                            }
+                        }
+                        if (cursor != null) {
+                            Log.i("UpdatePosts", result.response.feed.toString())
+                            _profilePosts.update { skyline -> Skyline.concat(skyline, newPosts) }
+                        } else {
+                            Log.i("Posts", result.response.feed.toString())
+
+                            _profilePosts.value = newPosts
+                        }
                     }
 
                 }
                 ProfileTabs.PostsReplies -> {
-                    val result = apiProvider.api.getAuthorFeed(GetAuthorFeedQueryParams(state.actor!!, 100, profilePostsReplies.value.cursor))
+                    val result = apiProvider.api.getAuthorFeed(GetAuthorFeedQueryParams(state.actor!!, 100, cursor, GetAuthorFeedFilter.POSTS_WITH_REPLIES))
                     if (result is AtpResponse.Success) {
-                        Log.i("Feeds", result.response.feed.toString())
-                        _profilePostsReplies.value = Skyline.from(result.response.feed, profilePostsReplies.value.cursor)
+                        Log.i("Posts+Replies", result.response.feed.toString())
+                        val newPosts = Skyline.from(result.response.feed, result.response.cursor)
+                        newPosts.posts.forEach { item ->
+                            if(item.thread == null) {
+                                item.postToThread(apiProvider, depth = 2, parentHeight = 2)
+                            }
+                        }
+                        if (cursor != null) {
+                            Log.i("UpdatePosts+Replies", result.response.feed.toString())
+
+                            _profilePostsReplies.update { skyline -> Skyline.concat(skyline, newPosts) }
+                        } else {
+                            Log.i("Posts+Replies", result.response.feed.toString())
+                            _profilePostsReplies.value = newPosts
+                        }
                     }
                 }
                 ProfileTabs.Media -> {
-                    val result = apiProvider.api.getAuthorFeed(GetAuthorFeedQueryParams(state.actor!!, 100, profileMedia.value.cursor))
+                    val result = apiProvider.api.getAuthorFeed(GetAuthorFeedQueryParams(state.actor!!, 100, cursor, GetAuthorFeedFilter.POSTS_WITH_MEDIA))
                     if (result is AtpResponse.Success) {
-                        Log.i("Feeds", result.response.feed.toString())
-                        _profileMedia.value = Skyline.from(result.response.feed, profileMedia.value.cursor)
+                        Log.i("Media", result.response.feed.toString())
+                        val newPosts = Skyline.from(result.response.feed, result.response.cursor)
+                        newPosts.posts.forEach { item ->
+                            if(item.thread == null) {
+                                //item.postToThread(apiProvider, depth = 2, parentHeight = 2)
+                            }
+                        }
+                        if (cursor != null) {
+                            Log.i("UpdateMedia", result.response.feed.toString())
+                            _profileMedia.update { skyline -> Skyline.concat(skyline, newPosts) }
+                        } else {
+                            Log.i("Media", result.response.feed.toString())
+                            _profileMedia.value = newPosts
+                        }
                     }
                 }
                 ProfileTabs.Feeds -> {

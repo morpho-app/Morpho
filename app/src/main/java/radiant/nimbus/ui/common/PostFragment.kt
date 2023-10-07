@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -20,6 +21,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ChatBubble
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.MoreHoriz
+import androidx.compose.material.icons.filled.Repeat
+import androidx.compose.material.icons.filled.Reply
 import androidx.compose.material.icons.outlined.ChatBubbleOutline
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.Repeat
@@ -55,10 +58,15 @@ import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import kotlinx.datetime.todayIn
+import radiant.nimbus.api.AtUri
+import radiant.nimbus.api.Cid
+import radiant.nimbus.api.Did
+import radiant.nimbus.api.Handle
 import radiant.nimbus.model.BasicProfile
 import radiant.nimbus.model.BskyLabel
 import radiant.nimbus.model.BskyPost
 import radiant.nimbus.model.BskyPostFeature
+import radiant.nimbus.model.BskyPostReason
 import radiant.nimbus.model.BskyPostReply
 import radiant.nimbus.model.EmbedImage
 import radiant.nimbus.model.EmbedPost
@@ -68,10 +76,6 @@ import radiant.nimbus.ui.theme.NimbusTheme
 import radiant.nimbus.ui.utils.DevicePreviews
 import radiant.nimbus.ui.utils.FontScalePreviews
 import radiant.nimbus.util.getFormattedDateTimeSince
-import radiant.nimbus.api.AtUri
-import radiant.nimbus.api.Cid
-import radiant.nimbus.api.Did
-import radiant.nimbus.api.Handle
 
 enum class PostFragmentRole {
     Solo,
@@ -426,12 +430,13 @@ fun PostFragment(
             ) {
 
                 if(indent < 2) {
+                    val repostedOffset = if(post.reason is BskyPostReason.BskyPostRepost) 26 else 4
                     OutlinedAvatar(
                         url = post.author.avatar.orEmpty(),
                         contentDescription = "Avatar for ${post.author.handle}",
                         modifier = Modifier
                             .size(40.dp)
-                            .offset(y = 4.dp),
+                            .offset(y = repostedOffset.dp),
                         outlineColor = MaterialTheme.colorScheme.background,
                         onClicked = onProfileClicked
                     )
@@ -442,6 +447,26 @@ fun PostFragment(
                         .padding(vertical = 6.dp, horizontal = 6.dp)
                         .fillMaxWidth(indentLevel(indent)),
                 ) {
+                    if(post.reason is BskyPostReason.BskyPostRepost) {
+                        Row(modifier = Modifier
+                            .offset(x = (-16).dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Repeat,
+                                contentDescription = "",
+                                tint = MaterialTheme.colorScheme.secondary,
+                                modifier = Modifier.height(15.dp)
+                            )
+                            Text(
+                                text = "Reposted by ${post.reason.repostAuthor.displayName}",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.secondary,
+                                modifier = Modifier.padding(start = 5.dp)
+                            )
+                        }
+                    }
+
                     SelectionContainer {
                         FlowRow(
                             modifier = Modifier
@@ -515,7 +540,25 @@ fun PostFragment(
                             )
                         }
                     }
-
+                    if(post.reply?.parent != null) {
+                        Row(modifier = Modifier
+                            .offset(x = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Reply,
+                                contentDescription = "",
+                                tint = MaterialTheme.colorScheme.secondary,
+                                modifier = Modifier.height(15.dp)
+                            )
+                            Text(
+                                text = "Reply to ${post.reply.parent.author.displayName}",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.secondary,
+                                modifier = Modifier.padding(start = 5.dp)
+                            )
+                        }
+                    }
 
                     SelectionContainer {
                         MarkdownText(

@@ -184,6 +184,7 @@ fun ThreadTree(
                 modifier = modifier
                     .fillMaxWidth()
                     .padding(vertical = 2.dp)
+
             ) {
                 val lineColour = if (indentLevel % 4 == 0) {
                     MaterialTheme.colorScheme.tertiary.copy(0.7f)
@@ -209,7 +210,6 @@ fun ThreadTree(
 
             ) {
                 Column(
-                    modifier = Modifier
                 ) {
                     ThreadReply(
                         item = reply,
@@ -220,7 +220,7 @@ fun ThreadTree(
 
                     val nextIndent = indentLevel + 1
                     reply.replies.sortedWith(comparator).forEach {
-                        ThreadTree(reply = it, indentLevel = nextIndent)
+                        ThreadTree(reply = it, indentLevel = nextIndent, modifier = modifier)
                     }
                 }
             }
