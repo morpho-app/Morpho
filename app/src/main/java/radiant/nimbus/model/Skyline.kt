@@ -62,7 +62,7 @@ data class Skyline(
 
         suspend fun collectThreads(
             list: List<FeedViewPost>,
-            depth: Int = 2, height: Int = 2,
+            depth: Int = 3, height: Int = 10,
             timeRange: Delta = Delta(Duration.parse("4h")),
             cursor: String? = null,
         ) = CoroutineScope(Dispatchers.Default).async {
@@ -71,7 +71,7 @@ data class Skyline(
 
         suspend fun collectThreads(
             skyline: Skyline,
-            depth: Int = 2, height: Int = 2,
+            depth: Int = 3, height: Int = 10,
             timeRange: Delta = Delta(Duration.parse("4h")),
             cursor: String? = skyline.cursor,
         ) = CoroutineScope(Dispatchers.Default).async {
@@ -175,7 +175,7 @@ data class Skyline(
     }
 
     suspend fun collectThreads(
-        depth: Int = 2, height: Int = 2,
+        depth: Int = 3, height: Int = 10,
         timeRange: Delta = Delta(Duration.parse("4h"))
     ) = CoroutineScope(Dispatchers.Default).async {
         return@async Companion.collectThreads(this@Skyline, depth, height, timeRange).await()
