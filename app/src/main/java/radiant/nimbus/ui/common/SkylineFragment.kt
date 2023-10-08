@@ -161,7 +161,7 @@ fun SkylineThreadFragment(
         ) {
             val threadPost = ThreadPost.ViewablePost(thread.post, thread.replies)
             if (thread.parents.isNotEmpty()) {
-                when (val root = thread.parents[0]) {
+                when (val root = thread.parents[thread.parents.lastIndex]) {
                     is ThreadPost.ViewablePost -> if (root.post.uri == thread.post.uri) {
                         Surface(
                             tonalElevation = 1.dp,
