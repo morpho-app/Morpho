@@ -78,6 +78,7 @@ fun ThreadFragmentFrame(
         } else {
             it.hashCode()
         }},
+
     listState: LazyListState = rememberLazyListState()
 ) {val lineColour = MaterialTheme.colorScheme.secondary.copy(0.3f)
     /*Surface (
@@ -237,6 +238,7 @@ fun ThreadItem(
     modifier: Modifier = Modifier,
     indentLevel: Int = 0,
     role: PostFragmentRole = PostFragmentRole.ThreadBranchStart,
+    elevate: Boolean = false,
     reason: BskyPostReason? = null
 ) {
     when(item) {
@@ -250,6 +252,7 @@ fun ThreadItem(
                     post = item.post,
                     role = role,
                     indentLevel = indentLevel,
+                    elevate = elevate
                 )
             }
         }

@@ -8,6 +8,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import app.bsky.feed.GetFeedQueryParams
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import radiant.nimbus.MainViewModel
@@ -23,11 +24,19 @@ fun SkylineScreen(
     viewModel: SkylineViewModel = hiltViewModel()
 ) {
     LaunchedEffect(Unit) {
-        viewModel.getSkyline(mainViewModel.apiProvider)
+        val uri = viewModel.state.feedUri
+        if (uri != null) {
+            viewModel.getSkyline(
+                mainViewModel.apiProvider,
+                GetFeedQueryParams(uri)
+                )
+        } else{
+            viewModel.getSkyline(mainViewModel.apiProvider)
+        }
     }
     SkylineView(navigator,viewModel,
         refresh = {cursor ->
-                viewModel.getSkyline(mainViewModel.apiProvider, cursor)
+                viewModel.getSkyline(mainViewModel.apiProvider, cursor, 10)
         }
     )
 }
@@ -40,7 +49,9 @@ fun SkylineView(
 ){
 
     ScreenBody(
-        modifier = Modifier.fillMaxSize().heightIn(0.dp, 20000.dp)
+        modifier = Modifier
+            .fillMaxSize()
+            .heightIn(0.dp, 20000.dp)
     ) {
         SkylineFragment(
             postFlow = viewModel.skylinePosts,

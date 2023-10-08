@@ -7,10 +7,10 @@ import app.bsky.feed.Post
 import app.bsky.feed.PostView
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.serialization.Serializable
-import radiant.nimbus.util.deserialize
-import radiant.nimbus.util.mapImmutable
 import radiant.nimbus.api.AtUri
 import radiant.nimbus.api.Cid
+import radiant.nimbus.util.deserialize
+import radiant.nimbus.util.mapImmutable
 import javax.annotation.concurrent.Immutable
 
 enum class PostType {
@@ -51,7 +51,41 @@ data class BskyPost (
     val labels: ImmutableList<BskyLabel>,
     val reply: BskyPostReply?,
     val reason: BskyPostReason?,
-)
+) {
+    override operator fun equals(other: Any?) : Boolean {
+        return when(other) {
+            null -> false
+            is Cid -> other == cid
+            is AtUri -> other == uri
+            else -> other.hashCode() == this.hashCode()
+        }
+    }
+
+    operator fun contains(other: Any?) : Boolean {
+        return when(other) {
+            null -> false
+            is Cid -> other == cid
+            is AtUri -> other == uri
+            is BskyPost -> other.cid == cid
+            else -> reply?.parent?.contains(other) == true
+        }
+    }
+
+    override fun hashCode(): Int {
+        var result = uri.hashCode()
+        result = 31 * result + cid.hashCode()
+        result = 31 * result + (feature?.hashCode() ?: 0)
+        result = 31 * result + replyCount.hashCode()
+        result = 31 * result + repostCount.hashCode()
+        result = 31 * result + likeCount.hashCode()
+        result = 31 * result + indexedAt.hashCode()
+        result = 31 * result + reposted.hashCode()
+        result = 31 * result + liked.hashCode()
+        result = 31 * result + labels.hashCode()
+        result = 31 * result + (reason?.hashCode() ?: 0)
+        return result
+    }
+}
 
 
 fun FeedViewPost.toPost(): BskyPost {

@@ -353,6 +353,7 @@ fun PostFragment(
     modifier: Modifier = Modifier,
     role: PostFragmentRole = PostFragmentRole.Solo,
     indentLevel: Int = 0,
+    elevate: Boolean = false,
     onItemClicked: OnPostClicked = {},
     onProfileClicked: () -> Unit = {},
 ) {
@@ -403,10 +404,10 @@ fun PostFragment(
             PostFragmentRole.ThreadRootUnfocused -> MaterialTheme.shapes.small
         }
         Surface (
-            shadowElevation = if (indentLevel > 0) 2.dp else 0.dp,
-            tonalElevation = if (indentLevel > 0) 3.dp else 0.dp,
+            shadowElevation = if (elevate || indentLevel > 0) 2.dp else 0.dp,
+            tonalElevation = if (elevate || indentLevel > 0) 3.dp else 0.dp,
             shape = MaterialTheme.shapes.small,
-            modifier = Modifier
+            modifier = modifier
                 .fillMaxWidth(indentLevel(indent))
                 .align(Alignment.End)
 

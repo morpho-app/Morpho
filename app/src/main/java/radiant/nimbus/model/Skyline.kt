@@ -8,7 +8,6 @@ import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.launch
 import radiant.nimbus.api.Cid
 import radiant.nimbus.util.mapImmutable
 import kotlin.time.Duration
@@ -30,12 +29,22 @@ data class Skyline(
         }
 
         fun concat(
-            skyline: Skyline,
             posts: List<FeedViewPost>,
-            cursor: String? = null,
+            skyline: Skyline,
+            cursor: String? = skyline.cursor,
         ): Skyline {
             return Skyline(
-                posts = skyline.posts + posts.mapImmutable { SkylineItem(it.toPost()) },
+                posts = (posts.mapImmutable { SkylineItem(it.toPost()) } union skyline.posts).toList().sortedByDescending { it.post?.createdAt },
+                cursor = cursor,
+            )
+        }
+        fun concat(
+            skyline: Skyline,
+            posts: List<FeedViewPost>,
+            cursor: String? = skyline.cursor,
+        ): Skyline {
+            return Skyline(
+                posts = (skyline.posts union posts.mapImmutable { SkylineItem(it.toPost()) }).toList().sortedByDescending { it.post?.createdAt },
                 cursor = cursor,
             )
         }
@@ -46,7 +55,7 @@ data class Skyline(
             cursor: String? = last.cursor
         ): Skyline {
             return Skyline(
-                posts = first.posts + last.posts,
+                posts = (first.posts union last.posts).toList().sortedByDescending { it.post?.createdAt },
                 cursor = cursor,
             )
         }
@@ -57,10 +66,18 @@ data class Skyline(
             timeRange: Delta = Delta(Duration.parse("4h")),
             cursor: String? = null,
         ) = CoroutineScope(Dispatchers.Default).async {
+            return@async collectThreads(from(list, cursor), depth, height, timeRange).await()
+        }
+
+        suspend fun collectThreads(
+            skyline: Skyline,
+            depth: Int = 2, height: Int = 2,
+            timeRange: Delta = Delta(Duration.parse("4h")),
+            cursor: String? = skyline.cursor,
+        ) = CoroutineScope(Dispatchers.Default).async {
             val threadCandidates = mutableMapOf<Cid, MutableMap<Cid, BskyPost>>()
-            val posts = list.map { SkylineItem(it.toPost()) }
             async {
-                posts.map { item ->
+                skyline.posts.map { item ->
                     val post = item.post
                     if (post != null) {
                         if(post.reply != null && item.thread == null) {
@@ -104,12 +121,12 @@ data class Skyline(
             }.await()
             val threads = mutableMapOf<Cid, List<BskyPost>>()
             awaitAll(
-                async { posts.filterNot { it.post == null && it.thread == null } },
+                async { skyline.posts.filterNot { it.post == null && it.thread == null } },
                 async { threadCandidates.map { thread ->
                     if (thread.value.values.isNotEmpty()) threads[thread.key] = thread.value.values.toMutableList()
                 } },
             )
-            posts.map { item ->
+            skyline.posts.map { item ->
                 val post = item.post
                 if (post != null){
                     val itemCid = post.cid
@@ -117,7 +134,7 @@ data class Skyline(
                         val level = 1
                         val thread = threads[itemCid]
                             ?.filter { (it.createdAt - post.createdAt).duration <= timeRange.duration }
-                            ?.sortedBy { it.createdAt }
+                            ?.sortedByDescending { it.createdAt }
                             .orEmpty()
                         val parents = async {
                             generateSequence(post.reply?.parent) {
@@ -138,7 +155,8 @@ data class Skyline(
                 }
 
             }
-            return@async Skyline(posts, cursor)
+            skyline.posts.sortedByDescending { it.post?.createdAt }
+            return@async Skyline(skyline.posts, cursor)
         }
 
         private fun findReplies(level: Int, depth: Int, post: BskyPost, list: List<BskyPost>
@@ -159,87 +177,18 @@ data class Skyline(
     suspend fun collectThreads(
         depth: Int = 2, height: Int = 2,
         timeRange: Delta = Delta(Duration.parse("4h"))
-    ) = CoroutineScope(Dispatchers.Default).launch {
-        val threadCandidates = mutableMapOf<Cid, MutableMap<Cid, BskyPost>>()
-        async {
-            posts.map { item ->
-                val post = item.post
-                if (post != null) {
-                    if(post.reply != null && item.thread == null) {
-                        val itemCid = post.cid
-                        val parent = post.reply.parent
-                        val root = post.reply.root
-                        if(itemCid !in threadCandidates.keys) {
-                            var found = false
-                            threadCandidates.forEach { thread ->
-                                if(itemCid in thread.value.keys) {
-                                    if (parent != null && parent.cid !in thread.value.keys) {
-                                        thread.value[parent.cid] = parent
-                                    }
-                                    if (root != null && root.cid !in thread.value.keys) {
-                                        thread.value[root.cid] = root
-                                    }
-                                    item.post = null
-                                    found = true
-                                    return@forEach
-                                }
-                            }
-                            if(!found) {
-                                threadCandidates[itemCid] = mutableMapOf()
-                                if (parent != null) threadCandidates[itemCid]?.set(parent.cid, parent )
-                                if (root != null && threadCandidates[itemCid]?.keys?.contains(root.cid) != true ) {
-                                    threadCandidates[itemCid]?.set(root.cid, root )
-                                }
-                            }
-                        } else {
-                            if (parent != null && threadCandidates[itemCid]?.keys?.contains(parent.cid) != true ) {
-                                threadCandidates[itemCid]?.set(parent.cid, parent )
-                            }
-                            if (root != null && threadCandidates[itemCid]?.keys?.contains(root.cid) != true ) {
-                                threadCandidates[itemCid]?.set(root.cid, root )
-                            }
-                            item.post = null
-                        }
-                    }
-                }
-            }
-        }.await()
-        val threads = mutableMapOf<Cid, List<BskyPost>>()
-        awaitAll(
-            async { posts.filterNot { it.post == null && it.thread == null } },
-            async { threadCandidates.map { thread ->
-                if (thread.value.values.isNotEmpty()) threads[thread.key] = thread.value.values.toMutableList()
-            } },
-        )
-        posts.map { item ->
-            val post = item.post
-            if (post != null){
-                val itemCid = post.cid
-                if( itemCid in threads.keys) {
-                    val level = 1
-                    val thread = threads[itemCid]
-                        ?.filter { (it.createdAt - post.createdAt).duration <= timeRange.duration }
-                        ?.sortedBy { it.createdAt }
-                        .orEmpty()
-                    val parents = async {
-                        generateSequence(post.reply?.parent) {
-                            it.reply?.parent
-                        }.toList().reversed().map { r->
-                            ThreadPost.ViewablePost(r, findReplies(level, height, r, thread).await())
-                        }
-                    }
-                    val replies: Deferred<List<ThreadPost>> = async {
-                        threads[itemCid]?.filter {
-                            (it.reply?.parent?.cid ?: Cid("")) == itemCid
-                        }?.map { p ->
-                            ThreadPost.ViewablePost(p, findReplies(level, depth, p, thread).await())
-                        }.orEmpty()
-                    }
-                    item.thread = BskyPostThread(post, parents.await(), replies.await().toImmutableList())
-                }
-            }
-        }
+    ) = CoroutineScope(Dispatchers.Default).async {
+        return@async Companion.collectThreads(this@Skyline, depth, height, timeRange).await()
     }
 
+    operator fun plus(skyline: Skyline) {
+        posts = posts + skyline.posts
+        cursor = skyline.cursor
+    }
+
+    operator fun contains(cid: Cid): Boolean {
+        posts.map { if ((it.post?.cid ?: Cid("")) == cid || (it.thread?.contains(cid) == true)) return true }
+        return false
+    }
 
 }
