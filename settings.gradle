@@ -20,3 +20,5 @@ rootProject.name = "Nimbus"
 
 include(":app")
 
+include ':baselineprofile'
+include ':benchmark'

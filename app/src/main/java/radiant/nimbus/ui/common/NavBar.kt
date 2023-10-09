@@ -29,6 +29,7 @@ import radiant.nimbus.screens.NavGraphs
 import radiant.nimbus.screens.appCurrentDestinationAsState
 import radiant.nimbus.screens.destinations.Destination
 import radiant.nimbus.screens.destinations.FeedListScreenDestination
+import radiant.nimbus.screens.destinations.MyProfileScreenDestination
 import radiant.nimbus.screens.destinations.NotificationsScreenDestination
 import radiant.nimbus.screens.destinations.ProfileScreenDestination
 import radiant.nimbus.screens.destinations.SkylineScreenDestination
@@ -40,7 +41,7 @@ fun NimbusNavigation(
     navController: NavHostController,
     modifier: Modifier = Modifier,
     location: NavBarLocation = NavBarLocation.BottomFull,
-    profilePic: (@Composable () -> Unit)? = null,
+    profilePic: (@Composable (() -> Unit) -> Unit)? = null,
     actor: AtIdentifier? = null,
 ) {
     if (location == NavBarLocation.BottomFull || location == NavBarLocation.BottomPartial) {
@@ -62,7 +63,7 @@ fun NimbusNavigation(
 fun NimbusBottomNavBar(
     navController: NavHostController,
     modifier: Modifier = Modifier,
-    profilePic: (@Composable () -> Unit)? = null,
+    profilePic: @Composable() ((() -> Unit) -> Unit)? = null,
     actor: AtIdentifier? = null,
 
     ) {
@@ -129,8 +130,8 @@ fun NimbusBottomNavBar(
             alwaysShowLabel = false,
         )
         NavigationBarItem(
-            selected = currentDestination == ProfileScreenDestination,
-            onClick = { navController.navigate(ProfileScreenDestination.invoke(actor)) {
+            selected = currentDestination == MyProfileScreenDestination,
+            onClick = { navController.navigate(MyProfileScreenDestination) {
                 popUpTo(NavGraphs.root) {
                     saveState = true
                 }
@@ -139,7 +140,15 @@ fun NimbusBottomNavBar(
             }  },
             icon = {
                 if (profilePic != null) {
-                    profilePic.invoke()
+                    profilePic.invoke {
+                        navController.navigate(MyProfileScreenDestination) {
+                            popUpTo(NavGraphs.root) {
+                                saveState = true
+                            }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                    }
                 } else {
                     Icon(
                         imageVector = Icons.Outlined.AccountCircle,
@@ -157,7 +166,7 @@ fun NimbusBottomNavBar(
 fun NimbusNavRail(
     navController: NavHostController,
     modifier: Modifier = Modifier,
-    profilePic: (@Composable () -> Unit)? = null,
+    profilePic: @Composable() ((() -> Unit) -> Unit)? = null,
     actor: AtIdentifier? = null,
 
     ) {
@@ -232,8 +241,8 @@ fun NimbusNavRail(
             alwaysShowLabel = false,
         )
         NavigationRailItem(
-            selected = currentDestination == ProfileScreenDestination.invoke(actor),
-            onClick = { navController.navigate(ProfileScreenDestination.invoke(actor)) {
+            selected = currentDestination == MyProfileScreenDestination,
+            onClick = { navController.navigate(MyProfileScreenDestination) {
                 popUpTo(NavGraphs.root) {
                     saveState = true
                 }
@@ -242,11 +251,19 @@ fun NimbusNavRail(
             }  },
             icon = {
                 if (profilePic != null) {
-                    profilePic.invoke()
+                    profilePic.invoke {
+                        navController.navigate(ProfileScreenDestination(actor)) {
+                            popUpTo(NavGraphs.root) {
+                                saveState = true
+                            }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                    }
                 } else {
                     Icon(
                         imageVector = Icons.Outlined.AccountCircle,
-                        contentDescription = "Profile Button"
+                        contentDescription = "Profile Button",
                     )
                 }
             },

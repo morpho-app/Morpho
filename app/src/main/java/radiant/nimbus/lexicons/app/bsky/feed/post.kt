@@ -1,8 +1,6 @@
 package app.bsky.feed
 
 import app.bsky.richtext.Facet
-import kotlin.String
-import kotlin.jvm.JvmInline
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialName
@@ -30,6 +28,14 @@ public sealed interface PostEmbedUnion {
   @SerialName("app.bsky.embed.external")
   public value class External(
     public val `value`: app.bsky.embed.External,
+  ) : PostEmbedUnion
+
+  public class ExternalMainSerializer : KSerializer<ExternalMain> by valueClassSerializer()
+  @Serializable(with = ExternalMainSerializer::class)
+  @JvmInline
+  @SerialName("app.bsky.embed.external#main")
+  public value class ExternalMain(
+    public val `value`: app.bsky.embed.ExternalMain,
   ) : PostEmbedUnion
 
   public class RecordSerializer : KSerializer<Record> by valueClassSerializer()

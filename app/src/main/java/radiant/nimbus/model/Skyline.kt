@@ -97,11 +97,20 @@ data class Skyline(
                                         item.post = null
                                         found = true
                                         return@forEach
+                                    } else if (parent != null && parent.cid in thread.value.keys) {
+                                        if(parent.reply?.parent != null) {
+                                            thread.value[parent.reply.parent.cid] = parent.reply.parent
+                                        }
                                     }
                                 }
                                 if(!found) {
                                     threadCandidates[itemCid] = mutableMapOf()
-                                    if (parent != null) threadCandidates[itemCid]?.set(parent.cid, parent )
+                                    if (parent != null) {
+                                        threadCandidates[itemCid]?.set(parent.cid, parent )
+                                        if(parent.reply?.parent != null) {
+                                            threadCandidates[itemCid]?.set(parent.reply.parent.cid, parent.reply.parent)
+                                        }
+                                    }
                                     if (root != null && threadCandidates[itemCid]?.keys?.contains(root.cid) != true ) {
                                         threadCandidates[itemCid]?.set(root.cid, root )
                                     }
@@ -109,6 +118,9 @@ data class Skyline(
                             } else {
                                 if (parent != null && threadCandidates[itemCid]?.keys?.contains(parent.cid) != true ) {
                                     threadCandidates[itemCid]?.set(parent.cid, parent )
+                                    if(parent.reply?.parent != null) {
+                                        threadCandidates[itemCid]?.set(parent.reply.parent.cid, parent.reply.parent)
+                                    }
                                 }
                                 if (root != null && threadCandidates[itemCid]?.keys?.contains(root.cid) != true ) {
                                     threadCandidates[itemCid]?.set(root.cid, root )
@@ -172,6 +184,20 @@ data class Skyline(
                 }
             }.toImmutableList()
         }
+/*
+        private fun findParents(level: Int, height: Int, post: BskyPost, list: List<SkylineItem>
+        ) : Deferred<ImmutableList<ThreadPost>> = CoroutineScope(Dispatchers.Default).async {
+            list.filter {
+                (it.post?.reply?.parent?.cid ?: Cid("")) == post.cid
+            }.map {
+                if (level < height) {
+                    val r = findParents(level + 1, height, it, list)
+                    ThreadPost.ViewablePost(it, r.await())
+                } else {
+                    ThreadPost.ViewablePost(it)
+                }
+            }.toImmutableList()
+        }*/
     }
 
     suspend fun collectThreads(

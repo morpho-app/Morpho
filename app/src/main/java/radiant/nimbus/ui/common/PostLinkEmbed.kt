@@ -1,8 +1,11 @@
 package radiant.nimbus.ui.common
 
-import androidx.compose.foundation.BorderStroke
+import android.content.Intent
+import android.net.Uri
+import android.util.Log
 import androidx.compose.foundation.interaction.Interaction
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -13,6 +16,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
@@ -26,7 +30,6 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import dev.jeziellago.compose.markdowntext.MarkdownText
-import radiant.nimbus.api.Uri
 import radiant.nimbus.R
 import radiant.nimbus.model.BskyPostFeature
 
@@ -37,12 +40,14 @@ fun PostLinkEmbed(
 ) {
     Surface(
         shape = MaterialTheme.shapes.extraSmall,
-        border = BorderStroke(1.dp,MaterialTheme.colorScheme.inverseSurface)
+        tonalElevation = 3.dp,
+        shadowElevation = 1.dp,
+        //border = BorderStroke(1.dp,MaterialTheme.colorScheme.secondary)
     ) {
         val interactionSource = remember { MutableInteractionSource() }
         val interactions = remember { mutableStateListOf<Interaction>() }
         val isPressed by interactionSource.collectIsPressedAsState()
-/*
+
         LaunchedEffect(interactionSource) {
             interactionSource.interactions.collect { interaction ->
                 when (interaction) {
@@ -54,15 +59,6 @@ fun PostLinkEmbed(
                     }
                     is PressInteraction.Cancel -> {
                         interactions.remove(interaction.press)
-                    }
-                    is DragInteraction.Start -> {
-                        interactions.add(interaction)
-                    }
-                    is DragInteraction.Stop -> {
-                        interactions.remove(interaction.start)
-                    }
-                    is DragInteraction.Cancel -> {
-                        interactions.remove(interaction.start)
                     }
 
                 }
@@ -77,7 +73,7 @@ fun PostLinkEmbed(
                 Uri.parse(linkData.uri.uri)
             )
             ctx.startActivity(urlIntent)
-        }*/
+        }
         SelectionContainer {
             Column() {
                 AsyncImage(
@@ -112,7 +108,7 @@ fun PostLinkEmbed(
 
 
 val testLinkEmbed = BskyPostFeature.ExternalFeature(
-    uri = Uri("https://www.youtube.com/watch?v=_q85LZqY5Ok"),
+    uri = radiant.nimbus.api.Uri("https://www.youtube.com/watch?v=_q85LZqY5Ok"),
     title = "(Hearthstone) Big Ol' Tendies - Yogg Rogue",
     description = "\n" +
             "14,866 views  Sep 24, 2023\n" +

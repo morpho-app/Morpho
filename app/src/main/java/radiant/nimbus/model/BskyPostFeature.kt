@@ -9,11 +9,11 @@ import app.bsky.feed.PostEmbedUnion
 import app.bsky.feed.PostViewEmbedUnion
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.serialization.Serializable
-import radiant.nimbus.util.deserialize
-import radiant.nimbus.util.mapImmutable
 import radiant.nimbus.api.AtUri
 import radiant.nimbus.api.Cid
 import radiant.nimbus.api.Uri
+import radiant.nimbus.util.deserialize
+import radiant.nimbus.util.mapImmutable
 
 sealed interface BskyPostFeature {
     @Serializable
@@ -171,10 +171,23 @@ public fun PostEmbedUnion.toFeature(): BskyPostFeature? {
         is PostEmbedUnion.RecordWithMedia -> {
             null // Don't nest embeds too hard
         }
+
+        is PostEmbedUnion.ExternalMain -> {
+            this.toEmbedExternalFeature()
+        }
     }
 }
 
 private fun PostEmbedUnion.External.toEmbedExternalFeature(): BskyPostFeature.ExternalFeature {
+    return BskyPostFeature.ExternalFeature(
+        uri = this.value.external.uri,
+        title = this.value.external.title,
+        description = this.value.external.description,
+        thumb = this.value.external.thumb.toString(),
+    )
+}
+
+private fun PostEmbedUnion.ExternalMain.toEmbedExternalFeature(): BskyPostFeature.ExternalFeature {
     return BskyPostFeature.ExternalFeature(
         uri = this.value.external.uri,
         title = this.value.external.title,

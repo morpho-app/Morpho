@@ -32,12 +32,11 @@ import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import kotlinx.coroutines.launch
 import radiant.nimbus.MainViewModel
+import radiant.nimbus.api.Handle
 import radiant.nimbus.api.auth.Credentials
 import radiant.nimbus.components.ScreenBody
 import radiant.nimbus.extensions.activityViewModel
 import radiant.nimbus.screens.destinations.ProfileScreenDestination
-import radiant.nimbus.api.AtIdentifier
-import radiant.nimbus.api.Handle
 
 @Destination
 @Composable
@@ -76,7 +75,7 @@ fun LoginScreen(
                                 {
                                     navigator.navigate(
                                         ProfileScreenDestination(
-                                            actor = AtIdentifier(it.did.did)
+                                            //actor = AtIdentifier(it.did.did)
                                         )
                                     )
                                 },
@@ -106,7 +105,7 @@ fun LoginScreen(
                 {
                     navigator.navigate(
                         ProfileScreenDestination(
-                            actor = AtIdentifier(it.did.did)
+                            //actor = AtIdentifier(it.did.did)
                         )
                     )
                 },
@@ -116,7 +115,7 @@ fun LoginScreen(
         is LoginState.Success -> {
             navigator.navigate(
                 ProfileScreenDestination(
-                    actor = AtIdentifier(handle)
+                    //actor = AtIdentifier(handle)
                 )
             )
         }

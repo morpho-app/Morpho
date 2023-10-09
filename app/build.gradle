@@ -8,6 +8,7 @@ plugins {
     id("com.google.devtools.ksp")
     id("org.jetbrains.kotlin.plugin.serialization")
     id("org.jetbrains.kotlinx.binary-compatibility-validator")
+    alias(libs.plugins.androidx.baselineprofile)
 }
 
 android {
@@ -35,6 +36,12 @@ android {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
+        benchmark {
+            initWith release
+            signingConfig signingConfigs.debug
+            matchingFallbacks = ['release']
+            debuggable false
+        }
     }
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_17
@@ -54,6 +61,8 @@ android {
 }
 
 dependencies {
+    implementation libs.profileinstaller
+    baselineProfile project(':baselineprofile')
     def room_version = "2.5.2"
 
 

@@ -2,6 +2,7 @@ package radiant.nimbus.screens.skyline
 
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
@@ -11,9 +12,12 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import app.bsky.feed.GetFeedQueryParams
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
+import com.ramcosta.composedestinations.navigation.popUpTo
 import radiant.nimbus.MainViewModel
 import radiant.nimbus.components.ScreenBody
 import radiant.nimbus.extensions.activityViewModel
+import radiant.nimbus.screens.NavGraphs
+import radiant.nimbus.screens.destinations.PostThreadScreenDestination
 import radiant.nimbus.ui.common.SkylineFragment
 
 @Destination
@@ -21,7 +25,7 @@ import radiant.nimbus.ui.common.SkylineFragment
 fun SkylineScreen(
     navigator: DestinationsNavigator,
     mainViewModel: MainViewModel = activityViewModel(),
-    viewModel: SkylineViewModel = hiltViewModel()
+    viewModel: SkylineViewModel = hiltViewModel(),
 ) {
     LaunchedEffect(Unit) {
         val uri = viewModel.state.feedUri
@@ -34,10 +38,13 @@ fun SkylineScreen(
             viewModel.getSkyline(mainViewModel.apiProvider)
         }
     }
-    SkylineView(navigator,viewModel,
+    SkylineView(
+        navigator = navigator,
+        viewModel = viewModel,
         refresh = {cursor ->
-                viewModel.getSkyline(mainViewModel.apiProvider, cursor, 10)
-        }
+                viewModel.getSkyline(mainViewModel.apiProvider, cursor)
+        },
+        navBar = { mainViewModel.navBar?.let { it() } },
     )
 }
 
@@ -46,16 +53,28 @@ fun SkylineView(
     navigator: DestinationsNavigator,
     viewModel: SkylineViewModel,
     refresh: (String?) -> Unit = {},
+    navBar: @Composable () -> Unit = {},
 ){
 
     ScreenBody(
         modifier = Modifier
-            .fillMaxSize()
-            .heightIn(0.dp, 20000.dp)
+            .fillMaxSize().systemBarsPadding()
+            .heightIn(0.dp, 20000.dp),
+        topContent = {},
+        navBar = navBar
+
     ) {
         SkylineFragment(
             postFlow = viewModel.skylinePosts,
-            onItemClicked = {},
+            onItemClicked = {
+                navigator.navigate(PostThreadScreenDestination(it)) {
+                    popUpTo(NavGraphs.root) {
+                        saveState = true
+                    }
+                    launchSingleTop = true
+                    restoreState = true
+                }
+                            },
             refresh = refresh,
             modifier = Modifier
         )

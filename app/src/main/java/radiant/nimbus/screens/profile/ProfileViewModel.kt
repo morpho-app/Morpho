@@ -63,6 +63,14 @@ class ProfileViewModel @Inject constructor(
     val profilePostsReplies: StateFlow<Skyline> = _profilePostsReplies.asStateFlow()
     val profileMedia: StateFlow<Skyline> = _profileMedia.asStateFlow()
 
+    fun useCachedProfile(profile: DetailedProfile?) : Boolean {
+        return if (profile != null) {
+            state = ProfileState(AtIdentifier(profile.did.did), profile, false)
+            true
+        } else {
+            false
+        }
+    }
 
     fun getProfile(
         apiProvider: ApiProvider,
@@ -70,7 +78,7 @@ class ProfileViewModel @Inject constructor(
         onSuccess: () -> Unit,
         onFailure: () -> Unit
     ) = viewModelScope.launch(Dispatchers.IO) {
-        when(val result = apiProvider.api.getProfile(GetProfileQueryParams(actor))) {
+        when (val result = apiProvider.api.getProfile(GetProfileQueryParams(actor))) {
             is AtpResponse.Failure -> {
                 Log.e("P Load Err", result.toString())
                 state = ProfileState(actor, null, isLoading = false, isError = true)
@@ -80,9 +88,9 @@ class ProfileViewModel @Inject constructor(
             is AtpResponse.Success -> {
                 val profile = result.response.toProfile()
                 Log.i("P Load Success", result.toString())
-                state = ProfileState(actor,profile,false)
-                getProfileFeed(ProfileTabs.Posts, apiProvider)
+                state = ProfileState(actor, profile, false)
                 onSuccess()
+                getProfileFeed(ProfileTabs.Posts, apiProvider)
                 getProfileFeed(ProfileTabs.PostsReplies, apiProvider)
                 getProfileFeed(ProfileTabs.Media, apiProvider)
 
@@ -90,11 +98,14 @@ class ProfileViewModel @Inject constructor(
         }
     }
 
-    fun getProfileFeed(feed: ProfileTabs, apiProvider: ApiProvider, cursor: String? = null) = viewModelScope.launch(Dispatchers.IO) {
-        if (state.actor != null) {
+    @Suppress("LocalVariableName")
+    fun getProfileFeed(feed: ProfileTabs, apiProvider: ApiProvider, cursor: String? = null, actor: AtIdentifier? = null
+    ) = viewModelScope.launch(Dispatchers.IO) {
+        val _actor = actor ?: state.actor
+        if (_actor != null) {
             when (feed) {
                 ProfileTabs.Posts -> {
-                    val result = apiProvider.api.getAuthorFeed(GetAuthorFeedQueryParams(state.actor!!, 100,cursor, GetAuthorFeedFilter.POSTS_NO_REPLIES))
+                    val result = apiProvider.api.getAuthorFeed(GetAuthorFeedQueryParams(_actor, 100,cursor, GetAuthorFeedFilter.POSTS_NO_REPLIES))
                     if (result is AtpResponse.Success) {
                         val newPosts = Skyline.from(result.response.feed, result.response.cursor)
                         newPosts.posts.forEach { item ->
@@ -114,7 +125,7 @@ class ProfileViewModel @Inject constructor(
 
                 }
                 ProfileTabs.PostsReplies -> {
-                    val result = apiProvider.api.getAuthorFeed(GetAuthorFeedQueryParams(state.actor!!, 100, cursor, GetAuthorFeedFilter.POSTS_WITH_REPLIES))
+                    val result = apiProvider.api.getAuthorFeed(GetAuthorFeedQueryParams(_actor, 100, cursor, GetAuthorFeedFilter.POSTS_WITH_REPLIES))
                     if (result is AtpResponse.Success) {
                         Log.i("Posts+Replies", result.response.feed.toString())
                         val newPosts = Skyline.from(result.response.feed, result.response.cursor)
@@ -134,7 +145,7 @@ class ProfileViewModel @Inject constructor(
                     }
                 }
                 ProfileTabs.Media -> {
-                    val result = apiProvider.api.getAuthorFeed(GetAuthorFeedQueryParams(state.actor!!, 100, cursor, GetAuthorFeedFilter.POSTS_WITH_MEDIA))
+                    val result = apiProvider.api.getAuthorFeed(GetAuthorFeedQueryParams(_actor, 100, cursor, GetAuthorFeedFilter.POSTS_WITH_MEDIA))
                     if (result is AtpResponse.Success) {
                         Log.i("Media", result.response.feed.toString())
                         val newPosts = Skyline.from(result.response.feed, result.response.cursor)
@@ -153,14 +164,14 @@ class ProfileViewModel @Inject constructor(
                     }
                 }
                 ProfileTabs.Feeds -> {
-                    val result = apiProvider.api.getActorFeeds(GetActorFeedsQueryParams(state.actor!!, 100))
+                    val result = apiProvider.api.getActorFeeds(GetActorFeedsQueryParams(_actor, 100))
                     if (result is AtpResponse.Success) {
                         Log.i("Feeds", result.response.feeds.toString())
                         //_profileMedia.value = Skyline.from(result.response.feed, profileMedia.value.cursor)
                     }
                 }
                 ProfileTabs.Lists -> {
-                    val result = apiProvider.api.getLists(GetListsQueryParams(state.actor!!, 100))
+                    val result = apiProvider.api.getLists(GetListsQueryParams(_actor, 100))
                     if (result is AtpResponse.Success) {
                         Log.i("Lists", result.response.lists.toString())
                         //_profileMedia.value = Skyline.from(result.response.feed, profileMedia.value.cursor)

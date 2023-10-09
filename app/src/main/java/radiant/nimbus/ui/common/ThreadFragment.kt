@@ -258,20 +258,14 @@ fun ThreadItem(
         }
         is ThreadPost.BlockedPost -> {
             BlockedPostFragment(
-                //post = item.value,
+                post = item.uri,
                 role = role,
                 indentLevel = indentLevel,
             )
         }
         is ThreadPost.NotFoundPost -> {
             NotFoundPostFragment(
-                //post = item.value,
-                role = role,
-                indentLevel = indentLevel,
-            )
-        }
-        else -> {
-            NotFoundPostFragment(
+                post = item.uri,
                 role = role,
                 indentLevel = indentLevel,
             )
@@ -301,13 +295,18 @@ fun ThreadReply(
             )
         }
         is ThreadPost.BlockedPost -> {
-            BlockedPostFragment()
+            BlockedPostFragment(
+                post = item.uri,
+                role = role,
+                indentLevel = indentLevel,
+            )
         }
         is ThreadPost.NotFoundPost -> {
-            NotFoundPostFragment()
-        }
-        else -> {
-            NotFoundPostFragment()
+            NotFoundPostFragment(
+                post = item.uri,
+                role = role,
+                indentLevel = indentLevel,
+            )
         }
     }
 }

@@ -5,17 +5,25 @@ import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.animation.ExperimentalAnimationApi
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
+import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.AccountCircle
+import androidx.compose.material3.Icon
 import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
 import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.lifecycleScope
+import androidx.navigation.NavHostController
 import app.bsky.actor.GetProfileQueryParams
 import com.google.accompanist.navigation.material.ExperimentalMaterialNavigationApi
 import com.ramcosta.composedestinations.DestinationsNavHost
-import com.ramcosta.composedestinations.animations.rememberAnimatedNavHostEngine
+import com.ramcosta.composedestinations.navigation.navigate
+import com.ramcosta.composedestinations.rememberNavHostEngine
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
@@ -27,7 +35,11 @@ import radiant.nimbus.api.auth.Credentials
 import radiant.nimbus.extensions.lifecycleViewModels
 import radiant.nimbus.model.toProfile
 import radiant.nimbus.screens.NavGraphs
+import radiant.nimbus.screens.appCurrentDestinationAsState
+import radiant.nimbus.screens.destinations.LoginScreenDestination
 import radiant.nimbus.screens.destinations.SkylineScreenDestination
+import radiant.nimbus.ui.common.NimbusNavigation
+import radiant.nimbus.ui.common.OutlinedAvatar
 import radiant.nimbus.ui.theme.NimbusTheme
 
 @OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
@@ -74,52 +86,64 @@ class MainActivity : ComponentActivity() {
         }
 
         Log.i("Response", response.toString())
-        /*
-        val post = runBlocking {
-            viewModel.apiProvider.api.getPosts(GetPostsQueryParams(persistentListOf<AtUri>().add(0,testThreadUri)))
-        }.requireResponse().posts[0]
-        //Log.i("Post", post.toString())
+        viewModel.currentUser = response.requireResponse().toProfile()
 
-        val item = SkylineItem(post.toPost(), null)
-        runBlocking{
-            item.postToThread(viewModel.apiProvider).join()
-        }
-        //Log.i("Thread", item.thread?.post.toString())
-        //Log.i("ThreadParents", item.thread?.parents.toString())
-        //Log.i("ThreadReplies", item.thread?.replies.toString())
-        */
 
         setContent {
+            val engine = rememberNavHostEngine()
+            val navController = engine.rememberNavController()
             viewModel.windowSizeClass = calculateWindowSizeClass(this)
+            viewModel.navBar = {
+                NimbusNavigation(
+                    navController = navController,
+                    profilePic = {onClick ->
+                        if(viewModel.currentUser != null) {
+                            response.requireResponse().avatar?.let { avatar ->
+                                OutlinedAvatar(url = avatar,
+                                    modifier = Modifier.size(30.dp),
+                                    onClicked = onClick,
+                                    )
+                            }
+                        } else {
+                            Icon(imageVector = Icons.Outlined.AccountCircle,
+                                contentDescription = "Profile")
+                        }
+                    },
+                    actor = viewModel.currentUser?.did?.did?.let { AtIdentifier(it) }
+                )
+            }
+            val startRoute = if (response.maybeResponse() == null) LoginScreenDestination else SkylineScreenDestination
             NimbusTheme {
-                val engine = rememberAnimatedNavHostEngine()
-                val navController = engine.rememberNavController()
-                // A surface container using the 'background' color from the theme
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
-                ) {
 
-                    if (response.maybeResponse() == null) {
-                        //DestinationsNavHost(navGraph = NavGraphs.root, startRoute = LoginScreenDestination)
 
-                    } else {
-                        viewModel.currentUser = response.requireResponse().toProfile()
-                        DestinationsNavHost(
-                            engine = engine,
-                            navController = navController,
-                            navGraph = NavGraphs.root,
-                            startRoute = SkylineScreenDestination
-                        )
-                    }
+                DestinationsNavHost(
+                    engine = engine,
+                    navGraph = NavGraphs.root,
+                    navController = navController,
+                    startRoute = startRoute
+                )
+                ShowLoginWhenLoggedOut(viewModel, navController)
 
-                    //item.thread?.let { ThreadFragmentFrame(thread = it) }
-
-                }
             }
         }
     }
 }
 
+
+@Composable
+private fun ShowLoginWhenLoggedOut(
+    vm: MainViewModel,
+    navController: NavHostController
+) {
+    val currentDestination by navController.appCurrentDestinationAsState()
+    val currentUser by remember { derivedStateOf { vm.currentUser } }
+
+    if ((currentUser == null) && currentDestination != LoginScreenDestination) {
+        // everytime destination changes or logged in state we check
+        // if we have to show Login screen and navigate to it if so
+        navController.navigate(LoginScreenDestination) {
+        }
+    }
+}
+
 val testThreadUri = AtUri("at://did:plc:mndtiksvxikpsy3zl6ebd2kr/app.bsky.feed.post/3k7rlrukr4w2v")
-//val testThreadUri = AtUri("at://did:plc:uy7ehrx332p6dow5sk32hxzq/app.bsky.feed.post/3k7rmyigapw2y")

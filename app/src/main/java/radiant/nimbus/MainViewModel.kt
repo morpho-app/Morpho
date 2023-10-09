@@ -2,6 +2,7 @@ package radiant.nimbus
 
 import android.app.Application
 import androidx.compose.material3.windowsizeclass.WindowSizeClass
+import androidx.compose.runtime.Composable
 import androidx.room.Room
 import dagger.hilt.android.lifecycle.HiltViewModel
 import radiant.nimbus.api.ApiProvider
@@ -24,4 +25,6 @@ class MainViewModel @Inject constructor(
     var windowSizeClass: WindowSizeClass? = null
     val db: AppDatabase = Room.databaseBuilder(app.applicationContext, AppDatabase::class.java, "nimbus_db")
         .build()
+
+    var navBar: @Composable (() -> Unit)? = null
 }

@@ -17,8 +17,10 @@ import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Create
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.KeyboardDoubleArrowUp
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
@@ -31,6 +33,7 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
@@ -41,15 +44,15 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import radiant.nimbus.api.AtUri
 import radiant.nimbus.components.ScreenBody
-import radiant.nimbus.model.BskyPost
 import radiant.nimbus.model.BskyPostThread
 import radiant.nimbus.model.Skyline
 import radiant.nimbus.model.SkylineItem
 import radiant.nimbus.model.ThreadPost
 import radiant.nimbus.ui.theme.NimbusTheme
 
-typealias OnPostClicked = (BskyPost) -> Unit
+typealias OnPostClicked = (AtUri) -> Unit
 
 class SkylineFragmentState(
 
@@ -66,10 +69,10 @@ fun SkylineFragment (
 ) {
     val postList by postFlow.collectAsStateWithLifecycle()
     val coroutineScope = rememberCoroutineScope()
-    LaunchedEffect(postList.posts.isNotEmpty() && !listState.canScrollForward) {
+    LaunchedEffect(postList.posts.size > 10 && !listState.canScrollForward) {
         refresh(postList.cursor)
     }
-    val scrolledDownBy by  derivedStateOf { listState.firstVisibleItemIndex }
+    val scrolledDownBy by remember { derivedStateOf { listState.firstVisibleItemIndex } }
     Box(modifier = Modifier.fillMaxWidth()) {
         LazyColumn(
             modifier = modifier,
@@ -83,11 +86,15 @@ fun SkylineFragment (
                     if (thread != null) {
                         SkylineThreadFragment(
                             thread = thread,
-                            modifier = Modifier.fillParentMaxWidth().padding(vertical = 2.dp, horizontal = 4.dp),
+                            modifier = Modifier
+                                .fillParentMaxWidth()
+                                .padding(vertical = 2.dp, horizontal = 4.dp),
                         )
                     } else if (post != null) {
                         PostFragment(
-                            modifier = Modifier.fillParentMaxWidth().padding(vertical = 2.dp, horizontal = 4.dp),
+                            modifier = Modifier
+                                .fillParentMaxWidth()
+                                .padding(vertical = 2.dp, horizontal = 4.dp),
                             post = post,
                             onItemClicked = onItemClicked,
                             elevate = true,
@@ -141,6 +148,18 @@ fun SkylineFragment (
                 )
             }
         }
+        FloatingActionButton(
+            onClick = { /*TODO*/ },
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .offset((-20).dp, 650.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Default.Create,
+                contentDescription = "Post a thing!",
+
+            )
+        }
     }
 
 }
@@ -151,36 +170,43 @@ fun SkylineThreadFragment(
     thread: BskyPostThread,
     modifier: Modifier = Modifier,
 ) {
+    val threadPost = remember { ThreadPost.ViewablePost(thread.post, thread.replies) }
+    val hasReplies = rememberSaveable { threadPost.replies.isNotEmpty()}
     Surface(
-        tonalElevation = 1.dp,
-        shape = MaterialTheme.shapes.extraSmall
+        tonalElevation = if(hasReplies) 1.dp else 0.dp,
+        shape = MaterialTheme.shapes.extraSmall,
+        modifier = if(hasReplies) Modifier.padding(2.dp) else Modifier.fillMaxWidth()
     ) {
         Column(
-            modifier = modifier
-                .padding(4.dp),
         ) {
-            val threadPost = ThreadPost.ViewablePost(thread.post, thread.replies)
             if (thread.parents.isNotEmpty()) {
                 when (val root = thread.parents[thread.parents.lastIndex]) {
                     is ThreadPost.ViewablePost -> if (root.post.uri == thread.post.uri) {
                         Surface(
                             tonalElevation = 1.dp,
-                            shape = MaterialTheme.shapes.extraSmall
+                            //border = BorderStroke(1.dp, MaterialTheme.colorScheme.secondary),
+                            shape = MaterialTheme.shapes.extraSmall,
+                            modifier = Modifier
+                                .padding(4.dp),
                         ) {
                             PostFragment(
                                 post = root.post,
-                                role = PostFragmentRole.ThreadRootUnfocused,
+                                role = PostFragmentRole.ThreadBranchStart,
                                 elevate = true,
+                                modifier = Modifier
+                                    .padding(2.dp),
                             )
                         }
                     } else {
                         Surface(
-                            tonalElevation = 1.dp,
-                            shape = MaterialTheme.shapes.extraSmall
+                            tonalElevation = if(hasReplies) 1.dp else 0.dp,
+                            //border = BorderStroke(1.dp, MaterialTheme.colorScheme.secondary),
+                            shape = MaterialTheme.shapes.extraSmall,
+                            modifier = if(hasReplies) Modifier.padding(2.dp) else Modifier.fillMaxWidth()
                         ) {
                             Column(
-                                modifier = modifier
-                                    .padding(2.dp),
+                                modifier = Modifier
+                                    .padding(4.dp),
                             ) {
                                 thread.parents.forEachIndexed { index, post ->
                                     val reason = remember { when(post) {
@@ -205,11 +231,18 @@ fun SkylineThreadFragment(
                                         )
                                     }
                                 }
+                                val role = remember { when(thread.parents.size) {
+                                    0 -> PostFragmentRole.Solo
+                                    1 -> PostFragmentRole.ThreadEnd
+                                    else -> PostFragmentRole.Solo
+                                } }
                                 ThreadItem(
                                     item = threadPost,
-                                    role = PostFragmentRole.PrimaryThreadRoot,
+                                    role = role,
                                     reason = thread.post.reason,
                                     elevate = true,
+                                    modifier = Modifier
+                                        .padding(4.dp),
                                 )
                             }
                         }
@@ -217,31 +250,53 @@ fun SkylineThreadFragment(
                     is ThreadPost.BlockedPost -> {}
                     is ThreadPost.NotFoundPost -> {}
                 }
-            }
-            Surface(
-                tonalElevation = 1.dp,
-                shape = MaterialTheme.shapes.extraSmall
-            ) {
-                Column(
-                    modifier = modifier
+            } else {
+                val role = remember { when(thread.parents.size) {
+                    0 -> PostFragmentRole.Solo
+                    1 -> PostFragmentRole.ThreadEnd
+                    else -> PostFragmentRole.Solo
+                } }
+                ThreadItem(
+                    item = threadPost,
+                    role = role,
+                    reason = thread.post.reason,
+                    elevate = true,
+                    modifier = Modifier
                         .padding(4.dp),
+                )
+            }
+
+            if (hasReplies) {
+                Surface(
+                    tonalElevation = 1.dp,
+                    //border = BorderStroke(1.dp, MaterialTheme.colorScheme.secondary),
+                    shape = MaterialTheme.shapes.extraSmall
                 ) {
-                    threadPost.replies.forEach { it:ThreadPost ->
-                        if (it is ThreadPost.ViewablePost) {
-                            ThreadReply(item = it,
-                                role = PostFragmentRole.ThreadBranchEnd,
-                                indentLevel = 1,
-                                modifier = Modifier.padding(4.dp)
-                            )
-                            if (it.replies.isNotEmpty()) {
-                                it.replies.forEach { reply ->
-                                    ThreadTree(reply = reply, indentLevel = 2, modifier = Modifier.padding(4.dp))
+                    Column(
+                        modifier = modifier
+                            .padding(4.dp),
+                    ) {
+                        threadPost.replies.forEach { it:ThreadPost ->
+                            if (it is ThreadPost.ViewablePost) {
+                                val threadHasReplies = rememberSaveable {
+                                    it.replies.isNotEmpty()
+                                }
+                                ThreadReply(item = it,
+                                    role = if(threadHasReplies) PostFragmentRole.ThreadBranchStart else PostFragmentRole.Solo,
+                                    indentLevel = 1,
+                                    modifier = Modifier.padding(4.dp)
+                                )
+                                if (threadHasReplies) {
+                                    it.replies.forEach { reply ->
+                                        ThreadTree(reply = reply, indentLevel = 2, modifier = Modifier.padding(4.dp))
+                                    }
                                 }
                             }
                         }
                     }
                 }
             }
+
         }
     }
 

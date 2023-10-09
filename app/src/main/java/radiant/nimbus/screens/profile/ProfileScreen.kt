@@ -16,8 +16,8 @@ import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.ButtonDefaults
@@ -37,6 +37,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -50,7 +51,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.navigation.compose.rememberNavController
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.ramcosta.composedestinations.annotation.Destination
@@ -65,8 +65,6 @@ import radiant.nimbus.components.ScreenBody
 import radiant.nimbus.extensions.activityViewModel
 import radiant.nimbus.model.BskyLabel
 import radiant.nimbus.model.DetailedProfile
-import radiant.nimbus.ui.common.NimbusBottomNavBar
-import radiant.nimbus.ui.common.NimbusNavRail
 import radiant.nimbus.ui.common.OutlinedAvatar
 import radiant.nimbus.ui.common.SkylineFragment
 import radiant.nimbus.ui.common.UserStatsFragment
@@ -90,10 +88,9 @@ fun ProfileScreen(
                 CircularProgressIndicator(
                     color = MaterialTheme.colorScheme.onSurface,
                 )
-
             }
         }
-        if (actor == null) {
+        if (viewModel.state.actor == null) {
             if (mainViewModel.currentUser != null) {
                 viewModel.getProfile(
                     mainViewModel.apiProvider,
@@ -109,9 +106,10 @@ fun ProfileScreen(
                 )
             }
         } else {
+            viewModel.state.actor = actor
             viewModel.getProfile(
                 mainViewModel.apiProvider,
-                actor,
+                viewModel.state.actor!!,
                 {
                     profileUIState = ProfileUIState.Done
                     showLoadingScreen = false
@@ -137,11 +135,34 @@ fun ProfileScreen(
                 apiProvider = mainViewModel.apiProvider,
                 currentUser = mainViewModel.currentUser,
                 navigator = navigator,
+                navBar = { mainViewModel.navBar?.let { it() } },
             )
-
         }
     }
 
+}
+
+@Destination
+@Composable
+fun MyProfileScreen(
+    navigator: DestinationsNavigator,
+    mainViewModel: MainViewModel = activityViewModel(),
+    viewModel: ProfileViewModel = hiltViewModel(),
+) {
+    if (viewModel.useCachedProfile(mainViewModel.currentUser)) {
+        LaunchedEffect(Unit) {
+            viewModel.getProfileFeed(ProfileTabs.Posts, mainViewModel.apiProvider)
+            viewModel.getProfileFeed(ProfileTabs.PostsReplies, mainViewModel.apiProvider)
+            viewModel.getProfileFeed(ProfileTabs.Media, mainViewModel.apiProvider)
+        }
+        ProfileView(
+            model = viewModel,
+            apiProvider = mainViewModel.apiProvider,
+            currentUser = mainViewModel.currentUser,
+            navigator = navigator,
+            navBar = { mainViewModel.navBar?.let { it() } },
+        )
+    }
 }
 
 enum class ProfileUIState {
@@ -149,7 +170,6 @@ enum class ProfileUIState {
     Done,
     Loading
 }
-
 
 
 @Composable
@@ -160,9 +180,9 @@ fun ProfileView(
     navigator: DestinationsNavigator? = null,
     currentUser: DetailedProfile? = null,
     isTopLevel: Boolean = true,
+    navBar: @Composable () -> Unit = {},
 ){
     var selectedTab by rememberSaveable { mutableStateOf(ProfileTabs.Posts) }
-    val navController = rememberNavController()
     Scaffold(
         topBar = {
             if (isTopLevel) {
@@ -274,27 +294,13 @@ fun ProfileView(
         },
         bottomBar = {
             if (isTopLevel) {
-                NimbusBottomNavBar(profilePic = {
-                    OutlinedAvatar(
-                        url = model.state.profile?.avatar.orEmpty(),
-                        modifier = Modifier.size(30.dp)
-                    )
-                }, navController = navController,
-                    actor = currentUser?.did?.did?.let { AtIdentifier(it) }
-                )
+                navBar()
             }
         }
     ) { contentPadding ->
         Row {
             if(!isTopLevel){
-                NimbusNavRail(profilePic = {
-                    OutlinedAvatar(
-                        url = model.state.profile?.avatar.orEmpty(),
-                        modifier = Modifier.size(30.dp)
-                    )
-                }, navController = navController,
-                    actor = currentUser?.did?.did?.let { AtIdentifier(it) }
-                )
+                navBar()
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -538,7 +544,7 @@ public fun DetailedProfileFragment(
                                 .size(30.dp)
                         ) {
                             Icon(
-                                imageVector = Icons.Filled.ArrowBack,
+                                imageVector = Icons.AutoMirrored.Default.ArrowBack,
                                 contentDescription = "Back",
                                 //tint =
                             )

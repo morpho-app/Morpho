@@ -1,6 +1,7 @@
 package radiant.nimbus.ui.common
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -29,10 +30,10 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import dev.jeziellago.compose.markdowntext.MarkdownText
+import radiant.nimbus.api.AtUri
 import radiant.nimbus.model.BskyPostFeature
 import radiant.nimbus.model.EmbedPost
 import radiant.nimbus.util.getFormattedDateTimeSince
-import radiant.nimbus.api.AtUri
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -40,7 +41,7 @@ fun EmbedPostFragment(
     post: EmbedPost.VisibleEmbedPost,
     modifier: Modifier = Modifier,
     role: PostFragmentRole = PostFragmentRole.Solo,
-    onItemClicked: OnPostClicked = {},
+    onItemClicked: (AtUri) -> Unit = {},
     onProfileClicked: () -> Unit = {},
 ) {
     val delta = remember { getFormattedDateTimeSince(post.litePost.createdAt) }
@@ -55,11 +56,14 @@ fun EmbedPostFragment(
             .padding(2.dp)
     ) {
         Surface (
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.inverseOnSurface),
+            tonalElevation = 3.dp,
+            shadowElevation = 1.dp,
+            //border = BorderStroke(1.dp, MaterialTheme.colorScheme.secondary),
             shape = MaterialTheme.shapes.small,
             modifier = Modifier
                 .fillMaxWidth()
                 .align(Alignment.End)
+                .clickable{}
 
         ) {
             Row(modifier = Modifier
@@ -68,8 +72,6 @@ fun EmbedPostFragment(
                 .fillMaxWidth()
 
             ) {
-
-
                 OutlinedAvatar(
                     url = post.author.avatar.orEmpty(),
                     contentDescription = "Avatar for ${post.author.handle}",
@@ -121,7 +123,9 @@ fun EmbedPostFragment(
                                 modifier = Modifier
                                     .wrapContentWidth(Alignment.Start)
                                     //.weight(10.0F)
-                                    .alignByBaseline(),
+                                    .alignByBaseline()
+                                    .clickable { onProfileClicked() },
+
 
                                 )
 
@@ -148,19 +152,44 @@ fun EmbedPostFragment(
                     }
 
 
-                    SelectionContainer {
+                    SelectionContainer(
+                        Modifier.clickable { onItemClicked(post.uri) }
+                    ) {
                         MarkdownText(
                             markdown = post.litePost.text.replace("\n", "  \n"),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurface,
                             modifier = Modifier.padding(start = 4.dp, top = 4.dp, bottom = 4.dp)
+                                .clickable { onItemClicked(post.uri) }
                         )
                     }
                     when (post.litePost.feature) {
                         is BskyPostFeature.ExternalFeature -> PostLinkEmbed(linkData = post.litePost.feature)
                         is BskyPostFeature.ImagesFeature -> PostImages(imagesFeature = post.litePost.feature)
-                        is BskyPostFeature.MediaPostFeature -> {}
-                        is BskyPostFeature.PostFeature -> {}
+                        is BskyPostFeature.MediaPostFeature -> {
+                            when(post.litePost.feature.media) {
+                                is BskyPostFeature.ExternalFeature -> PostLinkEmbed(linkData = post.litePost.feature.media)
+                                is BskyPostFeature.ImagesFeature -> PostImages(imagesFeature = post.litePost.feature.media)
+                            }
+                            when (post.litePost.feature.post) {
+                                is EmbedPost.BlockedEmbedPost -> EmbedBlockedPostFragment(uri = post.litePost.feature.post.uri)
+                                is EmbedPost.InvisibleEmbedPost -> EmbedNotFoundPostFragment(uri = post.litePost.feature.post.uri)
+                               is EmbedPost.VisibleEmbedPost ->EmbedPostFragment(
+                                   post = post.litePost.feature.post,
+                                   onItemClicked = onItemClicked
+                               )
+                            }
+                        }
+                        is BskyPostFeature.PostFeature -> {
+                            when (post.litePost.feature.post) {
+                                is EmbedPost.BlockedEmbedPost -> EmbedBlockedPostFragment(uri = post.litePost.feature.post.uri)
+                                is EmbedPost.InvisibleEmbedPost -> EmbedNotFoundPostFragment(uri = post.litePost.feature.post.uri)
+                                is EmbedPost.VisibleEmbedPost -> EmbedPostFragment(
+                                    post = post.litePost.feature.post,
+                                    onItemClicked = onItemClicked
+                                )
+                            }
+                        }
                         null -> {}
                     }
                 }

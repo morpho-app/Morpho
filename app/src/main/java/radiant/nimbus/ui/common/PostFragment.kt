@@ -1,6 +1,7 @@
 package radiant.nimbus.ui.common
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -18,11 +19,11 @@ import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Reply
 import androidx.compose.material.icons.filled.ChatBubble
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.MoreHoriz
 import androidx.compose.material.icons.filled.Repeat
-import androidx.compose.material.icons.filled.Reply
 import androidx.compose.material.icons.outlined.ChatBubbleOutline
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.Repeat
@@ -32,6 +33,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -84,6 +86,7 @@ enum class PostFragmentRole {
     ThreadBranchMiddle,
     ThreadBranchEnd,
     ThreadRootUnfocused,
+    ThreadEnd,
 }
 
 fun indentLevel(level:Float) : Float {
@@ -95,7 +98,7 @@ fun indentLevel(level:Float) : Float {
 fun FullPostFragment(
     post: BskyPost,
     modifier: Modifier = Modifier,
-    onItemClicked: OnPostClicked = {},
+    onItemClicked: (AtUri) -> Unit = {},
     onProfileClicked: () -> Unit = {},
     ) {
     val delta = rememberSaveable { getFormattedDateTimeSince(post.createdAt) }
@@ -110,6 +113,7 @@ fun FullPostFragment(
             .background(MaterialTheme.colorScheme.background)
             .padding(vertical = 4.dp)
             .padding(start = 6.dp, end = 6.dp)
+            .clickable{}
     ) {
 
         FlowRow(
@@ -194,12 +198,13 @@ fun FullPostFragment(
 
         SelectionContainer (
             modifier = Modifier.padding(start = 4.dp, top = 4.dp, bottom = 4.dp)
+                .clickable { onItemClicked(post.uri) }
         ){
             MarkdownText(
                 markdown = post.text.replace("\n", "  \n"),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurface,
-
+                modifier = Modifier.clickable { onItemClicked(post.uri) }
             )
         }
         val postTimestamp = remember {
@@ -217,14 +222,20 @@ fun FullPostFragment(
                 when (post.feature.post) {
                     is EmbedPost.BlockedEmbedPost -> EmbedBlockedPostFragment(uri = post.feature.post.uri)
                     is EmbedPost.InvisibleEmbedPost -> EmbedNotFoundPostFragment(uri = post.feature.post.uri)
-                    is EmbedPost.VisibleEmbedPost -> EmbedPostFragment(post = post.feature.post)
+                    is EmbedPost.VisibleEmbedPost -> EmbedPostFragment(
+                        post = post.feature.post,
+                        onItemClicked = onItemClicked
+                    )
                 }
             }
             is BskyPostFeature.PostFeature -> {
                 when (post.feature.post) {
                     is EmbedPost.BlockedEmbedPost -> EmbedBlockedPostFragment(uri = post.feature.post.uri)
                     is EmbedPost.InvisibleEmbedPost -> EmbedNotFoundPostFragment(uri = post.feature.post.uri)
-                    is EmbedPost.VisibleEmbedPost -> EmbedPostFragment(post = post.feature.post)
+                    is EmbedPost.VisibleEmbedPost -> EmbedPostFragment(
+                        post = post.feature.post,
+                        onItemClicked = onItemClicked
+                    )
                 }
             }
             null -> {}
@@ -355,6 +366,7 @@ fun PostFragment(
     indentLevel: Int = 0,
     elevate: Boolean = false,
     onItemClicked: OnPostClicked = {},
+    onEmbedClicked: () -> Unit = {},
     onProfileClicked: () -> Unit = {},
 ) {
     val delta = remember { getFormattedDateTimeSince(post.createdAt) }
@@ -366,6 +378,7 @@ fun PostFragment(
         PostFragmentRole.ThreadBranchMiddle -> Modifier.padding(start = 2.dp, top = 0.dp, end = 2.dp, bottom = 0.dp)
         PostFragmentRole.ThreadBranchEnd -> Modifier.padding(start = 2.dp, top = 0.dp, end = 2.dp, bottom = 2.dp)
         PostFragmentRole.ThreadRootUnfocused -> Modifier.padding(2.dp)
+        PostFragmentRole.ThreadEnd -> Modifier.padding(start = 2.dp, top = 0.dp, end = 2.dp, bottom = 2.dp)
     }}
     val indent = remember { when(role) {
         PostFragmentRole.Solo -> indentLevel.toFloat()
@@ -374,9 +387,10 @@ fun PostFragment(
         PostFragmentRole.ThreadBranchMiddle -> 0.0f//indentLevel.toFloat()-1
         PostFragmentRole.ThreadBranchEnd -> 0.0f//indentLevel.toFloat()-1
         PostFragmentRole.ThreadRootUnfocused -> indentLevel.toFloat()
+        PostFragmentRole.ThreadEnd -> 0.0f
     }}
     Column(
-        modifier = modifier.fillMaxWidth()
+        modifier = padding.fillMaxWidth()
     ) {
         val shape = when(role) {
             PostFragmentRole.Solo -> MaterialTheme.shapes.small
@@ -402,14 +416,28 @@ fun PostFragment(
                 )
             }
             PostFragmentRole.ThreadRootUnfocused -> MaterialTheme.shapes.small
+            PostFragmentRole.ThreadEnd -> {
+                MaterialTheme.shapes.small.copy(
+                    topEnd = CornerSize(0.dp),
+                    topStart = CornerSize(0.dp),
+                )
+            }
+        }
+        val bgColor = if (role == PostFragmentRole.ThreadEnd) {
+            MaterialTheme.colorScheme.background
+        } else {
+            MaterialTheme.colorScheme
+                .surfaceColorAtElevation(if (elevate || indentLevel > 0) 3.dp else 0.dp)
         }
         Surface (
-            shadowElevation = if (elevate || indentLevel > 0) 2.dp else 0.dp,
-            tonalElevation = if (elevate || indentLevel > 0) 3.dp else 0.dp,
-            shape = MaterialTheme.shapes.small,
+            shadowElevation = if (elevate || indentLevel > 0) 1.dp else 0.dp,
+            tonalElevation = if ((elevate || indentLevel > 0) && role != PostFragmentRole.ThreadEnd) 3.dp else 0.dp,
+            shape = shape,
             modifier = modifier
                 .fillMaxWidth(indentLevel(indent))
                 .align(Alignment.End)
+                .background(bgColor, shape)
+                .clickable{}
 
         ) {
             Row(modifier = Modifier
@@ -547,7 +575,7 @@ fun PostFragment(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Icon(
-                                imageVector = Icons.Default.Reply,
+                                imageVector = Icons.AutoMirrored.Filled.Reply,
                                 contentDescription = "",
                                 tint = MaterialTheme.colorScheme.secondary,
                                 modifier = Modifier.height(15.dp)
@@ -566,7 +594,7 @@ fun PostFragment(
                             markdown = post.text.replace("\n", "  \n"),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurface,
-                            modifier = Modifier.padding(start = 4.dp, top = 4.dp, bottom = 4.dp)
+                            modifier = Modifier.padding(start = 4.dp, top = 4.dp, bottom = 4.dp).clickable { onItemClicked(post.uri) },
                         )
                     }
                     when (post.feature) {
@@ -605,6 +633,7 @@ fun PostFragment(
 @Composable
 fun BlockedPostFragment(
     modifier: Modifier = Modifier,
+    post: AtUri? = null,
     indentLevel: Int = 0,
     role: PostFragmentRole = PostFragmentRole.Solo,
 ) {
@@ -639,8 +668,9 @@ fun BlockedPostFragment(
 @Composable
 fun NotFoundPostFragment(
     modifier: Modifier = Modifier,
-     indentLevel: Int = 0,
-     role: PostFragmentRole = PostFragmentRole.Solo,
+    post: AtUri? = null,
+    indentLevel: Int = 0,
+    role: PostFragmentRole = PostFragmentRole.Solo,
  ) {
     Column(
         modifier = Modifier
