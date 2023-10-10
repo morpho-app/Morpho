@@ -29,6 +29,8 @@ import radiant.nimbus.api.model.RecordUnion
 import radiant.nimbus.components.Center
 import radiant.nimbus.components.ScreenBody
 import radiant.nimbus.extensions.activityViewModel
+import radiant.nimbus.screens.destinations.PostThreadScreenDestination
+import radiant.nimbus.screens.destinations.ProfileScreenDestination
 import radiant.nimbus.ui.common.SkylineFragment
 import radiant.nimbus.ui.profile.DetailedProfileFragment
 import radiant.nimbus.ui.profile.ProfileTabRow
@@ -209,7 +211,12 @@ fun ProfileView(
                             navigator = navigator,
                             postFlow = model.profilePosts,
                             contentPadding = insets,
-                            onItemClicked = {},
+                            onItemClicked = {
+                                navigator.navigate(PostThreadScreenDestination(it))
+                            },
+                            onProfileClicked = {
+                                navigator.navigate(ProfileScreenDestination(it))
+                            },
                             refresh = {cursor ->
                                 if (apiProvider != null) {
                                     model.getProfileFeed(selectedTab,apiProvider, cursor)
@@ -235,7 +242,12 @@ fun ProfileView(
                             navigator = navigator,
                             postFlow = model.profilePostsReplies,
                             contentPadding = insets,
-                            onItemClicked = {},
+                            onItemClicked = {
+                                navigator.navigate(PostThreadScreenDestination(it))
+                            },
+                            onProfileClicked = {
+                                navigator.navigate(ProfileScreenDestination(it))
+                            },
                             refresh = {cursor ->
                                 if (apiProvider != null) {
                                     model.getProfileFeed(selectedTab,apiProvider, cursor)
@@ -260,7 +272,12 @@ fun ProfileView(
                             navigator = navigator,
                             postFlow = model.profileMedia,
                             contentPadding = insets,
-                            onItemClicked = {},
+                            onItemClicked = {
+                                navigator.navigate(PostThreadScreenDestination(it))
+                            },
+                            onProfileClicked = {
+                                navigator.navigate(ProfileScreenDestination(it))
+                            },
                             refresh = {cursor ->
                                 if (apiProvider != null) {
                                     model.getProfileFeed(selectedTab,apiProvider, cursor)

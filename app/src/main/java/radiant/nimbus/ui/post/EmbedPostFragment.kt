@@ -87,71 +87,66 @@ fun EmbedPostFragment(
                         .padding(vertical = 6.dp, horizontal = 6.dp)
                         .fillMaxWidth(),
                 ) {
-                    SelectionContainer {
-                        FlowRow(
+
+                    FlowRow(
+                        modifier = Modifier
+                            .padding(horizontal = 4.dp),
+                        horizontalArrangement = Arrangement.End
+
+                    ) {
+                        Text(
+                            text = buildAnnotatedString {
+                                withStyle(
+                                    style = SpanStyle(
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                        fontSize = MaterialTheme.typography.labelLarge.fontSize
+                                            .times(1.2f),
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                ) {
+                                    append(post.author.displayName.orEmpty())
+                                }
+                                withStyle(
+                                    style = SpanStyle(
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        fontSize = MaterialTheme.typography.labelLarge.fontSize
+                                            .times(1.0f)
+                                    )
+                                ) {
+                                    append(" @${post.author.handle}")
+                                }
+
+                            },
+                            maxLines = 2,
+                            style = MaterialTheme.typography.labelLarge,
+                            overflow = TextOverflow.Ellipsis,
                             modifier = Modifier
-                                .padding(horizontal = 4.dp),
-                            horizontalArrangement = Arrangement.End
-
-                        ) {
-
-                            Text(
-                                text = buildAnnotatedString {
-                                    withStyle(
-                                        style = SpanStyle(
-                                            color = MaterialTheme.colorScheme.onSurface,
-                                            fontSize = MaterialTheme.typography.labelLarge.fontSize
-                                                .times(1.2f),
-                                            fontWeight = FontWeight.Medium
-                                        )
-                                    ) {
-                                        append(post.author.displayName.orEmpty())
-                                    }
-                                    withStyle(
-                                        style = SpanStyle(
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                            fontSize = MaterialTheme.typography.labelLarge.fontSize
-                                                .times(1.0f)
-                                        )
-                                    ) {
-                                        append(" @${post.author.handle}")
-                                    }
-
-                                },
-                                maxLines = 2,
-                                style = MaterialTheme.typography.labelLarge,
-                                overflow = TextOverflow.Ellipsis,
-                                modifier = Modifier
-                                    .wrapContentWidth(Alignment.Start)
-                                    //.weight(10.0F)
-                                    .alignByBaseline()
-                                    .clickable { onProfileClicked() },
-
-
-                                )
-
-                            Spacer(
-                                modifier = Modifier
-                                    .width(1.dp)
-                                    .weight(0.1F),
-                            )
-                            Text(
-                                text = delta,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                style = MaterialTheme.typography.labelLarge,
-                                fontSize = MaterialTheme.typography.labelLarge
-                                    .fontSize.div(1.2F),
-                                modifier = Modifier
-                                    .wrapContentWidth(Alignment.End)
-                                    //.weight(3.0F)
-                                    .alignByBaseline(),
-                                maxLines = 1,
-                                overflow = TextOverflow.Visible,
-                                softWrap = false,
-                            )
-                        }
+                                .wrapContentWidth(Alignment.Start)
+                                .weight(10.0F)
+                                .alignByBaseline()
+                                .clickable { onProfileClicked() }
+                                ,
+                        )
+                        Spacer(
+                            modifier = Modifier
+                                .width(1.dp)
+                                .weight(0.1F),
+                        )
+                        Text(
+                            text = delta,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            style = MaterialTheme.typography.labelLarge,
+                            fontSize = MaterialTheme.typography.labelLarge
+                                .fontSize.div(1.2F),
+                            modifier = Modifier
+                                .wrapContentWidth(Alignment.End)
+                                .weight(3.0F)
+                                .alignByBaseline(),
+                            maxLines = 1,
+                            overflow = TextOverflow.Visible,
+                            softWrap = false,
+                        )
                     }
-
 
                     SelectionContainer(
                         Modifier.clickable { onItemClicked(post.uri) }
@@ -161,8 +156,7 @@ fun EmbedPostFragment(
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurface,
                             disableLinkMovementMethod = true,
-                            modifier = Modifier.padding(start = 4.dp, top = 4.dp, bottom = 4.dp)
-                                .clickable { onItemClicked(post.uri) },
+                            modifier = Modifier.padding(start = 4.dp, top = 4.dp, bottom = 4.dp),
                             onLinkClicked = {
                                 val urlIntent = Intent(
                                     Intent.ACTION_VIEW,

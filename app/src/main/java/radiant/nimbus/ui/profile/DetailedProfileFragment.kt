@@ -161,7 +161,7 @@ public fun DetailedProfileFragment(
 
         Column(
             modifier = Modifier
-                .padding(horizontal = 20.dp, vertical = 0.dp)
+                .padding(start = 20.dp, end = 20.dp, top = 10.dp)
         ) {
             val name = profile.displayName ?: profile.handle.handle
             SelectionContainer {
