@@ -71,30 +71,30 @@ fun SkylineView(
         topContent = {},
         navBar = navBar
 
-    ) {
+    ) {insets ->
 
-            SkylineFragment(
-                navigator = navigator,
-                postFlow = viewModel.skylinePosts,
-                onItemClicked = {
-                    navigator.navigate(PostThreadScreenDestination(it))
-                },
-                onProfileClicked = {
-                   navigator.navigate(ProfileScreenDestination(it))
-                },
-                refresh = refresh,
-                modifier = Modifier,
-                onUnClicked = {type, rkey ->  apiProvider.deleteRecord(type, rkey)},
-                onRepostClicked = {
-                    apiProvider.createRecord(RecordUnion.Repost(it))
-                    /* TODO: Add dialog/quote post option */
-                                  },
-                onReplyClicked = { },
-                onMenuClicked = { },
-                onLikeClicked = {
-                    apiProvider.createRecord(RecordUnion.Like(it))
-                },
-            )
+        SkylineFragment(
+            navigator = navigator,
+            postFlow = viewModel.skylinePosts,
+            onItemClicked = {
+                navigator.navigate(PostThreadScreenDestination(it))
+            },
+            onProfileClicked = {
+               navigator.navigate(ProfileScreenDestination(it))
+            },
+            refresh = refresh,
+            contentPadding = insets,
+            onUnClicked = {type, rkey ->  apiProvider.deleteRecord(type, rkey)},
+            onRepostClicked = {
+                apiProvider.createRecord(RecordUnion.Repost(it))
+                /* TODO: Add dialog/quote post option */
+                              },
+            onReplyClicked = { },
+            onMenuClicked = { },
+            onLikeClicked = {
+                apiProvider.createRecord(RecordUnion.Like(it))
+            },
+        )
     }
 
 

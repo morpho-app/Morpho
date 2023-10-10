@@ -1,20 +1,20 @@
 package radiant.nimbus.screens.composer
 
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import radiant.nimbus.MainViewModel
 import radiant.nimbus.components.ScreenBody
 import radiant.nimbus.extensions.activityViewModel
-import com.ramcosta.composedestinations.annotation.Destination
-import com.ramcosta.composedestinations.annotation.RootNavGraph
-import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 
-@Destination
+
+//@Destination(style = DestinationStyleBottomSheet::class)
 @Composable
-fun ComposerScreen(
+fun ColumnScope.ComposerScreen(
     navigator: DestinationsNavigator,
     mainViewModel: MainViewModel = activityViewModel(),
     viewModel: ComposerViewModel = hiltViewModel()

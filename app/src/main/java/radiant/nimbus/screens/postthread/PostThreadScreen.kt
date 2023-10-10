@@ -2,7 +2,6 @@ package radiant.nimbus.screens.postthread
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -66,10 +65,9 @@ fun PostThreadView(
     ScreenBody(
         modifier = Modifier.fillMaxSize().systemBarsPadding(),
         navBar = navBar,
-    ) {
-
+    ) {insets ->
         ThreadFragment(thread = thread,
-            modifier = Modifier.navigationBarsPadding(),
+            contentPadding = insets,
             onItemClicked = {
                 navigator.navigate(PostThreadScreenDestination(it))
             },

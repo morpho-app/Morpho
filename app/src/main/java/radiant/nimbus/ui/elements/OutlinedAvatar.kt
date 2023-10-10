@@ -60,7 +60,8 @@ fun OutlinedAvatar(
                 .build(),
             contentDescription = contentDescription,
             contentScale = ContentScale.Crop,
-            placeholder = painterResource(R.drawable.test_pfp),
+            fallback = painterResource(R.drawable.placeholder_pfp),
+            placeholder = painterResource(R.drawable.placeholder_pfp),
             modifier = Modifier
                 .padding(outlineSize)
                 .fillMaxSize()

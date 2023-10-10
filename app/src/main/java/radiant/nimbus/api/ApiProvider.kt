@@ -40,6 +40,7 @@ import radiant.nimbus.api.model.RecordUnion
 import radiant.nimbus.api.model.Timestamp
 import radiant.nimbus.api.response.AtpResponse
 import radiant.nimbus.api.xrpc.toAtpResponse
+import radiant.nimbus.api.xrpc.withXrpcConfiguration
 import radiant.nimbus.app.Supervisor
 import radiant.nimbus.util.getRkey
 import javax.inject.Inject
@@ -72,7 +73,7 @@ class ApiProvider @Inject constructor(
   private var client = HttpClient(CIO) {
     install(Logging) {
       logger = Logger.DEFAULT
-      level = LogLevel.ALL
+      level = LogLevel.HEADERS
     }
 
     install(XrpcAuthPlugin) {
@@ -146,7 +147,7 @@ class ApiProvider @Inject constructor(
   // Pulled this out of where I stuck it in the API so it doesn't get overwritten
   // TODO: Figure out root cause of why that first normal refresh fucks up, wtf did Christian do?
   suspend fun refreshSession(auth: AuthInfo): AtpResponse<RefreshSessionResponse> {
-    return client.post("/xrpc/com.atproto.server.refreshSession") {
+    return client.withXrpcConfiguration().post("/xrpc/com.atproto.server.refreshSession") {
       this.bearerAuth(auth.refreshJwt)
     }.toAtpResponse()
   }

@@ -1,10 +1,6 @@
 package radiant.nimbus.ui.thread
 
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.asPaddingValues
-import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.navigationBars
-import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
@@ -48,14 +44,15 @@ fun ThreadFragment(
     onLikeClicked: (StrongRef) -> Unit = { },
     onMenuClicked: (MenuOptions) -> Unit = { },
     onUnClicked: (type: RecordType, uri: AtUri) -> Unit = { _, _ -> },
-    listState: LazyListState = rememberLazyListState()
+    listState: LazyListState = rememberLazyListState(),
+    contentPadding: PaddingValues = PaddingValues(0.dp)
 ) {
     val threadPost = remember { ThreadPost.ViewablePost(thread.post, thread.replies) }
     val hasReplies = rememberSaveable { threadPost.replies.isNotEmpty()}
 
     LazyColumn(
-        modifier = modifier.heightIn(0.dp, 20000.dp).navigationBarsPadding(),
-        contentPadding = WindowInsets.navigationBars.asPaddingValues(),
+        modifier = modifier,
+        contentPadding = contentPadding,
         state = listState
     ) {
         if (thread.parents.isNotEmpty()) {

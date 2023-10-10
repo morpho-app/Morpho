@@ -92,6 +92,7 @@ class MainActivity : ComponentActivity() {
                                 }
                                 is AtpResponse.Success -> {
                                     Log.i(TAG, "Using cached credentials for ${credentials.username}, going to home screen")
+                                    viewModel.apiProvider.loginRepository.auth = response.response
                                     val profile = viewModel.apiProvider.api.getProfile(GetProfileQueryParams(AtIdentifier(credentials.username.handle)))
                                     loggedin = true
                                     viewModel.currentUser = profile.requireResponse().toProfile()
@@ -103,7 +104,7 @@ class MainActivity : ComponentActivity() {
                         }
                     }
                     is AtpResponse.Success -> {
-                        Log.d(TAG, "Refresh Successful, going to home screen")
+                        Log.d(TAG, "Refresh Successful: $refresh, going to home screen")
                         val profile = viewModel.apiProvider.api.getProfile(GetProfileQueryParams(AtIdentifier(refresh.response.did.did)))
                         loggedin = true
                         viewModel.currentUser = profile.requireResponse().toProfile()

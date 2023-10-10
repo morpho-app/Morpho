@@ -2,6 +2,7 @@ package radiant.nimbus.ui.common
 
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Home
@@ -13,12 +14,15 @@ import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationRail
 import androidx.compose.material3.NavigationRailItem
+import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.ramcosta.composedestinations.navigation.navigate
@@ -71,7 +75,14 @@ fun NimbusBottomNavBar(
     val isCurrentDestOnBackStack = navController.isRouteOnBackStack(currentDestination)
 
     NavigationBar(
-        
+        containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(0.dp),
+        modifier = Modifier.clip(
+            MaterialTheme.shapes.medium.copy(
+                bottomEnd = CornerSize(0.dp),
+                bottomStart = CornerSize(0.dp),
+                topStart = CornerSize(0.dp),
+            )
+        )
     ) {
         NavigationBarItem(selected = currentDestination == SkylineScreenDestination,
             onClick = {

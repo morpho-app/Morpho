@@ -1,5 +1,6 @@
 package radiant.nimbus.api
 
+import com.atproto.server.CreateSessionRequest
 import com.atproto.server.CreateSessionResponse
 import com.atproto.server.RefreshSessionResponse
 import io.ktor.client.HttpClient
@@ -11,6 +12,7 @@ import io.ktor.client.plugins.HttpSend
 import io.ktor.client.plugins.plugin
 import io.ktor.client.request.bearerAuth
 import io.ktor.client.request.post
+import io.ktor.client.request.setBody
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.HttpHeaders.Authorization
 import io.ktor.http.HttpStatusCode.Companion.BadRequest
@@ -66,16 +68,25 @@ internal class XrpcAuthPlugin(
 
         if (response.getOrNull()?.error == "ExpiredToken") {
           if (response.getOrNull()?.message?.contains("Token has been revoked") == true && plugin.authCredentials.value != null) {
-            val newSessionResponse = scope.post("/xrpc/com.atproto.server.createSession") {
-              if(plugin.authCredentials.value?.username?.handle != null) {
-                plugin.authCredentials.value?.username?.handle
-                plugin.authCredentials.value?.password
-              } else if(plugin.authCredentials.value?.email != null) {
-                plugin.authCredentials.value?.email
-                plugin.authCredentials.value?.password
+            val request = if(plugin.authCredentials.value?.username?.handle != null) {
+              plugin.authCredentials.value?.password?.let {
+                CreateSessionRequest(
+                  plugin.authCredentials.value?.username?.handle!!,
+                  it
+                )
               }
-            }
+            } else if(plugin.authCredentials.value?.email != null) {
+              plugin.authCredentials.value?.password?.let {
+                CreateSessionRequest(
+                  plugin.authCredentials.value?.email!!,
+                  it
+                )
+              }
+            } else null
 
+            val newSessionResponse = scope.post("/xrpc/com.atproto.server.createSession") {
+              this.setBody(request)
+            }
             runCatching { newSessionResponse.body<CreateSessionResponse>() }.getOrNull()?.let { new ->
               val newAccessToken = new.accessJwt
               val newRefreshToken = new.refreshJwt

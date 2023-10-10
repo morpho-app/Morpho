@@ -3,8 +3,10 @@ package radiant.nimbus.screens.profile
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -175,9 +177,10 @@ fun ProfileView(
             if (isTopLevel) {
                 navBar()
             }
-        }
-    ) { contentPadding ->
-        Row {
+        },
+        contentWindowInsets = WindowInsets.navigationBars,
+    ) { insets ->
+        Row (Modifier.consumeWindowInsets(insets)){
             if(!isTopLevel){
                 navBar()
                 Column(
@@ -205,7 +208,7 @@ fun ProfileView(
                         SkylineFragment(
                             navigator = navigator,
                             postFlow = model.profilePosts,
-                            modifier = Modifier.padding(contentPadding),
+                            contentPadding = insets,
                             onItemClicked = {},
                             refresh = {cursor ->
                                 if (apiProvider != null) {
@@ -231,7 +234,7 @@ fun ProfileView(
                         SkylineFragment(
                             navigator = navigator,
                             postFlow = model.profilePostsReplies,
-                            modifier = Modifier.padding(contentPadding),
+                            contentPadding = insets,
                             onItemClicked = {},
                             refresh = {cursor ->
                                 if (apiProvider != null) {
@@ -256,7 +259,7 @@ fun ProfileView(
                         SkylineFragment(
                             navigator = navigator,
                             postFlow = model.profileMedia,
-                            modifier = Modifier.padding(contentPadding),
+                            contentPadding = insets,
                             onItemClicked = {},
                             refresh = {cursor ->
                                 if (apiProvider != null) {

@@ -3,11 +3,9 @@ package radiant.nimbus.ui.common
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -78,6 +76,7 @@ fun SkylineFragment (
     onLikeClicked: (StrongRef) -> Unit = { },
     onMenuClicked: (MenuOptions) -> Unit = { },
     onUnClicked: (type: RecordType, uri: AtUri) -> Unit = { _, _ -> },
+    contentPadding: PaddingValues = PaddingValues(0.dp),
 ) {
     val postList by postFlow.collectAsStateWithLifecycle()
     val coroutineScope = rememberCoroutineScope()
@@ -90,7 +89,7 @@ fun SkylineFragment (
     Box(modifier = Modifier.fillMaxWidth()) {
         LazyColumn(
             modifier = modifier,
-            contentPadding = WindowInsets.navigationBars.asPaddingValues(),
+            contentPadding = contentPadding,
             state = listState
         ) {
             items(postList.posts) { skylineItem ->

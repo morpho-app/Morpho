@@ -3,6 +3,8 @@ package radiant.nimbus.components
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
@@ -37,9 +39,9 @@ fun ScreenBody(
     snackbarHost: @Composable () -> Unit = { },
     topContent: @Composable () -> Unit = { },
     navBar: @Composable () -> Unit = {},
+    contentWindowInsets: WindowInsets = WindowInsets.navigationBars,
     content2: @Composable (PaddingValues) -> Unit = {},
     content1: @Composable (PaddingValues) -> Unit,
-
 ) {
     when(navBarLocation) {
         NavBarLocation.BottomFull -> {
@@ -49,6 +51,7 @@ fun ScreenBody(
                     topBar = topContent,
                     snackbarHost = snackbarHost,
                     bottomBar = navBar,
+                    contentWindowInsets = contentWindowInsets,
                     ) { padding ->
                     content1(padding)
                 }
@@ -57,6 +60,7 @@ fun ScreenBody(
                     topBar = topContent,
                     snackbarHost = snackbarHost,
                     bottomBar = navBar,
+                    contentWindowInsets = contentWindowInsets,
                 ) { padding ->
                     Row() {
                         content1(padding)
@@ -72,6 +76,7 @@ fun ScreenBody(
                     topBar = topContent,
                     snackbarHost = snackbarHost,
                     bottomBar = navBar,
+                    contentWindowInsets = contentWindowInsets,
                 ) { padding ->
                     content1(padding)
                 }
@@ -81,6 +86,7 @@ fun ScreenBody(
                         topBar = topContent,
                         snackbarHost = snackbarHost,
                         bottomBar = navBar,
+                        contentWindowInsets = contentWindowInsets,
                     ) { padding ->
                         content1(padding)
                     }
@@ -96,6 +102,7 @@ fun ScreenBody(
                         modifier = Modifier.padding(contentPadding),
                         topBar = topContent,
                         snackbarHost = snackbarHost,
+                        contentWindowInsets = contentWindowInsets,
                     ) { padding ->
                         content1(padding)
                     }
@@ -106,6 +113,7 @@ fun ScreenBody(
                         modifier = Modifier.padding(contentPadding),
                         topBar = topContent,
                         snackbarHost = snackbarHost,
+                        contentWindowInsets = contentWindowInsets,
                     ) { padding ->
                         content1(padding)
                     }
