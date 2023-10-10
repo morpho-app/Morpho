@@ -107,6 +107,7 @@ public fun DetailedProfileFragment(
                         )
                         ProfileButtons(
                             myProfile = myProfile,
+                            following = profile.followedByMe,
                             modifier = Modifier
                                 .constrainAs(buttons) {
                                     centerAround(centreGuide)

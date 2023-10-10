@@ -165,6 +165,7 @@ import com.atproto.sync.RequestCrawlRequest
 import com.atproto.sync.SubscribeReposMessage
 import com.atproto.sync.SubscribeReposQueryParams
 import kotlinx.coroutines.flow.Flow
+import radiant.nimbus.api.auth.AuthInfo
 import radiant.nimbus.api.response.AtpResponse
 import app.bsky.graph.GetBlocksQueryParams as GraphGetBlocksQueryParams
 import com.atproto.admin.GetRecordQueryParams as AdminGetRecordQueryParams
@@ -583,6 +584,11 @@ public interface BlueskyApi {
    * Refresh an authentication session.
    */
   public suspend fun refreshSession(): AtpResponse<RefreshSessionResponse>
+
+  /**
+   * refresh with provided auth
+   */
+  public suspend fun refreshSession(auth: AuthInfo): AtpResponse<RefreshSessionResponse>
 
   /**
    * Register for push notifications with a service

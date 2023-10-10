@@ -6,6 +6,7 @@ import app.bsky.feed.Repost
 import com.atproto.repo.CreateRecordRequest
 import com.atproto.repo.DeleteRecordRequest
 import com.atproto.server.CreateSessionRequest
+import com.atproto.server.RefreshSessionResponse
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.cio.CIO
 import io.ktor.client.plugins.DefaultRequest
@@ -13,6 +14,8 @@ import io.ktor.client.plugins.logging.DEFAULT
 import io.ktor.client.plugins.logging.LogLevel
 import io.ktor.client.plugins.logging.Logger
 import io.ktor.client.plugins.logging.Logging
+import io.ktor.client.request.bearerAuth
+import io.ktor.client.request.post
 import io.ktor.http.Url
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -36,6 +39,7 @@ import radiant.nimbus.api.model.RecordType
 import radiant.nimbus.api.model.RecordUnion
 import radiant.nimbus.api.model.Timestamp
 import radiant.nimbus.api.response.AtpResponse
+import radiant.nimbus.api.xrpc.toAtpResponse
 import radiant.nimbus.app.Supervisor
 import radiant.nimbus.util.getRkey
 import javax.inject.Inject
@@ -137,6 +141,16 @@ class ApiProvider @Inject constructor(
     accessJwt = tokens.auth,
     refreshJwt = tokens.refresh,
   )
+
+
+  // Pulled this out of where I stuck it in the API so it doesn't get overwritten
+  // TODO: Figure out root cause of why that first normal refresh fucks up, wtf did Christian do?
+  suspend fun refreshSession(auth: AuthInfo): AtpResponse<RefreshSessionResponse> {
+    return client.post("/xrpc/com.atproto.server.refreshSession") {
+      this.bearerAuth(auth.refreshJwt)
+    }.toAtpResponse()
+  }
+
 
   suspend fun makeLoginRequest(credentials: Credentials): AtpResponse<AuthInfo> {
     return withContext(Dispatchers.IO) {

@@ -1,6 +1,5 @@
 package radiant.nimbus.ui.profile
 
-import android.view.Menu
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.material.icons.Icons
@@ -15,10 +14,10 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun ProfileMenuButton(
     modifier: Modifier = Modifier,
-    menu: Menu? = null,
+    onClick: () -> Unit = {},
 ) {
     SmallFloatingActionButton(
-        onClick = { /*TODO*/ },
+        onClick = onClick,
         shape = ButtonDefaults.filledTonalShape,
         modifier = modifier
             .sizeIn(

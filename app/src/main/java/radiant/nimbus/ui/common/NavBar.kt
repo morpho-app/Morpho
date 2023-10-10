@@ -22,7 +22,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.ramcosta.composedestinations.navigation.navigate
+import com.ramcosta.composedestinations.navigation.popBackStack
 import com.ramcosta.composedestinations.navigation.popUpTo
+import com.ramcosta.composedestinations.utils.isRouteOnBackStack
 import radiant.nimbus.api.AtIdentifier
 import radiant.nimbus.components.NavBarLocation
 import radiant.nimbus.screens.NavGraphs
@@ -31,7 +33,6 @@ import radiant.nimbus.screens.destinations.Destination
 import radiant.nimbus.screens.destinations.FeedListScreenDestination
 import radiant.nimbus.screens.destinations.MyProfileScreenDestination
 import radiant.nimbus.screens.destinations.NotificationsScreenDestination
-import radiant.nimbus.screens.destinations.ProfileScreenDestination
 import radiant.nimbus.screens.destinations.SkylineScreenDestination
 import radiant.nimbus.screens.startAppDestination
 
@@ -48,13 +49,13 @@ fun NimbusNavigation(
         NimbusBottomNavBar(
             navController = navController,
             modifier = modifier,
-            profilePic, actor
+            profilePic
         )
     } else {
         NimbusNavRail(
             navController = navController,
             modifier = modifier,
-            profilePic, actor
+            profilePic
         )
     }
 }
@@ -64,23 +65,29 @@ fun NimbusBottomNavBar(
     navController: NavHostController,
     modifier: Modifier = Modifier,
     profilePic: @Composable() ((() -> Unit) -> Unit)? = null,
-    actor: AtIdentifier? = null,
-
     ) {
     val currentDestination: Destination = navController.appCurrentDestinationAsState().value
         ?: NavGraphs.root.startAppDestination
+    val isCurrentDestOnBackStack = navController.isRouteOnBackStack(currentDestination)
 
     NavigationBar(
         
     ) {
         NavigationBarItem(selected = currentDestination == SkylineScreenDestination,
-            onClick = { navController.navigate(SkylineScreenDestination) {
-                popUpTo(NavGraphs.root) {
-                    saveState = true
-                }
-                launchSingleTop = true
-                restoreState = true
-            } },
+            onClick = {
+                if (navController.isRouteOnBackStack(SkylineScreenDestination)) {
+                    // When we click again on a bottom bar item and it was already selected
+                    // we want to pop the back stack until the initial destination of this bottom bar item
+                    navController.popBackStack(SkylineScreenDestination, false)
+                } else {
+                    navController.navigate(SkylineScreenDestination) {
+                        popUpTo(NavGraphs.root) {
+                            saveState = true
+                        }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
+                } },
             icon = {
                 Icon(imageVector = Icons.Filled.Home, contentDescription = "Home Button")
             },
@@ -88,13 +95,19 @@ fun NimbusBottomNavBar(
             alwaysShowLabel = false,
         )
         NavigationBarItem(selected = false,//currentDestination == SkylineScreenDestination,
-            onClick = { navController.navigate(SkylineScreenDestination) {
-                popUpTo(NavGraphs.root) {
-                    saveState = true
+            onClick = {
+                if (navController.isRouteOnBackStack(SkylineScreenDestination)) {
+                    // When we click again on a bottom bar item and it was already selected
+                    // we want to pop the back stack until the initial destination of this bottom bar item
+                    navController.popBackStack(SkylineScreenDestination, false)
+                } else {navController.navigate(SkylineScreenDestination) {
+                    popUpTo(NavGraphs.root) {
+                        saveState = true
+                    }
+                    launchSingleTop = true
+                    restoreState = true
                 }
-                launchSingleTop = true
-                restoreState = true
-            }  },
+                }  },
             icon = {
                 Icon(imageVector = Icons.Outlined.Search, contentDescription = "Search Button")
             },
@@ -102,13 +115,20 @@ fun NimbusBottomNavBar(
             alwaysShowLabel = false,
         )
         NavigationBarItem(selected = currentDestination == FeedListScreenDestination,
-            onClick = { navController.navigate(FeedListScreenDestination) {
-                popUpTo(NavGraphs.root) {
-                    saveState = true
-                }
-                launchSingleTop = true
-                restoreState = true
-            }  },
+            onClick = {
+                if (navController.isRouteOnBackStack(FeedListScreenDestination)) {
+                    // When we click again on a bottom bar item and it was already selected
+                    // we want to pop the back stack until the initial destination of this bottom bar item
+                    navController.popBackStack(FeedListScreenDestination, false)
+                } else {
+                    navController.navigate(FeedListScreenDestination) {
+                        popUpTo(NavGraphs.root) {
+                            saveState = true
+                        }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
+                }  },
             icon = {
                 Icon(imageVector = Icons.Outlined.DynamicFeed, contentDescription = "Feeds Button")
             },
@@ -116,13 +136,20 @@ fun NimbusBottomNavBar(
             alwaysShowLabel = false,
         )
         NavigationBarItem(selected = currentDestination == NotificationsScreenDestination,
-            onClick = { navController.navigate(NotificationsScreenDestination) {
-                popUpTo(NavGraphs.root) {
-                    saveState = true
-                }
-                launchSingleTop = true
-                restoreState = true
-            }  },
+            onClick = {
+                if (navController.isRouteOnBackStack(NotificationsScreenDestination)) {
+                    // When we click again on a bottom bar item and it was already selected
+                    // we want to pop the back stack until the initial destination of this bottom bar item
+                    navController.popBackStack(NotificationsScreenDestination, false)
+                } else {
+                    navController.navigate(NotificationsScreenDestination) {
+                        popUpTo(NavGraphs.root) {
+                            saveState = true
+                        }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
+                }  },
             icon = {
                 Icon(imageVector = Icons.Outlined.NotificationsNone, contentDescription = "Notifications Button")
             },
@@ -131,22 +158,34 @@ fun NimbusBottomNavBar(
         )
         NavigationBarItem(
             selected = currentDestination == MyProfileScreenDestination,
-            onClick = { navController.navigate(MyProfileScreenDestination) {
-                popUpTo(NavGraphs.root) {
-                    saveState = true
+            onClick = { if (navController.isRouteOnBackStack(MyProfileScreenDestination)) {
+                // When we click again on a bottom bar item and it was already selected
+                // we want to pop the back stack until the initial destination of this bottom bar item
+                navController.popBackStack(MyProfileScreenDestination, false)
+            } else {
+                navController.navigate(MyProfileScreenDestination) {
+                    popUpTo(NavGraphs.root) {
+                        saveState = true
+                    }
+                    launchSingleTop = true
+                    restoreState = true
                 }
-                launchSingleTop = true
-                restoreState = true
             }  },
             icon = {
                 if (profilePic != null) {
                     profilePic.invoke {
-                        navController.navigate(MyProfileScreenDestination) {
-                            popUpTo(NavGraphs.root) {
-                                saveState = true
+                        if (navController.isRouteOnBackStack(MyProfileScreenDestination)) {
+                            // When we click again on a bottom bar item and it was already selected
+                            // we want to pop the back stack until the initial destination of this bottom bar item
+                            navController.popBackStack(MyProfileScreenDestination, false)
+                        } else {
+                            navController.navigate(MyProfileScreenDestination) {
+                                popUpTo(NavGraphs.root) {
+                                    saveState = true
+                                }
+                                launchSingleTop = true
+                                restoreState = true
                             }
-                            launchSingleTop = true
-                            restoreState = true
                         }
                     }
                 } else {
@@ -167,11 +206,10 @@ fun NimbusNavRail(
     navController: NavHostController,
     modifier: Modifier = Modifier,
     profilePic: @Composable() ((() -> Unit) -> Unit)? = null,
-    actor: AtIdentifier? = null,
-
     ) {
     val currentDestination: Destination = navController.appCurrentDestinationAsState().value
         ?: NavGraphs.root.startAppDestination
+    val isCurrentDestOnBackStack = navController.isRouteOnBackStack(currentDestination)
 
     NavigationRail(
         header = {
@@ -185,12 +223,19 @@ fun NimbusNavRail(
             .height(20.dp)
             .weight(0.2F),)
         NavigationRailItem(selected = currentDestination == SkylineScreenDestination,
-            onClick = { navController.navigate(SkylineScreenDestination) {
-                popUpTo(NavGraphs.root) {
-                    saveState = true
+            onClick = {
+                if (navController.isRouteOnBackStack(SkylineScreenDestination)) {
+                    // When we click again on a bottom bar item and it was already selected
+                    // we want to pop the back stack until the initial destination of this bottom bar item
+                    navController.popBackStack(SkylineScreenDestination, false)
+                } else {
+                    navController.navigate(SkylineScreenDestination) {
+                    popUpTo(NavGraphs.root) {
+                        saveState = true
+                    }
+                    launchSingleTop = true
+                    restoreState = true
                 }
-                launchSingleTop = true
-                restoreState = true
             } },
             icon = {
                 Icon(imageVector = Icons.Filled.Home, contentDescription = "Home Button")
@@ -199,12 +244,18 @@ fun NimbusNavRail(
             alwaysShowLabel = false,
         )
         NavigationRailItem(selected = false, //currentDestination == SkylineScreenDestination.invoke(),
-            onClick = { navController.navigate(SkylineScreenDestination) {
-                popUpTo(NavGraphs.root) {
-                    saveState = true
+            onClick = {
+                if (navController.isRouteOnBackStack(SkylineScreenDestination)) {
+                    // When we click again on a bottom bar item and it was already selected
+                    // we want to pop the back stack until the initial destination of this bottom bar item
+                    navController.popBackStack(SkylineScreenDestination, false)
+                } else {navController.navigate(SkylineScreenDestination) {
+                    popUpTo(NavGraphs.root) {
+                        saveState = true
+                    }
+                    launchSingleTop = true
+                    restoreState = true
                 }
-                launchSingleTop = true
-                restoreState = true
             }  },
             icon = {
                 Icon(imageVector = Icons.Outlined.Search, contentDescription = "Search Button")
@@ -213,13 +264,20 @@ fun NimbusNavRail(
             alwaysShowLabel = false,
         )
         NavigationRailItem(selected = currentDestination == FeedListScreenDestination,
-            onClick = { navController.navigate(FeedListScreenDestination) {
-                popUpTo(NavGraphs.root) {
-                    saveState = true
-                }
-                launchSingleTop = true
-                restoreState = true
-            }  },
+            onClick = {
+                if (navController.isRouteOnBackStack(FeedListScreenDestination)) {
+                    // When we click again on a bottom bar item and it was already selected
+                    // we want to pop the back stack until the initial destination of this bottom bar item
+                    navController.popBackStack(FeedListScreenDestination, false)
+                } else {
+                    navController.navigate(FeedListScreenDestination) {
+                        popUpTo(NavGraphs.root) {
+                            saveState = true
+                        }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
+                }  },
             icon = {
                 Icon(imageVector = Icons.Outlined.DynamicFeed, contentDescription = "Feeds Button")
             },
@@ -227,13 +285,20 @@ fun NimbusNavRail(
             alwaysShowLabel = false,
         )
         NavigationRailItem(selected = currentDestination == NotificationsScreenDestination,
-            onClick = { navController.navigate(NotificationsScreenDestination) {
-                popUpTo(NavGraphs.root) {
-                    saveState = true
-                }
-                launchSingleTop = true
-                restoreState = true
-            }  },
+            onClick = {
+                if (navController.isRouteOnBackStack(NotificationsScreenDestination)) {
+                    // When we click again on a bottom bar item and it was already selected
+                    // we want to pop the back stack until the initial destination of this bottom bar item
+                    navController.popBackStack(NotificationsScreenDestination, false)
+                } else {
+                    navController.navigate(NotificationsScreenDestination) {
+                        popUpTo(NavGraphs.root) {
+                            saveState = true
+                        }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
+                }  },
             icon = {
                 Icon(imageVector = Icons.Outlined.NotificationsNone, contentDescription = "Notifications Button")
             },
@@ -242,22 +307,35 @@ fun NimbusNavRail(
         )
         NavigationRailItem(
             selected = currentDestination == MyProfileScreenDestination,
-            onClick = { navController.navigate(MyProfileScreenDestination) {
-                popUpTo(NavGraphs.root) {
-                    saveState = true
-                }
-                launchSingleTop = true
-                restoreState = true
-            }  },
+            onClick = {
+                if (navController.isRouteOnBackStack(MyProfileScreenDestination)) {
+                    // When we click again on a bottom bar item and it was already selected
+                    // we want to pop the back stack until the initial destination of this bottom bar item
+                    navController.popBackStack(MyProfileScreenDestination, false)
+                } else {
+                    navController.navigate(MyProfileScreenDestination) {
+                        popUpTo(NavGraphs.root) {
+                            saveState = true
+                        }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
+                }  },
             icon = {
                 if (profilePic != null) {
                     profilePic.invoke {
-                        navController.navigate(ProfileScreenDestination(actor)) {
-                            popUpTo(NavGraphs.root) {
-                                saveState = true
+                        if (navController.isRouteOnBackStack(MyProfileScreenDestination)) {
+                            // When we click again on a bottom bar item and it was already selected
+                            // we want to pop the back stack until the initial destination of this bottom bar item
+                            navController.popBackStack(MyProfileScreenDestination, false)
+                        } else {
+                            navController.navigate(MyProfileScreenDestination) {
+                                popUpTo(NavGraphs.root) {
+                                    saveState = true
+                                }
+                                launchSingleTop = true
+                                restoreState = true
                             }
-                            launchSingleTop = true
-                            restoreState = true
                         }
                     }
                 } else {

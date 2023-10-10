@@ -14,7 +14,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -28,7 +27,6 @@ import radiant.nimbus.api.model.RecordUnion
 import radiant.nimbus.components.Center
 import radiant.nimbus.components.ScreenBody
 import radiant.nimbus.extensions.activityViewModel
-import radiant.nimbus.model.DetailedProfile
 import radiant.nimbus.ui.common.SkylineFragment
 import radiant.nimbus.ui.profile.DetailedProfileFragment
 import radiant.nimbus.ui.profile.ProfileTabRow
@@ -99,7 +97,6 @@ fun ProfileScreen(
             ProfileView(
                 model = viewModel,
                 apiProvider = mainViewModel.apiProvider,
-                currentUser = mainViewModel.currentUser,
                 navigator = navigator,
                 navBar = { mainViewModel.navBar?.let { it() } },
 
@@ -125,7 +122,7 @@ fun MyProfileScreen(
         ProfileView(
             model = viewModel,
             apiProvider = mainViewModel.apiProvider,
-            currentUser = mainViewModel.currentUser,
+            myProfile = true,
             navigator = navigator,
             navBar = { mainViewModel.navBar?.let { it() } },
         )
@@ -138,19 +135,17 @@ enum class ProfileUIState {
     Loading
 }
 
-
 @Composable
 fun ProfileView(
     model: ProfileViewModel,
     modifier: Modifier = Modifier,
     apiProvider: ApiProvider? = null,
     navigator: DestinationsNavigator? = null,
-    currentUser: DetailedProfile? = null,
+    myProfile: Boolean = false,
     isTopLevel: Boolean = true,
     navBar: @Composable () -> Unit = {},
 ){
     var selectedTab by rememberSaveable { mutableStateOf(ProfileTabs.Posts) }
-    val scope = rememberCoroutineScope()
     Scaffold(
         topBar = {
             if (isTopLevel) {
@@ -162,7 +157,7 @@ fun ProfileView(
                         it?.let { it1 ->
                             DetailedProfileFragment(
                                 profile = it1,
-                                myProfile = currentUser?.did?.did == model.state.actor.toString(),
+                                myProfile = myProfile,
                                 isTopLevel = true,
                             )
                         }
@@ -193,7 +188,7 @@ fun ProfileView(
                         it?.let { it1 ->
                             DetailedProfileFragment(
                                 profile = it1,
-                                myProfile = currentUser?.did?.did == model.state.actor.toString()
+                                myProfile = myProfile
                             )
                         }
                     }

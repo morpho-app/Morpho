@@ -20,6 +20,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.datetime.Clock
 import radiant.nimbus.api.ApiProvider
 import radiant.nimbus.api.AtIdentifier
 import radiant.nimbus.api.model.RecordUnion
@@ -91,8 +92,8 @@ class ProfileViewModel @Inject constructor(
                 val profile = result.response.toProfile()
                 Log.i("P Load Success", result.toString())
                 state = ProfileState(actor, profile, false)
-                onSuccess()
                 getProfileFeed(ProfileTabs.Posts, apiProvider)
+                onSuccess()
                 getProfileFeed(ProfileTabs.PostsReplies, apiProvider)
                 getProfileFeed(ProfileTabs.Media, apiProvider)
 
@@ -118,13 +119,15 @@ class ProfileViewModel @Inject constructor(
                     if (result is AtpResponse.Success) {
                         val newPosts = Skyline.from(result.response.feed, result.response.cursor)
                         if (cursor != null) {
-                            Log.i("UpdatePosts", result.response.feed.toString())
-                            _profilePosts.update { skyline -> Skyline.concat(skyline, newPosts.collectThreads().await()) }
+                            Log.v("UpdatePosts", result.response.feed.toString())
+                            _profilePosts.update { skyline -> Skyline.concat(skyline, newPosts) }
                         } else {
-                            Log.i("Posts", result.response.feed.toString())
-
-                            _profilePosts.value = newPosts
-                            _profilePosts.update { skyline -> skyline.collectThreads().await() }
+                            Log.v("Posts", result.response.feed.toString())
+                            if(_profilePosts.value.posts.isNotEmpty() && (Clock.System.now().epochSeconds - _profilePosts.value.posts.first().post?.createdAt?.instant?.epochSeconds!! > 10)) {
+                                _profilePosts.update { skyline -> Skyline.concat(newPosts, skyline, _profilePosts.value.cursor) }
+                            } else {
+                                _profilePosts.value = newPosts
+                            }
                         }
                     }
 
@@ -132,45 +135,50 @@ class ProfileViewModel @Inject constructor(
                 ProfileTabs.PostsReplies -> {
                     val result = apiProvider.api.getAuthorFeed(GetAuthorFeedQueryParams(_actor, 100, cursor, GetAuthorFeedFilter.POSTS_WITH_REPLIES))
                     if (result is AtpResponse.Success) {
-                        Log.i("Posts+Replies", result.response.feed.toString())
+                        Log.d("Posts+Replies", result.response.feed.toString())
                         val newPosts = Skyline.from(result.response.feed, result.response.cursor)
                         if (cursor != null) {
-                            Log.i("UpdatePosts+Replies", result.response.feed.toString())
-
-                            _profilePostsReplies.update { skyline -> Skyline.concat(skyline, newPosts.collectThreads().await()) }
+                            Log.v("UpdatePosts+Replies", result.response.feed.toString())
+                            _profilePostsReplies.update { skyline -> Skyline.concat(skyline, newPosts) }
                         } else {
-                            Log.i("Posts+Replies", result.response.feed.toString())
-                            _profilePostsReplies.value = newPosts
-                            _profilePostsReplies.update { skyline -> skyline.collectThreads().await() }
+                            Log.v("Posts+Replies", result.response.feed.toString())
+                            if(_profilePostsReplies.value.posts.isNotEmpty() && (Clock.System.now().epochSeconds - _profilePostsReplies.value.posts.first().post?.createdAt?.instant?.epochSeconds!! > 10)) {
+                                _profilePostsReplies.update { skyline -> Skyline.concat(newPosts, skyline, _profilePostsReplies.value.cursor) }
+                            } else {
+                                _profilePostsReplies.value = newPosts
+                            }
                         }
                     }
                 }
                 ProfileTabs.Media -> {
                     val result = apiProvider.api.getAuthorFeed(GetAuthorFeedQueryParams(_actor, 100, cursor, GetAuthorFeedFilter.POSTS_WITH_MEDIA))
                     if (result is AtpResponse.Success) {
-                        Log.i("Media", result.response.feed.toString())
+                        Log.d("Media", result.response.feed.toString())
                         val newPosts = Skyline.from(result.response.feed, result.response.cursor)
                         if (cursor != null) {
-                            Log.i("UpdateMedia", result.response.feed.toString())
-                            _profileMedia.update { skyline -> Skyline.concat(skyline, newPosts.collectThreads().await()) }
+                            Log.v("UpdateMedia", result.response.feed.toString())
+                            _profileMedia.update { skyline -> Skyline.concat(skyline, newPosts) }
                         } else {
-                            Log.i("Media", result.response.feed.toString())
-                            _profileMedia.value = newPosts
-                            _profileMedia.update { skyline -> skyline.collectThreads().await() }
+                            Log.v("Media", result.response.feed.toString())
+                            if(_profileMedia.value.posts.isNotEmpty() && (Clock.System.now().epochSeconds - _profileMedia.value.posts.first().post?.createdAt?.instant?.epochSeconds!! > 10)) {
+                                _profileMedia.update { skyline -> Skyline.concat(newPosts, skyline, _profileMedia.value.cursor) }
+                            } else {
+                                _profileMedia.value = newPosts
+                            }
                         }
                     }
                 }
                 ProfileTabs.Feeds -> {
                     val result = apiProvider.api.getActorFeeds(GetActorFeedsQueryParams(_actor, 100))
                     if (result is AtpResponse.Success) {
-                        Log.i("Feeds", result.response.feeds.toString())
+                        Log.v("Feeds", result.response.feeds.toString())
                         //_profileMedia.value = Skyline.from(result.response.feed, profileMedia.value.cursor)
                     }
                 }
                 ProfileTabs.Lists -> {
                     val result = apiProvider.api.getLists(GetListsQueryParams(_actor, 100))
                     if (result is AtpResponse.Success) {
-                        Log.i("Lists", result.response.lists.toString())
+                        Log.v("Lists", result.response.lists.toString())
                         //_profileMedia.value = Skyline.from(result.response.feed, profileMedia.value.cursor)
                     }
                 }

@@ -12,6 +12,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -36,7 +37,7 @@ import radiant.nimbus.api.Handle
 import radiant.nimbus.api.auth.Credentials
 import radiant.nimbus.components.ScreenBody
 import radiant.nimbus.extensions.activityViewModel
-import radiant.nimbus.screens.destinations.ProfileScreenDestination
+import radiant.nimbus.screens.destinations.SkylineScreenDestination
 
 @Destination
 @Composable
@@ -74,9 +75,7 @@ fun LoginScreen(
                                 ),
                                 {
                                     navigator.navigate(
-                                        ProfileScreenDestination(
-                                            //actor = AtIdentifier(it.did.did)
-                                        )
+                                        SkylineScreenDestination
                                     )
                                 },
                                 {}
@@ -104,9 +103,7 @@ fun LoginScreen(
                 (loginState as LoginState.SigningIn).credentials,
                 {
                     navigator.navigate(
-                        ProfileScreenDestination(
-                            //actor = AtIdentifier(it.did.did)
-                        )
+                        SkylineScreenDestination
                     )
                 },
                 {}
@@ -114,23 +111,10 @@ fun LoginScreen(
         }
         is LoginState.Success -> {
             navigator.navigate(
-                ProfileScreenDestination(
-                    //actor = AtIdentifier(handle)
-                )
+                SkylineScreenDestination
             )
         }
     }
-
-
-    /*
-    viewModel.login(mainViewModel.apiProvider, Credentials(
-        email = "aeiluindae@gmail.com",
-        username = Handle("testenby.bsky.social"),
-        password = "5hrz-kzs2-cgqg-v5jw",
-        inviteCode = null
-        )
-    )*/
-
 }
 
 
@@ -147,6 +131,7 @@ fun LoginView(
     val focusManager = LocalFocusManager.current
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+    var appPWOverride by rememberSaveable { mutableStateOf(false) }
 
     ScreenBody(
         modifier = Modifier.fillMaxSize(),
@@ -193,16 +178,6 @@ fun LoginView(
                     placeholder = { Text(text = "App Password") },
                     label = { Text(text = "Password") },
                     onValueChange = {
-                        if (!(password.matches(
-                                Regex.fromLiteral(
-                                    "^[A-Za-z0-9]{4}-[A-Za-z0-9]{4}-[A-Za-z0-9]{4}-[A-Za-z0-9]{4}\$")))
-                        ) {
-                            scope.launch {
-                                snackbarHostState.showSnackbar(
-                                    "Please Use an App Password"
-                                )
-                            }
-                        }
                         onPasswordChange(it)
                     },
                     visualTransformation = PasswordVisualTransformation(),
@@ -211,13 +186,33 @@ fun LoginView(
                 )
 
                 Button(onClick = {
-                    if (handle.isNotBlank() && password.isNotBlank()) {
+                    if(handle.isNotBlank() && password.isNotBlank() && !isAppPassword(password) && !appPWOverride) {
+                        scope.launch {
+                            val result = snackbarHostState.showSnackbar(
+                                message = "Please Use an App Password",
+                                actionLabel = "Security Sucks",
+                                withDismissAction = true
+                            )
+                            when(result) {
+                                SnackbarResult.Dismissed -> {
+                                    // Make them actually click the "Security Sucks" button to do the dumb thing
+                                }
+                                SnackbarResult.ActionPerformed -> {
+                                    appPWOverride = true
+                                    // But we won't make them actually click the login button again
+                                    onLoginClick(handle)
+                                    focusManager.clearFocus()
+                                }
+                            }
+                        }
+                    } else if (handle.isNotBlank() && password.isNotBlank() && (isAppPassword(password) || appPWOverride)) {
                         onLoginClick(handle)
                         focusManager.clearFocus()
                     } else {
                         scope.launch {
                             snackbarHostState.showSnackbar(
-                                "Handle/Email or Password missing"
+                                message = "Handle/Email or Password missing",
+                                withDismissAction = true
                             )
                         }
                     }
@@ -228,6 +223,11 @@ fun LoginView(
         }
 
     }
+}
+
+fun isAppPassword(password: String) : Boolean {
+    return !(password.matches(
+        Regex.fromLiteral("^[A-Za-z0-9]{4}-[A-Za-z0-9]{4}-[A-Za-z0-9]{4}-[A-Za-z0-9]{4}\$")))
 }
 
 @Composable

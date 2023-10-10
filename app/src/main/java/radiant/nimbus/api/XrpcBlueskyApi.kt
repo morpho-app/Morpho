@@ -165,7 +165,10 @@ import com.atproto.sync.RequestCrawlRequest
 import com.atproto.sync.SubscribeReposMessage
 import com.atproto.sync.SubscribeReposQueryParams
 import io.ktor.client.HttpClient
+import io.ktor.client.request.bearerAuth
+import io.ktor.client.request.post
 import kotlinx.coroutines.flow.Flow
+import radiant.nimbus.api.auth.AuthInfo
 import radiant.nimbus.api.response.AtpResponse
 import radiant.nimbus.api.xrpc.procedure
 import radiant.nimbus.api.xrpc.query
@@ -1011,6 +1014,12 @@ public class XrpcBlueskyApi(
     return client.procedure(
       path = "/xrpc/com.atproto.server.refreshSession",
     ).toAtpResponse()
+  }
+
+  override suspend fun refreshSession(auth: AuthInfo): AtpResponse<RefreshSessionResponse> {
+    return client.post("/xrpc/com.atproto.server.refreshSession") {
+      this.bearerAuth(auth.refreshJwt)
+    }.toAtpResponse()
   }
 
   /**

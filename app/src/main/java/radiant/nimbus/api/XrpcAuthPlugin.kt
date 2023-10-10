@@ -66,7 +66,7 @@ internal class XrpcAuthPlugin(
 
         if (response.getOrNull()?.error == "ExpiredToken") {
           if (response.getOrNull()?.message?.contains("Token has been revoked") == true && plugin.authCredentials.value != null) {
-            val newSessionResponse = scope.post("/xrpc/com.atproto.server.newSession") {
+            val newSessionResponse = scope.post("/xrpc/com.atproto.server.createSession") {
               if(plugin.authCredentials.value?.username?.handle != null) {
                 plugin.authCredentials.value?.username?.handle
                 plugin.authCredentials.value?.password
@@ -98,7 +98,7 @@ internal class XrpcAuthPlugin(
                 context.headers.remove(Authorization)
                 context.bearerAuth(newAccessToken)
                 result = execute(context)
-              }
+            }
           }
         }
 

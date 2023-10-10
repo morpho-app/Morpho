@@ -11,6 +11,10 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
@@ -18,12 +22,16 @@ import androidx.compose.ui.unit.dp
 fun FollowButton(
     modifier: Modifier = Modifier,
     following: Boolean = false,
+    onClick: (Boolean) -> Unit = {},
 ) {
 
-    val label: String = if (following) {
-        "Following"
-    } else {
-        "Follow"
+    var followed by rememberSaveable {
+        mutableStateOf(following)
+    }
+    val label: String by rememberSaveable {
+        mutableStateOf(
+            if (followed) "Following" else "Follow"
+        )
     }
 
     ExtendedFloatingActionButton(
@@ -44,11 +52,14 @@ fun FollowButton(
                 } else {
                     Icons.Filled.Add
                 },
-                contentDescription = "$label Icon",
+                contentDescription = null,
                 modifier = Modifier.size(19.dp)
             )
         },
-        onClick = { /*TODO*/ },
+        onClick = {
+            if(followed) onClick(false) else onClick(true)
+            followed = !followed
+        },
         shape = ButtonDefaults.filledTonalShape,
         modifier = modifier
             .heightIn(min = 30.dp, max = 48.dp)

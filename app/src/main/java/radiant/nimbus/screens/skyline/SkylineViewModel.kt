@@ -31,6 +31,8 @@ data class SkylineState(
     val feedUri: AtUri? = null
 )
 
+private const val TAG = "Skyline"
+
 @HiltViewModel
 class SkylineViewModel @Inject constructor(
     app: Application,
@@ -57,19 +59,18 @@ class SkylineViewModel @Inject constructor(
     ) = viewModelScope.launch(Dispatchers.IO) {
         when(val result = apiProvider.api.getTimeline(GetTimelineQueryParams(limit = limit, cursor = cursor))) {
             is AtpResponse.Failure -> {
-                Log.e("Timeline Load Err", result.toString())
+                Log.e(TAG, "Load Err $result")
             }
 
             is AtpResponse.Success -> {
                 val newPosts = Skyline.from(result.response.feed, result.response.cursor)
-                Log.i("Timeline Load Success", result.toString())
                 if (cursor != null) {
-                    Log.i("UpdatePosts", result.response.feed.toString())
+                    Log.v(TAG, "UpdatePosts:, ${result.response.feed}")
                     _skylinePosts.update { skyline -> Skyline.concat(skyline, newPosts.collectThreads().await()) }
                 } else {
-                    Log.i("Posts", result.response.feed.toString())
+                    Log.v(TAG,"Posts: ${result.response.feed}")
                     if(skylinePosts.value.posts.isNotEmpty() && (Clock.System.now().epochSeconds - skylinePosts.value.posts.first().post?.createdAt?.instant?.epochSeconds!! > 10)) {
-                        _skylinePosts.update { skyline -> Skyline.concat(newPosts.collectThreads().await(), skyline, null) }
+                        _skylinePosts.update { skyline -> Skyline.concat(newPosts.collectThreads().await(), skyline, _skylinePosts.value.cursor) }
                     } else {
                         _skylinePosts.value = newPosts
                         _skylinePosts.update { skyline -> skyline.collectThreads().await() }
@@ -89,23 +90,22 @@ class SkylineViewModel @Inject constructor(
         }
         when(result) {
             is AtpResponse.Failure -> {
-                Log.e("Timeline Load Err", result.toString())
+                Log.e(TAG, "Feed Load Err $result")
             }
 
             is AtpResponse.Success -> {
                 val newPosts = Skyline.from(result.response.feed, result.response.cursor)
-                Log.i("Timeline Load Success", result.toString())
                 if (cursor != null || feedQuery.cursor != null) {
-                    Log.i("UpdatePosts", result.response.feed.toString())
+                    Log.v(TAG, "Update Feed Posts:, ${result.response.feed}")
                     _skylinePosts.update { skyline -> Skyline.concat(skyline, newPosts.collectThreads().await()) }
                 } else {
                     if(result.response.feed.first().post.indexedAt.toEpochMilliseconds() >
                         (skylinePosts.value.posts.first().post?.indexedAt?.instant?.toEpochMilliseconds() ?: 0)
                     ) {
-                        Log.i("UpdatePosts", result.response.feed.toString())
+                        Log.v(TAG, "Update Feed Posts:, ${result.response.feed}")
                         _skylinePosts.update { skyline -> Skyline.concat(newPosts.collectThreads().await(), skyline, null) }
                     } else {
-                        Log.i("Posts", result.response.feed.toString())
+                        Log.v(TAG,"Feed Posts: ${result.response.feed}")
                         _skylinePosts.value = newPosts
                         _skylinePosts.update { skyline -> skyline.collectThreads().await() }
                     }

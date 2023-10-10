@@ -10,7 +10,11 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun ProfileButtons(
     modifier: Modifier = Modifier,
-    myProfile: Boolean = false
+    myProfile: Boolean = false,
+    following: Boolean = false,
+    onFollowClicked: (Boolean) -> Unit = {},
+    onEditClicked: () -> Unit = {},
+    onMenuClicked: () -> Unit = {},
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -20,15 +24,18 @@ fun ProfileButtons(
         if (myProfile) {
             EditProfileButton(
                 modifier = modifier
-                    .padding(horizontal = 5.dp)
+                    .padding(horizontal = 5.dp),
+                onClick = onEditClicked
             )
         } else {
             FollowButton(
                 modifier = modifier
-                    .padding(horizontal = 5.dp)
+                    .padding(horizontal = 5.dp),
+                onClick = onFollowClicked,
+                following = following
             )
         }
-        ProfileMenuButton()
+        ProfileMenuButton(onClick = onMenuClicked)
     }
 
 }
