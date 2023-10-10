@@ -13,22 +13,17 @@ import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSiz
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
-import kotlinx.coroutines.launch
 import radiant.nimbus.MainViewModel
 import radiant.nimbus.api.ApiProvider
 import radiant.nimbus.api.AtIdentifier
-import radiant.nimbus.api.AtUri
 import radiant.nimbus.api.model.RecordUnion
 import radiant.nimbus.components.Center
 import radiant.nimbus.components.ScreenBody
@@ -156,8 +151,6 @@ fun ProfileView(
 ){
     var selectedTab by rememberSaveable { mutableStateOf(ProfileTabs.Posts) }
     val scope = rememberCoroutineScope()
-    val likeKeys = remember { mutableStateMapOf(Pair<AtUri, String?>(AtUri(""), "")) }
-    val repostKeys = remember { mutableStateMapOf(Pair<AtUri, String?>(AtUri(""), "")) }
     Scaffold(
         topBar = {
             if (isTopLevel) {
@@ -224,34 +217,16 @@ fun ProfileView(
                                     model.getProfileFeed(selectedTab,apiProvider, cursor)
                                 }
                             },
-                            onUnClicked = {type, rkey ->
-                                apiProvider?.deleteRecord(type, rkey)
-                            },
+                            onUnClicked = {type, uri ->  apiProvider?.deleteRecord(type, uri = uri)},
                             onRepostClicked = {
+                                apiProvider?.createRecord(RecordUnion.Repost(it))
                                 /* TODO: Add dialog/quote post option */
-                                scope.launch {
-                                    repostKeys[it.uri] = apiProvider?.let { it1 ->
-                                        model.createRecord(
-                                            record = RecordUnion.Repost(it),
-                                            apiProvider = it1
-                                        ).await()
-                                    }
-                                }
                             },
                             onReplyClicked = { },
                             onMenuClicked = { },
                             onLikeClicked = {
-                                scope.launch {
-                                    likeKeys[it.uri] = apiProvider?.let { it1 ->
-                                        model.createRecord(
-                                            record = RecordUnion.Like(it),
-                                            apiProvider = it1
-                                        ).await()
-                                    }
-                                }
+                                apiProvider?.createRecord(RecordUnion.Like(it))
                             },
-                            lKeys = snapshotFlow { likeKeys },
-                            rpKeys = snapshotFlow { repostKeys },
                         )
                     }
                 }
@@ -268,32 +243,16 @@ fun ProfileView(
                                     model.getProfileFeed(selectedTab,apiProvider, cursor)
                                 }
                             },
-                            onUnClicked = {type, rkey ->  apiProvider?.deleteRecord(type, rkey)},
+                            onUnClicked = {type, uri ->  apiProvider?.deleteRecord(type, uri = uri)},
                             onRepostClicked = {
+                                apiProvider?.createRecord(RecordUnion.Repost(it))
                                 /* TODO: Add dialog/quote post option */
-                                scope.launch {
-                                    repostKeys[it.uri] = apiProvider?.let { it1 ->
-                                        model.createRecord(
-                                            record = RecordUnion.Repost(it),
-                                            apiProvider = it1
-                                        ).await()
-                                    }
-                                }
                             },
                             onReplyClicked = { },
                             onMenuClicked = { },
                             onLikeClicked = {
-                                scope.launch {
-                                    likeKeys[it.uri] = apiProvider?.let { it1 ->
-                                        model.createRecord(
-                                            record = RecordUnion.Like(it),
-                                            apiProvider = it1
-                                        ).await()
-                                    }
-                                }
+                                apiProvider?.createRecord(RecordUnion.Like(it))
                             },
-                            lKeys = snapshotFlow { likeKeys },
-                            rpKeys = snapshotFlow { repostKeys },
                         )
                     }
                 }
@@ -309,34 +268,16 @@ fun ProfileView(
                                     model.getProfileFeed(selectedTab,apiProvider, cursor)
                                 }
                             },
-                            onUnClicked = {type, rkey ->
-                                apiProvider?.deleteRecord(type, rkey)
-                            },
+                            onUnClicked = {type, uri ->  apiProvider?.deleteRecord(type, uri = uri)},
                             onRepostClicked = {
-                                scope.launch {
-                                    /* TODO: Add dialog/quote post option */
-                                    repostKeys[it.uri] = apiProvider?.let { it1 ->
-                                        model.createRecord(
-                                            record = RecordUnion.Repost(it),
-                                            apiProvider = it1
-                                        ).await()
-                                    }
-                                }
+                                apiProvider?.createRecord(RecordUnion.Repost(it))
+                                /* TODO: Add dialog/quote post option */
                             },
                             onReplyClicked = { },
                             onMenuClicked = { },
                             onLikeClicked = {
-                                scope.launch {
-                                    likeKeys[it.uri] = apiProvider?.let { it1 ->
-                                        model.createRecord(
-                                            record = RecordUnion.Like(it),
-                                            apiProvider = it1
-                                        ).await()
-                                    }
-                                }
+                                apiProvider?.createRecord(RecordUnion.Like(it))
                             },
-                            lKeys = snapshotFlow { likeKeys },
-                            rpKeys = snapshotFlow { repostKeys },
                         )
                     }
                 }

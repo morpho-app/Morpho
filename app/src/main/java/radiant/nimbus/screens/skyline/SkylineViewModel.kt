@@ -12,7 +12,6 @@ import app.bsky.feed.GetTimelineQueryParams
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -47,8 +46,8 @@ class SkylineViewModel @Inject constructor(
     fun createRecord(
         record: RecordUnion,
         apiProvider: ApiProvider,
-    ) = CoroutineScope(Dispatchers.Default).async {
-        apiProvider.createRecord(record).await()
+    ) = CoroutineScope(Dispatchers.Default).launch {
+        apiProvider.createRecord(record)
     }
 
     fun getSkyline(

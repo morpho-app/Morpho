@@ -44,8 +44,6 @@ import androidx.compose.ui.unit.dp
 import com.atproto.repo.StrongRef
 import dev.jeziellago.compose.markdowntext.MarkdownText
 import kotlinx.collections.immutable.persistentListOf
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.datetime.Instant
 import radiant.nimbus.api.AtIdentifier
 import radiant.nimbus.api.AtUri
@@ -70,7 +68,6 @@ import radiant.nimbus.ui.theme.NimbusTheme
 import radiant.nimbus.ui.utils.DevicePreviews
 import radiant.nimbus.ui.utils.indentLevel
 import radiant.nimbus.util.getFormattedDateTimeSince
-import radiant.nimbus.util.getRkey
 
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -87,9 +84,7 @@ fun PostFragment(
     onRepostClicked: (StrongRef) -> Unit = { },
     onLikeClicked: (StrongRef) -> Unit = { },
     onMenuClicked: (MenuOptions) -> Unit = { },
-    onUnClicked: (type: RecordType, rkey: String) -> Unit = { _, _ -> },
-    lkeyFlow: Flow<String?> = flowOf(getRkey(post.likeUri)),
-    rpkeyFlow: Flow<String?> = flowOf(getRkey(post.repostUri))
+    onUnClicked: (type: RecordType, uri: AtUri) -> Unit = { _, _ -> },
 ) {
     val delta = remember { getFormattedDateTimeSince(post.createdAt) }
     val lineColour = MaterialTheme.colorScheme.onSurfaceVariant
@@ -387,8 +382,6 @@ fun PostFragment(
                             onRepostClicked(StrongRef(post.uri, post.cid))
                         },
                         onUnClicked = onUnClicked,
-                        lkeyFlow = lkeyFlow,
-                        rpkeyFlow = rpkeyFlow,
                     )
                 }
             }

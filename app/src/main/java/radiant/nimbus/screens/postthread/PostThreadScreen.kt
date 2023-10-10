@@ -6,19 +6,14 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
-import kotlinx.coroutines.launch
 import radiant.nimbus.MainViewModel
 import radiant.nimbus.api.ApiProvider
 import radiant.nimbus.api.AtUri
@@ -68,9 +63,6 @@ fun PostThreadView(
     navigator: DestinationsNavigator,
     navBar: @Composable () -> Unit = {},
 ){
-    val scope = rememberCoroutineScope()
-    val likeKeys = remember { mutableStateMapOf(Pair<AtUri, String?>(AtUri(""), "")) }
-    val repostKeys = remember { mutableStateMapOf(Pair<AtUri, String?>(AtUri(""), "")) }
     ScreenBody(
         modifier = Modifier.fillMaxSize().systemBarsPadding(),
         navBar = navBar,
@@ -84,26 +76,16 @@ fun PostThreadView(
             onProfileClicked = {
                 navigator.navigate(ProfileScreenDestination(it))
             },
-            onUnClicked = {type, rkey ->  apiProvider.deleteRecord(type, rkey)},
+            onUnClicked = {type, uri ->  apiProvider.deleteRecord(type, uri = uri)},
             onRepostClicked = {
+                apiProvider.createRecord(RecordUnion.Repost(it))
                 /* TODO: Add dialog/quote post option */
-                scope.launch {
-                    repostKeys[it.uri] = apiProvider.createRecord(
-                        record = RecordUnion.Repost(it),
-                    ).await()
-                }
             },
             onReplyClicked = { },
             onMenuClicked = { },
             onLikeClicked = {
-                scope.launch {
-                    likeKeys[it.uri] = apiProvider.createRecord(
-                        record = RecordUnion.Like(it),
-                    ).await()
-                }
+                apiProvider.createRecord(RecordUnion.Like(it))
             },
-            lKeys = snapshotFlow { likeKeys },
-            rpKeys = snapshotFlow { repostKeys }
         )
     }
 }

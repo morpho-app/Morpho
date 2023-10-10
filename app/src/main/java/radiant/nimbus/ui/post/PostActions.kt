@@ -27,15 +27,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.flowOf
+import radiant.nimbus.api.AtUri
 import radiant.nimbus.api.model.RecordType
 import radiant.nimbus.model.BskyPost
 import radiant.nimbus.ui.elements.MenuOptions
 import radiant.nimbus.ui.elements.PostMenu
-import radiant.nimbus.util.getRkey
+import radiant.nimbus.util.atUriSaver
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -47,11 +44,11 @@ fun PostActions(
     onRepostClicked: () -> Unit = { },
     onLikeClicked: () -> Unit = { },
     onMenuClicked: (MenuOptions) -> Unit = { },
-    onUnClicked: (type: RecordType, rkey: String) -> Unit = { _, _ -> },
-    lkeyFlow: Flow<String?> = flowOf(getRkey(post.likeUri)),
-    rpkeyFlow: Flow<String?> = flowOf(getRkey(post.repostUri))
+    onUnClicked: (type: RecordType, uri: AtUri) -> Unit = { _, _ -> },
 ) {
     var menuExpanded by remember { mutableStateOf(false) }
+    val likeUri: AtUri = rememberSaveable(saver = atUriSaver) { post.likeUri ?: post.uri }
+    val repostUri: AtUri = rememberSaveable(saver = atUriSaver) { post.repostUri ?: post.uri }
     FlowRow {
         PostAction(
             parameter = post.replyCount,
@@ -66,8 +63,7 @@ fun PostActions(
             iconNormal = Icons.Outlined.Repeat,
             contentDescription = "Repost",
             onClicked = onRepostClicked,
-            onUnClicked = { onUnClicked(RecordType.Repost, it) },
-            rkey = rpkeyFlow,
+            onUnClicked = { onUnClicked(RecordType.Repost, repostUri) },
             active = post.reposted
         )
         PostAction(
@@ -76,8 +72,7 @@ fun PostActions(
             iconActive = Icons.Default.Favorite,
             contentDescription = "Like",
             onClicked = onLikeClicked,
-            onUnClicked = { onUnClicked(RecordType.Like, it) },
-            rkey = lkeyFlow,
+            onUnClicked = { onUnClicked(RecordType.Like, likeUri) },
             active = post.liked
         )
         if (showMenu) {
@@ -108,16 +103,15 @@ fun PostAction(
     activeColor: Color = MaterialTheme.colorScheme.primary,
     contentDescription: String,
     onClicked: () -> Unit = { },
-    onUnClicked: (rkey: String) -> Unit = {},
+    onUnClicked: () -> Unit = {},
     active: Boolean = false,
-    rkey: Flow<String?> = MutableStateFlow(""),
+    uri: AtUri? =null,
 ) {
     var clicked by rememberSaveable { mutableStateOf(active) }
     val inactiveColor = MaterialTheme.colorScheme.onSurface
     var num by rememberSaveable { mutableLongStateOf(parameter) }
     val color = remember { mutableStateOf(if (clicked) activeColor else inactiveColor) }
     val icon = remember { mutableStateOf(if (clicked) iconActive else iconNormal) }
-    val key by rkey.collectAsStateWithLifecycle("")
     TextButton(
         onClick = {
             if (!clicked) {
@@ -131,7 +125,7 @@ fun PostAction(
                 color.value = inactiveColor
                 icon.value = iconNormal
                 num--
-                onUnClicked(key.orEmpty())
+                onUnClicked()
             }
         },
         modifier = Modifier

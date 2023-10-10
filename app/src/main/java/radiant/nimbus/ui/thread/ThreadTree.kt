@@ -8,20 +8,13 @@ import androidx.compose.foundation.lazy.LazyScopeMarker
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.atproto.repo.StrongRef
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.flowOf
 import radiant.nimbus.api.AtIdentifier
 import radiant.nimbus.api.AtUri
 import radiant.nimbus.api.model.RecordType
@@ -42,32 +35,19 @@ fun ThreadTree(
             it.post.indexedAt
         } else {
             it.hashCode()
-        }},
+        }
+    },
     onItemClicked: OnPostClicked = {},
     onProfileClicked: (AtIdentifier) -> Unit = {},
     onReplyClicked: (StrongRef) -> Unit = { },
     onRepostClicked: (StrongRef) -> Unit = { },
     onLikeClicked: (StrongRef) -> Unit = { },
     onMenuClicked: (MenuOptions) -> Unit = { },
-    onUnClicked: (type: RecordType, rkey: String) -> Unit = { _, _ -> },
-    lKeys: Flow<MutableMap<AtUri, String?>>,
-    rpKeys: Flow<MutableMap<AtUri, String?>>,
+    onUnClicked: (type: RecordType, uri: AtUri) -> Unit = { _, _ -> },
 ) {
     if(reply is ThreadPost.ViewablePost) {
-        val likeKeys by lKeys.collectAsStateWithLifecycle(initialValue = mutableMapOf())
-        val repostKeys by lKeys.collectAsStateWithLifecycle(initialValue = mutableMapOf())
 
         if (reply.replies.isEmpty()) {
-            var lkeyFlow: Flow<String?> = flowOf(null)
-            var rpkeyFlow: Flow<String?> = flowOf(null)
-            LaunchedEffect(likeKeys) {
-                lkeyFlow = snapshotFlow { likeKeys[reply.post.uri] }
-                    .distinctUntilChanged()
-            }
-            LaunchedEffect(repostKeys) {
-                rpkeyFlow = snapshotFlow { likeKeys[reply.post.uri] }
-                    .distinctUntilChanged()
-            }
             ThreadReply(
                 item = reply, role = PostFragmentRole.ThreadBranchEnd, indentLevel = indentLevel,
                 modifier = Modifier.padding(vertical = 2.dp),
@@ -78,8 +58,7 @@ fun ThreadTree(
                 onReplyClicked = onReplyClicked,
                 onMenuClicked = onMenuClicked,
                 onLikeClicked = onLikeClicked,
-                lkeyFlow = lkeyFlow,
-                rpkeyFlow = rpkeyFlow,
+
             )
         } else {
             Column(
@@ -115,16 +94,6 @@ fun ThreadTree(
                 ) {
                     Column(
                     ) {
-                        var lkeyFlow: Flow<String?> = flowOf(null)
-                        var rpkeyFlow: Flow<String?> = flowOf(null)
-                        LaunchedEffect(likeKeys) {
-                            lkeyFlow = snapshotFlow { likeKeys[reply.post.uri] }
-                                .distinctUntilChanged()
-                        }
-                        LaunchedEffect(repostKeys) {
-                            rpkeyFlow = snapshotFlow { likeKeys[reply.post.uri] }
-                                .distinctUntilChanged()
-                        }
                         ThreadReply(
                             item = reply,
                             role = PostFragmentRole.ThreadBranchStart,
@@ -137,23 +106,19 @@ fun ThreadTree(
                             onReplyClicked = onReplyClicked,
                             onMenuClicked = onMenuClicked,
                             onLikeClicked = onLikeClicked,
-                            lkeyFlow = lkeyFlow,
-                            rpkeyFlow = rpkeyFlow,
                         )
 
                         val nextIndent = indentLevel + 1
                         reply.replies.sortedWith(comparator).forEach {
                             ThreadTree(
-                                reply = it, indentLevel = nextIndent, modifier = modifier,
+                                reply = it, modifier = modifier, indentLevel = nextIndent,
                                 onItemClicked = onItemClicked,
                                 onProfileClicked = onProfileClicked,
-                                onUnClicked = onUnClicked,
-                                onRepostClicked = onRepostClicked,
                                 onReplyClicked = onReplyClicked,
-                                onMenuClicked = onMenuClicked,
+                                onRepostClicked = onRepostClicked,
                                 onLikeClicked = onLikeClicked,
-                                lKeys = lKeys,
-                                rpKeys = rpKeys,
+                                onMenuClicked = onMenuClicked,
+                                onUnClicked = onUnClicked,
                             )
                         }
                     }

@@ -15,9 +15,7 @@ import io.ktor.client.plugins.logging.Logger
 import io.ktor.client.plugins.logging.Logging
 import io.ktor.http.Url
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -28,6 +26,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.yield
 import kotlinx.datetime.Clock
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.encodeToJsonElement
 import radiant.nimbus.api.auth.AuthInfo
@@ -38,10 +37,19 @@ import radiant.nimbus.api.model.RecordUnion
 import radiant.nimbus.api.model.Timestamp
 import radiant.nimbus.api.response.AtpResponse
 import radiant.nimbus.app.Supervisor
+import radiant.nimbus.util.getRkey
 import javax.inject.Inject
 import javax.inject.Singleton
 
-//@SingleInApp
+@Serializable
+data class RkeyCacheEntry(
+  var likeKey: String = "",
+  var repostKey: String = "",
+  var postKey: String = "",
+)
+
+private const val TAG = "API_Provider"
+
 @Singleton
 class ApiProvider @Inject constructor(
   private val apiRepository: ServerRepository,
@@ -53,7 +61,8 @@ class ApiProvider @Inject constructor(
   private val tokens = MutableStateFlow(loginRepository.auth?.toTokens())
   private val userCredentials = MutableStateFlow(loginRepository.credentials)
 
-
+  // TODO: implement this cache in a better way
+  private val rkeyCache: MutableMap<AtUri, RkeyCacheEntry> = mutableMapOf()
 
 
   private var client = HttpClient(CIO) {
@@ -145,22 +154,24 @@ class ApiProvider @Inject constructor(
         is AtpResponse.Success -> {
           loginRepository.auth = response.response
           loginRepository.credentials = credentials
-          Log.i("Login: ", loginRepository.auth.toString())
-          Log.i("Login: ", userCredentials.value.toString())
+          Log.i(TAG, "Login: ${loginRepository.auth}")
+          Log.i(TAG,"Login: ${userCredentials.value}")
           response
         }
       }
     }
   }
 
-  suspend fun createRecord(
+  fun createRecord(
     record: RecordUnion
-  ) : Deferred<String?> = CoroutineScope(Dispatchers.IO).async {
+  ) = CoroutineScope(Dispatchers.IO).launch {
     val did = loginRepository.auth?.did
     val timestamp : Timestamp = Clock.System.now()
+    val uri: AtUri
     if (did != null) {
       val request = when(record) {
         is RecordUnion.Like -> {
+          uri = record.subject.uri
           val like = Like(record.subject, timestamp)
           CreateRecordRequest(
             repo = AtIdentifier(did.did),
@@ -169,6 +180,7 @@ class ApiProvider @Inject constructor(
           )
         }
         is RecordUnion.MakePost -> {
+          uri = AtUri("$did/${record.type.collection}/$timestamp")
           CreateRecordRequest(
             repo = AtIdentifier(did.did),
             collection = record.type.collection,
@@ -176,6 +188,7 @@ class ApiProvider @Inject constructor(
           )
         }
         is RecordUnion.Repost -> {
+          uri = record.subject.uri
           val repost = Repost(record.subject, timestamp)
           CreateRecordRequest(
             repo = AtIdentifier(did.did),
@@ -184,9 +197,48 @@ class ApiProvider @Inject constructor(
           )
         }
       }
-      api.createRecord(request).maybeResponse()?.cid?.cid
-    } else {
-      null
+      val rkey = getRkey(api.createRecord(request).maybeResponse()?.uri)
+      Log.i( TAG,"Rkey for creating ${record.type}: $rkey")
+      when(record) {
+        is RecordUnion.Like -> {
+          if (rkeyCache.containsKey(uri)) {
+            rkeyCache[uri]?.likeKey = rkey
+          } else {
+            rkeyCache[uri] = RkeyCacheEntry(likeKey = rkey)
+          }
+        }
+        is RecordUnion.MakePost -> {
+          if (rkeyCache.containsKey(uri)) {
+            rkeyCache[uri]?.postKey = rkey
+          } else {
+            rkeyCache[uri] = RkeyCacheEntry(postKey = rkey)
+          }
+        }
+        is RecordUnion.Repost -> if (rkeyCache.containsKey(uri)) {
+          rkeyCache[uri]?.repostKey = rkey
+        } else {
+          rkeyCache[uri] = RkeyCacheEntry(repostKey = rkey)
+        }
+      }
+    }
+  }
+  fun deleteRecord(type: RecordType, uri: AtUri?) {
+    if (uri != null) {
+      // If this is the right kind of uri for the record, we can use the last bit as the rkey
+      val rkey = if(uri.atUri.contains(type.collection.nsid)) {
+          getRkey(uri)
+      } else {
+        // Otherwise, we check our cache for it
+        when(type) {
+          RecordType.Post -> rkeyCache[uri]?.postKey
+          RecordType.Like -> rkeyCache[uri]?.likeKey
+          RecordType.Repost -> rkeyCache[uri]?.repostKey
+        }
+      }
+      if (rkey != null) {
+        Log.i( TAG,"Rkey for deleting $type: $rkey")
+        deleteRecord(type, rkey)
+      }
     }
   }
 

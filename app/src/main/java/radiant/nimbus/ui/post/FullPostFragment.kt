@@ -40,8 +40,6 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import com.atproto.repo.StrongRef
 import dev.jeziellago.compose.markdowntext.MarkdownText
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
@@ -60,7 +58,6 @@ import radiant.nimbus.ui.theme.NimbusTheme
 import radiant.nimbus.ui.utils.DevicePreviews
 import radiant.nimbus.ui.utils.FontScalePreviews
 import radiant.nimbus.util.getFormattedDateTimeSince
-import radiant.nimbus.util.getRkey
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -73,9 +70,7 @@ fun FullPostFragment(
     onRepostClicked: (StrongRef) -> Unit = { },
     onLikeClicked: (StrongRef) -> Unit = { },
     onMenuClicked: (MenuOptions) -> Unit = { },
-    onUnClicked: (type: RecordType, rkey: String) -> Unit = { _, _ -> },
-    lkeyFlow: Flow<String?> = flowOf(getRkey(post.likeUri)),
-    rpkeyFlow: Flow<String?> = flowOf(getRkey(post.repostUri))
+    onUnClicked: (type: RecordType, uri: AtUri) -> Unit = { _, _ -> },
     ) {
     val delta = rememberSaveable { getFormattedDateTimeSince(post.createdAt) }
     val timestamp =
@@ -273,8 +268,6 @@ fun FullPostFragment(
                     onRepostClicked(StrongRef(post.uri, post.cid))
                 },
                 onUnClicked = onUnClicked,
-                lkeyFlow = lkeyFlow,
-                rpkeyFlow = rpkeyFlow,
             )
             Spacer(
                 modifier = Modifier

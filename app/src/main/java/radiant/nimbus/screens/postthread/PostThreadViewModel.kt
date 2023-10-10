@@ -12,7 +12,6 @@ import app.bsky.feed.GetPostThreadResponseThreadUnion
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import radiant.nimbus.api.ApiProvider
 import radiant.nimbus.api.AtUri
@@ -43,8 +42,8 @@ class PostThreadViewModel @Inject constructor(
     fun createRecord(
         record: RecordUnion,
         apiProvider: ApiProvider,
-    ) = CoroutineScope(Dispatchers.Default).async {
-        apiProvider.createRecord(record).await()
+    ) = CoroutineScope(Dispatchers.Default).launch {
+        apiProvider.createRecord(record)
     }
 
 

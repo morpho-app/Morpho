@@ -11,18 +11,11 @@ import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.atproto.repo.StrongRef
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.flowOf
 import radiant.nimbus.api.AtIdentifier
 import radiant.nimbus.api.AtUri
 import radiant.nimbus.api.model.RecordType
@@ -46,22 +39,19 @@ fun ThreadFragment(
             it.post.indexedAt
         } else {
             it.hashCode()
-        }},
+        }
+    },
     onItemClicked: OnPostClicked = {},
     onProfileClicked: (AtIdentifier) -> Unit = {},
     onReplyClicked: (StrongRef) -> Unit = { },
     onRepostClicked: (StrongRef) -> Unit = { },
     onLikeClicked: (StrongRef) -> Unit = { },
     onMenuClicked: (MenuOptions) -> Unit = { },
-    onUnClicked: (type: RecordType, rkey: String) -> Unit = { _, _ -> },
-    lKeys: Flow<MutableMap<AtUri, String?>>,
-    rpKeys: Flow<MutableMap<AtUri, String?>>,
+    onUnClicked: (type: RecordType, uri: AtUri) -> Unit = { _, _ -> },
     listState: LazyListState = rememberLazyListState()
 ) {
     val threadPost = remember { ThreadPost.ViewablePost(thread.post, thread.replies) }
     val hasReplies = rememberSaveable { threadPost.replies.isNotEmpty()}
-    val likeKeys by lKeys.collectAsStateWithLifecycle(initialValue = mutableMapOf())
-    val repostKeys by lKeys.collectAsStateWithLifecycle(initialValue = mutableMapOf())
 
     LazyColumn(
         modifier = modifier.heightIn(0.dp, 20000.dp).navigationBarsPadding(),
@@ -73,16 +63,6 @@ fun ThreadFragment(
                 is ThreadPost.ViewablePost -> {
                     if (root.post.uri == thread.post.uri) {
                         item {
-                            var lkeyFlow: Flow<String?> = flowOf(null)
-                            var rpkeyFlow: Flow<String?> = flowOf(null)
-                            LaunchedEffect(likeKeys) {
-                                lkeyFlow = snapshotFlow { likeKeys[root.post.uri] }
-                                    .distinctUntilChanged()
-                            }
-                            LaunchedEffect(repostKeys) {
-                                rpkeyFlow = snapshotFlow { likeKeys[root.post.uri] }
-                                    .distinctUntilChanged()
-                            }
                             FullPostFragment(
                                 post = root.post,
                                 onItemClicked = onItemClicked,
@@ -92,22 +72,10 @@ fun ThreadFragment(
                                 onReplyClicked = onReplyClicked,
                                 onMenuClicked = onMenuClicked,
                                 onLikeClicked = onLikeClicked,
-                                lkeyFlow = lkeyFlow,
-                                rpkeyFlow = rpkeyFlow,
                             )
                         }
                     } else {
                         item {
-                            var lkeyFlow: Flow<String?> = flowOf(null)
-                            var rpkeyFlow: Flow<String?> = flowOf(null)
-                            LaunchedEffect(likeKeys) {
-                                lkeyFlow = snapshotFlow { likeKeys[root.post.uri] }
-                                    .distinctUntilChanged()
-                            }
-                            LaunchedEffect(repostKeys) {
-                                rpkeyFlow = snapshotFlow { likeKeys[root.post.uri] }
-                                    .distinctUntilChanged()
-                            }
                         PostFragment(
                             post = root.post,
                             role = PostFragmentRole.ThreadRootUnfocused,
@@ -119,21 +87,9 @@ fun ThreadFragment(
                             onReplyClicked = onReplyClicked,
                             onMenuClicked = onMenuClicked,
                             onLikeClicked = onLikeClicked,
-                            lkeyFlow = lkeyFlow,
-                            rpkeyFlow = rpkeyFlow,
                         )
                         }
                         item {
-                            var lkeyFlow: Flow<String?> = flowOf(null)
-                            var rpkeyFlow: Flow<String?> = flowOf(null)
-                            LaunchedEffect(likeKeys) {
-                                lkeyFlow = snapshotFlow { likeKeys[threadPost.post.uri] }
-                                    .distinctUntilChanged()
-                            }
-                            LaunchedEffect(repostKeys) {
-                                rpkeyFlow = snapshotFlow { likeKeys[threadPost.post.uri] }
-                                    .distinctUntilChanged()
-                            }
                             ThreadItem(
                                 item = threadPost,
                                 role = PostFragmentRole.PrimaryThreadRoot,
@@ -145,8 +101,6 @@ fun ThreadFragment(
                                 onReplyClicked = onReplyClicked,
                                 onMenuClicked = onMenuClicked,
                                 onLikeClicked = onLikeClicked,
-                                lkeyFlow = lkeyFlow,
-                                rpkeyFlow = rpkeyFlow,
                             )
                         }
                     }
@@ -173,16 +127,6 @@ fun ThreadFragment(
             }
         } else {
             item {
-                var lkeyFlow: Flow<String?> = flowOf(null)
-                var rpkeyFlow: Flow<String?> = flowOf(null)
-                LaunchedEffect(likeKeys) {
-                    lkeyFlow = snapshotFlow { likeKeys[threadPost.post.uri] }
-                        .distinctUntilChanged()
-                }
-                LaunchedEffect(repostKeys) {
-                    rpkeyFlow = snapshotFlow { likeKeys[threadPost.post.uri] }
-                        .distinctUntilChanged()
-                }
                 ThreadItem(
                     item = threadPost,
                     role = PostFragmentRole.PrimaryThreadRoot,
@@ -195,8 +139,6 @@ fun ThreadFragment(
                     onReplyClicked = onReplyClicked,
                     onMenuClicked = onMenuClicked,
                     onLikeClicked = onLikeClicked,
-                    lkeyFlow = lkeyFlow,
-                    rpkeyFlow = rpkeyFlow,
                 )
             }
         }
@@ -204,16 +146,6 @@ fun ThreadFragment(
             threadPost.replies.forEach { it ->
                 if(it is ThreadPost.ViewablePost) {
                     item {
-                        var lkeyFlow: Flow<String?> = flowOf(null)
-                        var rpkeyFlow: Flow<String?> = flowOf(null)
-                        LaunchedEffect(likeKeys) {
-                            lkeyFlow = snapshotFlow { likeKeys[it.post.uri] }
-                                .distinctUntilChanged()
-                        }
-                        LaunchedEffect(repostKeys) {
-                            rpkeyFlow = snapshotFlow { likeKeys[it.post.uri] }
-                                .distinctUntilChanged()
-                        }
                         ThreadReply(
                             item = it, role = PostFragmentRole.Solo, indentLevel = 1,
                             modifier = Modifier.padding(4.dp),
@@ -224,8 +156,6 @@ fun ThreadFragment(
                             onReplyClicked = onReplyClicked,
                             onMenuClicked = onMenuClicked,
                             onLikeClicked = onLikeClicked,
-                            lkeyFlow = lkeyFlow,
-                            rpkeyFlow = rpkeyFlow,
                         )
                     }
                     if (it.replies.isNotEmpty()) {
@@ -235,17 +165,15 @@ fun ThreadFragment(
                             }
                         ) {reply ->
                             ThreadTree(
-                                reply = reply, indentLevel = 2,
-                                modifier = Modifier.padding(4.dp),
+                                reply = reply, modifier = Modifier.padding(4.dp),
+                                indentLevel = 2,
                                 onItemClicked = onItemClicked,
                                 onProfileClicked = onProfileClicked,
-                                onUnClicked = onUnClicked,
-                                onRepostClicked = onRepostClicked,
                                 onReplyClicked = onReplyClicked,
-                                onMenuClicked = onMenuClicked,
+                                onRepostClicked = onRepostClicked,
                                 onLikeClicked = onLikeClicked,
-                                lKeys = lKeys,
-                                rpKeys = rpKeys,
+                                onMenuClicked = onMenuClicked,
+                                onUnClicked = onUnClicked,
                                 )
                         }
                     }
