@@ -1,5 +1,7 @@
-package radiant.nimbus.ui.common
+package radiant.nimbus.ui.post
 
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -19,10 +21,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -33,6 +35,7 @@ import dev.jeziellago.compose.markdowntext.MarkdownText
 import radiant.nimbus.api.AtUri
 import radiant.nimbus.model.BskyPostFeature
 import radiant.nimbus.model.EmbedPost
+import radiant.nimbus.ui.elements.OutlinedAvatar
 import radiant.nimbus.util.getFormattedDateTimeSince
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -47,9 +50,7 @@ fun EmbedPostFragment(
     val delta = remember { getFormattedDateTimeSince(post.litePost.createdAt) }
     val lineColour = MaterialTheme.colorScheme.onSurfaceVariant
 
-    LaunchedEffect(Unit) {
-
-    }
+    val ctx = LocalContext.current
     Column(
         Modifier
             .fillMaxWidth()
@@ -159,22 +160,48 @@ fun EmbedPostFragment(
                             markdown = post.litePost.text.replace("\n", "  \n"),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurface,
+                            disableLinkMovementMethod = true,
                             modifier = Modifier.padding(start = 4.dp, top = 4.dp, bottom = 4.dp)
-                                .clickable { onItemClicked(post.uri) }
+                                .clickable { onItemClicked(post.uri) },
+                            onLinkClicked = {
+                                val urlIntent = Intent(
+                                    Intent.ACTION_VIEW,
+                                    Uri.parse(it)
+                                )
+                                ctx.startActivity(urlIntent)
+                            },
                         )
                     }
                     when (post.litePost.feature) {
-                        is BskyPostFeature.ExternalFeature -> PostLinkEmbed(linkData = post.litePost.feature)
+                        is BskyPostFeature.ExternalFeature -> PostLinkEmbed(
+                            linkData = post.litePost.feature,
+                            linkPress = {
+                                val urlIntent = Intent(
+                                    Intent.ACTION_VIEW,
+                                    Uri.parse(it)
+                                )
+                                ctx.startActivity(urlIntent)
+                            },
+                        )
                         is BskyPostFeature.ImagesFeature -> PostImages(imagesFeature = post.litePost.feature)
                         is BskyPostFeature.MediaPostFeature -> {
                             when(post.litePost.feature.media) {
-                                is BskyPostFeature.ExternalFeature -> PostLinkEmbed(linkData = post.litePost.feature.media)
+                                is BskyPostFeature.ExternalFeature -> PostLinkEmbed(
+                                    linkData = post.litePost.feature.media,
+                                    linkPress = {
+                                        val urlIntent = Intent(
+                                            Intent.ACTION_VIEW,
+                                            Uri.parse(it)
+                                        )
+                                        ctx.startActivity(urlIntent)
+                                    },
+                                )
                                 is BskyPostFeature.ImagesFeature -> PostImages(imagesFeature = post.litePost.feature.media)
                             }
                             when (post.litePost.feature.post) {
                                 is EmbedPost.BlockedEmbedPost -> EmbedBlockedPostFragment(uri = post.litePost.feature.post.uri)
                                 is EmbedPost.InvisibleEmbedPost -> EmbedNotFoundPostFragment(uri = post.litePost.feature.post.uri)
-                               is EmbedPost.VisibleEmbedPost ->EmbedPostFragment(
+                               is EmbedPost.VisibleEmbedPost -> EmbedPostFragment(
                                    post = post.litePost.feature.post,
                                    onItemClicked = onItemClicked
                                )

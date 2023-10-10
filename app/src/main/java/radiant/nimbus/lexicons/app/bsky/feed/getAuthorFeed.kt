@@ -1,10 +1,13 @@
 package app.bsky.feed
 
+import kotlin.Any
+import kotlin.Long
+import kotlin.Pair
+import kotlin.String
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.serialization.Serializable
 import radiant.nimbus.api.AtIdentifier
 import radiant.nimbus.api.model.ReadOnlyList
-import java.util.Locale
 
 @Serializable
 public data class GetAuthorFeedQueryParams(
@@ -26,7 +29,7 @@ public data class GetAuthorFeedQueryParams(
     add("actor" to actor)
     add("limit" to limit)
     add("cursor" to cursor)
-    add("filter" to (filter?.name?.lowercase(Locale.ROOT) ?: ""))
+    add("filter" to filter)
   }.toImmutableList()
 }
 

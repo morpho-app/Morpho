@@ -6,11 +6,15 @@ import app.bsky.feed.FeedViewPost
 import app.bsky.feed.Post
 import app.bsky.feed.PostView
 import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.persistentListOf
+import kotlinx.datetime.Clock
 import kotlinx.serialization.Serializable
 import radiant.nimbus.api.AtUri
 import radiant.nimbus.api.Cid
+import radiant.nimbus.api.Language
 import radiant.nimbus.util.deserialize
 import radiant.nimbus.util.mapImmutable
+import radiant.nimbus.util.recordType
 import javax.annotation.concurrent.Immutable
 
 enum class PostType {
@@ -40,6 +44,7 @@ data class BskyPost (
     val author: Profile,
     val text: String,
     val textLinks: ImmutableList<BskyPostLink>,
+    val tags: ImmutableList<String>,
     val createdAt: Moment,
     val feature: BskyPostFeature?,
     val replyCount: Long,
@@ -47,10 +52,13 @@ data class BskyPost (
     val likeCount: Long,
     val indexedAt: Moment,
     val reposted: Boolean,
+    val repostUri: AtUri? = null,
     val liked: Boolean,
+    val likeUri: AtUri? = null,
     val labels: ImmutableList<BskyLabel>,
     val reply: BskyPostReply?,
     val reason: BskyPostReason?,
+    val langs: ImmutableList<Language> = persistentListOf(),
 ) {
     override operator fun equals(other: Any?) : Boolean {
         return when(other) {
@@ -79,8 +87,8 @@ data class BskyPost (
         result = 31 * result + repostCount.hashCode()
         result = 31 * result + likeCount.hashCode()
         result = 31 * result + indexedAt.hashCode()
-        result = 31 * result + reposted.hashCode()
-        result = 31 * result + liked.hashCode()
+        result = 31 * result + repostUri.hashCode()
+        result = 31 * result + likeUri.hashCode()
         result = 31 * result + labels.hashCode()
         result = 31 * result + (reason?.hashCode() ?: 0)
         return result
@@ -107,14 +115,21 @@ fun PostView.toPost(
     reason: BskyPostReason?,
 ): BskyPost {
     // TODO verify via recordType before blindly deserialized.
-    val postRecord = Post.serializer().deserialize(record)
-
+    val postRecord = if(record.recordType == "app.bsky.feed.post") {
+        Post.serializer().deserialize(record)
+    } else {
+        Post("Wrong Record Type, Couldn't deserialize",
+            tags = persistentListOf(),
+            createdAt = Clock.System.now()
+        )
+    }
     return BskyPost(
         uri = uri,
         cid = cid,
         author = author.toProfile(),
         text = postRecord.text,
         textLinks = postRecord.facets.mapImmutable { it.toLink() },
+        tags = postRecord.tags.mapImmutable{it},
         createdAt = Moment(postRecord.createdAt),
         feature = embed?.toFeature(),
         replyCount = replyCount ?: 0,
@@ -122,8 +137,11 @@ fun PostView.toPost(
         likeCount = likeCount ?: 0,
         indexedAt = Moment(indexedAt),
         reposted = viewer?.repost != null,
+        repostUri = viewer?.repost,
         liked = viewer?.like != null,
+        likeUri = viewer?.like,
         labels = labels.mapImmutable { it.toLabel() },
+        langs = postRecord.langs.mapImmutable { it },
         reply = reply,
         reason = reason,
     )

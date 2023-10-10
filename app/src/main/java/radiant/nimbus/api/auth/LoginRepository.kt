@@ -16,6 +16,11 @@ class LoginRepository @Inject constructor(
 ) {
     private val authPreference = app.storage.preference<AuthInfo>("auth-info", null)
 
+    private val credentialsPreference = app.storage.preference<Credentials>("credentials", null)
+
+    var credentials by credentialsPreference
+    fun credentials(): Flow<Credentials?> = credentialsPreference.updates
+
     var auth by authPreference
     fun auth(): Flow<AuthInfo?> = authPreference.updates
 }

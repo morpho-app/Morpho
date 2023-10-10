@@ -1,6 +1,5 @@
 package radiant.nimbus.ui.common
 
-import android.annotation.SuppressLint
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -34,38 +33,57 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.atproto.repo.StrongRef
+import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import kotlinx.coroutines.async
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
+import radiant.nimbus.api.AtIdentifier
 import radiant.nimbus.api.AtUri
+import radiant.nimbus.api.model.RecordType
 import radiant.nimbus.components.ScreenBody
 import radiant.nimbus.model.BskyPostThread
 import radiant.nimbus.model.Skyline
 import radiant.nimbus.model.SkylineItem
 import radiant.nimbus.model.ThreadPost
+import radiant.nimbus.ui.elements.MenuOptions
+import radiant.nimbus.ui.post.PostFragment
+import radiant.nimbus.ui.post.PostFragmentRole
+import radiant.nimbus.ui.post.testPost
 import radiant.nimbus.ui.theme.NimbusTheme
+import radiant.nimbus.ui.thread.ThreadItem
+import radiant.nimbus.ui.thread.ThreadReply
+import radiant.nimbus.ui.thread.ThreadTree
 
 typealias OnPostClicked = (AtUri) -> Unit
 
-class SkylineFragmentState(
 
-)
-
-@SuppressLint("UnrememberedMutableState")
 @Composable
 fun SkylineFragment (
+    navigator: DestinationsNavigator,
     postFlow: StateFlow<Skyline>,
-    onItemClicked: OnPostClicked,
     modifier: Modifier = Modifier,
+    onItemClicked: OnPostClicked,
+    onProfileClicked: (AtIdentifier) -> Unit = {},
     listState: LazyListState = rememberLazyListState(),
     refresh: (String?) -> Unit = {},
+    onReplyClicked: (StrongRef) -> Unit = { },
+    onRepostClicked: (StrongRef) -> Unit = { },
+    onLikeClicked: (StrongRef) -> Unit = { },
+    onMenuClicked: (MenuOptions) -> Unit = { },
+    onUnClicked: (type: RecordType, rkey: String) -> Unit = { _, _ -> },
+    lKeys: Flow<MutableMap<AtUri, String?>>,
+    rpKeys: Flow<MutableMap<AtUri, String?>>,
 ) {
     val postList by postFlow.collectAsStateWithLifecycle()
     val coroutineScope = rememberCoroutineScope()
@@ -73,6 +91,10 @@ fun SkylineFragment (
         refresh(postList.cursor)
     }
     val scrolledDownBy by remember { derivedStateOf { listState.firstVisibleItemIndex } }
+    val likeKeys by lKeys.collectAsStateWithLifecycle(initialValue = mutableMapOf())
+    val repostKeys by lKeys.collectAsStateWithLifecycle(initialValue = mutableMapOf())
+
+
     Box(modifier = Modifier.fillMaxWidth()) {
         LazyColumn(
             modifier = modifier,
@@ -89,15 +111,42 @@ fun SkylineFragment (
                             modifier = Modifier
                                 .fillParentMaxWidth()
                                 .padding(vertical = 2.dp, horizontal = 4.dp),
+                            onItemClicked = onItemClicked,
+                            onProfileClicked = onProfileClicked,
+                            onUnClicked = onUnClicked,
+                            onRepostClicked = onRepostClicked,
+                            onReplyClicked = onReplyClicked,
+                            onMenuClicked = onMenuClicked,
+                            onLikeClicked = onLikeClicked,
+                            lKeys = lKeys,
+                            rpKeys = rpKeys,
                         )
                     } else if (post != null) {
+                        var lkeyFlow: Flow<String?> = flowOf(null)
+                        var rpkeyFlow: Flow<String?> = flowOf(null)
+                        LaunchedEffect(likeKeys) {
+                            lkeyFlow = snapshotFlow { likeKeys[post.uri] }
+                                .distinctUntilChanged()
+                        }
+                        LaunchedEffect(repostKeys) {
+                            rpkeyFlow = snapshotFlow { repostKeys[post.uri] }
+                                .distinctUntilChanged()
+                        }
                         PostFragment(
                             modifier = Modifier
                                 .fillParentMaxWidth()
                                 .padding(vertical = 2.dp, horizontal = 4.dp),
                             post = post,
                             onItemClicked = onItemClicked,
+                            onProfileClicked = onProfileClicked,
                             elevate = true,
+                            onUnClicked = onUnClicked,
+                            onRepostClicked = onRepostClicked,
+                            onReplyClicked = onReplyClicked,
+                            onMenuClicked = onMenuClicked,
+                            onLikeClicked = onLikeClicked,
+                            lkeyFlow = lkeyFlow,
+                            rpkeyFlow = rpkeyFlow,
                         )
                     }
                 }
@@ -169,9 +218,21 @@ fun SkylineFragment (
 fun SkylineThreadFragment(
     thread: BskyPostThread,
     modifier: Modifier = Modifier,
+    onItemClicked: OnPostClicked = {},
+    onProfileClicked: (AtIdentifier) -> Unit = {},
+    onReplyClicked: (StrongRef) -> Unit = { },
+    onRepostClicked: (StrongRef) -> Unit = { },
+    onLikeClicked: (StrongRef) -> Unit = { },
+    onMenuClicked: (MenuOptions) -> Unit = { },
+    onUnClicked: (type: RecordType, rkey: String) -> Unit = { _, _ -> },
+    lKeys: Flow<MutableMap<AtUri, String?>>,
+    rpKeys: Flow<MutableMap<AtUri, String?>>,
 ) {
     val threadPost = remember { ThreadPost.ViewablePost(thread.post, thread.replies) }
     val hasReplies = rememberSaveable { threadPost.replies.isNotEmpty()}
+    val likeKeys by lKeys.collectAsStateWithLifecycle(initialValue = mutableMapOf())
+    val repostKeys by lKeys.collectAsStateWithLifecycle(initialValue = mutableMapOf())
+
     Surface(
         tonalElevation = if(hasReplies) 1.dp else 0.dp,
         shape = MaterialTheme.shapes.extraSmall,
@@ -189,12 +250,31 @@ fun SkylineThreadFragment(
                             modifier = Modifier
                                 .padding(4.dp),
                         ) {
+                            var lkeyFlow: Flow<String?> = flowOf(null)
+                            var rpkeyFlow: Flow<String?> = flowOf(null)
+                            LaunchedEffect(likeKeys) {
+                                lkeyFlow = snapshotFlow { likeKeys[root.post.uri] }
+                                    .distinctUntilChanged()
+                            }
+                            LaunchedEffect(repostKeys) {
+                                rpkeyFlow = snapshotFlow { likeKeys[root.post.uri] }
+                                    .distinctUntilChanged()
+                            }
                             PostFragment(
                                 post = root.post,
                                 role = PostFragmentRole.ThreadBranchStart,
                                 elevate = true,
                                 modifier = Modifier
                                     .padding(2.dp),
+                                onItemClicked = onItemClicked,
+                                onProfileClicked = onProfileClicked,
+                                onUnClicked = onUnClicked,
+                                onRepostClicked = onRepostClicked,
+                                onReplyClicked = onReplyClicked,
+                                onMenuClicked = onMenuClicked,
+                                onLikeClicked = onLikeClicked,
+                                lkeyFlow = lkeyFlow,
+                                rpkeyFlow = rpkeyFlow,
                             )
                         }
                     } else {
@@ -222,12 +302,31 @@ fun SkylineThreadFragment(
                                         else -> PostFragmentRole.ThreadBranchMiddle
                                     } }
                                     if (post is ThreadPost.ViewablePost) {
+                                        var lkeyFlow: Flow<String?> = flowOf(null)
+                                        var rpkeyFlow: Flow<String?> = flowOf(null)
+                                        LaunchedEffect(likeKeys) {
+                                            lkeyFlow = snapshotFlow { likeKeys[post.post.uri] }
+                                                .distinctUntilChanged()
+                                        }
+                                        LaunchedEffect(repostKeys) {
+                                            rpkeyFlow = snapshotFlow { likeKeys[post.post.uri] }
+                                                .distinctUntilChanged()
+                                        }
                                         ThreadItem(
                                             item = post,
                                             role = role,
                                             indentLevel = 1,
                                             reason = reason,
                                             elevate = true,
+                                            onItemClicked = onItemClicked,
+                                            onProfileClicked = onProfileClicked,
+                                            onUnClicked = onUnClicked,
+                                            onRepostClicked = onRepostClicked,
+                                            onReplyClicked = onReplyClicked,
+                                            onLikeClicked = onLikeClicked,
+                                            onMenuClicked = onMenuClicked,
+                                            lkeyFlow = lkeyFlow,
+                                            rpkeyFlow = rpkeyFlow,
                                         )
                                     }
                                 }
@@ -236,6 +335,16 @@ fun SkylineThreadFragment(
                                     1 -> PostFragmentRole.ThreadEnd
                                     else -> PostFragmentRole.Solo
                                 } }
+                                var lkeyFlow: Flow<String?> = flowOf(null)
+                                var rpkeyFlow: Flow<String?> = flowOf(null)
+                                LaunchedEffect(likeKeys) {
+                                    lkeyFlow = snapshotFlow { likeKeys[threadPost.post.uri] }
+                                        .distinctUntilChanged()
+                                }
+                                LaunchedEffect(repostKeys) {
+                                    rpkeyFlow = snapshotFlow { likeKeys[threadPost.post.uri] }
+                                        .distinctUntilChanged()
+                                }
                                 ThreadItem(
                                     item = threadPost,
                                     role = role,
@@ -243,6 +352,15 @@ fun SkylineThreadFragment(
                                     elevate = true,
                                     modifier = Modifier
                                         .padding(4.dp),
+                                    onItemClicked = onItemClicked,
+                                    onProfileClicked = onProfileClicked,
+                                    onUnClicked = onUnClicked,
+                                    onRepostClicked = onRepostClicked,
+                                    onReplyClicked = onReplyClicked,
+                                    onLikeClicked = onLikeClicked,
+                                    onMenuClicked = onMenuClicked,
+                                    lkeyFlow = lkeyFlow,
+                                    rpkeyFlow = rpkeyFlow,
                                 )
                             }
                         }
@@ -256,6 +374,16 @@ fun SkylineThreadFragment(
                     1 -> PostFragmentRole.ThreadEnd
                     else -> PostFragmentRole.Solo
                 } }
+                var lkeyFlow: Flow<String?> = flowOf(null)
+                var rpkeyFlow: Flow<String?> = flowOf(null)
+                LaunchedEffect(likeKeys) {
+                    lkeyFlow = snapshotFlow { likeKeys[threadPost.post.uri] }
+                        .distinctUntilChanged()
+                }
+                LaunchedEffect(repostKeys) {
+                    rpkeyFlow = snapshotFlow { likeKeys[threadPost.post.uri] }
+                        .distinctUntilChanged()
+                }
                 ThreadItem(
                     item = threadPost,
                     role = role,
@@ -263,6 +391,15 @@ fun SkylineThreadFragment(
                     elevate = true,
                     modifier = Modifier
                         .padding(4.dp),
+                    onItemClicked = onItemClicked,
+                    onProfileClicked = onProfileClicked,
+                    onUnClicked = onUnClicked,
+                    onRepostClicked = onRepostClicked,
+                    onReplyClicked = onReplyClicked,
+                    onLikeClicked = onLikeClicked,
+                    onMenuClicked = onMenuClicked,
+                    lkeyFlow = lkeyFlow,
+                    rpkeyFlow = rpkeyFlow,
                 )
             }
 
@@ -281,14 +418,46 @@ fun SkylineThreadFragment(
                                 val threadHasReplies = rememberSaveable {
                                     it.replies.isNotEmpty()
                                 }
-                                ThreadReply(item = it,
+                                var lkeyFlow: Flow<String?> = flowOf(null)
+                                var rpkeyFlow: Flow<String?> = flowOf(null)
+                                LaunchedEffect(likeKeys) {
+                                    lkeyFlow = snapshotFlow { likeKeys[it.post.uri] }
+                                        .distinctUntilChanged()
+                                }
+                                LaunchedEffect(repostKeys) {
+                                    rpkeyFlow = snapshotFlow { likeKeys[it.post.uri] }
+                                        .distinctUntilChanged()
+                                }
+                                ThreadReply(
+                                    item = it,
                                     role = if(threadHasReplies) PostFragmentRole.ThreadBranchStart else PostFragmentRole.Solo,
                                     indentLevel = 1,
-                                    modifier = Modifier.padding(4.dp)
+                                    modifier = Modifier.padding(4.dp),
+                                    onItemClicked = onItemClicked,
+                                    onProfileClicked = onProfileClicked,
+                                    onUnClicked = onUnClicked,
+                                    onRepostClicked = onRepostClicked,
+                                    onReplyClicked = onReplyClicked,
+                                    onLikeClicked = onLikeClicked,
+                                    onMenuClicked = onMenuClicked,
+                                    lkeyFlow = lkeyFlow,
+                                    rpkeyFlow = rpkeyFlow,
                                 )
                                 if (threadHasReplies) {
                                     it.replies.forEach { reply ->
-                                        ThreadTree(reply = reply, indentLevel = 2, modifier = Modifier.padding(4.dp))
+                                        ThreadTree(
+                                            reply = reply, indentLevel = 2,
+                                            modifier = Modifier.padding(4.dp),
+                                            onItemClicked = onItemClicked,
+                                            onProfileClicked = onProfileClicked,
+                                            onUnClicked = onUnClicked,
+                                            onRepostClicked = onRepostClicked,
+                                            onReplyClicked = onReplyClicked,
+                                            onLikeClicked = onLikeClicked,
+                                            onMenuClicked = onMenuClicked,
+                                            lKeys = lKeys,
+                                            rpKeys = rpKeys,
+                                            )
                                     }
                                 }
                             }
@@ -312,7 +481,7 @@ fun PreviewSkyline() {
                 posts.add(SkylineItem(testPost))
             }
             val postsFlow = MutableStateFlow(Skyline(posts, null))
-            SkylineFragment(postFlow = postsFlow.asStateFlow(), {})
+            //SkylineFragment(postFlow = postsFlow.asStateFlow(), {})
         }
     }
 

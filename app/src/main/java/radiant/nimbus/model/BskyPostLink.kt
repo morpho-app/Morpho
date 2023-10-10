@@ -29,6 +29,11 @@ sealed interface LinkTarget {
     data class ExternalLink(
         val uri: Uri,
     ) : LinkTarget
+
+    @Serializable
+    data class Tag(
+        val tag: String,
+    ) : LinkTarget
 }
 
 fun Facet.toLink(): BskyPostLink {
@@ -38,6 +43,7 @@ fun Facet.toLink(): BskyPostLink {
         target = when (val feature = features.first()) {
             is FacetFeatureUnion.Link -> LinkTarget.ExternalLink(feature.value.uri)
             is FacetFeatureUnion.Mention -> LinkTarget.UserDidMention(feature.value.did)
+            is FacetFeatureUnion.Tag -> LinkTarget.Tag(feature.value.tag)
         },
     )
 }

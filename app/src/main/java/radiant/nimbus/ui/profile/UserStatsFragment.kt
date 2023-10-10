@@ -1,4 +1,4 @@
-package radiant.nimbus.ui.common
+package radiant.nimbus.ui.profile
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.ExperimentalLayoutApi

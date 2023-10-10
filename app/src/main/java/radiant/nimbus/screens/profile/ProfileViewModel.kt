@@ -13,7 +13,9 @@ import app.bsky.feed.GetAuthorFeedFilter
 import app.bsky.feed.GetAuthorFeedQueryParams
 import app.bsky.graph.GetListsQueryParams
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -21,6 +23,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import radiant.nimbus.api.ApiProvider
 import radiant.nimbus.api.AtIdentifier
+import radiant.nimbus.api.model.RecordUnion
 import radiant.nimbus.api.response.AtpResponse
 import radiant.nimbus.base.BaseViewModel
 import radiant.nimbus.model.DetailedProfile
@@ -98,6 +101,13 @@ class ProfileViewModel @Inject constructor(
         }
     }
 
+    fun createRecord(
+        record: RecordUnion,
+        apiProvider: ApiProvider,
+    ) = CoroutineScope(Dispatchers.Default).async {
+        apiProvider.createRecord(record).await()
+    }
+
     @Suppress("LocalVariableName")
     fun getProfileFeed(feed: ProfileTabs, apiProvider: ApiProvider, cursor: String? = null, actor: AtIdentifier? = null
     ) = viewModelScope.launch(Dispatchers.IO) {
@@ -108,18 +118,14 @@ class ProfileViewModel @Inject constructor(
                     val result = apiProvider.api.getAuthorFeed(GetAuthorFeedQueryParams(_actor, 100,cursor, GetAuthorFeedFilter.POSTS_NO_REPLIES))
                     if (result is AtpResponse.Success) {
                         val newPosts = Skyline.from(result.response.feed, result.response.cursor)
-                        newPosts.posts.forEach { item ->
-                            if(item.thread == null) {
-                                item.postToThread(apiProvider, depth = 1, parentHeight = 2)
-                            }
-                        }
                         if (cursor != null) {
                             Log.i("UpdatePosts", result.response.feed.toString())
-                            _profilePosts.update { skyline -> Skyline.concat(skyline, newPosts) }
+                            _profilePosts.update { skyline -> Skyline.concat(skyline, newPosts.collectThreads().await()) }
                         } else {
                             Log.i("Posts", result.response.feed.toString())
 
                             _profilePosts.value = newPosts
+                            _profilePosts.update { skyline -> skyline.collectThreads().await() }
                         }
                     }
 
@@ -129,18 +135,14 @@ class ProfileViewModel @Inject constructor(
                     if (result is AtpResponse.Success) {
                         Log.i("Posts+Replies", result.response.feed.toString())
                         val newPosts = Skyline.from(result.response.feed, result.response.cursor)
-                        newPosts.posts.forEach { item ->
-                            if(item.thread == null) {
-                                item.postToThread(apiProvider, depth = 2, parentHeight = 2)
-                            }
-                        }
                         if (cursor != null) {
                             Log.i("UpdatePosts+Replies", result.response.feed.toString())
 
-                            _profilePostsReplies.update { skyline -> Skyline.concat(skyline, newPosts) }
+                            _profilePostsReplies.update { skyline -> Skyline.concat(skyline, newPosts.collectThreads().await()) }
                         } else {
                             Log.i("Posts+Replies", result.response.feed.toString())
                             _profilePostsReplies.value = newPosts
+                            _profilePostsReplies.update { skyline -> skyline.collectThreads().await() }
                         }
                     }
                 }
@@ -149,17 +151,13 @@ class ProfileViewModel @Inject constructor(
                     if (result is AtpResponse.Success) {
                         Log.i("Media", result.response.feed.toString())
                         val newPosts = Skyline.from(result.response.feed, result.response.cursor)
-                        newPosts.posts.forEach { item ->
-                            if(item.thread == null) {
-                                //item.postToThread(apiProvider, depth = 2, parentHeight = 2)
-                            }
-                        }
                         if (cursor != null) {
                             Log.i("UpdateMedia", result.response.feed.toString())
-                            _profileMedia.update { skyline -> Skyline.concat(skyline, newPosts) }
+                            _profileMedia.update { skyline -> Skyline.concat(skyline, newPosts.collectThreads().await()) }
                         } else {
                             Log.i("Media", result.response.feed.toString())
                             _profileMedia.value = newPosts
+                            _profileMedia.update { skyline -> skyline.collectThreads().await() }
                         }
                     }
                 }

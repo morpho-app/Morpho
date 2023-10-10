@@ -168,6 +168,9 @@ public fun PostEmbedUnion.toFeature(): BskyPostFeature? {
         is PostEmbedUnion.Record -> {
             null // Don't nest embeds too hard
         }
+        is PostEmbedUnion.RecordMain -> {
+            null // Don't nest embeds too hard
+        }
         is PostEmbedUnion.RecordWithMedia -> {
             null // Don't nest embeds too hard
         }

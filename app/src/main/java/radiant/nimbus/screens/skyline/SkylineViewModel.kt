@@ -10,7 +10,9 @@ import androidx.lifecycle.viewModelScope
 import app.bsky.feed.GetFeedQueryParams
 import app.bsky.feed.GetTimelineQueryParams
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -19,6 +21,7 @@ import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import radiant.nimbus.api.ApiProvider
 import radiant.nimbus.api.AtUri
+import radiant.nimbus.api.model.RecordUnion
 import radiant.nimbus.api.response.AtpResponse
 import radiant.nimbus.base.BaseViewModel
 import radiant.nimbus.model.Skyline
@@ -41,6 +44,12 @@ class SkylineViewModel @Inject constructor(
     val skylinePosts: StateFlow<Skyline> = _skylinePosts.asStateFlow()
 
 
+    fun createRecord(
+        record: RecordUnion,
+        apiProvider: ApiProvider,
+    ) = CoroutineScope(Dispatchers.Default).async {
+        apiProvider.createRecord(record).await()
+    }
 
     fun getSkyline(
         apiProvider: ApiProvider,

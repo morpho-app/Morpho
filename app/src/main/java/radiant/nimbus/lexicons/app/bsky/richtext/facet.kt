@@ -26,6 +26,15 @@ public sealed interface FacetFeatureUnion {
   public value class Link(
     public val `value`: FacetLink,
   ) : FacetFeatureUnion
+
+  public class TagSerializer : KSerializer<Tag> by valueClassSerializer()
+
+  @Serializable(with = TagSerializer::class)
+  @JvmInline
+  @SerialName("app.bsky.richtext.facet#tag")
+  public value class Tag(
+    public val `value`: FacetTag,
+  ) : FacetFeatureUnion
 }
 
 @Serializable

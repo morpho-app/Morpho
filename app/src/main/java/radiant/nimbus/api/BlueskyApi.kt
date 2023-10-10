@@ -1,4 +1,4 @@
-package radiant.nimbus
+package radiant.nimbus.api
 
 import app.bsky.actor.GetPreferencesResponse
 import app.bsky.actor.GetProfileQueryParams
@@ -41,6 +41,8 @@ import app.bsky.feed.GetSuggestedFeedsQueryParams
 import app.bsky.feed.GetSuggestedFeedsResponse
 import app.bsky.feed.GetTimelineQueryParams
 import app.bsky.feed.GetTimelineResponse
+import app.bsky.feed.SearchPostsQueryParams
+import app.bsky.feed.SearchPostsResponse
 import app.bsky.graph.GetBlocksResponse
 import app.bsky.graph.GetFollowersQueryParams
 import app.bsky.graph.GetFollowersResponse
@@ -75,6 +77,10 @@ import app.bsky.unspecced.GetPopularQueryParams
 import app.bsky.unspecced.GetPopularResponse
 import app.bsky.unspecced.GetTimelineSkeletonQueryParams
 import app.bsky.unspecced.GetTimelineSkeletonResponse
+import app.bsky.unspecced.SearchActorsSkeletonQueryParams
+import app.bsky.unspecced.SearchActorsSkeletonResponse
+import app.bsky.unspecced.SearchPostsSkeletonQueryParams
+import app.bsky.unspecced.SearchPostsSkeletonResponse
 import com.atproto.admin.DisableAccountInvitesRequest
 import com.atproto.admin.DisableInviteCodesRequest
 import com.atproto.admin.EnableAccountInvitesRequest
@@ -121,6 +127,7 @@ import com.atproto.repo.ListRecordsResponse
 import com.atproto.repo.PutRecordRequest
 import com.atproto.repo.PutRecordResponse
 import com.atproto.repo.UploadBlobResponse
+import com.atproto.server.ConfirmEmailRequest
 import com.atproto.server.CreateAccountRequest
 import com.atproto.server.CreateAccountResponse
 import com.atproto.server.CreateAppPasswordRequest
@@ -138,9 +145,11 @@ import com.atproto.server.GetAccountInviteCodesResponse
 import com.atproto.server.GetSessionResponse
 import com.atproto.server.ListAppPasswordsResponse
 import com.atproto.server.RefreshSessionResponse
+import com.atproto.server.RequestEmailUpdateResponse
 import com.atproto.server.RequestPasswordResetRequest
 import com.atproto.server.ResetPasswordRequest
 import com.atproto.server.RevokeAppPasswordRequest
+import com.atproto.server.UpdateEmailRequest
 import com.atproto.sync.GetBlobQueryParams
 import com.atproto.sync.GetCheckoutQueryParams
 import com.atproto.sync.GetHeadQueryParams
@@ -155,8 +164,6 @@ import com.atproto.sync.NotifyOfUpdateRequest
 import com.atproto.sync.RequestCrawlRequest
 import com.atproto.sync.SubscribeReposMessage
 import com.atproto.sync.SubscribeReposQueryParams
-import kotlin.ByteArray
-import kotlin.Unit
 import kotlinx.coroutines.flow.Flow
 import radiant.nimbus.api.response.AtpResponse
 import app.bsky.graph.GetBlocksQueryParams as GraphGetBlocksQueryParams
@@ -179,6 +186,11 @@ public interface BlueskyApi {
    * Apply a batch transaction of creates, updates, and deletes.
    */
   public suspend fun applyWrites(request: ApplyWritesRequest): AtpResponse<Unit>
+
+  /**
+   * Confirm an email using a token from com.atproto.server.requestEmailConfirmation.
+   */
+  public suspend fun confirmEmail(request: ConfirmEmailRequest): AtpResponse<Unit>
 
   /**
    * Create an account.
@@ -588,6 +600,16 @@ public interface BlueskyApi {
   public suspend fun requestCrawl(request: RequestCrawlRequest): AtpResponse<Unit>
 
   /**
+   * Request an email with a code to confirm ownership of email
+   */
+  public suspend fun requestEmailConfirmation(): AtpResponse<Unit>
+
+  /**
+   * Request a token in order to update email.
+   */
+  public suspend fun requestEmailUpdate(): AtpResponse<RequestEmailUpdateResponse>
+
+  /**
    * Initiate a user account password reset via email.
    */
   public suspend fun requestPasswordReset(request: RequestPasswordResetRequest): AtpResponse<Unit>
@@ -621,16 +643,33 @@ public interface BlueskyApi {
   public suspend fun revokeAppPassword(request: RevokeAppPasswordRequest): AtpResponse<Unit>
 
   /**
-   * Find actors matching search criteria.
+   * Find actors (profiles) matching search criteria.
    */
   public suspend fun searchActors(params: SearchActorsQueryParams):
       AtpResponse<SearchActorsResponse>
+
+  /**
+   * Backend Actors (profile) search, returning only skeleton
+   */
+  public suspend fun searchActorsSkeleton(params: SearchActorsSkeletonQueryParams):
+      AtpResponse<SearchActorsSkeletonResponse>
 
   /**
    * Find actor suggestions for a search term.
    */
   public suspend fun searchActorsTypeahead(params: SearchActorsTypeaheadQueryParams):
       AtpResponse<SearchActorsTypeaheadResponse>
+
+  /**
+   * Find posts matching search criteria
+   */
+  public suspend fun searchPosts(params: SearchPostsQueryParams): AtpResponse<SearchPostsResponse>
+
+  /**
+   * Backend Posts search, returning only skeleton
+   */
+  public suspend fun searchPostsSkeleton(params: SearchPostsSkeletonQueryParams):
+      AtpResponse<SearchPostsSkeletonResponse>
 
   /**
    * Find repositories based on a search term.
@@ -679,6 +718,11 @@ public interface BlueskyApi {
    * Administrative action to update an account's handle
    */
   public suspend fun updateAccountHandle(request: UpdateAccountHandleRequest): AtpResponse<Unit>
+
+  /**
+   * Update an account's email.
+   */
+  public suspend fun updateEmail(request: UpdateEmailRequest): AtpResponse<Unit>
 
   /**
    * Updates the handle of the account

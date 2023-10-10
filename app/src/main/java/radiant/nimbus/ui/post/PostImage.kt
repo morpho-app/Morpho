@@ -1,4 +1,4 @@
-package radiant.nimbus.ui.common
+package radiant.nimbus.ui.post
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable

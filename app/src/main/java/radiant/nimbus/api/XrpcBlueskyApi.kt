@@ -41,6 +41,8 @@ import app.bsky.feed.GetSuggestedFeedsQueryParams
 import app.bsky.feed.GetSuggestedFeedsResponse
 import app.bsky.feed.GetTimelineQueryParams
 import app.bsky.feed.GetTimelineResponse
+import app.bsky.feed.SearchPostsQueryParams
+import app.bsky.feed.SearchPostsResponse
 import app.bsky.graph.GetBlocksResponse
 import app.bsky.graph.GetFollowersQueryParams
 import app.bsky.graph.GetFollowersResponse
@@ -75,6 +77,10 @@ import app.bsky.unspecced.GetPopularQueryParams
 import app.bsky.unspecced.GetPopularResponse
 import app.bsky.unspecced.GetTimelineSkeletonQueryParams
 import app.bsky.unspecced.GetTimelineSkeletonResponse
+import app.bsky.unspecced.SearchActorsSkeletonQueryParams
+import app.bsky.unspecced.SearchActorsSkeletonResponse
+import app.bsky.unspecced.SearchPostsSkeletonQueryParams
+import app.bsky.unspecced.SearchPostsSkeletonResponse
 import com.atproto.admin.DisableAccountInvitesRequest
 import com.atproto.admin.DisableInviteCodesRequest
 import com.atproto.admin.EnableAccountInvitesRequest
@@ -121,6 +127,7 @@ import com.atproto.repo.ListRecordsResponse
 import com.atproto.repo.PutRecordRequest
 import com.atproto.repo.PutRecordResponse
 import com.atproto.repo.UploadBlobResponse
+import com.atproto.server.ConfirmEmailRequest
 import com.atproto.server.CreateAccountRequest
 import com.atproto.server.CreateAccountResponse
 import com.atproto.server.CreateAppPasswordRequest
@@ -138,9 +145,11 @@ import com.atproto.server.GetAccountInviteCodesResponse
 import com.atproto.server.GetSessionResponse
 import com.atproto.server.ListAppPasswordsResponse
 import com.atproto.server.RefreshSessionResponse
+import com.atproto.server.RequestEmailUpdateResponse
 import com.atproto.server.RequestPasswordResetRequest
 import com.atproto.server.ResetPasswordRequest
 import com.atproto.server.RevokeAppPasswordRequest
+import com.atproto.server.UpdateEmailRequest
 import com.atproto.sync.GetBlobQueryParams
 import com.atproto.sync.GetCheckoutQueryParams
 import com.atproto.sync.GetHeadQueryParams
@@ -156,10 +165,7 @@ import com.atproto.sync.RequestCrawlRequest
 import com.atproto.sync.SubscribeReposMessage
 import com.atproto.sync.SubscribeReposQueryParams
 import io.ktor.client.HttpClient
-import kotlin.ByteArray
-import kotlin.Unit
 import kotlinx.coroutines.flow.Flow
-import radiant.nimbus.BlueskyApi
 import radiant.nimbus.api.response.AtpResponse
 import radiant.nimbus.api.xrpc.procedure
 import radiant.nimbus.api.xrpc.query
@@ -198,6 +204,17 @@ public class XrpcBlueskyApi(
   override suspend fun applyWrites(request: ApplyWritesRequest): AtpResponse<Unit> {
     return client.procedure(
       path = "/xrpc/com.atproto.repo.applyWrites",
+      body = request,
+      encoding = "application/json",
+    ).toAtpResponse()
+  }
+
+  /**
+   * Confirm an email using a token from com.atproto.server.requestEmailConfirmation.
+   */
+  override suspend fun confirmEmail(request: ConfirmEmailRequest): AtpResponse<Unit> {
+    return client.procedure(
+      path = "/xrpc/com.atproto.server.confirmEmail",
       body = request,
       encoding = "application/json",
     ).toAtpResponse()
@@ -1028,6 +1045,24 @@ public class XrpcBlueskyApi(
   }
 
   /**
+   * Request an email with a code to confirm ownership of email
+   */
+  override suspend fun requestEmailConfirmation(): AtpResponse<Unit> {
+    return client.procedure(
+      path = "/xrpc/com.atproto.server.requestEmailConfirmation",
+    ).toAtpResponse()
+  }
+
+  /**
+   * Request a token in order to update email.
+   */
+  override suspend fun requestEmailUpdate(): AtpResponse<RequestEmailUpdateResponse> {
+    return client.procedure(
+      path = "/xrpc/com.atproto.server.requestEmailUpdate",
+    ).toAtpResponse()
+  }
+
+  /**
    * Initiate a user account password reset via email.
    */
   override suspend fun requestPasswordReset(request: RequestPasswordResetRequest):
@@ -1097,12 +1132,23 @@ public class XrpcBlueskyApi(
   }
 
   /**
-   * Find actors matching search criteria.
+   * Find actors (profiles) matching search criteria.
    */
   override suspend fun searchActors(params: SearchActorsQueryParams):
       AtpResponse<SearchActorsResponse> {
     return client.query(
       path = "/xrpc/app.bsky.actor.searchActors",
+      queryParams = params.asList(),
+    ).toAtpResponse()
+  }
+
+  /**
+   * Backend Actors (profile) search, returning only skeleton
+   */
+  override suspend fun searchActorsSkeleton(params: SearchActorsSkeletonQueryParams):
+      AtpResponse<SearchActorsSkeletonResponse> {
+    return client.query(
+      path = "/xrpc/app.bsky.unspecced.searchActorsSkeleton",
       queryParams = params.asList(),
     ).toAtpResponse()
   }
@@ -1114,6 +1160,28 @@ public class XrpcBlueskyApi(
       AtpResponse<SearchActorsTypeaheadResponse> {
     return client.query(
       path = "/xrpc/app.bsky.actor.searchActorsTypeahead",
+      queryParams = params.asList(),
+    ).toAtpResponse()
+  }
+
+  /**
+   * Find posts matching search criteria
+   */
+  override suspend fun searchPosts(params: SearchPostsQueryParams):
+      AtpResponse<SearchPostsResponse> {
+    return client.query(
+      path = "/xrpc/app.bsky.feed.searchPosts",
+      queryParams = params.asList(),
+    ).toAtpResponse()
+  }
+
+  /**
+   * Backend Posts search, returning only skeleton
+   */
+  override suspend fun searchPostsSkeleton(params: SearchPostsSkeletonQueryParams):
+      AtpResponse<SearchPostsSkeletonResponse> {
+    return client.query(
+      path = "/xrpc/app.bsky.unspecced.searchPostsSkeleton",
       queryParams = params.asList(),
     ).toAtpResponse()
   }
@@ -1213,6 +1281,17 @@ public class XrpcBlueskyApi(
   override suspend fun updateAccountHandle(request: UpdateAccountHandleRequest): AtpResponse<Unit> {
     return client.procedure(
       path = "/xrpc/com.atproto.admin.updateAccountHandle",
+      body = request,
+      encoding = "application/json",
+    ).toAtpResponse()
+  }
+
+  /**
+   * Update an account's email.
+   */
+  override suspend fun updateEmail(request: UpdateEmailRequest): AtpResponse<Unit> {
+    return client.procedure(
+      path = "/xrpc/com.atproto.server.updateEmail",
       body = request,
       encoding = "application/json",
     ).toAtpResponse()

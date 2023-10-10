@@ -10,8 +10,15 @@ import radiant.nimbus.api.model.ReadOnlyList
 
 @Serializable
 public data class SearchActorsTypeaheadQueryParams(
+  /**
+   * DEPRECATED: use 'q' instead
+   */
   public val term: String? = null,
-  public val limit: Long? = 50,
+  /**
+   * search query prefix; not a full query string
+   */
+  public val q: String? = null,
+  public val limit: Long? = 10,
 ) {
   init {
     require(limit == null || limit >= 1) {
@@ -24,6 +31,7 @@ public data class SearchActorsTypeaheadQueryParams(
 
   public fun asList(): ReadOnlyList<Pair<String, Any?>> = buildList {
     add("term" to term)
+    add("q" to q)
     add("limit" to limit)
   }.toImmutableList()
 }

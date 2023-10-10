@@ -87,7 +87,7 @@ fun NimbusBottomNavBar(
             //label = {Text("Home")},
             alwaysShowLabel = false,
         )
-        NavigationBarItem(selected = currentDestination == SkylineScreenDestination,
+        NavigationBarItem(selected = false,//currentDestination == SkylineScreenDestination,
             onClick = { navController.navigate(SkylineScreenDestination) {
                 popUpTo(NavGraphs.root) {
                     saveState = true
@@ -184,8 +184,8 @@ fun NimbusNavRail(
         Spacer(modifier = Modifier
             .height(20.dp)
             .weight(0.2F),)
-        NavigationRailItem(selected = currentDestination == SkylineScreenDestination.invoke(),
-            onClick = { navController.navigate(SkylineScreenDestination.invoke()) {
+        NavigationRailItem(selected = currentDestination == SkylineScreenDestination,
+            onClick = { navController.navigate(SkylineScreenDestination) {
                 popUpTo(NavGraphs.root) {
                     saveState = true
                 }
@@ -198,8 +198,8 @@ fun NimbusNavRail(
             //label = {Text("Home")},
             alwaysShowLabel = false,
         )
-        NavigationRailItem(selected = currentDestination == SkylineScreenDestination.invoke(),
-            onClick = { navController.navigate(SkylineScreenDestination.invoke()) {
+        NavigationRailItem(selected = false, //currentDestination == SkylineScreenDestination.invoke(),
+            onClick = { navController.navigate(SkylineScreenDestination) {
                 popUpTo(NavGraphs.root) {
                     saveState = true
                 }
@@ -212,8 +212,8 @@ fun NimbusNavRail(
             //label = {Text("Search")},
             alwaysShowLabel = false,
         )
-        NavigationRailItem(selected = currentDestination == FeedListScreenDestination.invoke(),
-            onClick = { navController.navigate(FeedListScreenDestination.invoke()) {
+        NavigationRailItem(selected = currentDestination == FeedListScreenDestination,
+            onClick = { navController.navigate(FeedListScreenDestination) {
                 popUpTo(NavGraphs.root) {
                     saveState = true
                 }
@@ -226,8 +226,8 @@ fun NimbusNavRail(
             //label = {Text("Feeds")},
             alwaysShowLabel = false,
         )
-        NavigationRailItem(selected = currentDestination == NotificationsScreenDestination.invoke(),
-            onClick = { navController.navigate(NotificationsScreenDestination.invoke()) {
+        NavigationRailItem(selected = currentDestination == NotificationsScreenDestination,
+            onClick = { navController.navigate(NotificationsScreenDestination) {
                 popUpTo(NavGraphs.root) {
                     saveState = true
                 }

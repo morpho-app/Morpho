@@ -36,7 +36,7 @@ public data class SkylineItem(
             }
                 ?.let {
                     apiProvider.api
-                        .getPostThread(it).requireResponse().thread
+                        .getPostThread(it).maybeResponse()?.thread
                 }
         //Log.i("responseThread", responseThread.toString())
         when (responseThread) {

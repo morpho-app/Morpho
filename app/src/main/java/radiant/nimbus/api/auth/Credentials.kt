@@ -1,8 +1,9 @@
 package radiant.nimbus.api.auth
 
+import kotlinx.serialization.Serializable
 import radiant.nimbus.api.Handle
 
-
+@Serializable
 data class Credentials constructor(
     val email: String?,
     val username: Handle,

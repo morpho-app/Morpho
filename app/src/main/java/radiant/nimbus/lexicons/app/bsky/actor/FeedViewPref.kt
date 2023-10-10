@@ -1,5 +1,8 @@
 package app.bsky.actor
 
+import kotlin.Boolean
+import kotlin.Long
+import kotlin.String
 import kotlinx.serialization.Serializable
 
 @Serializable

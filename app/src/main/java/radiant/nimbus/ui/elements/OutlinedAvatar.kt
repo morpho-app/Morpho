@@ -1,4 +1,4 @@
-package radiant.nimbus.ui.common
+package radiant.nimbus.ui.elements
 
 /*
  * Copyright 2020 The Android Open Source Project

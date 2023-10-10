@@ -14,7 +14,7 @@ import radiant.nimbus.components.ScreenBody
 import radiant.nimbus.extensions.activityViewModel
 import radiant.nimbus.api.AtUri
 
-@RootNavGraph(start = true)
+
 @Destination
 @Composable
 fun TemplateScreen(

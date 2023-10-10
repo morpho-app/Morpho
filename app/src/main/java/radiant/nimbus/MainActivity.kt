@@ -39,7 +39,7 @@ import radiant.nimbus.screens.appCurrentDestinationAsState
 import radiant.nimbus.screens.destinations.LoginScreenDestination
 import radiant.nimbus.screens.destinations.SkylineScreenDestination
 import radiant.nimbus.ui.common.NimbusNavigation
-import radiant.nimbus.ui.common.OutlinedAvatar
+import radiant.nimbus.ui.elements.OutlinedAvatar
 import radiant.nimbus.ui.theme.NimbusTheme
 
 @OptIn(ExperimentalMaterial3WindowSizeClassApi::class)

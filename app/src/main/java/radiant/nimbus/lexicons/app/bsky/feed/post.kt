@@ -47,6 +47,16 @@ public sealed interface PostEmbedUnion {
     public val `value`: app.bsky.embed.Record,
   ) : PostEmbedUnion
 
+  public class RecordMainSerializer : KSerializer<RecordMain> by valueClassSerializer()
+
+  @Serializable(with = RecordMainSerializer::class)
+  @JvmInline
+  @SerialName("app.bsky.embed.record#main")
+  public value class RecordMain(
+    public val `value`: app.bsky.embed.RecordMain,
+  ) : PostEmbedUnion
+
+
   public class RecordWithMediaSerializer : KSerializer<RecordWithMedia> by valueClassSerializer()
 
   @Serializable(with = RecordWithMediaSerializer::class)
@@ -81,6 +91,10 @@ public data class Post(
   public val embed: PostEmbedUnion? = null,
   public val langs: ReadOnlyList<Language> = persistentListOf(),
   public val labels: PostLabelsUnion? = null,
+  /**
+   * Additional non-inline tags describing this post.
+   */
+  public val tags: ReadOnlyList<String> = persistentListOf(),
   public val createdAt: Timestamp,
 ) {
   init {
@@ -89,6 +103,12 @@ public data class Post(
     }
     require(langs == null || langs.count() <= 3) {
       "langs.count() must be <= 3, but was ${langs?.count()}"
+    }
+    require(tags == null || tags.count() <= 8) {
+      "tags.count() must be <= 8, but was ${tags?.count()}"
+    }
+    require(tags == null || tags.count() <= 640) {
+      "tags.count() must be <= 640, but was ${tags?.count()}"
     }
   }
 }

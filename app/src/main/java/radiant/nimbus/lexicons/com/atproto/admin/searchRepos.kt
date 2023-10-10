@@ -10,7 +10,11 @@ import radiant.nimbus.api.model.ReadOnlyList
 
 @Serializable
 public data class SearchReposQueryParams(
+  /**
+   * DEPRECATED: use 'q' instead
+   */
   public val term: String? = null,
+  public val q: String? = null,
   public val invitedBy: String? = null,
   public val limit: Long? = 50,
   public val cursor: String? = null,
@@ -26,6 +30,7 @@ public data class SearchReposQueryParams(
 
   public fun asList(): ReadOnlyList<Pair<String, Any?>> = buildList {
     add("term" to term)
+    add("q" to q)
     add("invitedBy" to invitedBy)
     add("limit" to limit)
     add("cursor" to cursor)

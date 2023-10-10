@@ -1,19 +1,34 @@
 package radiant.nimbus.screens.postthread
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
+import kotlinx.coroutines.launch
 import radiant.nimbus.MainViewModel
+import radiant.nimbus.api.ApiProvider
 import radiant.nimbus.api.AtUri
+import radiant.nimbus.api.model.RecordUnion
 import radiant.nimbus.components.ScreenBody
 import radiant.nimbus.extensions.activityViewModel
 import radiant.nimbus.model.BskyPostThread
-import radiant.nimbus.ui.common.ThreadFragmentFrame
+import radiant.nimbus.screens.destinations.PostThreadScreenDestination
+import radiant.nimbus.screens.destinations.ProfileScreenDestination
+import radiant.nimbus.ui.thread.ThreadFragment
 
 @Destination
 @Composable
@@ -23,13 +38,23 @@ fun PostThreadScreen(
     viewModel: PostThreadViewModel = hiltViewModel(),
     uri: AtUri,
 ) {
-    when {
-        viewModel.state.isLoading -> {
-            viewModel.loadThread(uri, mainViewModel.apiProvider)
-        }
-        !viewModel.state.isLoading -> {
-            if (!viewModel.state.isBlocked || !viewModel.state.notFound || viewModel.thread != null ) {
-                viewModel.thread?.let { PostThreadView(it, navBar = { mainViewModel.navBar?.let { it() } },) }
+    var showLoadingScreen by rememberSaveable { mutableStateOf(true) }
+    BackHandler {
+        navigator.navigateUp()
+    }
+    if(showLoadingScreen) {
+            viewModel.loadThread(uri, mainViewModel.apiProvider) {
+                showLoadingScreen = false
+            }
+    } else {
+        if (!viewModel.state.isBlocked || !viewModel.state.notFound || viewModel.thread != null ) {
+            viewModel.thread?.let {
+                PostThreadView(
+                    thread = it,
+                    apiProvider = mainViewModel.apiProvider,
+                    navigator = navigator,
+                    navBar = { mainViewModel.navBar?.let { it() } }
+                )
             }
         }
     }
@@ -39,13 +64,47 @@ fun PostThreadScreen(
 @Composable
 fun PostThreadView(
     thread: BskyPostThread,
+    apiProvider: ApiProvider,
+    navigator: DestinationsNavigator,
     navBar: @Composable () -> Unit = {},
 ){
+    val scope = rememberCoroutineScope()
+    val likeKeys = remember { mutableStateMapOf(Pair<AtUri, String?>(AtUri(""), "")) }
+    val repostKeys = remember { mutableStateMapOf(Pair<AtUri, String?>(AtUri(""), "")) }
     ScreenBody(
         modifier = Modifier.fillMaxSize().systemBarsPadding(),
         navBar = navBar,
     ) {
-        ThreadFragmentFrame(thread = thread)
+
+        ThreadFragment(thread = thread,
+            modifier = Modifier.navigationBarsPadding(),
+            onItemClicked = {
+                navigator.navigate(PostThreadScreenDestination(it))
+            },
+            onProfileClicked = {
+                navigator.navigate(ProfileScreenDestination(it))
+            },
+            onUnClicked = {type, rkey ->  apiProvider.deleteRecord(type, rkey)},
+            onRepostClicked = {
+                /* TODO: Add dialog/quote post option */
+                scope.launch {
+                    repostKeys[it.uri] = apiProvider.createRecord(
+                        record = RecordUnion.Repost(it),
+                    ).await()
+                }
+            },
+            onReplyClicked = { },
+            onMenuClicked = { },
+            onLikeClicked = {
+                scope.launch {
+                    likeKeys[it.uri] = apiProvider.createRecord(
+                        record = RecordUnion.Like(it),
+                    ).await()
+                }
+            },
+            lKeys = snapshotFlow { likeKeys },
+            rpKeys = snapshotFlow { repostKeys }
+        )
     }
 }
 

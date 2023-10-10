@@ -10,8 +10,16 @@ import radiant.nimbus.api.model.ReadOnlyList
 
 @Serializable
 public data class SearchActorsQueryParams(
+  /**
+   * DEPRECATED: use 'q' instead
+   */
   public val term: String? = null,
-  public val limit: Long? = 50,
+  /**
+   * search query string; syntax, phrase, boolean, and faceting is unspecified, but Lucene query
+   * syntax is recommended
+   */
+  public val q: String? = null,
+  public val limit: Long? = 25,
   public val cursor: String? = null,
 ) {
   init {
@@ -25,6 +33,7 @@ public data class SearchActorsQueryParams(
 
   public fun asList(): ReadOnlyList<Pair<String, Any?>> = buildList {
     add("term" to term)
+    add("q" to q)
     add("limit" to limit)
     add("cursor" to cursor)
   }.toImmutableList()

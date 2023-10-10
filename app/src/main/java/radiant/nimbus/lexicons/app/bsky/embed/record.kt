@@ -7,3 +7,8 @@ import kotlinx.serialization.Serializable
 public data class Record(
   public val record: StrongRef,
 )
+
+@Serializable
+public data class RecordMain(
+  public val record: StrongRef,
+)
