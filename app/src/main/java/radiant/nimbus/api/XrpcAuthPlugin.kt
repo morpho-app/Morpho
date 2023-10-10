@@ -14,8 +14,10 @@ import io.ktor.client.request.bearerAuth
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.bodyAsText
+import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders.Authorization
 import io.ktor.http.HttpStatusCode.Companion.BadRequest
+import io.ktor.http.contentType
 import io.ktor.util.AttributeKey
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.serialization.json.Json
@@ -84,18 +86,20 @@ internal class XrpcAuthPlugin(
               }
             } else null
 
-            val newSessionResponse = scope.post("/xrpc/com.atproto.server.createSession") {
-              this.setBody(request)
-            }
-            runCatching { newSessionResponse.body<CreateSessionResponse>() }.getOrNull()?.let { new ->
-              val newAccessToken = new.accessJwt
-              val newRefreshToken = new.refreshJwt
+              val newSessionResponse = scope.post("/xrpc/com.atproto.server.createSession") {
+                plugin.authTokens.value?.refresh?.let { bearerAuth(it) }
+                contentType(ContentType.Application.Json)
+                setBody(request)
+              }
+              runCatching { newSessionResponse.body<CreateSessionResponse>() }.getOrNull()?.let { new ->
+                val newAccessToken = new.accessJwt
+                val newRefreshToken = new.refreshJwt
 
-              plugin.authTokens.value = Tokens(newAccessToken, newRefreshToken)
-              context.headers.remove(Authorization)
-              context.bearerAuth(newAccessToken)
-              result = execute(context)
-            }
+                plugin.authTokens.value = Tokens(newAccessToken, newRefreshToken)
+                context.headers.remove(Authorization)
+                context.bearerAuth(newAccessToken)
+                result = execute(context)
+              }
 
           } else {
             val refreshResponse = scope.post("/xrpc/com.atproto.server.refreshSession") {

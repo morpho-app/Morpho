@@ -54,14 +54,14 @@ fun PostActions(
             parameter = post.replyCount,
             iconNormal = Icons.Outlined.ChatBubbleOutline,
             iconActive = Icons.Default.ChatBubble,
-            contentDescription = "Reply",
+            contentDescription = "Reply ",
             onClicked = onReplyClicked,
             //onUnClicked = { onUnClicked(RecordType.Post, it) },
         )
         PostAction(
             parameter = post.repostCount,
             iconNormal = Icons.Outlined.Repeat,
-            contentDescription = "Repost",
+            contentDescription = "Repost ",
             onClicked = onRepostClicked,
             onUnClicked = { onUnClicked(RecordType.Repost, repostUri) },
             active = post.reposted
@@ -70,7 +70,7 @@ fun PostActions(
             parameter = post.likeCount,
             iconNormal = Icons.Outlined.FavoriteBorder,
             iconActive = Icons.Default.Favorite,
-            contentDescription = "Like",
+            contentDescription = "Like ",
             onClicked = onLikeClicked,
             onUnClicked = { onUnClicked(RecordType.Like, likeUri) },
             active = post.liked
@@ -79,7 +79,7 @@ fun PostActions(
             PostAction(
                 parameter = -1,
                 iconNormal = Icons.Default.MoreHoriz,
-                contentDescription = "More",
+                contentDescription = "More ",
                 onClicked = {
                     menuExpanded = true
                 },

@@ -2,7 +2,7 @@ package radiant.nimbus.ui.profile
 
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.ScrollableTabRow
+import androidx.compose.material3.SecondaryScrollableTabRow
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -24,7 +24,7 @@ fun ProfileTabRow(
     onTabChanged: (ProfileTabs)-> Unit,
 ) {
     var selectedTab by rememberSaveable { mutableStateOf(selected) }
-    ScrollableTabRow(
+    SecondaryScrollableTabRow(
         selectedTabIndex = selectedTab.ordinal,
         edgePadding = 4.dp,
         modifier = Modifier

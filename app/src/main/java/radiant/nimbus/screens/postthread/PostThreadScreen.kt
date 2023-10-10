@@ -47,7 +47,7 @@ fun PostThreadScreen(
                     thread = it,
                     apiProvider = mainViewModel.apiProvider,
                     navigator = navigator,
-                    navBar = { mainViewModel.navBar?.let { it() } }
+                    navBar = { mainViewModel.navBar?.let { it(5) } }
                 )
             }
         }

@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -49,7 +48,7 @@ fun SkylineScreen(
                 viewModel.getSkyline(mainViewModel.apiProvider, cursor)
         },
         apiProvider = mainViewModel.apiProvider,
-        navBar = { mainViewModel.navBar?.let { it() } },
+        navBar = { mainViewModel.navBar?.let { it(0) } },
     )
 }
 
@@ -61,8 +60,6 @@ fun SkylineView(
     refresh: (String?) -> Unit = {},
     navBar: @Composable () -> Unit = {},
 ){
-    val scope = rememberCoroutineScope()
-
     ScreenBody(
         modifier = Modifier
             .fillMaxSize()

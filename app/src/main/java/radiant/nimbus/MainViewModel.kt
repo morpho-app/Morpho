@@ -26,5 +26,5 @@ class MainViewModel @Inject constructor(
     val db: AppDatabase = Room.databaseBuilder(app.applicationContext, AppDatabase::class.java, "nimbus_db")
         .build()
 
-    var navBar: @Composable (() -> Unit)? = null
+    var navBar: @Composable ((index: Int) -> Unit)? = null
 }
