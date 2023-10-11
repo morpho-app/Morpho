@@ -39,7 +39,7 @@ fun ScreenBody(
     snackbarHost: @Composable () -> Unit = { },
     topContent: @Composable () -> Unit = { },
     navBar: @Composable () -> Unit = {},
-    contentWindowInsets: WindowInsets = WindowInsets.navigationBars,
+    contentWindowInsets: WindowInsets = WindowInsets.navigationBars ,
     content2: @Composable (PaddingValues) -> Unit = {},
     content1: @Composable (PaddingValues) -> Unit,
 ) {
@@ -47,7 +47,7 @@ fun ScreenBody(
         NavBarLocation.BottomFull -> {
             when(layout) {
                 ScreenLayout.SingleColumn -> Scaffold(
-                    modifier = Modifier.padding(contentPadding),
+                    modifier = modifier.padding(contentPadding),
                     topBar = topContent,
                     snackbarHost = snackbarHost,
                     bottomBar = navBar,
@@ -56,7 +56,7 @@ fun ScreenBody(
                     content1(padding)
                 }
                 ScreenLayout.TwoColumn -> Scaffold(
-                    modifier = Modifier.padding(contentPadding),
+                    modifier = modifier.padding(contentPadding),
                     topBar = topContent,
                     snackbarHost = snackbarHost,
                     bottomBar = navBar,
@@ -72,7 +72,7 @@ fun ScreenBody(
         NavBarLocation.BottomPartial -> {
             when(layout) {
                 ScreenLayout.SingleColumn -> Scaffold(
-                    modifier = Modifier.padding(contentPadding),
+                    modifier = modifier.padding(contentPadding),
                     topBar = topContent,
                     snackbarHost = snackbarHost,
                     bottomBar = navBar,
@@ -82,7 +82,7 @@ fun ScreenBody(
                 }
                 ScreenLayout.TwoColumn -> Row() {
                     Scaffold(
-                        modifier = Modifier.padding(contentPadding),
+                        modifier = modifier.padding(contentPadding),
                         topBar = topContent,
                         snackbarHost = snackbarHost,
                         bottomBar = navBar,
@@ -99,7 +99,7 @@ fun ScreenBody(
                 ScreenLayout.SingleColumn -> Row {
                     navBar.invoke()
                     Scaffold(
-                        modifier = Modifier.padding(contentPadding),
+                        modifier = modifier.padding(contentPadding),
                         topBar = topContent,
                         snackbarHost = snackbarHost,
                         contentWindowInsets = contentWindowInsets,
@@ -110,7 +110,7 @@ fun ScreenBody(
                 ScreenLayout.TwoColumn -> Row() {
                     navBar.invoke()
                     Scaffold(
-                        modifier = Modifier.padding(contentPadding),
+                        modifier = modifier.padding(contentPadding),
                         topBar = topContent,
                         snackbarHost = snackbarHost,
                         contentWindowInsets = contentWindowInsets,

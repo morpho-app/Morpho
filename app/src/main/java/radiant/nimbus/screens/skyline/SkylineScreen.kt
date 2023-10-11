@@ -1,11 +1,38 @@
 package radiant.nimbus.screens.skyline
 
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBarsPadding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CornerSize
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SecondaryScrollableTabRow
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Tab
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -52,6 +79,7 @@ fun SkylineScreen(
     )
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SkylineView(
     navigator: DestinationsNavigator,
@@ -60,14 +88,78 @@ fun SkylineView(
     refresh: (String?) -> Unit = {},
     navBar: @Composable () -> Unit = {},
 ){
+
     ScreenBody(
         modifier = Modifier
             .fillMaxSize()
             .systemBarsPadding()
             .heightIn(0.dp, 20000.dp),
-        topContent = {},
-        navBar = navBar
+        topContent = {
+            var selectedTab by rememberSaveable { mutableIntStateOf(0) }
+            TopAppBar(
+                title = {},
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
+                actions = {
 
+                    Surface(
+                        tonalElevation = 3.dp,
+                        modifier = Modifier.offset(y = (-4).dp),
+                        shape = MaterialTheme.shapes.small.copy(
+                            bottomStart = CornerSize(0.dp),
+                            topStart = CornerSize(0.dp),
+                            topEnd = CornerSize(0.dp),
+                        )
+                    ){
+                        IconButton(
+                            onClick = { /* doSomething() */ },
+                            modifier = Modifier.padding(bottom = 5.dp, top = 5.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Menu,
+                                contentDescription = "Menu",
+                                modifier = Modifier
+                                    .size(20.dp)
+                            )
+                        }
+                    }
+
+                    SecondaryScrollableTabRow(
+                        selectedTabIndex = selectedTab,
+                        modifier = Modifier.padding(0.dp).offset(y = (-8).dp),
+                        edgePadding = 10.dp,
+                        //divider = {}
+                    ) {
+
+                        Tab(selected = selectedTab == 0,
+                            onClick = { selectedTab = 0},
+                            text = {
+                                Text("Home")
+                            }
+                        )
+                        Tab(selected = selectedTab == 1,
+                            onClick = { selectedTab = 1},
+                            text = {
+                                Text("Feed 1")
+                            }
+                        )
+                        Tab(selected = selectedTab == 2,
+                            onClick = { selectedTab = 2},
+                            text = {
+                                Text("Feed 2")
+                            }
+                        )
+                        Tab(selected = selectedTab == 3,
+                            onClick = { selectedTab = 3},
+                            text = {
+                                Text("Feed 3")
+                            }
+                        )
+                    }
+                },
+            )
+        },
+        navBar = navBar,
+        contentWindowInsets = WindowInsets.navigationBars,
     ) {insets ->
 
         SkylineFragment(
@@ -97,8 +189,67 @@ fun SkylineView(
 
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 @Preview(showBackground = true)
-fun SkylinePreview(){
-    //SkylineView()
+fun TopAppBarPreview(){
+    var selectedTab by rememberSaveable { mutableIntStateOf(0) }
+    TopAppBar(
+        title = {},
+        actions = {
+            Column{
+                IconButton(
+                    onClick = { /* doSomething() */ },
+                    modifier = Modifier
+                        .fillMaxHeight()
+                        .padding(bottom = 5.dp, top = 5.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Menu,
+                        contentDescription = "Menu",
+                        modifier = Modifier
+                            .padding(horizontal = 10.dp)
+                            .size(30.dp)
+                    )
+
+                }
+                HorizontalDivider(
+                    Modifier
+                        .offset(y = (-9.25).dp)
+                        .width(60.dp),
+
+                )
+            }
+            SecondaryScrollableTabRow(
+                selectedTabIndex = selectedTab,
+                modifier = Modifier.padding(0.dp)
+                //divider = {}
+            ) {
+                Tab(selected = selectedTab == 0,
+                    onClick = { selectedTab = 0},
+                    text = {
+                        Text("Home")
+                    }
+                )
+                Tab(selected = selectedTab == 1,
+                    onClick = { selectedTab = 1},
+                    text = {
+                        Text("Feed 1")
+                    }
+                )
+                Tab(selected = selectedTab == 2,
+                    onClick = { selectedTab = 2},
+                    text = {
+                        Text("Feed 2")
+                    }
+                )
+                Tab(selected = selectedTab == 3,
+                    onClick = { selectedTab = 3},
+                    text = {
+                        Text("Feed 3")
+                    }
+                )
+            }
+        },
+    )
 }

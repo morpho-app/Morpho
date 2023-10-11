@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
@@ -86,7 +87,7 @@ fun SkylineFragment (
     val scrolledDownBy by remember { derivedStateOf { listState.firstVisibleItemIndex } }
 
 
-    Box(modifier = Modifier.fillMaxWidth()) {
+    Box(modifier = Modifier.fillMaxWidth().safeDrawingPadding()) {
         LazyColumn(
             modifier = modifier,
             contentPadding = contentPadding,
@@ -130,6 +131,7 @@ fun SkylineFragment (
 
             }
         }
+        // TODO: Combine the two button modes here and rework the layout to go from the bottom, using constraints
         if(scrolledDownBy > 20) {
             OutlinedIconButton(onClick = {
                 coroutineScope.launch {
@@ -141,7 +143,7 @@ fun SkylineFragment (
                 colors = IconButtonDefaults.outlinedIconButtonColors(containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp).copy(alpha = 0.8f)),
                 modifier = Modifier
                     .align(Alignment.TopStart)
-                    .offset(20.dp, 650.dp)
+                    .offset(20.dp, 670.dp)
                     .size(50.dp)
             ) {
                 Icon(
@@ -163,7 +165,7 @@ fun SkylineFragment (
                 colors = IconButtonDefaults.outlinedIconButtonColors(containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp).copy(alpha = 0.8f)),
                 modifier = Modifier
                     .align(Alignment.TopStart)
-                    .offset(20.dp, 650.dp)
+                    .offset(20.dp, 670.dp)
                     .size(50.dp)
             ) {
                 Icon(Icons.Default.KeyboardArrowUp,
@@ -178,7 +180,7 @@ fun SkylineFragment (
             onClick = { /*TODO*/ },
             modifier = Modifier
                 .align(Alignment.TopEnd)
-                .offset((-20).dp, 650.dp)
+                .offset((-20).dp, 670.dp)
         ) {
             Icon(
                 imageVector = Icons.Default.Create,

@@ -1,7 +1,12 @@
 package radiant.nimbus.ui.common
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.windowInsetsBottomHeight
 import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Edit
@@ -19,6 +24,7 @@ import androidx.compose.material3.NavigationRail
 import androidx.compose.material3.NavigationRailItem
 import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRowDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -36,11 +42,19 @@ import radiant.nimbus.api.AtIdentifier
 import radiant.nimbus.components.NavBarLocation
 import radiant.nimbus.screens.NavGraphs
 import radiant.nimbus.screens.appCurrentDestinationAsState
+import radiant.nimbus.screens.destinations.BottomSheetScreenDestination
 import radiant.nimbus.screens.destinations.Destination
+import radiant.nimbus.screens.destinations.FeedDiscoveryScreenDestination
 import radiant.nimbus.screens.destinations.FeedListScreenDestination
+import radiant.nimbus.screens.destinations.LoginScreenDestination
 import radiant.nimbus.screens.destinations.MyProfileScreenDestination
 import radiant.nimbus.screens.destinations.NotificationsScreenDestination
+import radiant.nimbus.screens.destinations.PostThreadScreenDestination
+import radiant.nimbus.screens.destinations.ProfileScreenDestination
+import radiant.nimbus.screens.destinations.SearchScreenScreenDestination
+import radiant.nimbus.screens.destinations.SettingsScreenDestination
 import radiant.nimbus.screens.destinations.SkylineScreenDestination
+import radiant.nimbus.screens.destinations.TemplateScreenDestination
 import radiant.nimbus.screens.startAppDestination
 
 
@@ -49,7 +63,7 @@ fun NimbusNavigation(
     navController: NavHostController,
     modifier: Modifier = Modifier,
     location: NavBarLocation = NavBarLocation.BottomFull,
-    profilePic: (@Composable (() -> Unit) -> Unit)? = null,
+    profilePic: (@Composable (Boolean, () -> Unit) -> Unit)? = null,
     selected: Int = 0,
     actor: AtIdentifier? = null,
 ) {
@@ -73,15 +87,30 @@ fun NimbusNavigation(
 fun NimbusBottomNavBar(
     navController: NavHostController,
     modifier: Modifier = Modifier,
-    selected: Int = 0,
-    profilePic: @Composable() ((() -> Unit) -> Unit)? = null,
+    selected: Int,
+    profilePic: @Composable() ((Boolean, () -> Unit) -> Unit)? = null,
     ) {
     val currentDestination: Destination = navController.appCurrentDestinationAsState().value
         ?: NavGraphs.root.startAppDestination
     var selectedTab by rememberSaveable { mutableIntStateOf(selected) }
-    PrimaryTabRow(
-        selectedTabIndex = selectedTab,
-        modifier = Modifier.clip(
+    val unselectedColor = MaterialTheme.colorScheme.outline
+    selectedTab = when(currentDestination) {
+        BottomSheetScreenDestination -> 0
+        FeedDiscoveryScreenDestination -> 0
+        FeedListScreenDestination -> 2
+        LoginScreenDestination -> 0
+        MyProfileScreenDestination -> 4
+        NotificationsScreenDestination -> 3
+        SettingsScreenDestination -> 0
+        SkylineScreenDestination -> 0
+        SearchScreenScreenDestination -> 0
+        TemplateScreenDestination -> 0
+        PostThreadScreenDestination -> 5
+        ProfileScreenDestination -> 4
+    }
+    Column(
+        Modifier.background(
+            TabRowDefaults.primaryContainerColor,
             MaterialTheme.shapes.medium.copy(
                 bottomEnd = CornerSize(0.dp),
                 bottomStart = CornerSize(0.dp),
@@ -89,126 +118,163 @@ fun NimbusBottomNavBar(
             )
         )
     ) {
-        Tab(selected = currentDestination == SkylineScreenDestination,
-            onClick = {
-                selectedTab = 0
-                if (navController.isRouteOnBackStack(SkylineScreenDestination)) {
-                    // When we click again on a bottom bar item and it was already selected
-                    // we want to pop the back stack until the initial destination of this bottom bar item
-                    navController.popBackStack(SkylineScreenDestination, false)
-                } else {
-                    navController.navigate(SkylineScreenDestination) {
-                        popUpTo(NavGraphs.root) {
-                            saveState = true
+        PrimaryTabRow(
+            selectedTabIndex = selectedTab,
+            modifier = Modifier.clip(
+                MaterialTheme.shapes.medium.copy(
+                    bottomEnd = CornerSize(0.dp),
+                    bottomStart = CornerSize(0.dp),
+                    topStart = CornerSize(0.dp),
+                )
+            )
+        ) {
+            Tab(
+                selected = selectedTab == 0,
+                onClick = {
+                    selectedTab = 0
+                    if (navController.isRouteOnBackStack(SkylineScreenDestination)) {
+                        // When we click again on a bottom bar item and it was already selected
+                        // we want to pop the back stack until the initial destination of this bottom bar item
+                        navController.popBackStack(SkylineScreenDestination, false)
+                    } else {
+                        navController.navigate(SkylineScreenDestination) {
+                            popUpTo(NavGraphs.root) {
+                                saveState = true
+                            }
+                            launchSingleTop = true
+                            restoreState = true
                         }
-                        launchSingleTop = true
-                        restoreState = true
                     }
-                } },
-            icon = {
-                Icon(imageVector = Icons.Filled.Home, contentDescription = "Home Button")
-            },
-        )
-        Tab(selected = false,//currentDestination == SkylineScreenDestination,
-            onClick = {
-                selectedTab = 1
-                if (navController.isRouteOnBackStack(SkylineScreenDestination)) {
-                    // When we click again on a bottom bar item and it was already selected
-                    // we want to pop the back stack until the initial destination of this bottom bar item
-                    navController.popBackStack(SkylineScreenDestination, false)
-                } else {navController.navigate(SkylineScreenDestination) {
-                    popUpTo(NavGraphs.root) {
-                        saveState = true
-                    }
-                    launchSingleTop = true
-                    restoreState = true
-                }
-                }  },
-            icon = {
-                Icon(imageVector = Icons.Outlined.Search, contentDescription = "Search Button")
-            },
-        )
-        Tab(selected = currentDestination == FeedListScreenDestination,
-            onClick = {
-                selectedTab = 2
-                if (navController.isRouteOnBackStack(FeedListScreenDestination)) {
-                    // When we click again on a bottom bar item and it was already selected
-                    // we want to pop the back stack until the initial destination of this bottom bar item
-                    navController.popBackStack(FeedListScreenDestination, false)
-                } else {
-                    navController.navigate(FeedListScreenDestination) {
-                        popUpTo(NavGraphs.root) {
-                            saveState = true
+                },
+                icon = {
+                    Icon(imageVector = Icons.Filled.Home, contentDescription = "Home Button")
+                },
+                unselectedContentColor = unselectedColor,
+            )
+            Tab(
+                selected = selectedTab == 1,//currentDestination == SkylineScreenDestination,
+                onClick = {
+                    selectedTab = 1
+                    if (navController.isRouteOnBackStack(SearchScreenScreenDestination)) {
+                        // When we click again on a bottom bar item and it was already selected
+                        // we want to pop the back stack until the initial destination of this bottom bar item
+                        navController.popBackStack(SearchScreenScreenDestination, false)
+                    } else {
+                        navController.navigate(SearchScreenScreenDestination) {
+                            popUpTo(NavGraphs.root) {
+                                saveState = true
+                            }
+                            launchSingleTop = true
+                            restoreState = true
                         }
-                        launchSingleTop = true
-                        restoreState = true
                     }
-                }  },
-            icon = {
-                Icon(imageVector = Icons.Outlined.DynamicFeed, contentDescription = "Feeds Button")
-            },
-        )
-        Tab(selected = currentDestination == NotificationsScreenDestination,
-            onClick = {
-                selectedTab = 3
-                if (navController.isRouteOnBackStack(NotificationsScreenDestination)) {
-                    // When we click again on a bottom bar item and it was already selected
-                    // we want to pop the back stack until the initial destination of this bottom bar item
-                    navController.popBackStack(NotificationsScreenDestination, false)
-                } else {
-                    navController.navigate(NotificationsScreenDestination) {
-                        popUpTo(NavGraphs.root) {
-                            saveState = true
+                },
+                icon = {
+                    Icon(imageVector = Icons.Outlined.Search, contentDescription = "Search Button")
+                },
+                unselectedContentColor = unselectedColor,
+            )
+            Tab(
+                selected = selectedTab == 2,
+                onClick = {
+                    selectedTab = 2
+                    if (navController.isRouteOnBackStack(FeedListScreenDestination)) {
+                        // When we click again on a bottom bar item and it was already selected
+                        // we want to pop the back stack until the initial destination of this bottom bar item
+                        navController.popBackStack(FeedListScreenDestination, false)
+                    } else {
+                        navController.navigate(FeedListScreenDestination) {
+                            popUpTo(NavGraphs.root) {
+                                saveState = true
+                            }
+                            launchSingleTop = true
+                            restoreState = true
                         }
-                        launchSingleTop = true
-                        restoreState = true
                     }
-                }  },
-            icon = {
-                Icon(imageVector = Icons.Outlined.NotificationsNone, contentDescription = "Notifications Button")
-            },
-        )
-        Tab(
-            selected = currentDestination == MyProfileScreenDestination,
-            onClick = {
-                selectedTab = 4
-                if (navController.isRouteOnBackStack(MyProfileScreenDestination)) {
-                    // When we click again on a bottom bar item and it was already selected
-                    // we want to pop the back stack until the initial destination of this bottom bar item
-                    navController.popBackStack(MyProfileScreenDestination, false)
-                } else {
-                    navController.navigate(MyProfileScreenDestination) {
-                        popUpTo(NavGraphs.root) {
-                            saveState = true
+                },
+                icon = {
+                    Icon(
+                        imageVector = Icons.Outlined.DynamicFeed,
+                        contentDescription = "Feeds Button"
+                    )
+                },
+                unselectedContentColor = unselectedColor,
+            )
+            Tab(
+                selected = selectedTab == 3,
+                onClick = {
+                    selectedTab = 3
+                    if (navController.isRouteOnBackStack(NotificationsScreenDestination)) {
+                        // When we click again on a bottom bar item and it was already selected
+                        // we want to pop the back stack until the initial destination of this bottom bar item
+                        navController.popBackStack(NotificationsScreenDestination, false)
+                    } else {
+                        navController.navigate(NotificationsScreenDestination) {
+                            popUpTo(NavGraphs.root) {
+                                saveState = true
+                            }
+                            launchSingleTop = true
+                            restoreState = true
                         }
-                        launchSingleTop = true
-                        restoreState = true
                     }
-                }  },
-            icon = {
-                if (profilePic != null) {
-                    profilePic.invoke {
-                        if (navController.isRouteOnBackStack(MyProfileScreenDestination)) {
-                            // When we click again on a bottom bar item and it was already selected
-                            // we want to pop the back stack until the initial destination of this bottom bar item
-                            navController.popBackStack(MyProfileScreenDestination, false)
-                        } else {
-                            navController.navigate(MyProfileScreenDestination) {
-                                popUpTo(NavGraphs.root) {
-                                    saveState = true
+                },
+                icon = {
+                    Icon(
+                        imageVector = Icons.Outlined.NotificationsNone,
+                        contentDescription = "Notifications Button"
+                    )
+                },
+                unselectedContentColor = unselectedColor,
+            )
+            Tab(
+                selected = selectedTab == 4,
+                onClick = {
+                    selectedTab = 4
+                    if (navController.isRouteOnBackStack(MyProfileScreenDestination)) {
+                        // When we click again on a bottom bar item and it was already selected
+                        // we want to pop the back stack until the initial destination of this bottom bar item
+                        navController.popBackStack(MyProfileScreenDestination, false)
+                    } else {
+                        navController.navigate(MyProfileScreenDestination) {
+                            popUpTo(NavGraphs.root) {
+                                saveState = true
+                            }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                    }
+                },
+                icon = {
+                    if (profilePic != null) {
+                        profilePic.invoke(selectedTab == 4) {
+                            if (navController.isRouteOnBackStack(MyProfileScreenDestination)) {
+                                // When we click again on a bottom bar item and it was already selected
+                                // we want to pop the back stack until the initial destination of this bottom bar item
+                                navController.popBackStack(MyProfileScreenDestination, false)
+                            } else {
+                                navController.navigate(MyProfileScreenDestination) {
+                                    popUpTo(NavGraphs.root) {
+                                        saveState = true
+                                    }
+                                    launchSingleTop = true
+                                    restoreState = true
                                 }
-                                launchSingleTop = true
-                                restoreState = true
                             }
                         }
+                    } else {
+                        Icon(
+                            imageVector = Icons.Outlined.AccountCircle,
+                            contentDescription = "Profile Button"
+                        )
                     }
-                } else {
-                    Icon(
-                        imageVector = Icons.Outlined.AccountCircle,
-                        contentDescription = "Profile Button"
-                    )
-                }
-            },
+                },
+                unselectedContentColor = unselectedColor,
+            )
+        }
+        Spacer(
+            Modifier.windowInsetsBottomHeight(
+                WindowInsets.systemBars
+            )
         )
     }
 }
@@ -217,7 +283,7 @@ fun NimbusBottomNavBar(
 fun NimbusNavRail(
     navController: NavHostController,
     modifier: Modifier = Modifier,
-    profilePic: @Composable() ((() -> Unit) -> Unit)? = null,
+    profilePic: @Composable() ((Boolean,() -> Unit) -> Unit)? = null,
     ) {
     val currentDestination: Destination = navController.appCurrentDestinationAsState().value
         ?: NavGraphs.root.startAppDestination
@@ -335,7 +401,7 @@ fun NimbusNavRail(
                 }  },
             icon = {
                 if (profilePic != null) {
-                    profilePic.invoke {
+                    profilePic.invoke(currentDestination == MyProfileScreenDestination) {
                         if (navController.isRouteOnBackStack(MyProfileScreenDestination)) {
                             // When we click again on a bottom bar item and it was already selected
                             // we want to pop the back stack until the initial destination of this bottom bar item

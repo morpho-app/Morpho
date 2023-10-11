@@ -9,14 +9,20 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.AccountCircle
 import androidx.compose.material3.Icon
+import androidx.compose.material3.TabRowDefaults
 import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
 import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.core.view.WindowCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavHostController
 import app.bsky.actor.GetProfileQueryParams
@@ -55,6 +61,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         var loggedin = false
+        WindowCompat.setDecorFitsSystemWindows(window, false)
 
         viewModel.supervisors.plus(viewModel.apiProvider)
         viewModel.supervisors.forEach { supervisor ->
@@ -134,16 +141,23 @@ class MainActivity : ComponentActivity() {
         setContent {
             val engine = rememberAnimatedNavHostEngine()
             val navController = engine.rememberNavController()
+            var selectedTab by rememberSaveable { mutableIntStateOf(0) }
             viewModel.windowSizeClass = calculateWindowSizeClass(this)
             viewModel.navBar = {
                 NimbusNavigation(
                     navController = navController,
-                    profilePic = {onClick ->
+                    profilePic = { state, onClick ->
                         if(viewModel.currentUser != null) {
                             viewModel.currentUser!!.avatar?.let { avatar ->
                                 OutlinedAvatar(url = avatar,
                                     modifier = Modifier.size(30.dp),
                                     onClicked = onClick,
+                                    outlineSize = if (state) 2.dp else 0.dp,
+                                    outlineColor = if(state) {
+                                            TabRowDefaults.primaryContentColor
+                                        } else {
+                                            Color.Transparent
+                                        }
                                     )
                             }
                         } else {
@@ -151,7 +165,8 @@ class MainActivity : ComponentActivity() {
                                 contentDescription = "Profile")
                         }
                     },
-                    actor = viewModel.currentUser?.did?.did?.let { AtIdentifier(it) }
+                    actor = viewModel.currentUser?.did?.did?.let { AtIdentifier(it) },
+                    selected = selectedTab,
                 )
             }
             val startRoute = if (!loggedin) LoginScreenDestination else SkylineScreenDestination
