@@ -4,6 +4,7 @@ import android.app.Application
 import androidx.compose.material3.windowsizeclass.WindowSizeClass
 import androidx.compose.runtime.Composable
 import androidx.room.Room
+import app.bsky.actor.BskyPreferences
 import dagger.hilt.android.lifecycle.HiltViewModel
 import radiant.nimbus.api.ApiProvider
 import radiant.nimbus.api.ServerRepository
@@ -22,6 +23,7 @@ class MainViewModel @Inject constructor(
 ) : BaseViewModel(app) {
     var supervisors: Set<Supervisor> = setOf()
     var currentUser: DetailedProfile? = null
+    var userPreferences: BskyPreferences? = null
     var windowSizeClass: WindowSizeClass? = null
     val db: AppDatabase = Room.databaseBuilder(app.applicationContext, AppDatabase::class.java, "nimbus_db")
         .build()

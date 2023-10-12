@@ -10,3 +10,4 @@ public data class PersonalDetailsPref(
    */
   public val birthDate: Timestamp? = null,
 )
+

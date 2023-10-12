@@ -1,15 +1,23 @@
 package radiant.nimbus.ui.common
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.layout.safeContent
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
@@ -18,12 +26,18 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Create
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.KeyboardDoubleArrowUp
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedIconButton
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -81,18 +95,61 @@ fun SkylineFragment (
 ) {
     val postList by postFlow.collectAsStateWithLifecycle()
     val coroutineScope = rememberCoroutineScope()
+    LaunchedEffect(Unit) {
+        refresh(postList.cursor)
+    }
     LaunchedEffect(postList.posts.size > 10 && !listState.canScrollForward) {
         refresh(postList.cursor)
     }
     val scrolledDownBy by remember { derivedStateOf { listState.firstVisibleItemIndex } }
 
 
-    Box(modifier = Modifier.fillMaxWidth().safeDrawingPadding()) {
+    Box(modifier = Modifier
+        .fillMaxWidth()
+        .systemBarsPadding()) {
         LazyColumn(
             modifier = modifier,
-            contentPadding = contentPadding,
+            contentPadding = PaddingValues(bottom = contentPadding.calculateBottomPadding(),
+                top = WindowInsets.safeContent.only(WindowInsetsSides.Top).asPaddingValues().calculateTopPadding()),
             state = listState
         ) {
+            item {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
+                ){
+                    Spacer(modifier = Modifier
+                        .padding(horizontal = 2.dp)
+                        .weight(0.4f))
+                    IconButton(onClick = { refresh(null) },
+                        colors = IconButtonDefaults.iconButtonColors(
+                            containerColor = MaterialTheme.colorScheme.background,
+                            contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                        ),
+                        modifier = Modifier
+                            .padding(horizontal = 8.dp)
+                            .weight(0.2f)
+                    ) {
+                        Icon(imageVector = Icons.Default.Refresh, contentDescription = "Refresh",
+                            modifier = Modifier.size(20.dp))
+                    }
+                    TextButton(onClick = { /*TODO*/ },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.background,
+                            contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                        ),
+                        modifier = Modifier
+                            .padding(horizontal = 8.dp)
+                            //.weight(0.5f)
+                    ) {
+                        Icon(imageVector = Icons.Default.Settings, contentDescription = null,
+                            modifier = Modifier
+                                .size(20.dp)
+                                )
+                        Text(text = "Feed settings", Modifier.padding(start = 6.dp))
+                    }
+                }
+            }
             items(postList.posts) { skylineItem ->
                 if( skylineItem.post != null) {
                     val post = skylineItem.post

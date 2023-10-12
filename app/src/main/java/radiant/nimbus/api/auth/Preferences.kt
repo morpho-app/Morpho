@@ -1,9 +1,9 @@
 package app.bsky.actor
 
-import kotlin.jvm.JvmInline
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import radiant.nimbus.api.SkyFeedBuilderFeedsPref
 import radiant.nimbus.api.runtime.valueClassSerializer
 
 @Serializable
@@ -45,6 +45,17 @@ public sealed interface PreferencesUnion {
     public val `value`: app.bsky.actor.PersonalDetailsPref,
   ) : PreferencesUnion
 
+
+  public class SkyFeedBuilderFeedsPrefSerializer : KSerializer<SkyFeedBuilderFeedsPref> by
+  valueClassSerializer()
+
+  @Serializable(with = SkyFeedBuilderFeedsPrefSerializer::class)
+  @JvmInline
+  @SerialName("app.bsky.actor.defs#skyfeedBuilderFeedsPref")
+  public value class SkyFeedBuilderFeedsPref(
+    public val `value`: radiant.nimbus.api.SkyFeedBuilderFeedsPref,
+  ) : PreferencesUnion
+
   public class FeedViewPrefSerializer : KSerializer<FeedViewPref> by valueClassSerializer()
 
   @Serializable(with = FeedViewPrefSerializer::class)
@@ -62,4 +73,31 @@ public sealed interface PreferencesUnion {
   public value class ThreadViewPref(
     public val `value`: app.bsky.actor.ThreadViewPref,
   ) : PreferencesUnion
+}
+
+@Serializable
+public data class BskyPreferences(
+  public var personalDetails: PersonalDetailsPref? = null,
+  public var adultContent: AdultContentPref? = null,
+  public var feedViewPrefs: FeedViewPref? = null,
+  public var skyFeedBuilderFeeds: SkyFeedBuilderFeedsPref? = null,
+  public var savedFeeds: SavedFeedsPref? = null,
+  public var contentLabelPrefs: ContentLabelPref? = null,
+  public var threadViewPrefs: ThreadViewPref? = null,
+)
+
+fun GetPreferencesResponse.toPreferences() : BskyPreferences {
+  val prefs = BskyPreferences()
+  preferences.map { pref ->
+    when(pref) {
+      is PreferencesUnion.AdultContentPref -> prefs.adultContent = pref.value
+      is PreferencesUnion.ContentLabelPref -> prefs.contentLabelPrefs = pref.value
+      is PreferencesUnion.FeedViewPref -> prefs.feedViewPrefs = pref.value
+      is PreferencesUnion.PersonalDetailsPref -> prefs.personalDetails = pref.value
+      is PreferencesUnion.SavedFeedsPref -> prefs.savedFeeds = pref.value
+      is PreferencesUnion.SkyFeedBuilderFeedsPref -> prefs.skyFeedBuilderFeeds = pref.value
+      is PreferencesUnion.ThreadViewPref -> prefs.threadViewPrefs = pref.value
+    }
+  }
+  return prefs
 }

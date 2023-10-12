@@ -146,7 +146,7 @@ fun ProfileViewPhone(
     model: ProfileViewModel,
     modifier: Modifier = Modifier,
     apiProvider: ApiProvider? = null,
-    navigator: DestinationsNavigator? = null,
+    navigator: DestinationsNavigator,
     myProfile: Boolean = false,
     navBar: @Composable () -> Unit = {},
 ){
@@ -182,95 +182,89 @@ fun ProfileViewPhone(
     ) { insets ->
         when (selectedTab) {
             ProfileTabs.Posts -> {
-                if (navigator != null) {
-                    SkylineFragment(
-                        navigator = navigator,
-                        postFlow = model.profilePosts,
-                        contentPadding = insets,
-                        onItemClicked = {
-                            navigator.navigate(PostThreadScreenDestination(it))
-                        },
-                        onProfileClicked = {
-                            navigator.navigate(ProfileScreenDestination(it))
-                        },
-                        refresh = {cursor ->
-                            if (apiProvider != null) {
-                                model.getProfileFeed(selectedTab,apiProvider, cursor)
-                            }
-                        },
-                        onUnClicked = {type, uri ->  apiProvider?.deleteRecord(type, uri = uri)},
-                        onRepostClicked = {
-                            apiProvider?.createRecord(RecordUnion.Repost(it))
-                            /* TODO: Add dialog/quote post option */
-                        },
-                        onReplyClicked = { },
-                        onMenuClicked = { },
-                        onLikeClicked = {
-                            apiProvider?.createRecord(RecordUnion.Like(it))
-                        },
-                    )
-                }
+                SkylineFragment(
+                    navigator = navigator,
+                    postFlow = model.profilePosts,
+                    contentPadding = insets,
+                    onItemClicked = {
+                        navigator.navigate(PostThreadScreenDestination(it))
+                    },
+                    onProfileClicked = {
+                        navigator.navigate(ProfileScreenDestination(it))
+                    },
+                    refresh = {cursor ->
+                        if (apiProvider != null) {
+                            model.getProfileFeed(selectedTab,apiProvider, cursor)
+                        }
+                    },
+                    onUnClicked = {type, uri ->  apiProvider?.deleteRecord(type, uri = uri)},
+                    onRepostClicked = {
+                        apiProvider?.createRecord(RecordUnion.Repost(it))
+                        /* TODO: Add dialog/quote post option */
+                    },
+                    onReplyClicked = { },
+                    onMenuClicked = { },
+                    onLikeClicked = {
+                        apiProvider?.createRecord(RecordUnion.Like(it))
+                    },
+                )
             }
 
             ProfileTabs.PostsReplies -> {
-                if (navigator != null) {
-                    SkylineFragment(
-                        navigator = navigator,
-                        postFlow = model.profilePostsReplies,
-                        contentPadding = insets,
-                        onItemClicked = {
-                            navigator.navigate(PostThreadScreenDestination(it))
-                        },
-                        onProfileClicked = {
-                            navigator.navigate(ProfileScreenDestination(it))
-                        },
-                        refresh = {cursor ->
-                            if (apiProvider != null) {
-                                model.getProfileFeed(selectedTab,apiProvider, cursor)
-                            }
-                        },
-                        onUnClicked = {type, uri ->  apiProvider?.deleteRecord(type, uri = uri)},
-                        onRepostClicked = {
-                            apiProvider?.createRecord(RecordUnion.Repost(it))
-                            /* TODO: Add dialog/quote post option */
-                        },
-                        onReplyClicked = { },
-                        onMenuClicked = { },
-                        onLikeClicked = {
-                            apiProvider?.createRecord(RecordUnion.Like(it))
-                        },
-                    )
-                }
+                SkylineFragment(
+                    navigator = navigator,
+                    postFlow = model.profilePostsReplies,
+                    contentPadding = insets,
+                    onItemClicked = {
+                        navigator.navigate(PostThreadScreenDestination(it))
+                    },
+                    onProfileClicked = {
+                        navigator.navigate(ProfileScreenDestination(it))
+                    },
+                    refresh = {cursor ->
+                        if (apiProvider != null) {
+                            model.getProfileFeed(selectedTab,apiProvider, cursor)
+                        }
+                    },
+                    onUnClicked = {type, uri ->  apiProvider?.deleteRecord(type, uri = uri)},
+                    onRepostClicked = {
+                        apiProvider?.createRecord(RecordUnion.Repost(it))
+                        /* TODO: Add dialog/quote post option */
+                    },
+                    onReplyClicked = { },
+                    onMenuClicked = { },
+                    onLikeClicked = {
+                        apiProvider?.createRecord(RecordUnion.Like(it))
+                    },
+                )
             }
             ProfileTabs.Media -> {
-                if (navigator != null) {
-                    SkylineFragment(
-                        navigator = navigator,
-                        postFlow = model.profileMedia,
-                        contentPadding = insets,
-                        onItemClicked = {
-                            navigator.navigate(PostThreadScreenDestination(it))
-                        },
-                        onProfileClicked = {
-                            navigator.navigate(ProfileScreenDestination(it))
-                        },
-                        refresh = {cursor ->
-                            if (apiProvider != null) {
-                                model.getProfileFeed(selectedTab,apiProvider, cursor)
-                            }
-                        },
-                        onUnClicked = {type, uri ->  apiProvider?.deleteRecord(type, uri = uri)},
-                        onRepostClicked = {
-                            apiProvider?.createRecord(RecordUnion.Repost(it))
-                            /* TODO: Add dialog/quote post option */
-                        },
-                        onReplyClicked = { },
-                        onMenuClicked = { },
-                        onLikeClicked = {
-                            apiProvider?.createRecord(RecordUnion.Like(it))
-                        },
-                    )
-                }
+                SkylineFragment(
+                    navigator = navigator,
+                    postFlow = model.profileMedia,
+                    contentPadding = insets,
+                    onItemClicked = {
+                        navigator.navigate(PostThreadScreenDestination(it))
+                    },
+                    onProfileClicked = {
+                        navigator.navigate(ProfileScreenDestination(it))
+                    },
+                    refresh = {cursor ->
+                        if (apiProvider != null) {
+                            model.getProfileFeed(selectedTab,apiProvider, cursor)
+                        }
+                    },
+                    onUnClicked = {type, uri ->  apiProvider?.deleteRecord(type, uri = uri)},
+                    onRepostClicked = {
+                        apiProvider?.createRecord(RecordUnion.Repost(it))
+                        /* TODO: Add dialog/quote post option */
+                    },
+                    onReplyClicked = { },
+                    onMenuClicked = { },
+                    onLikeClicked = {
+                        apiProvider?.createRecord(RecordUnion.Like(it))
+                    },
+                )
             }
             ProfileTabs.Feeds -> {}
             ProfileTabs.Lists -> {}

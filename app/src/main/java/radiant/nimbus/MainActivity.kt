@@ -26,6 +26,7 @@ import androidx.core.view.WindowCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavHostController
 import app.bsky.actor.GetProfileQueryParams
+import app.bsky.actor.toPreferences
 import com.google.accompanist.navigation.material.ExperimentalMaterialNavigationApi
 import com.ramcosta.composedestinations.DestinationsNavHost
 import com.ramcosta.composedestinations.animations.rememberAnimatedNavHostEngine
@@ -83,26 +84,28 @@ class MainActivity : ComponentActivity() {
          */
         runBlocking {
             val authInfo = viewModel.apiProvider.auth().first()
+            val credentials = viewModel.apiProvider.credentials().first()
             if(authInfo != null) {
                 Log.i(TAG, "Auth Info: $authInfo")
                 // Got around it (maybe) by adding a manual function to the api
                 // that does the refresh with provided auth tokens
-                viewModel.apiProvider.loginRepository.auth = authInfo
-                when(val refresh = viewModel.apiProvider.refreshSession(authInfo)) {
+                when(val prefs = viewModel.apiProvider.getUserPreferences()) {
                     is AtpResponse.Failure -> {
-                        Log.e(TAG, "Refresh failure: $refresh")
-                        val credentials = viewModel.apiProvider.credentials().first()
+                        Log.e(TAG, "Couldn't get Preferences: $prefs")
                         if(credentials != null) {
                             when (val response = viewModel.apiProvider.makeLoginRequest(credentials)) {
                                 is AtpResponse.Failure -> {
                                     Log.e(TAG, "Login failure: $response")
                                 }
                                 is AtpResponse.Success -> {
+                                    val p = viewModel.apiProvider.getUserPreferences().maybeResponse()
+                                    Log.d(TAG, "Preferences load: $p")
                                     Log.i(TAG, "Using cached credentials for ${credentials.username}, going to home screen")
                                     viewModel.apiProvider.loginRepository.auth = response.response
                                     val profile = viewModel.apiProvider.api.getProfile(GetProfileQueryParams(AtIdentifier(credentials.username.handle)))
                                     loggedin = true
                                     viewModel.currentUser = profile.requireResponse().toProfile()
+                                    viewModel.userPreferences = p?.toPreferences()
                                 }
                             }
                         } else {
@@ -111,24 +114,27 @@ class MainActivity : ComponentActivity() {
                         }
                     }
                     is AtpResponse.Success -> {
-                        Log.d(TAG, "Refresh Successful: $refresh, going to home screen")
-                        val profile = viewModel.apiProvider.api.getProfile(GetProfileQueryParams(AtIdentifier(refresh.response.did.did)))
+                        Log.d(TAG, "Preferences load successful: $prefs, going to home screen")
+                        val profile = viewModel.apiProvider.api.getProfile(GetProfileQueryParams(AtIdentifier(authInfo.did.did)))
                         loggedin = true
                         viewModel.currentUser = profile.requireResponse().toProfile()
+                        viewModel.userPreferences = prefs.response.toPreferences()
                     }
                 }
             } else {
-                val credentials = viewModel.apiProvider.credentials().first()
                 if(credentials != null) {
                     when (val response = viewModel.apiProvider.makeLoginRequest(credentials)) {
                         is AtpResponse.Failure -> {
                             Log.e(TAG, "Login failure: $response")
                         }
                         is AtpResponse.Success -> {
+                            val p = viewModel.apiProvider.getUserPreferences().maybeResponse()
+                            Log.d(TAG, "Preferences load: $p")
                             Log.i(TAG, "Using cached credentials for ${credentials.username}, going to home screen")
                             val profile = viewModel.apiProvider.api.getProfile(GetProfileQueryParams(AtIdentifier(credentials.username.handle)))
                             loggedin = true
                             viewModel.currentUser = profile.requireResponse().toProfile()
+                            viewModel.userPreferences = p?.toPreferences()
                         }
                     }
                 } else {
@@ -136,7 +142,10 @@ class MainActivity : ComponentActivity() {
                     loggedin = false
                 }
             }
+
         }
+
+
 
         setContent {
             val engine = rememberAnimatedNavHostEngine()

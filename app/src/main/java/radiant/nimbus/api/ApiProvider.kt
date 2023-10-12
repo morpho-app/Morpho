@@ -1,6 +1,7 @@
 package radiant.nimbus.api
 
 import android.util.Log
+import app.bsky.actor.GetPreferencesResponse
 import app.bsky.feed.Like
 import app.bsky.feed.Repost
 import com.atproto.repo.CreateRecordRequest
@@ -15,6 +16,7 @@ import io.ktor.client.plugins.logging.LogLevel
 import io.ktor.client.plugins.logging.Logger
 import io.ktor.client.plugins.logging.Logging
 import io.ktor.client.request.bearerAuth
+import io.ktor.client.request.get
 import io.ktor.client.request.post
 import io.ktor.http.Url
 import kotlinx.coroutines.CoroutineScope
@@ -35,6 +37,7 @@ import kotlinx.serialization.json.encodeToJsonElement
 import radiant.nimbus.api.auth.AuthInfo
 import radiant.nimbus.api.auth.Credentials
 import radiant.nimbus.api.auth.LoginRepository
+import radiant.nimbus.api.model.ReadOnlyList
 import radiant.nimbus.api.model.RecordType
 import radiant.nimbus.api.model.RecordUnion
 import radiant.nimbus.api.model.Timestamp
@@ -143,12 +146,24 @@ class ApiProvider @Inject constructor(
     refreshJwt = tokens.refresh,
   )
 
+  public
+
 
   // Pulled this out of where I stuck it in the API so it doesn't get overwritten
   // TODO: Figure out root cause of why that first normal refresh fucks up, wtf did Christian do?
   suspend fun refreshSession(auth: AuthInfo): AtpResponse<RefreshSessionResponse> {
     return client.withXrpcConfiguration().post("/xrpc/com.atproto.server.refreshSession") {
       this.bearerAuth(auth.refreshJwt)
+    }.toAtpResponse()
+  }
+
+  suspend fun getUserPreferences() : AtpResponse<GetPreferencesResponse> {
+    return api.getPreferences()
+  }
+
+  suspend fun getPreferencesInit() : AtpResponse<GetPreferencesResponse>{
+    return client.withXrpcConfiguration().get("/xrpc/app.bsky.actor.getPreferences") {
+      auth().first()?.let { this.bearerAuth(it.refreshJwt) }
     }.toAtpResponse()
   }
 
@@ -264,3 +279,11 @@ class ApiProvider @Inject constructor(
     }
   }
 }
+
+@Serializable
+public data class SkyFeedBuilderFeedsPref(
+  /**
+   * List of feeds
+   */
+  public val feeds: ReadOnlyList<AtUri>,
+)

@@ -29,14 +29,19 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import app.bsky.actor.GetProfileQueryParams
+import app.bsky.actor.toPreferences
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import radiant.nimbus.MainViewModel
+import radiant.nimbus.api.AtIdentifier
 import radiant.nimbus.api.Handle
 import radiant.nimbus.api.auth.Credentials
 import radiant.nimbus.components.ScreenBody
 import radiant.nimbus.extensions.activityViewModel
+import radiant.nimbus.model.toProfile
 import radiant.nimbus.screens.destinations.SkylineScreenDestination
 
 @Destination
@@ -74,6 +79,15 @@ fun LoginScreen(
                                     null
                                 ),
                                 {
+                                    runBlocking {
+                                        mainViewModel.currentUser = mainViewModel.apiProvider.api.getProfile(
+                                            GetProfileQueryParams(AtIdentifier(handle))
+                                        ).maybeResponse()?.toProfile()
+                                        mainViewModel.userPreferences = mainViewModel.apiProvider.getUserPreferences()
+                                            .maybeResponse()?.toPreferences()
+                                    }
+
+
                                     navigator.navigate(
                                         SkylineScreenDestination
                                     )

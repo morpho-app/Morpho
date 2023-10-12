@@ -3,6 +3,8 @@ package radiant.nimbus.screens.skyline
 import android.app.Application
 import android.util.Log
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.DefaultLifecycleObserver
@@ -43,7 +45,8 @@ class SkylineViewModel @Inject constructor(
 
     private val _skylinePosts = MutableStateFlow(Skyline(emptyList(), null))
     val skylinePosts: StateFlow<Skyline> = _skylinePosts.asStateFlow()
-
+    val feedPosts = mutableStateMapOf(Pair(AtUri(""),MutableStateFlow( Skyline(emptyList(), null))))
+    var pinnedFeeds = mutableStateListOf<FeedTab>()
 
     fun createRecord(
         record: RecordUnion,
@@ -95,21 +98,27 @@ class SkylineViewModel @Inject constructor(
 
             is AtpResponse.Success -> {
                 val newPosts = Skyline.from(result.response.feed, result.response.cursor)
-                if (cursor != null || feedQuery.cursor != null) {
-                    Log.v(TAG, "Update Feed Posts:, ${result.response.feed}")
-                    _skylinePosts.update { skyline -> Skyline.concat(skyline, newPosts.collectThreads().await()) }
-                } else {
-                    if(result.response.feed.first().post.indexedAt.toEpochMilliseconds() >
-                        (skylinePosts.value.posts.first().post?.indexedAt?.instant?.toEpochMilliseconds() ?: 0)
-                    ) {
+                if (result.response.feed.isNotEmpty() ){
+                    if (cursor != null || feedQuery.cursor != null) {
                         Log.v(TAG, "Update Feed Posts:, ${result.response.feed}")
-                        _skylinePosts.update { skyline -> Skyline.concat(newPosts.collectThreads().await(), skyline, null) }
+                        feedPosts[feedQuery.feed]?.update { Skyline.concat(it, newPosts) }
                     } else {
-                        Log.v(TAG,"Feed Posts: ${result.response.feed}")
-                        _skylinePosts.value = newPosts
-                        _skylinePosts.update { skyline -> skyline.collectThreads().await() }
+                        if(result.response.feed.first().post.indexedAt.toEpochMilliseconds() >
+                                (feedPosts[feedQuery.feed]?.value?.posts?.first()?.post?.indexedAt?.instant?.toEpochMilliseconds() ?: 0)
+                        ) {
+                            Log.v(TAG, "Prepend Feed Posts:, ${result.response.feed}")
+                            if(feedPosts.containsKey(feedQuery.feed)) {
+                                feedPosts[feedQuery.feed]!!.update { Skyline.concat(newPosts, it, result.response.cursor) }
+                            } else {
+                                feedPosts[feedQuery.feed] = MutableStateFlow(newPosts)
+                            }
+                        } else {
+                            Log.v(TAG,"Feed Posts: ${result.response.feed}")
+                            feedPosts[feedQuery.feed] = MutableStateFlow(newPosts)
+                        }
                     }
                 }
+                //Log.v(TAG, "Feed: ${feedPosts[feedQuery.feed]?.value}")
             }
         }
     }

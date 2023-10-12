@@ -106,7 +106,7 @@ fun NimbusBottomNavBar(
         SearchScreenScreenDestination -> 0
         TemplateScreenDestination -> 0
         PostThreadScreenDestination -> 5
-        ProfileScreenDestination -> 4
+        ProfileScreenDestination -> 5
     }
     Column(
         Modifier.background(

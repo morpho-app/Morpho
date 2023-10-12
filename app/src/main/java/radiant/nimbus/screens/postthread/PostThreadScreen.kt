@@ -1,7 +1,9 @@
 package radiant.nimbus.screens.postthread
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -13,6 +15,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
+import kotlinx.collections.immutable.persistentListOf
 import radiant.nimbus.MainViewModel
 import radiant.nimbus.api.ApiProvider
 import radiant.nimbus.api.AtUri
@@ -22,6 +25,8 @@ import radiant.nimbus.extensions.activityViewModel
 import radiant.nimbus.model.BskyPostThread
 import radiant.nimbus.screens.destinations.PostThreadScreenDestination
 import radiant.nimbus.screens.destinations.ProfileScreenDestination
+import radiant.nimbus.screens.skyline.FeedTab
+import radiant.nimbus.screens.skyline.SkylineTopBar
 import radiant.nimbus.ui.thread.ThreadFragment
 
 @Destination
@@ -47,7 +52,7 @@ fun PostThreadScreen(
                     thread = it,
                     apiProvider = mainViewModel.apiProvider,
                     navigator = navigator,
-                    navBar = { mainViewModel.navBar?.let { it(5) } }
+                    navBar = { mainViewModel.navBar?.let { it(5) } },
                 )
             }
         }
@@ -61,10 +66,15 @@ fun PostThreadView(
     apiProvider: ApiProvider,
     navigator: DestinationsNavigator,
     navBar: @Composable () -> Unit = {},
+    tabList: List<FeedTab> = persistentListOf(),
 ){
     ScreenBody(
         modifier = Modifier.fillMaxSize().systemBarsPadding(),
+        topContent = {
+            SkylineTopBar(tabList)
+        },
         navBar = navBar,
+        contentWindowInsets = WindowInsets.navigationBars,
     ) {insets ->
         ThreadFragment(thread = thread,
             contentPadding = insets,
