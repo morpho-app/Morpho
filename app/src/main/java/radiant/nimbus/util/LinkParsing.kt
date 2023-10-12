@@ -6,6 +6,7 @@ import android.net.Uri
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import radiant.nimbus.api.AtIdentifier
 import radiant.nimbus.api.AtUri
+import radiant.nimbus.api.Did
 import radiant.nimbus.screens.destinations.ProfileScreenDestination
 
 fun linkVisit(string: String, ctx: Context, navigator: DestinationsNavigator) {
@@ -28,6 +29,18 @@ fun linkVisit(string: String, ctx: Context, navigator: DestinationsNavigator) {
         ctx.startActivity(urlIntent)
     }
 
+}
+
+fun parseImageThumbRef(string: String, did: Did): String {
+    var link = string.substringAfter("""{"${"$"}type":"blob","ref":{"${"$"}link":"""")
+    link = link.substringBefore(""""},"mimeType":"image/jpeg","size""")
+    return """https://cdn.bsky.app/img/feed_thumbnail/plain/$did/$link@jpeg"""
+}
+
+fun parseImageFullRef(string: String, did: Did): String {
+    var link = string.substringAfter("""{"${"$"}type":"blob","ref":{"${"$"}link":"""")
+    link = link.substringBefore(""""},"mimeType":"image/jpeg","size""")
+    return """https://cdn.bsky.app/img/feed_fullsize/plain/$did/$link@jpeg"""
 }
 
 fun getRkey(uri: AtUri?) : String {

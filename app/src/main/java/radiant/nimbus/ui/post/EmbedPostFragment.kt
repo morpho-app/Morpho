@@ -32,11 +32,15 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import dev.jeziellago.compose.markdowntext.MarkdownText
+import kotlinx.collections.immutable.toImmutableList
 import radiant.nimbus.api.AtUri
 import radiant.nimbus.model.BskyPostFeature
+import radiant.nimbus.model.EmbedImage
 import radiant.nimbus.model.EmbedPost
 import radiant.nimbus.ui.elements.OutlinedAvatar
 import radiant.nimbus.util.getFormattedDateTimeSince
+import radiant.nimbus.util.parseImageFullRef
+import radiant.nimbus.util.parseImageThumbRef
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -49,7 +53,6 @@ fun EmbedPostFragment(
 ) {
     val delta = remember { getFormattedDateTimeSince(post.litePost.createdAt) }
     val lineColour = MaterialTheme.colorScheme.onSurfaceVariant
-
     val ctx = LocalContext.current
     Column(
         Modifier
@@ -167,21 +170,17 @@ fun EmbedPostFragment(
                         )
                     }
                     when (post.litePost.feature) {
-                        is BskyPostFeature.ExternalFeature -> PostLinkEmbed(
-                            linkData = post.litePost.feature,
-                            linkPress = {
-                                val urlIntent = Intent(
-                                    Intent.ACTION_VIEW,
-                                    Uri.parse(it)
-                                )
-                                ctx.startActivity(urlIntent)
-                            },
-                        )
-                        is BskyPostFeature.ImagesFeature -> PostImages(imagesFeature = post.litePost.feature)
-                        is BskyPostFeature.MediaPostFeature -> {
-                            when(post.litePost.feature.media) {
-                                is BskyPostFeature.ExternalFeature -> PostLinkEmbed(
-                                    linkData = post.litePost.feature.media,
+                        is BskyPostFeature.ExternalFeature -> {
+                            if (post.litePost.feature.thumb?.contains("{") == true) {
+                                val embed = post.litePost.feature
+                                val thumb = parseImageThumbRef(post.litePost.feature.thumb, post.author.did)
+                                PostLinkEmbed(
+                                    linkData = BskyPostFeature.ExternalFeature(
+                                        uri = embed.uri,
+                                        title = embed.title,
+                                        description = embed.description,
+                                        thumb = thumb
+                                    ),
                                     linkPress = {
                                         val urlIntent = Intent(
                                             Intent.ACTION_VIEW,
@@ -190,7 +189,89 @@ fun EmbedPostFragment(
                                         ctx.startActivity(urlIntent)
                                     },
                                 )
-                                is BskyPostFeature.ImagesFeature -> PostImages(imagesFeature = post.litePost.feature.media)
+                            } else {
+                                PostLinkEmbed(
+                                    linkData = post.litePost.feature,
+                                    linkPress = {
+                                        val urlIntent = Intent(
+                                            Intent.ACTION_VIEW,
+                                            Uri.parse(it)
+                                        )
+                                        ctx.startActivity(urlIntent)
+                                    },
+                                )
+                            }
+                        }
+                        is BskyPostFeature.ImagesFeature -> {
+                            if (post.litePost.feature.images.isNotEmpty()
+                                && post.litePost.feature.images.first().thumb.contains("{")
+                                ) {
+                                val images = mutableListOf<EmbedImage>()
+                                post.litePost.feature.images.map {
+                                    images.add(
+                                        EmbedImage(
+                                        thumb = parseImageThumbRef(it.thumb, post.author.did),
+                                        fullsize = parseImageFullRef(it.fullsize, post.author.did),
+                                        alt = it.alt
+                                    ))
+                                }
+                                PostImages(imagesFeature = BskyPostFeature.ImagesFeature(images.toImmutableList()))
+                            } else {
+                                PostImages(imagesFeature = post.litePost.feature)
+                            }
+                        }
+                        is BskyPostFeature.MediaPostFeature -> {
+                            when(post.litePost.feature.media) {
+                                is BskyPostFeature.ExternalFeature -> {
+                                    if (post.litePost.feature.media.thumb?.contains("{") == true) {
+                                        val embed = post.litePost.feature.media
+                                        val thumb = parseImageThumbRef(post.litePost.feature.media.thumb, post.author.did)
+                                        PostLinkEmbed(
+                                            linkData = BskyPostFeature.ExternalFeature(
+                                                uri = embed.uri,
+                                                title = embed.title,
+                                                description = embed.description,
+                                                thumb = thumb
+                                            ),
+                                            linkPress = {
+                                                val urlIntent = Intent(
+                                                    Intent.ACTION_VIEW,
+                                                    Uri.parse(it)
+                                                )
+                                                ctx.startActivity(urlIntent)
+                                            },
+                                        )
+                                    } else {
+                                        PostLinkEmbed(
+                                            linkData = post.litePost.feature.media,
+                                            linkPress = {
+                                                val urlIntent = Intent(
+                                                    Intent.ACTION_VIEW,
+                                                    Uri.parse(it)
+                                                )
+                                                ctx.startActivity(urlIntent)
+                                            },
+                                        )
+                                    }
+                                }
+                                is BskyPostFeature.ImagesFeature -> {
+                                    if (post.litePost.feature.media.images.isNotEmpty()
+                                        && post.litePost.feature.media.images.first().thumb.contains("{")
+                                    ) {
+                                        val images = mutableListOf<EmbedImage>()
+                                        post.litePost.feature.media.images.map {
+                                            images.add(
+                                                EmbedImage(
+                                                    thumb = parseImageThumbRef(it.thumb, post.author.did),
+                                                    fullsize = parseImageFullRef(it.fullsize, post.author.did),
+                                                    alt = it.alt
+                                                ))
+                                        }
+                                        PostImages(imagesFeature = BskyPostFeature.ImagesFeature(images.toImmutableList()))
+                                    } else {
+                                        PostImages(imagesFeature = post.litePost.feature.media)
+                                    }
+                                }
                             }
                             when (post.litePost.feature.post) {
                                 is EmbedPost.BlockedEmbedPost -> EmbedBlockedPostFragment(uri = post.litePost.feature.post.uri)

@@ -295,7 +295,7 @@ fun PostFragment(
                         ) {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.Reply,
-                                contentDescription = "",
+                                contentDescription = null,
                                 tint = MaterialTheme.colorScheme.secondary,
                                 modifier = Modifier.height(15.dp)
                             )
@@ -333,20 +333,26 @@ fun PostFragment(
                                 )
                                 ctx.startActivity(urlIntent)
                             })
-                        is BskyPostFeature.ImagesFeature -> PostImages(imagesFeature = post.feature)
+                        is BskyPostFeature.ImagesFeature -> {
+                            PostImages(imagesFeature = post.feature)
+                        }
                         is BskyPostFeature.MediaPostFeature -> {
                             when(post.feature.media) {
-                                is BskyPostFeature.ExternalFeature -> PostLinkEmbed(
-                                    linkData = post.feature.media,
-                                    linkPress = {
-                                        val urlIntent = Intent(
-                                            Intent.ACTION_VIEW,
-                                            Uri.parse(it)
-                                        )
-                                        ctx.startActivity(urlIntent)
-                                    }
+                                is BskyPostFeature.ExternalFeature -> {
+                                    PostLinkEmbed(
+                                        linkData = post.feature.media,
+                                        linkPress = {
+                                            val urlIntent = Intent(
+                                                Intent.ACTION_VIEW,
+                                                Uri.parse(it)
+                                            )
+                                            ctx.startActivity(urlIntent)
+                                        }
                                     )
-                                is BskyPostFeature.ImagesFeature -> PostImages(imagesFeature = post.feature.media)
+                                }
+                                is BskyPostFeature.ImagesFeature -> {
+                                    PostImages(imagesFeature = post.feature.media)
+                                }
                             }
                             when (post.feature.post) {
                                 is EmbedPost.BlockedEmbedPost -> EmbedBlockedPostFragment(uri = post.feature.post.uri)
