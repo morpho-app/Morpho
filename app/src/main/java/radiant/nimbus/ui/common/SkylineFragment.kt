@@ -29,6 +29,7 @@ import androidx.compose.material.icons.filled.KeyboardDoubleArrowUp
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -61,6 +62,7 @@ import radiant.nimbus.api.AtIdentifier
 import radiant.nimbus.api.AtUri
 import radiant.nimbus.api.model.RecordType
 import radiant.nimbus.components.ScreenBody
+import radiant.nimbus.model.BskyPost
 import radiant.nimbus.model.BskyPostThread
 import radiant.nimbus.model.Skyline
 import radiant.nimbus.model.SkylineItem
@@ -77,6 +79,7 @@ import radiant.nimbus.ui.thread.ThreadTree
 typealias OnPostClicked = (AtUri) -> Unit
 
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SkylineFragment (
     navigator: DestinationsNavigator,
@@ -85,9 +88,10 @@ fun SkylineFragment (
     onItemClicked: OnPostClicked,
     onProfileClicked: (AtIdentifier) -> Unit = {},
     listState: LazyListState = rememberLazyListState(),
+    onPostButtonClicked: () -> Unit = {},
     refresh: (String?) -> Unit = {},
-    onReplyClicked: (StrongRef) -> Unit = { },
-    onRepostClicked: (StrongRef) -> Unit = { },
+    onReplyClicked: (BskyPost) -> Unit = { },
+    onRepostClicked: (BskyPost) -> Unit = { },
     onLikeClicked: (StrongRef) -> Unit = { },
     onMenuClicked: (MenuOptions) -> Unit = { },
     onUnClicked: (type: RecordType, uri: AtUri) -> Unit = { _, _ -> },
@@ -104,25 +108,32 @@ fun SkylineFragment (
     }
     val scrolledDownBy by remember { derivedStateOf { listState.firstVisibleItemIndex } }
 
-
-    Box(modifier = Modifier
-        .fillMaxWidth()
-        .systemBarsPadding()) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .systemBarsPadding()
+    ) {
         LazyColumn(
             modifier = modifier,
-            contentPadding = PaddingValues(bottom = contentPadding.calculateBottomPadding(),
-                top = WindowInsets.safeContent.only(WindowInsetsSides.Top).asPaddingValues().calculateTopPadding()),
+            contentPadding = PaddingValues(
+                bottom = contentPadding.calculateBottomPadding(),
+                top = WindowInsets.safeContent.only(WindowInsetsSides.Top).asPaddingValues()
+                    .calculateTopPadding()
+            ),
             state = listState
         ) {
             item {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.End
-                ){
-                    Spacer(modifier = Modifier
-                        .padding(horizontal = 2.dp)
-                        .weight(0.4f))
-                    IconButton(onClick = { refresh(null) },
+                ) {
+                    Spacer(
+                        modifier = Modifier
+                            .padding(horizontal = 2.dp)
+                            .weight(0.4f)
+                    )
+                    IconButton(
+                        onClick = { refresh(null) },
                         colors = IconButtonDefaults.iconButtonColors(
                             containerColor = MaterialTheme.colorScheme.background,
                             contentColor = MaterialTheme.colorScheme.onSurfaceVariant
@@ -131,28 +142,32 @@ fun SkylineFragment (
                             .padding(horizontal = 8.dp)
                             .weight(0.2f)
                     ) {
-                        Icon(imageVector = Icons.Default.Refresh, contentDescription = "Refresh",
-                            modifier = Modifier.size(20.dp))
+                        Icon(
+                            imageVector = Icons.Default.Refresh, contentDescription = "Refresh",
+                            modifier = Modifier.size(20.dp)
+                        )
                     }
-                    TextButton(onClick = { /*TODO*/ },
+                    TextButton(
+                        onClick = { /*TODO*/ },
                         colors = ButtonDefaults.buttonColors(
                             containerColor = MaterialTheme.colorScheme.background,
                             contentColor = MaterialTheme.colorScheme.onSurfaceVariant
                         ),
                         modifier = Modifier
                             .padding(horizontal = 8.dp)
-                            //.weight(0.5f)
+                        //.weight(0.5f)
                     ) {
-                        Icon(imageVector = Icons.Default.Settings, contentDescription = null,
+                        Icon(
+                            imageVector = Icons.Default.Settings, contentDescription = null,
                             modifier = Modifier
                                 .size(20.dp)
-                                )
+                        )
                         Text(text = "Feed settings", Modifier.padding(start = 6.dp))
                     }
                 }
             }
             items(postList.posts) { skylineItem ->
-                if( skylineItem.post != null) {
+                if (skylineItem.post != null) {
                     val post = skylineItem.post
                     val thread = skylineItem.thread
                     if (thread != null) {
@@ -190,15 +205,21 @@ fun SkylineFragment (
             }
         }
         // TODO: Rework the layout to go from the bottom, using constraints
-        if(scrolledDownBy > 5) {
-            OutlinedIconButton(onClick = {
-                coroutineScope.launch {
-                    val a = async { refresh(null) }
-                    listState.animateScrollToItem(0)
-                    a.await()
-                } },
+        if (scrolledDownBy > 5) {
+            OutlinedIconButton(
+                onClick = {
+                    coroutineScope.launch {
+                        val a = async { refresh(null) }
+                        listState.animateScrollToItem(0)
+                        a.await()
+                    }
+                },
                 border = BorderStroke(1.dp, MaterialTheme.colorScheme.surfaceVariant),
-                colors = IconButtonDefaults.outlinedIconButtonColors(containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp).copy(alpha = 0.8f)),
+                colors = IconButtonDefaults.outlinedIconButtonColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(
+                        1.dp
+                    ).copy(alpha = 0.8f)
+                ),
                 modifier = Modifier
                     .align(Alignment.TopStart)
                     .offset(20.dp, 670.dp)
@@ -224,7 +245,7 @@ fun SkylineFragment (
             }
         }
         FloatingActionButton(
-            onClick = { /*TODO*/ },
+            onClick = { onPostButtonClicked() },
             modifier = Modifier
                 .align(Alignment.TopEnd)
                 .offset((-20).dp, 670.dp)
@@ -233,7 +254,7 @@ fun SkylineFragment (
                 imageVector = Icons.Default.Create,
                 contentDescription = "Post a thing!",
 
-            )
+                )
         }
     }
 
@@ -246,8 +267,8 @@ fun SkylineThreadFragment(
     modifier: Modifier = Modifier,
     onItemClicked: OnPostClicked = {},
     onProfileClicked: (AtIdentifier) -> Unit = {},
-    onReplyClicked: (StrongRef) -> Unit = { },
-    onRepostClicked: (StrongRef) -> Unit = { },
+    onReplyClicked: (BskyPost) -> Unit = { },
+    onRepostClicked: (BskyPost) -> Unit = { },
     onLikeClicked: (StrongRef) -> Unit = { },
     onMenuClicked: (MenuOptions) -> Unit = { },
     onUnClicked: (type: RecordType, uri: AtUri) -> Unit = { _, _ -> },

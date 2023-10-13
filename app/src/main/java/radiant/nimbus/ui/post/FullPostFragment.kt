@@ -66,8 +66,8 @@ fun FullPostFragment(
     modifier: Modifier = Modifier,
     onItemClicked: (AtUri) -> Unit = {},
     onProfileClicked: (AtIdentifier) -> Unit = {},
-    onReplyClicked: (StrongRef) -> Unit = { },
-    onRepostClicked: (StrongRef) -> Unit = { },
+    onReplyClicked: (BskyPost) -> Unit = { },
+    onRepostClicked: (BskyPost) -> Unit = { },
     onLikeClicked: (StrongRef) -> Unit = { },
     onMenuClicked: (MenuOptions) -> Unit = { },
     onUnClicked: (type: RecordType, uri: AtUri) -> Unit = { _, _ -> },
@@ -268,10 +268,10 @@ fun FullPostFragment(
                     onLikeClicked(StrongRef(post.uri, post.cid))
                 },
                 onReplyClicked = {
-
+                    onReplyClicked(post)
                 },
                 onRepostClicked = {
-                    onRepostClicked(StrongRef(post.uri, post.cid))
+                    onRepostClicked(post)
                 },
                 onUnClicked = onUnClicked,
             )

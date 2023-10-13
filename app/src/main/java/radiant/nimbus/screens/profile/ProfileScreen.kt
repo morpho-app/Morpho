@@ -21,6 +21,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.atproto.repo.StrongRef
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import radiant.nimbus.MainViewModel
@@ -199,7 +200,7 @@ fun ProfileViewPhone(
                     },
                     onUnClicked = {type, uri ->  apiProvider?.deleteRecord(type, uri = uri)},
                     onRepostClicked = {
-                        apiProvider?.createRecord(RecordUnion.Repost(it))
+                        apiProvider?.createRecord(RecordUnion.Repost(StrongRef(it.uri,it.cid)))
                         /* TODO: Add dialog/quote post option */
                     },
                     onReplyClicked = { },
@@ -228,7 +229,7 @@ fun ProfileViewPhone(
                     },
                     onUnClicked = {type, uri ->  apiProvider?.deleteRecord(type, uri = uri)},
                     onRepostClicked = {
-                        apiProvider?.createRecord(RecordUnion.Repost(it))
+                        apiProvider?.createRecord(RecordUnion.Repost(StrongRef(it.uri,it.cid)))
                         /* TODO: Add dialog/quote post option */
                     },
                     onReplyClicked = { },
@@ -256,7 +257,7 @@ fun ProfileViewPhone(
                     },
                     onUnClicked = {type, uri ->  apiProvider?.deleteRecord(type, uri = uri)},
                     onRepostClicked = {
-                        apiProvider?.createRecord(RecordUnion.Repost(it))
+                        apiProvider?.createRecord(RecordUnion.Repost(StrongRef(it.uri,it.cid)))
                         /* TODO: Add dialog/quote post option */
                     },
                     onReplyClicked = { },

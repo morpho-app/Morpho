@@ -76,8 +76,8 @@ fun PostFragment(
     elevate: Boolean = false,
     onItemClicked: OnPostClicked = {},
     onProfileClicked: (AtIdentifier) -> Unit = {},
-    onReplyClicked: (StrongRef) -> Unit = { },
-    onRepostClicked: (StrongRef) -> Unit = { },
+    onReplyClicked: (BskyPost) -> Unit = { },
+    onRepostClicked: (BskyPost) -> Unit = { },
     onLikeClicked: (StrongRef) -> Unit = { },
     onMenuClicked: (MenuOptions) -> Unit = { },
     onUnClicked: (type: RecordType, uri: AtUri) -> Unit = { _, _ -> },
@@ -373,10 +373,10 @@ fun PostFragment(
                         },
                         onMenuClicked = onMenuClicked,
                         onReplyClicked = {
-
+                            onReplyClicked(post)
                         },
                         onRepostClicked = {
-                            onRepostClicked(StrongRef(post.uri, post.cid))
+                            onRepostClicked(post)
                         },
                         onUnClicked = onUnClicked,
                     )

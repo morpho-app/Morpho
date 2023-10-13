@@ -5,10 +5,18 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Image
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -22,7 +30,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import app.bsky.feed.Post
@@ -44,6 +51,7 @@ enum class ComposerRole {
     QuotePost,
     ThreadBuilder,
 }
+
 
 
 @Composable
@@ -77,11 +85,17 @@ fun PostComposer(
             ComposerRole.QuotePost -> "Quote Post"
             ComposerRole.ThreadBuilder -> "Post"
         }
+
     }
-    Column {
+    val textLeft = remember { 300 - postText.codePoints().count() }
+    val textFractionUsed: Float = remember { postText.codePoints().count() / 300.0f }
+    Column(
+        Modifier
+            .imePadding(),
+    ) {
         Row(
             horizontalArrangement = Arrangement.SpaceEvenly,
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             TextButton(
                 onClick = onCancel,
@@ -129,6 +143,7 @@ fun PostComposer(
 
                 OutlinedTextField(
                     modifier = Modifier
+                        .imePadding()
                         .fillMaxWidth()
                         .padding(4.dp),
 
@@ -137,12 +152,35 @@ fun PostComposer(
                     onValueChange = { postText = it},
                     supportingText = if (quoteRef != null && initialContent != null) {
                         { ComposerPostFragment(post = initialContent) } } else null,
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                    keyboardOptions = KeyboardOptions(autoCorrect = true),
                     keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() }),
                 )
             }
         }
+        Row(
+            horizontalArrangement = Arrangement.SpaceEvenly,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            IconButton(
+                onClick = {},
+                modifier = Modifier.padding(horizontal = 4.dp)
+            ) {
+                Icon(imageVector = Icons.Default.Image, contentDescription = "Select Image")
+            }
+            Spacer(modifier = Modifier
+                .padding(horizontal = 12.dp)
+                .weight(0.1f))
 
+            Text(text = textLeft.toString(), style = MaterialTheme.typography.labelLarge)
+            CircularProgressIndicator(
+                progress = textFractionUsed,
+                trackColor = MaterialTheme.colorScheme.surfaceVariant,
+                modifier = Modifier
+                    .size(45.dp)
+                    .padding(8.dp),
+
+            )
+        }
 
 
     }

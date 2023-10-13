@@ -15,6 +15,7 @@ import com.atproto.repo.StrongRef
 import radiant.nimbus.api.AtIdentifier
 import radiant.nimbus.api.AtUri
 import radiant.nimbus.api.model.RecordType
+import radiant.nimbus.model.BskyPost
 import radiant.nimbus.model.BskyPostThread
 import radiant.nimbus.model.ThreadPost
 import radiant.nimbus.ui.common.OnPostClicked
@@ -39,8 +40,8 @@ fun ThreadFragment(
     },
     onItemClicked: OnPostClicked = {},
     onProfileClicked: (AtIdentifier) -> Unit = {},
-    onReplyClicked: (StrongRef) -> Unit = { },
-    onRepostClicked: (StrongRef) -> Unit = { },
+    onReplyClicked: (BskyPost) -> Unit = { },
+    onRepostClicked: (BskyPost) -> Unit = { },
     onLikeClicked: (StrongRef) -> Unit = { },
     onMenuClicked: (MenuOptions) -> Unit = { },
     onUnClicked: (type: RecordType, uri: AtUri) -> Unit = { _, _ -> },

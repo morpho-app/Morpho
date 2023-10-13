@@ -1,25 +1,48 @@
 package radiant.nimbus.screens.skyline
 
 import android.util.Log
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.FormatQuote
+import androidx.compose.material.icons.filled.Repeat
+import androidx.compose.material3.Button
+import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.hilt.navigation.compose.hiltViewModel
 import app.bsky.feed.GetFeedGeneratorQueryParams
 import app.bsky.feed.GetFeedQueryParams
+import com.atproto.repo.StrongRef
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.RootNavGraph
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 import radiant.nimbus.MainViewModel
 import radiant.nimbus.api.ApiProvider
@@ -28,9 +51,12 @@ import radiant.nimbus.api.model.RecordUnion
 import radiant.nimbus.api.response.AtpResponse
 import radiant.nimbus.components.ScreenBody
 import radiant.nimbus.extensions.activityViewModel
+import radiant.nimbus.model.BskyPost
 import radiant.nimbus.model.Skyline
 import radiant.nimbus.screens.destinations.PostThreadScreenDestination
 import radiant.nimbus.screens.destinations.ProfileScreenDestination
+import radiant.nimbus.ui.common.ComposerRole
+import radiant.nimbus.ui.common.PostComposer
 import radiant.nimbus.ui.common.SkylineFragment
 import radiant.nimbus.ui.common.SkylineTopBar
 import radiant.nimbus.ui.elements.OutlinedAvatar
@@ -103,6 +129,8 @@ fun SkylineView(
 ){
     var selectedTab by rememberSaveable { mutableIntStateOf(0) }
 
+
+
     LaunchedEffect(selectedTab) {
         if(selectedTab > 0) {
             viewModel.getSkyline(apiProvider, GetFeedQueryParams(
@@ -137,6 +165,13 @@ fun SkylineView(
         navBar = navBar,
         contentWindowInsets = WindowInsets.navigationBars,
     ) {insets ->
+        val scope = rememberCoroutineScope()
+        var repostClicked by remember { mutableStateOf(false)}
+        var initialContent: BskyPost? by remember { mutableStateOf(null) }
+        var showComposer by remember { mutableStateOf(false)}
+        var composerRole by remember { mutableStateOf(ComposerRole.StandalonePost)}
+        val sheetState = rememberModalBottomSheetState()
+
 
         when(selectedTab) {
             0 -> {
@@ -153,14 +188,23 @@ fun SkylineView(
                     contentPadding = insets,
                     onUnClicked = {type, rkey ->  apiProvider.deleteRecord(type, rkey)},
                     onRepostClicked = {
-                        apiProvider.createRecord(RecordUnion.Repost(it))
-                        /* TODO: Add dialog/quote post option */
+                        initialContent = it
+                        composerRole = ComposerRole.QuotePost
+                        repostClicked = true
                     },
-                    onReplyClicked = { },
+                    onReplyClicked = {
+                        initialContent = it
+                        composerRole = ComposerRole.Reply
+                        showComposer = true
+                    },
                     onMenuClicked = { },
                     onLikeClicked = {
                         apiProvider.createRecord(RecordUnion.Like(it))
                     },
+                    onPostButtonClicked = {
+                        composerRole = ComposerRole.StandalonePost
+                        showComposer = true
+                    }
                 )
             }
             else -> {
@@ -180,22 +224,139 @@ fun SkylineView(
                         contentPadding = insets,
                         onUnClicked = {type, rkey ->  apiProvider.deleteRecord(type, rkey)},
                         onRepostClicked = {
-                            apiProvider.createRecord(RecordUnion.Repost(it))
-                            /* TODO: Add dialog/quote post option */
+                            initialContent = it
+                            repostClicked = true
                         },
-                        onReplyClicked = { },
+                        onReplyClicked = {
+                            initialContent = it
+                            composerRole = ComposerRole.Reply
+                            showComposer = true
+                        },
                         onMenuClicked = { },
                         onLikeClicked = {
                             apiProvider.createRecord(RecordUnion.Like(it))
                         },
+                        onPostButtonClicked = {
+                            composerRole = ComposerRole.StandalonePost
+                            showComposer = true
+                        }
                     )
                 }
             }
         }
+        if(repostClicked) {
+            RepostQueryDialog(
+                onDismissRequest = {
+                    showComposer = false
+                    repostClicked = false
+                },
+                onRepost = {
+                    repostClicked = false
+                    initialContent?.let { post ->
+                        RecordUnion.Repost(
+                            StrongRef(post.uri,post.cid)
+                        )
+                    }?.let { apiProvider.createRecord(it) }
+                },
+                onQuotePost = {
+                    showComposer = true
+                    repostClicked = false
+                }
+            )
+        }
+        if(showComposer) {
+            ModalBottomSheet(
+                onDismissRequest = {
+                    scope.launch { sheetState.hide() }.invokeOnCompletion {
+                        if (!sheetState.isVisible) {
+                            showComposer = false
+                        }
+                    }
+                },
+                containerColor = MaterialTheme.colorScheme.background,
+                sheetState = sheetState,
+
+                ){
+                PostComposer(
+                    role = composerRole,
+                    modifier = Modifier.safeDrawingPadding().imePadding(),
+                    initialContent = initialContent,
+                    onCancel = {
+                        scope.launch { sheetState.hide() }.invokeOnCompletion {
+                            if (!sheetState.isVisible) {
+                                showComposer = false
+                            }
+                        }
+                    },
+                    onSend = {
+                        apiProvider.createRecord(RecordUnion.MakePost(it))
+                    }
+                )
+            }
+
+        }
+
+
     }
 
 
 }
 
 
+
+
+@Composable
+fun RepostQueryDialog(
+    onDismissRequest: () -> Unit = {},
+    onRepost: () -> Unit = {},
+    onQuotePost: () -> Unit = {},
+) {
+    Dialog(
+        onDismissRequest = { onDismissRequest() },
+        properties = DialogProperties(
+            dismissOnBackPress = true,
+            dismissOnClickOutside = true,
+            usePlatformDefaultWidth = true,),
+    ) {
+        BackHandler {
+            onDismissRequest()
+        }
+        Card(
+            shape = MaterialTheme.shapes.large,
+            modifier = Modifier.padding(36.dp)
+        ) {
+            TextButton(
+                onClick = {
+                    onRepost()
+                          },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(12.dp)
+            ) {
+                Icon(imageVector = Icons.Default.Repeat, contentDescription = null)
+                Text(text = "Repost")
+            }
+            TextButton(
+                onClick = {
+                    onQuotePost()
+                          },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(12.dp)
+            ) {
+                Icon(imageVector = Icons.Default.FormatQuote, contentDescription = null)
+                Text(text = "Quote Post")
+            }
+
+            Button(
+                onClick = { onDismissRequest() },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(12.dp)
+            ) {
+                Text(text = "Cancel")
+            }
+        }
+    }
+}
 
