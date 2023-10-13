@@ -90,7 +90,6 @@ fun FullPostFragment(
             .background(MaterialTheme.colorScheme.background)
             .padding(vertical = 4.dp)
             .padding(start = 6.dp, end = 6.dp)
-            .clickable {}
     ) {
 
         FlowRow(
@@ -103,7 +102,7 @@ fun FullPostFragment(
                 url = post.author.avatar.orEmpty(),
                 contentDescription = "Avatar for ${post.author.handle}",
                 modifier = Modifier
-                    .size(50.dp)
+                    .size(55.dp)
                     .align(Alignment.CenterVertically),
                 outlineColor = MaterialTheme.colorScheme.background,
                 onClicked = { onProfileClicked(AtIdentifier(post.author.did.did)) }
@@ -187,8 +186,9 @@ fun FullPostFragment(
                 markdown = post.text.replace("\n", "  \n"),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurface,
-                //disableLinkMovementMethod = true,
-                modifier = Modifier.padding(start = 8.dp, end = 8.dp, top = 4.dp, bottom = 8.dp),
+                linkColor = MaterialTheme.colorScheme.tertiary,
+                modifier = Modifier.padding(start = 8.dp, end = 8.dp, top = 4.dp, bottom = 8.dp)
+                    .clickable { onItemClicked(post.uri) },
                 onLinkClicked = {
                     val urlIntent = Intent(
                         Intent.ACTION_VIEW,
@@ -212,10 +212,12 @@ fun FullPostFragment(
                         Uri.parse(it)
                     )
                     ctx.startActivity(urlIntent)
-                }
+                },
+                modifier = Modifier.align(Alignment.CenterHorizontally)
             )
 
-            is BskyPostFeature.ImagesFeature -> PostImages(imagesFeature = post.feature)
+            is BskyPostFeature.ImagesFeature -> PostImages(imagesFeature = post.feature,
+                modifier = Modifier.align(Alignment.CenterHorizontally))
             is BskyPostFeature.MediaPostFeature -> {
                 when (post.feature.media) {
                     is BskyPostFeature.ExternalFeature -> PostLinkEmbed(
@@ -226,17 +228,20 @@ fun FullPostFragment(
                                 Uri.parse(it)
                             )
                             ctx.startActivity(urlIntent)
-                        }
+                        },
+                        modifier = Modifier.align(Alignment.CenterHorizontally)
                     )
 
-                    is BskyPostFeature.ImagesFeature -> PostImages(imagesFeature = post.feature.media)
+                    is BskyPostFeature.ImagesFeature -> PostImages(imagesFeature = post.feature.media,
+                        modifier = Modifier.align(Alignment.CenterHorizontally))
                 }
                 when (post.feature.post) {
                     is EmbedPost.BlockedEmbedPost -> EmbedBlockedPostFragment(uri = post.feature.post.uri)
                     is EmbedPost.InvisibleEmbedPost -> EmbedNotFoundPostFragment(uri = post.feature.post.uri)
                     is EmbedPost.VisibleEmbedPost -> EmbedPostFragment(
                         post = post.feature.post,
-                        onItemClicked = { onItemClicked(it) }
+                        onItemClicked = { onItemClicked(it) },
+                        modifier = Modifier.align(Alignment.CenterHorizontally)
                     )
                 }
             }
@@ -247,7 +252,8 @@ fun FullPostFragment(
                     is EmbedPost.InvisibleEmbedPost -> EmbedNotFoundPostFragment(uri = post.feature.post.uri)
                     is EmbedPost.VisibleEmbedPost -> EmbedPostFragment(
                         post = post.feature.post,
-                        onItemClicked = { onItemClicked(it) }
+                        onItemClicked = { onItemClicked(it) },
+                        modifier = Modifier.align(Alignment.CenterHorizontally)
                     )
                 }
             }

@@ -166,7 +166,8 @@ class MainActivity : ComponentActivity() {
                                             TabRowDefaults.primaryContentColor
                                         } else {
                                             Color.Transparent
-                                        }
+                                        },
+                                    circle = true
                                     )
                             }
                         } else {

@@ -97,6 +97,7 @@ fun SkylineFragment (
     val coroutineScope = rememberCoroutineScope()
     LaunchedEffect(Unit) {
         refresh(postList.cursor)
+        if(listState.firstVisibleItemIndex == 0) listState.animateScrollToItem(0, 50)
     }
     LaunchedEffect(postList.posts.size > 10 && !listState.canScrollForward) {
         refresh(postList.cursor)
@@ -188,30 +189,8 @@ fun SkylineFragment (
 
             }
         }
-        // TODO: Combine the two button modes here and rework the layout to go from the bottom, using constraints
-        if(scrolledDownBy > 20) {
-            OutlinedIconButton(onClick = {
-                coroutineScope.launch {
-                    val a = async { refresh(null) }
-                    listState.scrollToItem(0)
-                    a.await()
-                } },
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.surfaceVariant),
-                colors = IconButtonDefaults.outlinedIconButtonColors(containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp).copy(alpha = 0.8f)),
-                modifier = Modifier
-                    .align(Alignment.TopStart)
-                    .offset(20.dp, 670.dp)
-                    .size(50.dp)
-            ) {
-                Icon(
-                    Icons.Default.KeyboardDoubleArrowUp,
-                    "Scroll to top",
-                    modifier = Modifier
-                        .size(40.dp)
-                        .padding(5.dp)
-                )
-            }
-        } else if(scrolledDownBy > 5) {
+        // TODO: Rework the layout to go from the bottom, using constraints
+        if(scrolledDownBy > 5) {
             OutlinedIconButton(onClick = {
                 coroutineScope.launch {
                     val a = async { refresh(null) }
@@ -225,12 +204,23 @@ fun SkylineFragment (
                     .offset(20.dp, 670.dp)
                     .size(50.dp)
             ) {
-                Icon(Icons.Default.KeyboardArrowUp,
-                    "Scroll to top",
-                    modifier = Modifier
-                        .size(40.dp)
-                        .padding(5.dp)
-                )
+                if (scrolledDownBy > 20) {
+                    Icon(
+                        Icons.Default.KeyboardDoubleArrowUp,
+                        "Scroll to top",
+                        modifier = Modifier
+                            .size(40.dp)
+                            .padding(5.dp)
+                    )
+                } else {
+                    Icon(
+                        Icons.Default.KeyboardArrowUp,
+                        "Scroll to top",
+                        modifier = Modifier
+                            .size(40.dp)
+                            .padding(5.dp)
+                    )
+                }
             }
         }
         FloatingActionButton(

@@ -52,7 +52,7 @@ import radiant.nimbus.model.BskyLabel
 import radiant.nimbus.model.DetailedProfile
 import radiant.nimbus.model.Moment
 import radiant.nimbus.screens.profile.ProfileTabs
-import radiant.nimbus.screens.skyline.TopAppBarPreview
+import radiant.nimbus.ui.common.TopAppBarPreview
 import radiant.nimbus.ui.elements.OutlinedAvatar
 import radiant.nimbus.ui.elements.RichText
 import radiant.nimbus.ui.theme.NimbusTheme

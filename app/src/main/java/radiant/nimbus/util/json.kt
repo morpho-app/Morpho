@@ -7,7 +7,7 @@ import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 
-private val json = Json {
+val json = Json {
     classDiscriminator = "${'$'}type"
     ignoreUnknownKeys = true
 }

@@ -16,10 +16,13 @@ package radiant.nimbus.ui.elements
  * limitations under the License.
  */
 
-import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
@@ -45,10 +48,16 @@ fun OutlinedAvatar(
     outlineSize: Dp = 1.dp,
     outlineColor: Color = MaterialTheme.colorScheme.surface,
     contentDescription: String = "",
+    circle: Boolean = false,
     onClicked: () -> Unit = {},
 ) {
+    val shape = if(circle) {
+        CircleShape
+    } else {
+        MaterialTheme.shapes.small.copy(topEnd = CornerSize(0.dp), bottomStart =CornerSize(0.dp))
+    }
     Surface(
-        shape = CircleShape,
+        shape = shape,
         color = outlineColor,
         onClick = onClicked,
         modifier = modifier
@@ -65,7 +74,7 @@ fun OutlinedAvatar(
             modifier = Modifier
                 .padding(outlineSize)
                 .fillMaxSize()
-                .clip(CircleShape)
+                .clip(shape)
         )
     }
 }
@@ -78,8 +87,10 @@ fun OutlinedAvatar(
 @Composable
 private fun OutlinedAvatarPreview() {
     NimbusTheme {
-        Box {
+        Column {
             OutlinedAvatar(url = "")
+            Spacer(modifier = Modifier.height(20.dp))
+            OutlinedAvatar(url = "", circle = true)
         }
     }
 }

@@ -26,7 +26,7 @@ import radiant.nimbus.model.BskyPostThread
 import radiant.nimbus.screens.destinations.PostThreadScreenDestination
 import radiant.nimbus.screens.destinations.ProfileScreenDestination
 import radiant.nimbus.screens.skyline.FeedTab
-import radiant.nimbus.screens.skyline.SkylineTopBar
+import radiant.nimbus.ui.common.SkylineTopBar
 import radiant.nimbus.ui.thread.ThreadFragment
 
 @Destination

@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -55,7 +54,7 @@ fun EmbedPostFragment(
     val lineColour = MaterialTheme.colorScheme.onSurfaceVariant
     val ctx = LocalContext.current
     Column(
-        Modifier
+        modifier
             .fillMaxWidth()
             .padding(2.dp)
     ) {
@@ -67,12 +66,12 @@ fun EmbedPostFragment(
             modifier = Modifier
                 .fillMaxWidth()
                 .align(Alignment.End)
-                .clickable{}
+                .clickable{onItemClicked(post.uri)}
 
         ) {
             Row(modifier = Modifier
-                .padding(vertical = 4.dp)
-                .padding(start = 6.dp, end = 6.dp)
+                .padding(bottom = 4.dp)
+                .padding(start = 0.dp, end = 6.dp)
                 .fillMaxWidth()
 
             ) {
@@ -80,8 +79,7 @@ fun EmbedPostFragment(
                     url = post.author.avatar.orEmpty(),
                     contentDescription = "Avatar for ${post.author.handle}",
                     modifier = Modifier
-                        .size(40.dp)
-                        .offset(y = 4.dp),
+                        .size(40.dp),
                     outlineColor = MaterialTheme.colorScheme.background,
                     onClicked = onProfileClicked
                 )
@@ -93,6 +91,7 @@ fun EmbedPostFragment(
 
                     FlowRow(
                         modifier = Modifier
+                            .padding(top = 4.dp)
                             .padding(horizontal = 4.dp),
                         horizontalArrangement = Arrangement.End
 
@@ -158,8 +157,8 @@ fun EmbedPostFragment(
                             markdown = post.litePost.text.replace("\n", "  \n"),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurface,
-                            disableLinkMovementMethod = true,
-                            modifier = Modifier.padding(start = 4.dp, top = 4.dp, bottom = 4.dp),
+                            linkColor = MaterialTheme.colorScheme.tertiary,
+                            modifier = Modifier.padding(start = 4.dp, top = 4.dp, bottom = 4.dp).clickable { onItemClicked(post.uri) },
                             onLinkClicked = {
                                 val urlIntent = Intent(
                                     Intent.ACTION_VIEW,
@@ -173,7 +172,7 @@ fun EmbedPostFragment(
                         is BskyPostFeature.ExternalFeature -> {
                             if (post.litePost.feature.thumb?.contains("{") == true) {
                                 val embed = post.litePost.feature
-                                val thumb = parseImageThumbRef(post.litePost.feature.thumb, post.author.did)
+                                val thumb = remember {parseImageThumbRef(post.litePost.feature.thumb, post.author.did) }
                                 PostLinkEmbed(
                                     linkData = BskyPostFeature.ExternalFeature(
                                         uri = embed.uri,
@@ -188,6 +187,7 @@ fun EmbedPostFragment(
                                         )
                                         ctx.startActivity(urlIntent)
                                     },
+                                    modifier = Modifier.align(Alignment.CenterHorizontally)
                                 )
                             } else {
                                 PostLinkEmbed(
@@ -199,6 +199,7 @@ fun EmbedPostFragment(
                                         )
                                         ctx.startActivity(urlIntent)
                                     },
+                                    modifier = Modifier.align(Alignment.CenterHorizontally)
                                 )
                             }
                         }
@@ -207,17 +208,19 @@ fun EmbedPostFragment(
                                 && post.litePost.feature.images.first().thumb.contains("{")
                                 ) {
                                 val images = mutableListOf<EmbedImage>()
-                                post.litePost.feature.images.map {
+                                remember {post.litePost.feature.images.map {
                                     images.add(
                                         EmbedImage(
                                         thumb = parseImageThumbRef(it.thumb, post.author.did),
                                         fullsize = parseImageFullRef(it.fullsize, post.author.did),
                                         alt = it.alt
                                     ))
-                                }
-                                PostImages(imagesFeature = BskyPostFeature.ImagesFeature(images.toImmutableList()))
+                                }}
+                                PostImages(imagesFeature = BskyPostFeature.ImagesFeature(images.toImmutableList()),
+                                    modifier = Modifier.align(Alignment.CenterHorizontally))
                             } else {
-                                PostImages(imagesFeature = post.litePost.feature)
+                                PostImages(imagesFeature = post.litePost.feature,
+                                    modifier = Modifier.align(Alignment.CenterHorizontally))
                             }
                         }
                         is BskyPostFeature.MediaPostFeature -> {
@@ -225,7 +228,7 @@ fun EmbedPostFragment(
                                 is BskyPostFeature.ExternalFeature -> {
                                     if (post.litePost.feature.media.thumb?.contains("{") == true) {
                                         val embed = post.litePost.feature.media
-                                        val thumb = parseImageThumbRef(post.litePost.feature.media.thumb, post.author.did)
+                                        val thumb = remember {parseImageThumbRef(post.litePost.feature.media.thumb, post.author.did)}
                                         PostLinkEmbed(
                                             linkData = BskyPostFeature.ExternalFeature(
                                                 uri = embed.uri,
@@ -240,6 +243,7 @@ fun EmbedPostFragment(
                                                 )
                                                 ctx.startActivity(urlIntent)
                                             },
+                                            modifier = Modifier.align(Alignment.CenterHorizontally)
                                         )
                                     } else {
                                         PostLinkEmbed(
@@ -251,6 +255,7 @@ fun EmbedPostFragment(
                                                 )
                                                 ctx.startActivity(urlIntent)
                                             },
+                                            modifier = Modifier.align(Alignment.CenterHorizontally)
                                         )
                                     }
                                 }
@@ -259,6 +264,7 @@ fun EmbedPostFragment(
                                         && post.litePost.feature.media.images.first().thumb.contains("{")
                                     ) {
                                         val images = mutableListOf<EmbedImage>()
+                                        remember {
                                         post.litePost.feature.media.images.map {
                                             images.add(
                                                 EmbedImage(
@@ -266,10 +272,12 @@ fun EmbedPostFragment(
                                                     fullsize = parseImageFullRef(it.fullsize, post.author.did),
                                                     alt = it.alt
                                                 ))
-                                        }
-                                        PostImages(imagesFeature = BskyPostFeature.ImagesFeature(images.toImmutableList()))
+                                        }}
+                                        PostImages(imagesFeature = BskyPostFeature.ImagesFeature(images.toImmutableList()),
+                                            modifier = Modifier.align(Alignment.CenterHorizontally))
                                     } else {
-                                        PostImages(imagesFeature = post.litePost.feature.media)
+                                        PostImages(imagesFeature = post.litePost.feature.media,
+                                            modifier = Modifier.align(Alignment.CenterHorizontally))
                                     }
                                 }
                             }
@@ -278,7 +286,8 @@ fun EmbedPostFragment(
                                 is EmbedPost.InvisibleEmbedPost -> EmbedNotFoundPostFragment(uri = post.litePost.feature.post.uri)
                                is EmbedPost.VisibleEmbedPost -> EmbedPostFragment(
                                    post = post.litePost.feature.post,
-                                   onItemClicked = onItemClicked
+                                   onItemClicked = onItemClicked,
+                                   modifier = Modifier.align(Alignment.CenterHorizontally)
                                )
                             }
                         }
@@ -288,7 +297,8 @@ fun EmbedPostFragment(
                                 is EmbedPost.InvisibleEmbedPost -> EmbedNotFoundPostFragment(uri = post.litePost.feature.post.uri)
                                 is EmbedPost.VisibleEmbedPost -> EmbedPostFragment(
                                     post = post.litePost.feature.post,
-                                    onItemClicked = onItemClicked
+                                    onItemClicked = onItemClicked,
+                                    modifier = Modifier.align(Alignment.CenterHorizontally)
                                 )
                             }
                         }

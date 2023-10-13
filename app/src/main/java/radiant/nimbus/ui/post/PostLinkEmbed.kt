@@ -30,6 +30,7 @@ import radiant.nimbus.model.BskyPostFeature
 fun PostLinkEmbed(
     linkData: BskyPostFeature.ExternalFeature,
     linkPress: (String) -> Unit,
+    modifier: Modifier = Modifier,
 ) {
 
     LaunchedEffect(Unit) {
@@ -39,6 +40,7 @@ fun PostLinkEmbed(
         shape = MaterialTheme.shapes.extraSmall,
         tonalElevation = 3.dp,
         shadowElevation = 1.dp,
+        modifier = modifier
         //border = BorderStroke(1.dp,MaterialTheme.colorScheme.secondary)
     ) {
 
@@ -68,13 +70,13 @@ fun PostLinkEmbed(
                 )
             }
             SelectionContainer(
-                Modifier
+                Modifier.clickable { linkPress(linkData.uri.uri) }
             ) {
                 MarkdownText(
                     markdown = linkData.description.replace("\n", "  \n"),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurface,
-                    //disableLinkMovementMethod = true,
+                    linkColor = MaterialTheme.colorScheme.tertiary,
                     onLinkClicked = {
                         linkPress(it)
                     },

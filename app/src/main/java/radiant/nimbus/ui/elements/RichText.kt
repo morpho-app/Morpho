@@ -16,7 +16,7 @@ fun RichText(profile: DetailedProfile) {
         markdown = profile.description.orEmpty().replace("\n", "  \n"),
         style = MaterialTheme.typography.bodyMedium,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
-        disableLinkMovementMethod = true,
+        linkColor = MaterialTheme.colorScheme.tertiary,
         onLinkClicked = {
             val urlIntent = Intent(
                 Intent.ACTION_VIEW,

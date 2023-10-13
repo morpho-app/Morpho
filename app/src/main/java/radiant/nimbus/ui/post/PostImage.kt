@@ -52,13 +52,14 @@ import radiant.nimbus.model.EmbedImage
 @Composable
 fun PostImages(
     imagesFeature: BskyPostFeature.ImagesFeature,
+    modifier: Modifier = Modifier,
 ) {
     val numImages = rememberSaveable { imagesFeature.images.size}
     if(numImages > 1) {
         LazyVerticalStaggeredGrid(
             columns = StaggeredGridCells.Adaptive(120.dp),
             contentPadding = PaddingValues(0.dp),
-            modifier = Modifier
+            modifier = modifier
                 .padding(vertical = 6.dp)
                 .heightIn(10.dp, 2000.dp)
         ) {
@@ -69,7 +70,7 @@ fun PostImages(
                 )
             }
         }
-    } else if (numImages == 1) {
+    } else if (numImages == 1 && imagesFeature.images.isNotEmpty()) {
         PostImageThumb(image = imagesFeature.images.first(), modifier = Modifier
             .padding(vertical = 6.dp)
             .fillMaxWidth()

@@ -31,9 +31,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.drawWithCache
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -63,7 +60,6 @@ import radiant.nimbus.model.Moment
 import radiant.nimbus.ui.common.OnPostClicked
 import radiant.nimbus.ui.elements.MenuOptions
 import radiant.nimbus.ui.elements.OutlinedAvatar
-import radiant.nimbus.ui.elements.dpToPx
 import radiant.nimbus.ui.theme.NimbusTheme
 import radiant.nimbus.ui.utils.DevicePreviews
 import radiant.nimbus.ui.utils.indentLevel
@@ -160,33 +156,21 @@ fun PostFragment(
 
         ) {
             Row(modifier = Modifier
-                .padding(vertical = 4.dp)
-                .padding(start = 6.dp, end = 6.dp)
-                .drawWithCache {
-                    val path = Path()
-                    if (false) {
-                        path.moveTo(dpToPx(8.dp), dpToPx(29.dp))
-                        path.lineTo(-dpToPx(8.dp), dpToPx(29.dp))
-                        path.close()
-                    }
-                    onDrawBehind {
-                        drawPath(path, lineColour, style = Stroke(width = 5f))
-                    }
-                }
+                .padding(bottom = 4.dp)
+                .padding(start = 0.dp, end = 6.dp)
                 .fillMaxWidth(indentLevel(indent))
 
             ) {
 
                 if(indent < 2) {
-                    val repostedOffset = if(post.reason is BskyPostReason.BskyPostRepost) 26 else 4
                     OutlinedAvatar(
                         url = post.author.avatar.orEmpty(),
                         contentDescription = "Avatar for ${post.author.handle}",
                         modifier = Modifier
-                            .size(40.dp)
-                            .offset(y = repostedOffset.dp),
+                            .size(45.dp),
                         outlineColor = MaterialTheme.colorScheme.background,
-                        onClicked = { onProfileClicked(AtIdentifier(post.author.did.did)) }
+                        onClicked = { onProfileClicked(AtIdentifier(post.author.did.did)) },
+                        circle = false
                     )
                 }
 
@@ -196,8 +180,7 @@ fun PostFragment(
                         .fillMaxWidth(indentLevel(indent)),
                 ) {
                     if(post.reason is BskyPostReason.BskyPostRepost) {
-                        Row(modifier = Modifier
-                            .offset(x = (-16).dp),
+                        Row(modifier = Modifier,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Icon(
@@ -218,6 +201,7 @@ fun PostFragment(
                     SelectionContainer {
                         FlowRow(
                             modifier = Modifier
+                                .padding(top = 4.dp)
                                 .padding(horizontal = 4.dp),
                             horizontalArrangement = Arrangement.End
 
@@ -308,13 +292,14 @@ fun PostFragment(
                         }
                     }
 
-                    SelectionContainer {
+                    SelectionContainer(Modifier.clickable { onItemClicked(post.uri) }) {
                         MarkdownText(
                             markdown = post.text.replace("\n", "  \n"),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurface,
+                            linkColor = MaterialTheme.colorScheme.tertiary,
                             //disableLinkMovementMethod = true,
-                            modifier = Modifier.padding(start = 8.dp, end = 8.dp, top = 4.dp, bottom = 8.dp),
+                            modifier = Modifier.padding(start = 8.dp, end = 8.dp, top = 4.dp, bottom = 8.dp).clickable { onItemClicked(post.uri) },
                             onLinkClicked = {
                                 val urlIntent = Intent(
                                     Intent.ACTION_VIEW,
@@ -332,9 +317,11 @@ fun PostFragment(
                                     Uri.parse(it)
                                 )
                                 ctx.startActivity(urlIntent)
-                            })
+                            },
+                            modifier = Modifier.align(Alignment.CenterHorizontally))
                         is BskyPostFeature.ImagesFeature -> {
-                            PostImages(imagesFeature = post.feature)
+                            PostImages(imagesFeature = post.feature,
+                                modifier = Modifier.align(Alignment.CenterHorizontally))
                         }
                         is BskyPostFeature.MediaPostFeature -> {
                             when(post.feature.media) {
@@ -347,11 +334,13 @@ fun PostFragment(
                                                 Uri.parse(it)
                                             )
                                             ctx.startActivity(urlIntent)
-                                        }
+                                        },
+                                        modifier = Modifier.align(Alignment.CenterHorizontally)
                                     )
                                 }
                                 is BskyPostFeature.ImagesFeature -> {
-                                    PostImages(imagesFeature = post.feature.media)
+                                    PostImages(imagesFeature = post.feature.media,
+                                        modifier = Modifier.align(Alignment.CenterHorizontally))
                                 }
                             }
                             when (post.feature.post) {
@@ -359,7 +348,8 @@ fun PostFragment(
                                 is EmbedPost.InvisibleEmbedPost -> EmbedNotFoundPostFragment(uri = post.feature.post.uri)
                                 is EmbedPost.VisibleEmbedPost -> EmbedPostFragment(
                                     post = post.feature.post,
-                                    onItemClicked =  {onItemClicked(post.feature.post.uri)}
+                                    onItemClicked =  {onItemClicked(post.feature.post.uri)},
+                                    modifier = Modifier.align(Alignment.CenterHorizontally)
                                 )
                             }
                         }
@@ -369,7 +359,8 @@ fun PostFragment(
                                 is EmbedPost.InvisibleEmbedPost -> EmbedNotFoundPostFragment(uri = post.feature.post.uri)
                                 is EmbedPost.VisibleEmbedPost -> EmbedPostFragment(
                                     post = post.feature.post,
-                                    onItemClicked =  {onItemClicked(post.feature.post.uri)}
+                                    onItemClicked =  {onItemClicked(post.feature.post.uri)},
+                                    modifier = Modifier.align(Alignment.CenterHorizontally)
                                 )
                             }
                         }

@@ -16,7 +16,6 @@ import io.ktor.client.plugins.logging.LogLevel
 import io.ktor.client.plugins.logging.Logger
 import io.ktor.client.plugins.logging.Logging
 import io.ktor.client.request.bearerAuth
-import io.ktor.client.request.get
 import io.ktor.client.request.post
 import io.ktor.http.Url
 import kotlinx.coroutines.CoroutineScope
@@ -32,7 +31,6 @@ import kotlinx.coroutines.withContext
 import kotlinx.coroutines.yield
 import kotlinx.datetime.Clock
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.encodeToJsonElement
 import radiant.nimbus.api.auth.AuthInfo
 import radiant.nimbus.api.auth.Credentials
@@ -46,8 +44,10 @@ import radiant.nimbus.api.xrpc.toAtpResponse
 import radiant.nimbus.api.xrpc.withXrpcConfiguration
 import radiant.nimbus.app.Supervisor
 import radiant.nimbus.util.getRkey
+import radiant.nimbus.util.json
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlin.collections.set
 
 @Serializable
 data class RkeyCacheEntry(
@@ -161,12 +161,6 @@ class ApiProvider @Inject constructor(
     return api.getPreferences()
   }
 
-  suspend fun getPreferencesInit() : AtpResponse<GetPreferencesResponse>{
-    return client.withXrpcConfiguration().get("/xrpc/app.bsky.actor.getPreferences") {
-      auth().first()?.let { this.bearerAuth(it.refreshJwt) }
-    }.toAtpResponse()
-  }
-
 
   suspend fun makeLoginRequest(credentials: Credentials): AtpResponse<AuthInfo> {
     return withContext(Dispatchers.IO) {
@@ -206,7 +200,7 @@ class ApiProvider @Inject constructor(
           CreateRecordRequest(
             repo = AtIdentifier(did.did),
             collection = record.type.collection,
-            record = Json.encodeToJsonElement(value = like)
+            record = json.encodeToJsonElement(value = like)
           )
         }
         is RecordUnion.MakePost -> {
@@ -214,7 +208,7 @@ class ApiProvider @Inject constructor(
           CreateRecordRequest(
             repo = AtIdentifier(did.did),
             collection = record.type.collection,
-            record = Json.encodeToJsonElement(value = record.post)
+            record = json.encodeToJsonElement(value = record.post)
           )
         }
         is RecordUnion.Repost -> {
@@ -223,7 +217,7 @@ class ApiProvider @Inject constructor(
           CreateRecordRequest(
             repo = AtIdentifier(did.did),
             collection = record.type.collection,
-            record = Json.encodeToJsonElement(value = repost)
+            record = json.encodeToJsonElement(value = repost)
           )
         }
       }
@@ -272,7 +266,7 @@ class ApiProvider @Inject constructor(
     }
   }
 
-  fun deleteRecord(type: RecordType, rkey: String) = CoroutineScope(Dispatchers.IO).launch {
+  private fun deleteRecord(type: RecordType, rkey: String) = CoroutineScope(Dispatchers.IO).launch {
     val did = loginRepository.auth?.did
     if (did != null) {
       api.deleteRecord(DeleteRecordRequest(AtIdentifier(did.did), type.collection, rkey))
