@@ -33,6 +33,7 @@ import androidx.compose.ui.unit.dp
 import dev.jeziellago.compose.markdowntext.MarkdownText
 import kotlinx.collections.immutable.toImmutableList
 import radiant.nimbus.api.AtUri
+import radiant.nimbus.model.BskyPost
 import radiant.nimbus.model.BskyPostFeature
 import radiant.nimbus.model.EmbedImage
 import radiant.nimbus.model.EmbedPost
@@ -310,6 +311,111 @@ fun EmbedPostFragment(
     }
 
 }
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+fun ComposerPostFragment(
+    post: BskyPost,
+    modifier: Modifier = Modifier,
+) {
+    val delta = remember { getFormattedDateTimeSince(post.createdAt) }
+    val lineColour = MaterialTheme.colorScheme.onSurfaceVariant
+    val ctx = LocalContext.current
+    Column(
+        modifier
+            .fillMaxWidth()
+            .padding(2.dp)
+    ) {
+        Surface (
+            tonalElevation = 3.dp,
+            shadowElevation = 1.dp,
+            //border = BorderStroke(1.dp, MaterialTheme.colorScheme.secondary),
+            shape = MaterialTheme.shapes.small,
+            modifier = Modifier
+                .fillMaxWidth()
+                .align(Alignment.End)
+
+        ) {
+            Row(modifier = Modifier
+                .padding(bottom = 4.dp)
+                .padding(start = 0.dp, end = 6.dp)
+                .fillMaxWidth()
+
+            ) {
+                OutlinedAvatar(
+                    url = post.author.avatar.orEmpty(),
+                    contentDescription = "Avatar for ${post.author.handle}",
+                    modifier = Modifier
+                        .size(40.dp),
+                    outlineColor = MaterialTheme.colorScheme.background,
+                )
+                Column(
+                    Modifier
+                        .padding(vertical = 6.dp, horizontal = 6.dp)
+                        .fillMaxWidth(),
+                ) {
+
+                    FlowRow(
+                        modifier = Modifier
+                            .padding(top = 4.dp)
+                            .padding(horizontal = 4.dp),
+                        horizontalArrangement = Arrangement.End
+
+                    ) {
+                        Text(
+                            text = buildAnnotatedString {
+                                withStyle(
+                                    style = SpanStyle(
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                        fontSize = MaterialTheme.typography.labelLarge.fontSize
+                                            .times(1.2f),
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                ) {
+                                    append(post.author.displayName.orEmpty())
+                                }
+                                withStyle(
+                                    style = SpanStyle(
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        fontSize = MaterialTheme.typography.labelLarge.fontSize
+                                            .times(1.0f)
+                                    )
+                                ) {
+                                    append(" @${post.author.handle}")
+                                }
+
+                            },
+                            maxLines = 2,
+                            style = MaterialTheme.typography.labelLarge,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier
+                                .wrapContentWidth(Alignment.Start)
+                                .weight(10.0F)
+                                .alignByBaseline()
+                            ,
+                        )
+                    }
+
+                    SelectionContainer(
+                    ) {
+                        MarkdownText(
+                            markdown = post.text.replace("\n", "  \n"),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            linkColor = MaterialTheme.colorScheme.tertiary,
+                            modifier = Modifier.padding(start = 4.dp, top = 4.dp, bottom = 4.dp),
+                            onLinkClicked = {
+                            },
+                        )
+                    }
+
+                }
+            }
+        }
+    }
+
+}
+
 
 @Composable
 fun EmbedBlockedPostFragment(

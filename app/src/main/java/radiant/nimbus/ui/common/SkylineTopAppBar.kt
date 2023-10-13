@@ -63,7 +63,6 @@ fun SkylineTopBar(
                     IconButton(
                         onClick = onButtonClicked,
                         modifier = Modifier
-                            .fillMaxHeight()
                             .padding(bottom = 5.dp, top = 5.dp)
                     ) {
                         Icon(
@@ -107,6 +106,7 @@ fun SkylineTopBar(
                 }
             }
         },
+        //scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     )
 }
 
