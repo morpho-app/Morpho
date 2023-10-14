@@ -1,25 +1,10 @@
 package radiant.nimbus.screens.skyline
 
-import android.util.Log
-import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.FormatQuote
-import androidx.compose.material.icons.filled.Repeat
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -27,36 +12,34 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import androidx.hilt.navigation.compose.hiltViewModel
-import app.bsky.feed.GetFeedGeneratorQueryParams
 import app.bsky.feed.GetFeedQueryParams
 import com.atproto.repo.StrongRef
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.RootNavGraph
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
+import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 import radiant.nimbus.MainViewModel
 import radiant.nimbus.api.ApiProvider
 import radiant.nimbus.api.AtUri
 import radiant.nimbus.api.model.RecordUnion
-import radiant.nimbus.api.response.AtpResponse
 import radiant.nimbus.components.ScreenBody
 import radiant.nimbus.extensions.activityViewModel
 import radiant.nimbus.model.BskyPost
+import radiant.nimbus.model.DraftPost
 import radiant.nimbus.model.Skyline
+import radiant.nimbus.screens.destinations.MyProfileScreenDestination
 import radiant.nimbus.screens.destinations.PostThreadScreenDestination
 import radiant.nimbus.screens.destinations.ProfileScreenDestination
+import radiant.nimbus.ui.common.BottomSheetPostComposer
 import radiant.nimbus.ui.common.ComposerRole
-import radiant.nimbus.ui.common.PostComposer
+import radiant.nimbus.ui.common.RepostQueryDialog
 import radiant.nimbus.ui.common.SkylineFragment
 import radiant.nimbus.ui.common.SkylineTopBar
 import radiant.nimbus.ui.elements.OutlinedAvatar
@@ -69,34 +52,30 @@ fun SkylineScreen(
     navigator: DestinationsNavigator,
     mainViewModel: MainViewModel = activityViewModel(),
     viewModel: SkylineViewModel = hiltViewModel(),
+    tabIndex: Int = 0,
 ) {
     LaunchedEffect(Unit) {
         val uri = viewModel.state.feedUri
         if (uri != null) {
 
-        } else{
+        } else {
             viewModel.getSkyline(mainViewModel.apiProvider)
-        }
-
-        mainViewModel.userPreferences?.savedFeeds?.pinned?.map { feedUri ->
-            when(val response = mainViewModel.apiProvider.api.getFeedGenerator(GetFeedGeneratorQueryParams(feedUri))) {
-                is AtpResponse.Failure -> {
-                    Log.e("Skyline", "Error getting feed info: $response")}
-                is AtpResponse.Success -> {
-                    viewModel.pinnedFeeds += FeedTab(response.response.view.displayName, response.response.view.uri)
-                }
+            mainViewModel.pinnedFeeds.forEach {
+                viewModel.getSkyline(mainViewModel.apiProvider,
+                    GetFeedQueryParams(
+                        it.uri,
+                        cursor = it.cursor
+                    )
+                )
             }
         }
     }
     SkylineView(
         navigator = navigator,
         viewModel = viewModel,
-        refresh = {cursor ->
-                viewModel.getSkyline(mainViewModel.apiProvider, cursor)
-        },
-        feedRefresh = { uri, cursor ->
-            viewModel.getSkyline(mainViewModel.apiProvider, GetFeedQueryParams(uri), cursor)
-        },
+        refresh = {cursor -> viewModel.getSkyline(mainViewModel.apiProvider, cursor) },
+        feedRefresh = { uri, cursor -> viewModel
+            .getSkyline(mainViewModel.apiProvider, GetFeedQueryParams(uri), cursor) },
         apiProvider = mainViewModel.apiProvider,
         navBar = { mainViewModel.navBar?.let { it(0) } },
         mainButton = { onClicked ->
@@ -105,7 +84,9 @@ fun SkylineScreen(
                 onClicked = onClicked,
                 outlineSize = 0.dp
             )
-        }
+        },
+        pinnedFeeds = mainViewModel.pinnedFeeds,
+        tabIndex = tabIndex,
     )
 }
 
@@ -121,35 +102,45 @@ data class FeedTab(
 fun SkylineView(
     navigator: DestinationsNavigator,
     viewModel: SkylineViewModel,
+    pinnedFeeds: List<FeedTab> = persistentListOf(),
     apiProvider: ApiProvider,
     refresh: (String?) -> Unit = {},
     feedRefresh: (AtUri, String?) -> Unit = {_,_ ->},
     navBar: @Composable () -> Unit = {},
     mainButton: @Composable ((() -> Unit) -> Unit)? = null,
+    tabIndex: Int = 0,
 ){
-    var selectedTab by rememberSaveable { mutableIntStateOf(0) }
+    var selectedTab by rememberSaveable { mutableIntStateOf(tabIndex) }
 
+    var repostClicked by remember { mutableStateOf(false)}
+    var initialContent: BskyPost? by remember { mutableStateOf(null) }
+    var showComposer by remember { mutableStateOf(false)}
+    var composerRole by remember { mutableStateOf(ComposerRole.StandalonePost)}
+    val sheetState = rememberModalBottomSheetState()
+    // Probably pull this farther up,
+    //      but this means if you don't explicitly cancel you don't lose the post
+    var draft by remember{ mutableStateOf(DraftPost()) }
 
 
     LaunchedEffect(selectedTab) {
         if(selectedTab > 0) {
             viewModel.getSkyline(apiProvider, GetFeedQueryParams(
-                viewModel.pinnedFeeds[selectedTab-1].uri,
-                cursor = viewModel.pinnedFeeds[selectedTab-1].cursor
+                pinnedFeeds[selectedTab-1].uri,
+                cursor = pinnedFeeds[selectedTab-1].cursor
             ))
         }
     }
     ScreenBody(
         modifier = Modifier,
         topContent = {
-            SkylineTopBar(viewModel.pinnedFeeds, tabIndex =  selectedTab,
+            SkylineTopBar(pinnedFeeds, tabIndex =  selectedTab,
                 onChanged = {
                     selectedTab = it
                     if (selectedTab > 0) {
                         viewModel.getSkyline(
                             apiProvider, GetFeedQueryParams(
-                                viewModel.pinnedFeeds[it - 1].uri,
-                                cursor = viewModel.pinnedFeeds[it - 1].cursor
+                                pinnedFeeds[max(it-1, 0)].uri,
+                                cursor = pinnedFeeds[max(it-1, 0)].cursor
                             )
                         )
                     } else {
@@ -158,21 +149,13 @@ fun SkylineView(
                 },
                 mainButton = mainButton,
                 onButtonClicked = {
-
+                    navigator.navigate(MyProfileScreenDestination)
                 }
             )
         },
         navBar = navBar,
         contentWindowInsets = WindowInsets.navigationBars,
     ) {insets ->
-        val scope = rememberCoroutineScope()
-        var repostClicked by remember { mutableStateOf(false)}
-        var initialContent: BskyPost? by remember { mutableStateOf(null) }
-        var showComposer by remember { mutableStateOf(false)}
-        var composerRole by remember { mutableStateOf(ComposerRole.StandalonePost)}
-        val sheetState = rememberModalBottomSheetState()
-
-
         when(selectedTab) {
             0 -> {
                 SkylineFragment(
@@ -208,7 +191,7 @@ fun SkylineView(
                 )
             }
             else -> {
-                viewModel.feedPosts[viewModel.pinnedFeeds[selectedTab-1].uri]?.let { it: MutableStateFlow<Skyline> ->
+                viewModel.feedPosts[pinnedFeeds[max(selectedTab-1, 0)].uri]?.let { it: MutableStateFlow<Skyline> ->
                     SkylineFragment(
                         navigator = navigator,
                         postFlow = it,
@@ -219,7 +202,7 @@ fun SkylineView(
                             navigator.navigate(ProfileScreenDestination(it))
                         },
                         refresh = { cursor->
-                            feedRefresh(viewModel.pinnedFeeds[max(selectedTab-1, 0)].uri, cursor)
+                            feedRefresh(pinnedFeeds[max(selectedTab-1, 0)].uri, cursor)
                         },
                         contentPadding = insets,
                         onUnClicked = {type, rkey ->  apiProvider.deleteRecord(type, rkey)},
@@ -265,34 +248,17 @@ fun SkylineView(
             )
         }
         if(showComposer) {
-            ModalBottomSheet(
-                onDismissRequest = {
-                    scope.launch { sheetState.hide() }.invokeOnCompletion {
-                        if (!sheetState.isVisible) {
-                            showComposer = false
-                        }
-                    }
-                },
-                containerColor = MaterialTheme.colorScheme.background,
+            BottomSheetPostComposer(
+                onDismissRequest = { showComposer = false },
                 sheetState = sheetState,
-
-                ){
-                PostComposer(
-                    role = composerRole,
-                    modifier = Modifier.safeDrawingPadding().imePadding(),
-                    initialContent = initialContent,
-                    onCancel = {
-                        scope.launch { sheetState.hide() }.invokeOnCompletion {
-                            if (!sheetState.isVisible) {
-                                showComposer = false
-                            }
-                        }
-                    },
-                    onSend = {
-                        apiProvider.createRecord(RecordUnion.MakePost(it))
-                    }
-                )
-            }
+                role = composerRole,
+                modifier = Modifier.padding(insets),
+                initialContent = initialContent,
+                draft = draft,
+                onCancel = { showComposer = false },
+                onSend = { apiProvider.createRecord(RecordUnion.MakePost(it)) },
+                onUpdate = { draft = it }
+            )
 
         }
 
@@ -300,63 +266,5 @@ fun SkylineView(
     }
 
 
-}
-
-
-
-
-@Composable
-fun RepostQueryDialog(
-    onDismissRequest: () -> Unit = {},
-    onRepost: () -> Unit = {},
-    onQuotePost: () -> Unit = {},
-) {
-    Dialog(
-        onDismissRequest = { onDismissRequest() },
-        properties = DialogProperties(
-            dismissOnBackPress = true,
-            dismissOnClickOutside = true,
-            usePlatformDefaultWidth = true,),
-    ) {
-        BackHandler {
-            onDismissRequest()
-        }
-        Card(
-            shape = MaterialTheme.shapes.large,
-            modifier = Modifier.padding(36.dp)
-        ) {
-            TextButton(
-                onClick = {
-                    onRepost()
-                          },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(12.dp)
-            ) {
-                Icon(imageVector = Icons.Default.Repeat, contentDescription = null)
-                Text(text = "Repost")
-            }
-            TextButton(
-                onClick = {
-                    onQuotePost()
-                          },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(12.dp)
-            ) {
-                Icon(imageVector = Icons.Default.FormatQuote, contentDescription = null)
-                Text(text = "Quote Post")
-            }
-
-            Button(
-                onClick = { onDismissRequest() },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(12.dp)
-            ) {
-                Text(text = "Cancel")
-            }
-        }
-    }
 }
 

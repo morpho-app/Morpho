@@ -27,6 +27,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavHostController
 import app.bsky.actor.GetProfileQueryParams
 import app.bsky.actor.toPreferences
+import app.bsky.feed.GetFeedGeneratorQueryParams
 import com.google.accompanist.navigation.material.ExperimentalMaterialNavigationApi
 import com.ramcosta.composedestinations.DestinationsNavHost
 import com.ramcosta.composedestinations.animations.rememberAnimatedNavHostEngine
@@ -44,6 +45,7 @@ import radiant.nimbus.screens.NavGraphs
 import radiant.nimbus.screens.appCurrentDestinationAsState
 import radiant.nimbus.screens.destinations.LoginScreenDestination
 import radiant.nimbus.screens.destinations.SkylineScreenDestination
+import radiant.nimbus.screens.skyline.FeedTab
 import radiant.nimbus.ui.common.NimbusNavigation
 import radiant.nimbus.ui.elements.OutlinedAvatar
 import radiant.nimbus.ui.theme.NimbusTheme
@@ -61,7 +63,7 @@ class MainActivity : ComponentActivity() {
     )
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        var loggedin = false
+        var loggedIn = false
         WindowCompat.setDecorFitsSystemWindows(window, false)
 
         viewModel.supervisors.plus(viewModel.apiProvider)
@@ -103,20 +105,20 @@ class MainActivity : ComponentActivity() {
                                     Log.i(TAG, "Using cached credentials for ${credentials.username}, going to home screen")
                                     viewModel.apiProvider.loginRepository.auth = response.response
                                     val profile = viewModel.apiProvider.api.getProfile(GetProfileQueryParams(AtIdentifier(credentials.username.handle)))
-                                    loggedin = true
+                                    loggedIn = true
                                     viewModel.currentUser = profile.requireResponse().toProfile()
                                     viewModel.userPreferences = p?.toPreferences()
                                 }
                             }
                         } else {
                             Log.d(TAG, "No cached credentials, punting to login screen")
-                            loggedin = false
+                            loggedIn = false
                         }
                     }
                     is AtpResponse.Success -> {
                         Log.d(TAG, "Preferences load successful: $prefs, going to home screen")
                         val profile = viewModel.apiProvider.api.getProfile(GetProfileQueryParams(AtIdentifier(authInfo.did.did)))
-                        loggedin = true
+                        loggedIn = true
                         viewModel.currentUser = profile.requireResponse().toProfile()
                         viewModel.userPreferences = prefs.response.toPreferences()
                     }
@@ -132,17 +134,27 @@ class MainActivity : ComponentActivity() {
                             Log.d(TAG, "Preferences load: $p")
                             Log.i(TAG, "Using cached credentials for ${credentials.username}, going to home screen")
                             val profile = viewModel.apiProvider.api.getProfile(GetProfileQueryParams(AtIdentifier(credentials.username.handle)))
-                            loggedin = true
+                            loggedIn = true
                             viewModel.currentUser = profile.requireResponse().toProfile()
                             viewModel.userPreferences = p?.toPreferences()
                         }
                     }
                 } else {
                     Log.d(TAG, "No cached credentials, punting to login screen")
-                    loggedin = false
+                    loggedIn = false
                 }
             }
-
+            viewModel.userPreferences?.savedFeeds?.pinned?.map { feedUri ->
+                when(val response = viewModel.apiProvider.api.getFeedGenerator(
+                    GetFeedGeneratorQueryParams(feedUri)
+                )) {
+                    is AtpResponse.Failure -> {
+                        Log.e("Skyline", "Error getting feed info: $response")}
+                    is AtpResponse.Success -> {
+                        viewModel.pinnedFeeds += FeedTab(response.response.view.displayName, response.response.view.uri)
+                    }
+                }
+            }
         }
 
 
@@ -179,7 +191,7 @@ class MainActivity : ComponentActivity() {
                     selected = selectedTab,
                 )
             }
-            val startRoute = if (!loggedin) LoginScreenDestination else SkylineScreenDestination
+            val startRoute = if (!loggedIn) LoginScreenDestination else SkylineScreenDestination
             NimbusTheme {
                 DestinationsNavHost(
                     engine = engine,

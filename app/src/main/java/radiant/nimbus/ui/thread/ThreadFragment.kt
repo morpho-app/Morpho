@@ -5,8 +5,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
@@ -23,7 +25,6 @@ import radiant.nimbus.ui.elements.MenuOptions
 import radiant.nimbus.ui.post.BlockedPostFragment
 import radiant.nimbus.ui.post.FullPostFragment
 import radiant.nimbus.ui.post.NotFoundPostFragment
-import radiant.nimbus.ui.post.PostFragment
 import radiant.nimbus.ui.post.PostFragmentRole
 
 
@@ -50,6 +51,11 @@ fun ThreadFragment(
 ) {
     val threadPost = remember { ThreadPost.ViewablePost(thread.post, thread.replies) }
     val hasReplies = rememberSaveable { threadPost.replies.isNotEmpty()}
+    val rootIndex = remember { thread.parents.size }
+
+    LaunchedEffect(Unit) {
+        listState.scrollToItem(rootIndex)
+    }
 
     LazyColumn(
         modifier = modifier,
@@ -57,10 +63,10 @@ fun ThreadFragment(
         state = listState
     ) {
         if (thread.parents.isNotEmpty()) {
-            when (val root = thread.parents[thread.parents.lastIndex]) {
+            when (val root = thread.parents[0]) {
                 is ThreadPost.ViewablePost -> {
                     if (root.post.uri == thread.post.uri) {
-                        item {
+                        item(key = threadPost.post.cid) {
                             FullPostFragment(
                                 post = root.post,
                                 onItemClicked = onItemClicked,
@@ -73,19 +79,35 @@ fun ThreadFragment(
                             )
                         }
                     } else {
-                        item {
-                        PostFragment(
-                            post = root.post,
-                            role = PostFragmentRole.ThreadRootUnfocused,
-                            indentLevel = 1,
-                            onItemClicked = onItemClicked,
-                            onProfileClicked = onProfileClicked,
-                            onUnClicked = onUnClicked,
-                            onRepostClicked = onRepostClicked,
-                            onReplyClicked = onReplyClicked,
-                            onMenuClicked = onMenuClicked,
-                            onLikeClicked = onLikeClicked,
-                        )
+                        itemsIndexed(thread.parents) { index, post ->
+                            val reason = remember { when(post) {
+                                is ThreadPost.BlockedPost -> null
+                                is ThreadPost.NotFoundPost -> null
+                                is ThreadPost.ViewablePost -> {
+                                    post.post.reason
+                                }
+                            } }
+                            val role = remember { when(index) {
+                                0 -> PostFragmentRole.ThreadBranchStart
+                                thread.parents.lastIndex -> PostFragmentRole.ThreadBranchEnd
+                                else -> PostFragmentRole.ThreadBranchMiddle
+                            } }
+                            if (post is ThreadPost.ViewablePost) {
+                                ThreadItem(
+                                    item = post,
+                                    role = role,
+                                    indentLevel = 1,
+                                    reason = reason,
+                                    elevate = true,
+                                    onItemClicked = onItemClicked,
+                                    onProfileClicked = onProfileClicked,
+                                    onUnClicked = onUnClicked,
+                                    onRepostClicked = onRepostClicked,
+                                    onReplyClicked = onReplyClicked,
+                                    onLikeClicked = onLikeClicked,
+                                    onMenuClicked = onMenuClicked,
+                                )
+                            }
                         }
                         item {
                             ThreadItem(

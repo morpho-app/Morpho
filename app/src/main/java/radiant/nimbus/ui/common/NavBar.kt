@@ -137,7 +137,7 @@ fun NimbusBottomNavBar(
                         // we want to pop the back stack until the initial destination of this bottom bar item
                         navController.popBackStack(SkylineScreenDestination, false)
                     } else {
-                        navController.navigate(SkylineScreenDestination) {
+                        navController.navigate(SkylineScreenDestination()) {
                             popUpTo(NavGraphs.root) {
                                 saveState = true
                             }
@@ -307,7 +307,7 @@ fun NimbusNavRail(
                     // we want to pop the back stack until the initial destination of this bottom bar item
                     navController.popBackStack(SkylineScreenDestination, false)
                 } else {
-                    navController.navigate(SkylineScreenDestination) {
+                    navController.navigate(SkylineScreenDestination()) {
                     popUpTo(NavGraphs.root) {
                         saveState = true
                     }
@@ -327,7 +327,7 @@ fun NimbusNavRail(
                     // When we click again on a bottom bar item and it was already selected
                     // we want to pop the back stack until the initial destination of this bottom bar item
                     navController.popBackStack(SkylineScreenDestination, false)
-                } else {navController.navigate(SkylineScreenDestination) {
+                } else {navController.navigate(SkylineScreenDestination()) {
                     popUpTo(NavGraphs.root) {
                         saveState = true
                     }

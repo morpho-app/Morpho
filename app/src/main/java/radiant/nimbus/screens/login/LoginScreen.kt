@@ -89,7 +89,7 @@ fun LoginScreen(
 
 
                                     navigator.navigate(
-                                        SkylineScreenDestination
+                                        SkylineScreenDestination()
                                     )
                                 },
                                 {}
@@ -117,7 +117,7 @@ fun LoginScreen(
                 (loginState as LoginState.SigningIn).credentials,
                 {
                     navigator.navigate(
-                        SkylineScreenDestination
+                        SkylineScreenDestination()
                     )
                 },
                 {}
@@ -125,7 +125,7 @@ fun LoginScreen(
         }
         is LoginState.Success -> {
             navigator.navigate(
-                SkylineScreenDestination
+                SkylineScreenDestination()
             )
         }
     }

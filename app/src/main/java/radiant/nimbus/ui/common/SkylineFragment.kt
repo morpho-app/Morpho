@@ -2,7 +2,6 @@ package radiant.nimbus.ui.common
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -10,9 +9,9 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeContent
@@ -47,10 +46,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.atproto.repo.StrongRef
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
@@ -96,73 +95,92 @@ fun SkylineFragment (
     onMenuClicked: (MenuOptions) -> Unit = { },
     onUnClicked: (type: RecordType, uri: AtUri) -> Unit = { _, _ -> },
     contentPadding: PaddingValues = PaddingValues(0.dp),
+    isProfileFeed: Boolean = false,
 ) {
     val postList by postFlow.collectAsStateWithLifecycle()
     val coroutineScope = rememberCoroutineScope()
     LaunchedEffect(Unit) {
         refresh(postList.cursor)
-        if(listState.firstVisibleItemIndex == 0) listState.animateScrollToItem(0, 50)
+        if(listState.firstVisibleItemIndex == 0 && !isProfileFeed) listState.animateScrollToItem(0, 50)
     }
     LaunchedEffect(postList.posts.size > 10 && !listState.canScrollForward) {
         refresh(postList.cursor)
     }
     val scrolledDownBy by remember { derivedStateOf { listState.firstVisibleItemIndex } }
 
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
+    ConstraintLayout(
+        modifier = if(isProfileFeed) {
+            Modifier.fillMaxWidth().systemBarsPadding()
+        }   else {
+            Modifier
+            .fillMaxSize()
             .systemBarsPadding()
+        },
     ) {
+        val (scrollButton, postButton, skyline) = createRefs()
+        val leftGuideline = createGuidelineFromStart(40.dp)
+        val rightGuideline = createGuidelineFromEnd(40.dp)
+        val buttonGuideline = createGuidelineFromBottom(100.dp)
         LazyColumn(
-            modifier = modifier,
-            contentPadding = PaddingValues(
-                bottom = contentPadding.calculateBottomPadding(),
-                top = WindowInsets.safeContent.only(WindowInsetsSides.Top).asPaddingValues()
-                    .calculateTopPadding()
-            ),
+            modifier = modifier.constrainAs(skyline) {
+                 top.linkTo(parent.top)
+                bottom.linkTo(parent.bottom)
+            },
+            contentPadding = if(isProfileFeed) {
+                contentPadding
+            }   else {
+                PaddingValues(
+                    bottom = contentPadding.calculateBottomPadding(),
+                    top = WindowInsets.safeContent.only(WindowInsetsSides.Top).asPaddingValues()
+                        .calculateTopPadding()
+                )
+            },
+            verticalArrangement = Arrangement.Top,
             state = listState
         ) {
-            item {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End
-                ) {
-                    Spacer(
-                        modifier = Modifier
-                            .padding(horizontal = 2.dp)
-                            .weight(0.4f)
-                    )
-                    IconButton(
-                        onClick = { refresh(null) },
-                        colors = IconButtonDefaults.iconButtonColors(
-                            containerColor = MaterialTheme.colorScheme.background,
-                            contentColor = MaterialTheme.colorScheme.onSurfaceVariant
-                        ),
-                        modifier = Modifier
-                            .padding(horizontal = 8.dp)
-                            .weight(0.2f)
+            if(!isProfileFeed) {
+                item {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.End
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.Refresh, contentDescription = "Refresh",
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
-                    TextButton(
-                        onClick = { /*TODO*/ },
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.background,
-                            contentColor = MaterialTheme.colorScheme.onSurfaceVariant
-                        ),
-                        modifier = Modifier
-                            .padding(horizontal = 8.dp)
-                        //.weight(0.5f)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Settings, contentDescription = null,
+                        Spacer(
                             modifier = Modifier
-                                .size(20.dp)
+                                .padding(horizontal = 2.dp)
+                                .weight(0.4f)
                         )
-                        Text(text = "Feed settings", Modifier.padding(start = 6.dp))
+                        IconButton(
+                            onClick = { refresh(null) },
+                            colors = IconButtonDefaults.iconButtonColors(
+                                containerColor = MaterialTheme.colorScheme.background,
+                                contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                            ),
+                            modifier = Modifier
+                                .padding(horizontal = 8.dp)
+                                .weight(0.2f)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Refresh, contentDescription = "Refresh",
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                        TextButton(
+                            onClick = { /*TODO*/ },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.background,
+                                contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                            ),
+                            modifier = Modifier
+                                .padding(horizontal = 8.dp)
+                            //.weight(0.5f)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Settings, contentDescription = null,
+                                modifier = Modifier
+                                    .size(20.dp)
+                            )
+                            Text(text = "Feed settings", Modifier.padding(start = 6.dp))
+                        }
                     }
                 }
             }
@@ -221,9 +239,11 @@ fun SkylineFragment (
                     ).copy(alpha = 0.8f)
                 ),
                 modifier = Modifier
-                    .align(Alignment.TopStart)
-                    .offset(20.dp, 670.dp)
                     .size(50.dp)
+                    .constrainAs(scrollButton) {
+                        centerAround(buttonGuideline)
+                        centerAround(leftGuideline)
+                    }
             ) {
                 if (scrolledDownBy > 20) {
                     Icon(
@@ -247,8 +267,10 @@ fun SkylineFragment (
         FloatingActionButton(
             onClick = { onPostButtonClicked() },
             modifier = Modifier
-                .align(Alignment.TopEnd)
-                .offset((-20).dp, 670.dp)
+                .constrainAs(postButton) {
+                    centerAround(buttonGuideline)
+                    centerAround(rightGuideline)
+                }
         ) {
             Icon(
                 imageVector = Icons.Default.Create,
@@ -284,7 +306,7 @@ fun SkylineThreadFragment(
         Column(
         ) {
             if (thread.parents.isNotEmpty()) {
-                when (val root = thread.parents[thread.parents.lastIndex]) {
+                when (val root = thread.parents[0]) {
                     is ThreadPost.ViewablePost -> if (root.post.uri == thread.post.uri) {
                         Surface(
                             tonalElevation = 1.dp,
@@ -297,8 +319,7 @@ fun SkylineThreadFragment(
                                 post = root.post,
                                 role = PostFragmentRole.ThreadBranchStart,
                                 elevate = true,
-                                modifier = Modifier
-                                    .padding(2.dp),
+                                modifier = Modifier,
                                 onItemClicked = onItemClicked,
                                 onProfileClicked = onProfileClicked,
                                 onUnClicked = onUnClicked,
@@ -328,8 +349,8 @@ fun SkylineThreadFragment(
                                         }
                                     } }
                                     val role = remember { when(index) {
-                                        0 -> PostFragmentRole.ThreadBranchStart
-                                        thread.parents.lastIndex -> PostFragmentRole.ThreadBranchEnd
+                                        thread.parents.lastIndex -> PostFragmentRole.ThreadBranchStart
+                                        0 -> PostFragmentRole.ThreadBranchEnd
                                         else -> PostFragmentRole.ThreadBranchMiddle
                                     } }
                                     if (post is ThreadPost.ViewablePost) {

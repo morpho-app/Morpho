@@ -7,7 +7,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -34,7 +33,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.BaselineShift
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
@@ -92,7 +90,7 @@ fun FullPostFragment(
             .padding(start = 6.dp, end = 6.dp)
     ) {
 
-        FlowRow(
+        Row(
             modifier = Modifier
                 .padding(horizontal = 4.dp),
             horizontalArrangement = Arrangement.End
@@ -126,7 +124,7 @@ fun FullPostFragment(
                         ) {
                             append(post.author.displayName.orEmpty())
                         }
-                        if (diff < 179) {
+                        /*if (diff < 179) {
                             withStyle(
                                 style = SpanStyle(
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -137,7 +135,7 @@ fun FullPostFragment(
                             ) {
                                 append("  •  $delta")
                             }
-                        }
+                        }*/
                         withStyle(
                             style = SpanStyle(
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
