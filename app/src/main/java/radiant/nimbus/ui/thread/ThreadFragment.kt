@@ -4,7 +4,6 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
@@ -163,30 +162,14 @@ fun ThreadFragment(
             }
         }
         if (hasReplies){
-            threadPost.replies.forEach { it ->
-                if(it is ThreadPost.ViewablePost) {
-                    item {
-                        ThreadReply(
-                            item = it, role = PostFragmentRole.Solo, indentLevel = 1,
-                            modifier = Modifier.padding(4.dp),
-                            onItemClicked = onItemClicked,
-                            onProfileClicked = onProfileClicked,
-                            onUnClicked = onUnClicked,
-                            onRepostClicked = onRepostClicked,
-                            onReplyClicked = onReplyClicked,
-                            onMenuClicked = onMenuClicked,
-                            onLikeClicked = onLikeClicked,
-                        )
-                    }
-                    if (it.replies.isNotEmpty()) {
-                        items(it.replies.sortedWith(comparator),
-                            key = {
-                                it.hashCode()
-                            }
-                        ) {reply ->
+            threadPost.replies.forEach { reply ->
+                if(reply is ThreadPost.ViewablePost) {
+                    if (reply.replies.isNotEmpty()) {
+                        item {
                             ThreadTree(
                                 reply = reply, modifier = Modifier.padding(4.dp),
-                                indentLevel = 2,
+                                indentLevel = 1,
+                                comparator = comparator,
                                 onItemClicked = onItemClicked,
                                 onProfileClicked = onProfileClicked,
                                 onReplyClicked = onReplyClicked,
@@ -194,7 +177,21 @@ fun ThreadFragment(
                                 onLikeClicked = onLikeClicked,
                                 onMenuClicked = onMenuClicked,
                                 onUnClicked = onUnClicked,
-                                )
+                            )
+                        }
+                    } else {
+                        item {
+                            ThreadItem(
+                                item = reply, role = PostFragmentRole.Solo, indentLevel = 1,
+                                modifier = Modifier.padding(4.dp),
+                                onItemClicked = onItemClicked,
+                                onProfileClicked = onProfileClicked,
+                                onUnClicked = onUnClicked,
+                                onRepostClicked = onRepostClicked,
+                                onReplyClicked = onReplyClicked,
+                                onMenuClicked = onMenuClicked,
+                                onLikeClicked = onLikeClicked,
+                            )
                         }
                     }
                 }

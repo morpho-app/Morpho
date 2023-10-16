@@ -76,7 +76,7 @@ class ApiProvider @Inject constructor(
   private var client = HttpClient(CIO) {
     install(Logging) {
       logger = Logger.DEFAULT
-      level = LogLevel.ALL
+      level = LogLevel.HEADERS
     }
 
     install(XrpcAuthPlugin) {

@@ -28,6 +28,7 @@ import radiant.nimbus.api.response.AtpResponse
 import radiant.nimbus.base.BaseViewModel
 import radiant.nimbus.model.DetailedProfile
 import radiant.nimbus.model.Skyline
+import radiant.nimbus.model.toBskyPostList
 import radiant.nimbus.model.toProfile
 import javax.inject.Inject
 
@@ -117,7 +118,7 @@ class ProfileViewModel @Inject constructor(
                 ProfileTabs.Posts -> {
                     val result = apiProvider.api.getAuthorFeed(GetAuthorFeedQueryParams(_actor, 100,cursor, GetAuthorFeedFilter.POSTS_NO_REPLIES))
                     if (result is AtpResponse.Success) {
-                        val newPosts = Skyline.from(result.response.feed, result.response.cursor)
+                        val newPosts = Skyline.from(result.response.feed.toBskyPostList(), result.response.cursor)
                         if (cursor != null) {
                             Log.v("UpdatePosts", result.response.feed.toString())
                             _profilePosts.update { skyline -> Skyline.concat(skyline, newPosts) }
@@ -136,7 +137,7 @@ class ProfileViewModel @Inject constructor(
                     val result = apiProvider.api.getAuthorFeed(GetAuthorFeedQueryParams(_actor, 100, cursor, GetAuthorFeedFilter.POSTS_WITH_REPLIES))
                     if (result is AtpResponse.Success) {
                         Log.d("Posts+Replies", result.response.feed.toString())
-                        val newPosts = Skyline.from(result.response.feed, result.response.cursor)
+                        val newPosts = Skyline.from(result.response.feed.toBskyPostList(), result.response.cursor)
                         if (cursor != null) {
                             Log.v("UpdatePosts+Replies", result.response.feed.toString())
                             _profilePostsReplies.update { skyline -> Skyline.concat(skyline, newPosts) }
@@ -154,7 +155,7 @@ class ProfileViewModel @Inject constructor(
                     val result = apiProvider.api.getAuthorFeed(GetAuthorFeedQueryParams(_actor, 100, cursor, GetAuthorFeedFilter.POSTS_WITH_MEDIA))
                     if (result is AtpResponse.Success) {
                         Log.d("Media", result.response.feed.toString())
-                        val newPosts = Skyline.from(result.response.feed, result.response.cursor)
+                        val newPosts = Skyline.from(result.response.feed.toBskyPostList(), result.response.cursor)
                         if (cursor != null) {
                             Log.v("UpdateMedia", result.response.feed.toString())
                             _profileMedia.update { skyline -> Skyline.concat(skyline, newPosts) }

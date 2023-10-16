@@ -22,7 +22,7 @@ import com.atproto.repo.StrongRef
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.RootNavGraph
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
-import kotlinx.collections.immutable.persistentListOf
+import io.github.xxfast.kstore.utils.ExperimentalKStoreApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.serialization.Serializable
 import radiant.nimbus.MainViewModel
@@ -45,6 +45,7 @@ import radiant.nimbus.ui.common.SkylineTopBar
 import radiant.nimbus.ui.elements.OutlinedAvatar
 import kotlin.math.max
 
+@OptIn(ExperimentalKStoreApi::class)
 @RootNavGraph(start = true)
 @Destination
 @Composable
@@ -59,21 +60,34 @@ fun SkylineScreen(
         if (uri != null) {
 
         } else {
-            viewModel.getSkyline(mainViewModel.apiProvider)
-            mainViewModel.pinnedFeeds.forEach {
-                viewModel.getSkyline(mainViewModel.apiProvider,
-                    GetFeedQueryParams(
-                        it.uri,
-                        cursor = it.cursor
-                    )
+            mainViewModel.userPreferences?.feedViewPrefs?.get("home")?.let {
+                viewModel.getSkyline(
+                    mainViewModel.apiProvider, null,
+                    prefs = it
                 )
+            }
+            mainViewModel.pinnedFeeds.forEach {
+            viewModel.getSkyline(mainViewModel.apiProvider,
+                GetFeedQueryParams(
+                    it.uri,
+                    cursor = it.cursor
+                )
+            )
             }
         }
     }
+    viewModel.pinnedFeeds = mainViewModel.pinnedFeeds
     SkylineView(
         navigator = navigator,
         viewModel = viewModel,
-        refresh = {cursor -> viewModel.getSkyline(mainViewModel.apiProvider, cursor) },
+        refresh = { cursor ->
+            mainViewModel.userPreferences?.feedViewPrefs?.get("home")?.let {
+                viewModel.getSkyline(
+                    mainViewModel.apiProvider, viewModel.skylinePosts.value.cursor,
+                    prefs = it
+                )
+            }
+        },
         feedRefresh = { uri, cursor -> viewModel
             .getSkyline(mainViewModel.apiProvider, GetFeedQueryParams(uri), cursor) },
         apiProvider = mainViewModel.apiProvider,
@@ -85,7 +99,7 @@ fun SkylineScreen(
                 outlineSize = 0.dp
             )
         },
-        pinnedFeeds = mainViewModel.pinnedFeeds,
+        pinnedFeeds = viewModel.pinnedFeeds,
         tabIndex = tabIndex,
     )
 }
@@ -102,10 +116,10 @@ data class FeedTab(
 fun SkylineView(
     navigator: DestinationsNavigator,
     viewModel: SkylineViewModel,
-    pinnedFeeds: List<FeedTab> = persistentListOf(),
+    pinnedFeeds: List<FeedTab> = listOf(),
     apiProvider: ApiProvider,
     refresh: (String?) -> Unit = {},
-    feedRefresh: (AtUri, String?) -> Unit = {_,_ ->},
+    feedRefresh: (AtUri, String?) -> Unit = { _, _ ->},
     navBar: @Composable () -> Unit = {},
     mainButton: @Composable ((() -> Unit) -> Unit)? = null,
     tabIndex: Int = 0,
@@ -139,8 +153,8 @@ fun SkylineView(
                     if (selectedTab > 0) {
                         viewModel.getSkyline(
                             apiProvider, GetFeedQueryParams(
-                                pinnedFeeds[max(it-1, 0)].uri,
-                                cursor = pinnedFeeds[max(it-1, 0)].cursor
+                                viewModel.pinnedFeeds[max(it-1, 0)].uri,
+                                cursor = viewModel.pinnedFeeds[max(it-1, 0)].cursor
                             )
                         )
                     } else {
@@ -191,7 +205,7 @@ fun SkylineView(
                 )
             }
             else -> {
-                viewModel.feedPosts[pinnedFeeds[max(selectedTab-1, 0)].uri]?.let { it: MutableStateFlow<Skyline> ->
+                viewModel.feedPosts[viewModel.pinnedFeeds[max(selectedTab-1, 0)].uri]?.let { it: MutableStateFlow<Skyline> ->
                     SkylineFragment(
                         navigator = navigator,
                         postFlow = it,
@@ -202,7 +216,7 @@ fun SkylineView(
                             navigator.navigate(ProfileScreenDestination(it))
                         },
                         refresh = { cursor->
-                            feedRefresh(pinnedFeeds[max(selectedTab-1, 0)].uri, cursor)
+                            feedRefresh(viewModel.pinnedFeeds[max(selectedTab-1, 0)].uri, cursor)
                         },
                         contentPadding = insets,
                         onUnClicked = {type, rkey ->  apiProvider.deleteRecord(type, rkey)},
@@ -232,6 +246,7 @@ fun SkylineView(
                 onDismissRequest = {
                     showComposer = false
                     repostClicked = false
+
                 },
                 onRepost = {
                     repostClicked = false

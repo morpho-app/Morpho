@@ -1,8 +1,7 @@
+@file:Suppress("PropertyName")
+
 package app.bsky.actor
 
-import kotlin.Boolean
-import kotlin.Long
-import kotlin.String
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -31,4 +30,6 @@ public data class FeedViewPref(
    * Hide quote posts in the feed.
    */
   public val hideQuotePosts: Boolean? = null,
+
+  public val lab_mergeFeedEnabled: Boolean? = null
 )

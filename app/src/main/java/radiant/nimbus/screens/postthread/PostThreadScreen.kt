@@ -26,7 +26,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.atproto.repo.StrongRef
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
-import kotlinx.collections.immutable.persistentListOf
 import radiant.nimbus.MainViewModel
 import radiant.nimbus.api.ApiProvider
 import radiant.nimbus.api.AtUri
@@ -58,7 +57,8 @@ fun PostThreadScreen(
     BackHandler {
         navigator.navigateUp()
     }
-    if(showLoadingScreen) {
+    if((uri != viewModel.thread?.post?.uri) || showLoadingScreen) {
+        showLoadingScreen = true
             viewModel.loadThread(uri, mainViewModel.apiProvider) {
                 showLoadingScreen = false
             }
@@ -85,7 +85,7 @@ fun PostThreadView(
     apiProvider: ApiProvider,
     navigator: DestinationsNavigator,
     navBar: @Composable () -> Unit = {},
-    tabList: List<FeedTab> = persistentListOf(),
+    tabList: List<FeedTab> = listOf(),
 ){
     var repostClicked by remember { mutableStateOf(false)}
     var initialContent: BskyPost? by remember { mutableStateOf(null) }

@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ChatBubble
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.MoreHoriz
 import androidx.compose.material.icons.outlined.ChatBubbleOutline
@@ -53,10 +52,9 @@ fun PostActions(
         PostAction(
             parameter = post.replyCount,
             iconNormal = Icons.Outlined.ChatBubbleOutline,
-            iconActive = Icons.Default.ChatBubble,
             contentDescription = "Reply ",
             onClicked = onReplyClicked,
-            //onUnClicked = { onUnClicked(RecordType.Post, it) },
+            onUnClicked = {  },
         )
         PostAction(
             parameter = post.repostCount,
@@ -92,6 +90,8 @@ fun PostActions(
 
     }
 }
+
+
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable

@@ -26,7 +26,6 @@ import androidx.core.view.WindowCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavHostController
 import app.bsky.actor.GetProfileQueryParams
-import app.bsky.actor.toPreferences
 import app.bsky.feed.GetFeedGeneratorQueryParams
 import com.google.accompanist.navigation.material.ExperimentalMaterialNavigationApi
 import com.ramcosta.composedestinations.DestinationsNavHost
@@ -39,7 +38,9 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import radiant.nimbus.api.AtIdentifier
 import radiant.nimbus.api.response.AtpResponse
+import radiant.nimbus.api.toPreferences
 import radiant.nimbus.extensions.lifecycleViewModels
+import radiant.nimbus.model.DetailedProfile
 import radiant.nimbus.model.toProfile
 import radiant.nimbus.screens.NavGraphs
 import radiant.nimbus.screens.appCurrentDestinationAsState
@@ -65,6 +66,8 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         var loggedIn = false
         WindowCompat.setDecorFitsSystemWindows(window, false)
+
+        var me: DetailedProfile? = null
 
         viewModel.supervisors.plus(viewModel.apiProvider)
         viewModel.supervisors.forEach { supervisor ->
@@ -152,9 +155,13 @@ class MainActivity : ComponentActivity() {
                         Log.e("Skyline", "Error getting feed info: $response")}
                     is AtpResponse.Success -> {
                         viewModel.pinnedFeeds += FeedTab(response.response.view.displayName, response.response.view.uri)
-                    }
+                    }   // lol that += was important.
+                        // Forgot to put it back in earlier when I stripped out
+                        // the abortive attempt to store all prefs to disk using KStore.
+                        // Broke the feed tabs.
                 }
             }
+            me = viewModel.currentUser
         }
 
 
@@ -168,8 +175,8 @@ class MainActivity : ComponentActivity() {
                 NimbusNavigation(
                     navController = navController,
                     profilePic = { state, onClick ->
-                        if(viewModel.currentUser != null) {
-                            viewModel.currentUser!!.avatar?.let { avatar ->
+                        if(me != null) {
+                            me?.avatar?.let { avatar ->
                                 OutlinedAvatar(url = avatar,
                                     modifier = Modifier.size(30.dp),
                                     onClicked = onClick,
@@ -187,7 +194,7 @@ class MainActivity : ComponentActivity() {
                                 contentDescription = "Profile")
                         }
                     },
-                    actor = viewModel.currentUser?.did?.did?.let { AtIdentifier(it) },
+                    actor = me?.did?.did?.let { AtIdentifier(it) },
                     selected = selectedTab,
                 )
             }

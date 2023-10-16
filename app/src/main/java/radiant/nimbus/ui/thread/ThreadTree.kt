@@ -50,8 +50,8 @@ fun ThreadTree(
 
         if (reply.replies.isEmpty()) {
             ThreadReply(
-                item = reply, role = PostFragmentRole.ThreadBranchEnd, indentLevel = indentLevel,
-                modifier = Modifier.padding(vertical = 2.dp),
+                item = reply, role = PostFragmentRole.Solo, indentLevel = indentLevel,
+                modifier = Modifier.padding(top = 2.dp),
                 onItemClicked = onItemClicked,
                 onProfileClicked = onProfileClicked,
                 onUnClicked = onUnClicked,
@@ -65,7 +65,7 @@ fun ThreadTree(
             Column(
                 modifier = modifier
                     .fillMaxWidth()
-                    .padding(vertical = 2.dp)
+                    .padding(top = 2.dp)
 
             ) {
                 val lineColour = if (indentLevel % 4 == 0) {
@@ -98,8 +98,8 @@ fun ThreadTree(
                         ThreadReply(
                             item = reply,
                             role = PostFragmentRole.ThreadBranchStart,
-                            indentLevel = indentLevel + 1,
-                            modifier = Modifier.padding(vertical = 2.dp),
+                            indentLevel = indentLevel,
+                            modifier = Modifier.padding(top = 2.dp),
                             onItemClicked = onItemClicked,
                             onProfileClicked = onProfileClicked,
                             onUnClicked = onUnClicked,
@@ -109,7 +109,7 @@ fun ThreadTree(
                             onLikeClicked = onLikeClicked,
                         )
 
-                        val nextIndent = indentLevel + 1
+                        val nextIndent = indentLevel
                         reply.replies.sortedWith(comparator).forEach {
                             ThreadTree(
                                 reply = it, modifier = modifier, indentLevel = nextIndent,

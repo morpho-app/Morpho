@@ -16,6 +16,7 @@ import radiant.nimbus.api.ApiProvider
 public data class SkylineItem(
     var post: BskyPost? = null,
     var thread: BskyPostThread? = null,
+    val reason: BskyPostReason? = null,
 ) {
 
     // Can convert a single post into a thread if the post is part of a thread

@@ -7,6 +7,7 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.util.fastMap
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.viewModelScope
 import app.bsky.feed.GetFeedQueryParams
@@ -19,13 +20,18 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.datetime.Clock
 import radiant.nimbus.api.ApiProvider
 import radiant.nimbus.api.AtUri
+import radiant.nimbus.api.BskyFeedPref
 import radiant.nimbus.api.model.RecordUnion
 import radiant.nimbus.api.response.AtpResponse
 import radiant.nimbus.base.BaseViewModel
+import radiant.nimbus.model.BasicProfile
 import radiant.nimbus.model.Skyline
+import radiant.nimbus.model.Skyline.Companion.filterByPrefs
+import radiant.nimbus.model.TunerFunction
+import radiant.nimbus.model.toBskyPostList
+import radiant.nimbus.model.tune
 import javax.inject.Inject
 
 data class SkylineState(
@@ -58,7 +64,9 @@ class SkylineViewModel @Inject constructor(
     fun getSkyline(
         apiProvider: ApiProvider,
         cursor: String? = null,
-        limit: Long = 60,
+        limit: Long = 100,
+        prefs: BskyFeedPref = BskyFeedPref(),
+        follows: List<BasicProfile> = listOf(),
     ) = viewModelScope.launch(Dispatchers.IO) {
         when(val result = apiProvider.api.getTimeline(GetTimelineQueryParams(limit = limit, cursor = cursor))) {
             is AtpResponse.Failure -> {
@@ -66,18 +74,20 @@ class SkylineViewModel @Inject constructor(
             }
 
             is AtpResponse.Success -> {
-                val newPosts = Skyline.from(result.response.feed, result.response.cursor)
+                val tuners = mutableListOf<TunerFunction>()
+                tuners.add { posts -> filterByPrefs(posts, prefs, follows.fastMap { it.did }) }
+
+                val newPosts = result.response.feed.toBskyPostList().tune(tuners)
+
+
                 if (cursor != null) {
                     Log.v(TAG, "UpdatePosts:, ${result.response.feed}")
-                    _skylinePosts.update { skyline -> Skyline.concat(skyline, newPosts.collectThreads().await()) }
+                    _skylinePosts.update { skyline -> Skyline.concat(skyline, Skyline.collectThreads(apiProvider,result.response.cursor,newPosts).await()) }//Skyline.collectThreads(apiProvider, result.response.cursor, newPosts).await()) }
+                    //_skylinePosts.update { Skyline.collectThreads(apiProvider,result.response.cursor,newPosts).await() }
                 } else {
                     Log.v(TAG,"Posts: ${result.response.feed}")
-                    if(skylinePosts.value.posts.isNotEmpty() && (Clock.System.now().epochSeconds - skylinePosts.value.posts.first().post?.createdAt?.instant?.epochSeconds!! > 10)) {
-                        _skylinePosts.update { skyline -> Skyline.concat(newPosts.collectThreads().await(), skyline, _skylinePosts.value.cursor) }
-                    } else {
-                        _skylinePosts.value = newPosts
-                        _skylinePosts.update { skyline -> skyline.collectThreads().await() }
-                    }
+                    //_skylinePosts.update { Skyline.from(newPosts, result.response.cursor) }
+                    _skylinePosts.update { Skyline.collectThreads(apiProvider,result.response.cursor,newPosts).await() }
                 }
             }
         }
@@ -97,7 +107,7 @@ class SkylineViewModel @Inject constructor(
             }
 
             is AtpResponse.Success -> {
-                val newPosts = Skyline.from(result.response.feed, result.response.cursor)
+                val newPosts = Skyline.from(result.response.feed.toBskyPostList(), result.response.cursor)
                 if (result.response.feed.isNotEmpty() ){
                     if (cursor != null || feedQuery.cursor != null) {
                         Log.v(TAG, "Update Feed Posts:, ${result.response.feed}")
@@ -122,4 +132,5 @@ class SkylineViewModel @Inject constructor(
             }
         }
     }
+
 }

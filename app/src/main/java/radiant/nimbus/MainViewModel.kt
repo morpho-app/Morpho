@@ -5,9 +5,9 @@ import androidx.compose.material3.windowsizeclass.WindowSizeClass
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateListOf
 import androidx.room.Room
-import app.bsky.actor.BskyPreferences
 import dagger.hilt.android.lifecycle.HiltViewModel
 import radiant.nimbus.api.ApiProvider
+import radiant.nimbus.api.BskyPreferences
 import radiant.nimbus.api.ServerRepository
 import radiant.nimbus.api.auth.LoginRepository
 import radiant.nimbus.app.Supervisor
@@ -32,4 +32,22 @@ class MainViewModel @Inject constructor(
         .build()
 
     var navBar: @Composable ((index: Int) -> Unit)? = null
+    /*
+    private val currentUserPref = app.storage.preference<DetailedProfile>("current_user", null)
+    var currentUser by mutableStateOf(currentUserPref)
+    fun currentUser(): Flow<DetailedProfile?> = currentUserPref.updates.distinctUntilChanged()
+
+    private val followsPref = app.storage.preference<List<BasicProfile>>("user_follows", listOf())
+    val follows by mutableStateOf(followsPref)
+    fun follows(): Flow<List<BasicProfile>> = followsPref.updates.filterNotNull().distinctUntilChanged()
+
+    private val pinnedFeedsPref = app.storage.preference<List<FeedTab>>("user_pinned_feeds", listOf())
+    var pinnedFeeds by mutableStateOf(pinnedFeedsPref)
+    fun pinnedFeeds(): Flow<List<FeedTab>> = pinnedFeedsPref.updates.filterNotNull().distinctUntilChanged()
+
+    private val userPreferencesStore = app.storage.preference<BskyPreferences>("user_pinned_feeds", null)
+    var userPreferences by mutableStateOf(userPreferencesStore)
+    fun userPreferences(): Flow<BskyPreferences?> = userPreferencesStore.updates.distinctUntilChanged()
+
+     */
 }

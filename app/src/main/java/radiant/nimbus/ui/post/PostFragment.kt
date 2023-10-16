@@ -87,11 +87,11 @@ fun PostFragment(
     val padding = remember { when(role) {
         PostFragmentRole.Solo -> Modifier.padding(2.dp)
         PostFragmentRole.PrimaryThreadRoot -> Modifier.padding(2.dp)
-        PostFragmentRole.ThreadBranchStart -> Modifier.padding(start = 2.dp, top = 2.dp, end = 2.dp, bottom = 0.dp)
+        PostFragmentRole.ThreadBranchStart -> Modifier.padding(start = 2.dp, top = 0.dp, end = 2.dp, bottom = 0.dp)
         PostFragmentRole.ThreadBranchMiddle -> Modifier.padding(start = 2.dp, top = 0.dp, end = 2.dp, bottom = 0.dp)
-        PostFragmentRole.ThreadBranchEnd -> Modifier.padding(start = 2.dp, top = 0.dp, end = 2.dp, bottom = 2.dp)
+        PostFragmentRole.ThreadBranchEnd -> Modifier.padding(start = 2.dp, top = 0.dp, end = 2.dp, bottom = 0.dp)
         PostFragmentRole.ThreadRootUnfocused -> Modifier.padding(2.dp)
-        PostFragmentRole.ThreadEnd -> Modifier.padding(start = 2.dp, top = 0.dp, end = 2.dp, bottom = 2.dp)
+        PostFragmentRole.ThreadEnd -> Modifier.padding(start = 2.dp, top = 0.dp, end = 2.dp, bottom = 0.dp)
     }}
     val indent = remember { when(role) {
         PostFragmentRole.Solo -> indentLevel.toFloat()
@@ -142,11 +142,11 @@ fun PostFragment(
             MaterialTheme.colorScheme.background
         } else {
             MaterialTheme.colorScheme
-                .surfaceColorAtElevation(if (elevate || indentLevel > 0) 3.dp else 0.dp)
+                .surfaceColorAtElevation(if (elevate || indentLevel > 0) 2.dp else 0.dp)
         }
         Surface (
             shadowElevation = if (elevate || indentLevel > 0) 1.dp else 0.dp,
-            tonalElevation = if ((elevate || indentLevel > 0) && role != PostFragmentRole.ThreadEnd) 3.dp else 0.dp,
+            tonalElevation = if ((elevate || indentLevel > 0) && role != PostFragmentRole.ThreadEnd) 2.dp else 0.dp,
             shape = shape,
             modifier = modifier
                 .fillMaxWidth(indentLevel(indent))

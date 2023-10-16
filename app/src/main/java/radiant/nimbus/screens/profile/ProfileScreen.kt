@@ -27,6 +27,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.atproto.repo.StrongRef
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
+import io.github.xxfast.kstore.utils.ExperimentalKStoreApi
 import radiant.nimbus.MainViewModel
 import radiant.nimbus.api.ApiProvider
 import radiant.nimbus.api.AtIdentifier
@@ -47,6 +48,7 @@ import radiant.nimbus.ui.profile.ProfileTabRow
 import radiant.nimbus.ui.utils.DevicePreviews
 import radiant.nimbus.ui.utils.FontScalePreviews
 
+@OptIn(ExperimentalKStoreApi::class)
 @Destination
 @Composable
 fun ProfileScreen(
@@ -83,7 +85,7 @@ fun ProfileScreen(
                 }
             )
         } else {
-            if (mainViewModel.currentUser != null) {
+            if (mainViewModel.currentUser!= null) {
                 viewModel.getProfile(
                     mainViewModel.apiProvider,
                     AtIdentifier(mainViewModel.currentUser!!.did.did),
@@ -120,6 +122,7 @@ fun ProfileScreen(
 
 }
 
+@OptIn(ExperimentalKStoreApi::class)
 @Destination
 @Composable
 fun MyProfileScreen(

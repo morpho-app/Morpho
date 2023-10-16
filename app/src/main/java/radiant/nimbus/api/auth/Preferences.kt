@@ -75,29 +75,3 @@ public sealed interface PreferencesUnion {
   ) : PreferencesUnion
 }
 
-@Serializable
-public data class BskyPreferences(
-  public var personalDetails: PersonalDetailsPref? = null,
-  public var adultContent: AdultContentPref? = null,
-  public var feedViewPrefs: FeedViewPref? = null,
-  public var skyFeedBuilderFeeds: SkyFeedBuilderFeedsPref? = null,
-  public var savedFeeds: SavedFeedsPref? = null,
-  public var contentLabelPrefs: ContentLabelPref? = null,
-  public var threadViewPrefs: ThreadViewPref? = null,
-)
-
-fun GetPreferencesResponse.toPreferences() : BskyPreferences {
-  val prefs = BskyPreferences()
-  preferences.map { pref ->
-    when(pref) {
-      is PreferencesUnion.AdultContentPref -> prefs.adultContent = pref.value
-      is PreferencesUnion.ContentLabelPref -> prefs.contentLabelPrefs = pref.value
-      is PreferencesUnion.FeedViewPref -> prefs.feedViewPrefs = pref.value
-      is PreferencesUnion.PersonalDetailsPref -> prefs.personalDetails = pref.value
-      is PreferencesUnion.SavedFeedsPref -> prefs.savedFeeds = pref.value
-      is PreferencesUnion.SkyFeedBuilderFeedsPref -> prefs.skyFeedBuilderFeeds = pref.value
-      is PreferencesUnion.ThreadViewPref -> prefs.threadViewPrefs = pref.value
-    }
-  }
-  return prefs
-}
