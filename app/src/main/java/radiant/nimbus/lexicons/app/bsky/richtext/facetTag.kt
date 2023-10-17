@@ -1,6 +1,5 @@
 package app.bsky.richtext
 
-import kotlin.String
 import kotlinx.serialization.Serializable
 
 /**
@@ -15,4 +14,11 @@ public data class FacetTag(
       "tag.count() must be <= 640, but was ${tag.count()}"
     }
   }
+}
+
+
+@Serializable
+public data class PollBlueOptionFacet(
+  public val number: Int,
+) {
 }

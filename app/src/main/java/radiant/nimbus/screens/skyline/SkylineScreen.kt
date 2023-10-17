@@ -125,7 +125,6 @@ fun SkylineView(
     tabIndex: Int = 0,
 ){
     var selectedTab by rememberSaveable { mutableIntStateOf(tabIndex) }
-
     var repostClicked by remember { mutableStateOf(false)}
     var initialContent: BskyPost? by remember { mutableStateOf(null) }
     var showComposer by remember { mutableStateOf(false)}
@@ -271,7 +270,10 @@ fun SkylineView(
                 initialContent = initialContent,
                 draft = draft,
                 onCancel = { showComposer = false },
-                onSend = { apiProvider.createRecord(RecordUnion.MakePost(it)) },
+                onSend = {
+                    apiProvider.createRecord(RecordUnion.MakePost(it))
+                    showComposer = false
+                         },
                 onUpdate = { draft = it }
             )
 

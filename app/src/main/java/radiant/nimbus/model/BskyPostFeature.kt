@@ -1,6 +1,7 @@
 package radiant.nimbus.model
 
 import app.bsky.embed.ExternalView
+import app.bsky.embed.ImagesAspectRatio
 import app.bsky.embed.ImagesView
 import app.bsky.embed.RecordViewRecordUnion
 import app.bsky.embed.RecordWithMediaViewMediaUnion
@@ -48,6 +49,7 @@ data class EmbedImage(
     val thumb: String,
     val fullsize: String,
     val alt: String,
+    val aspectRatio: ImagesAspectRatio? = null,
 )
 
 sealed interface EmbedPost {
@@ -105,6 +107,7 @@ private fun ImagesView.toImagesFeature(): BskyPostFeature.ImagesFeature {
                 thumb = it.thumb,
                 fullsize = it.fullsize,
                 alt = it.alt,
+                aspectRatio = it.aspectRatio
             )
         }
     )
@@ -206,6 +209,7 @@ private fun PostEmbedUnion.Images.toEmbedImagesFeature(): BskyPostFeature.Images
                 thumb = it.image.toString(),
                 fullsize = it.image.toString(),
                 alt = it.alt,
+                aspectRatio = it.aspectRatio
             )
         }
     )

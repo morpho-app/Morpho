@@ -7,14 +7,12 @@ import app.bsky.feed.Post
 import app.bsky.feed.PostView
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
-import kotlinx.datetime.Clock
 import kotlinx.serialization.Serializable
 import radiant.nimbus.api.AtUri
 import radiant.nimbus.api.Cid
 import radiant.nimbus.api.Language
 import radiant.nimbus.util.deserialize
 import radiant.nimbus.util.mapImmutable
-import radiant.nimbus.util.recordType
 import javax.annotation.concurrent.Immutable
 
 enum class PostType {
@@ -115,14 +113,9 @@ fun PostView.toPost(
     reason: BskyPostReason?,
 ): BskyPost {
     // TODO verify via recordType before blindly deserialized.
-    val postRecord = if(record.recordType == "app.bsky.feed.post") {
-        Post.serializer().deserialize(record)
-    } else {
-        Post("Wrong Record Type, Couldn't deserialize",
-            tags = persistentListOf(),
-            createdAt = Clock.System.now()
-        )
-    }
+    //Log.v("PostRecord", record.toString())
+    val postRecord = Post.serializer().deserialize(record)
+
     return BskyPost(
         uri = uri,
         cid = cid,

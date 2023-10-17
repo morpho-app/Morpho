@@ -26,6 +26,7 @@ data class PostThreadState(
     val isLoading : Boolean = true,
     val isBlocked : Boolean = false,
     val notFound : Boolean = false,
+    val currentUri: AtUri? = null,
 )
 
 @HiltViewModel
@@ -36,8 +37,8 @@ class PostThreadViewModel @Inject constructor(
     var state by mutableStateOf(PostThreadState())
         private set
 
-    var thread: BskyPostThread?  by mutableStateOf(null)
-        private set
+    var thread by mutableStateOf<BskyPostThread?>(null)
+
 
     fun createRecord(
         record: RecordUnion,
@@ -64,12 +65,13 @@ class PostThreadViewModel @Inject constructor(
                     is GetPostThreadResponseThreadUnion.NotFoundPost -> {
                         state = PostThreadState(
                             isLoading = false,
-                            notFound = true
+                            notFound = true,
+
                         )
                     }
                     is GetPostThreadResponseThreadUnion.ThreadViewPost -> {
                         thread = threadResponse.value.toThread()
-                        state = PostThreadState(true)
+                        state = PostThreadState(false, currentUri = uri)
                     }
                 }
                 onComplete()
@@ -78,3 +80,5 @@ class PostThreadViewModel @Inject constructor(
     }
 
 }
+
+

@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -30,6 +31,7 @@ import radiant.nimbus.MainViewModel
 import radiant.nimbus.api.ApiProvider
 import radiant.nimbus.api.AtUri
 import radiant.nimbus.api.model.RecordUnion
+import radiant.nimbus.components.Center
 import radiant.nimbus.components.ScreenBody
 import radiant.nimbus.extensions.activityViewModel
 import radiant.nimbus.model.BskyPost
@@ -59,9 +61,43 @@ fun PostThreadScreen(
     }
     if((uri != viewModel.thread?.post?.uri) || showLoadingScreen) {
         showLoadingScreen = true
-            viewModel.loadThread(uri, mainViewModel.apiProvider) {
-                showLoadingScreen = false
+        ScreenBody(
+            modifier = Modifier
+                .fillMaxSize()
+                .systemBarsPadding(),
+            topContent = {
+                SkylineTopBar( mainViewModel.pinnedFeeds,
+                    mainButton = {
+                        IconButton(onClick = { it() },
+                            modifier = Modifier
+                                .padding(bottom = 5.dp, top = 5.dp)
+                        ) {
+                            Icon(imageVector = Icons.AutoMirrored.Default.ArrowBack,
+                                contentDescription = "Back",
+                                modifier = Modifier
+                                    .padding(horizontal = 10.dp)
+                                    .size(30.dp)
+                            )
+                        }
+                    },
+                    onButtonClicked = {
+                        navigator.navigateUp()
+                    },
+                    onChanged = {
+                        navigator.navigate(SkylineScreenDestination(it))
+                    },
+                )
+            },
+            navBar = { mainViewModel.navBar?.let { it(5) } },
+            contentWindowInsets = WindowInsets.navigationBars,
+        ) {insets ->
+            Center {
+                CircularProgressIndicator()
             }
+        }
+        viewModel.loadThread(uri, mainViewModel.apiProvider) {
+            showLoadingScreen = false
+        }
     } else {
         if (!viewModel.state.isBlocked || !viewModel.state.notFound || viewModel.thread != null ) {
             viewModel.thread?.let {

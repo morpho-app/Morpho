@@ -10,6 +10,7 @@ import kotlinx.serialization.json.jsonPrimitive
 val json = Json {
     classDiscriminator = "${'$'}type"
     ignoreUnknownKeys = true
+    prettyPrint = true
 }
 
 val JsonElement.recordType: String

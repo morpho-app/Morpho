@@ -1,5 +1,6 @@
 package radiant.nimbus.ui.common
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -78,6 +79,9 @@ fun BottomSheetPostComposer(
     onUpdate: (DraftPost) -> Unit = {},
     sheetState:SheetState = rememberModalBottomSheetState(),
 ) {
+    BackHandler {
+        onDismissRequest()
+    }
     val scope = rememberCoroutineScope()
     ModalBottomSheet(
         onDismissRequest = { scope.launch { sheetState.hide() }
@@ -96,7 +100,9 @@ fun BottomSheetPostComposer(
             onCancel = { scope.launch { sheetState.hide() }
                     .invokeOnCompletion {
                         if (!sheetState.isVisible) {onCancel() } } },
-            onSend = { onSend(it) },
+            onSend = {
+                onSend(it)
+                scope.launch { sheetState.hide() } },
             onUpdate = { onUpdate(it) }
         )
     }

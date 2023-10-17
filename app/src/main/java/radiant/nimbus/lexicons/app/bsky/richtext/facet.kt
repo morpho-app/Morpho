@@ -1,6 +1,5 @@
 package app.bsky.richtext
 
-import kotlin.jvm.JvmInline
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -34,6 +33,15 @@ public sealed interface FacetFeatureUnion {
   @SerialName("app.bsky.richtext.facet#tag")
   public value class Tag(
     public val `value`: FacetTag,
+  ) : FacetFeatureUnion
+
+
+  public class PollBlueFacetSerializer : KSerializer<PollBlueOption> by valueClassSerializer()
+  @Serializable(with = PollBlueFacetSerializer::class)
+  @JvmInline
+  @SerialName("app.pollblue.poll.facet#option")
+  public value class PollBlueOption(
+    public val `value`: PollBlueOptionFacet,
   ) : FacetFeatureUnion
 }
 

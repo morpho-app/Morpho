@@ -34,6 +34,11 @@ sealed interface LinkTarget {
     data class Tag(
         val tag: String,
     ) : LinkTarget
+
+    @Serializable
+    data class PollBlueOption(
+        val number: Int,
+    ) : LinkTarget
 }
 
 fun Facet.toLink(): BskyPostLink {
@@ -44,6 +49,7 @@ fun Facet.toLink(): BskyPostLink {
             is FacetFeatureUnion.Link -> LinkTarget.ExternalLink(feature.value.uri)
             is FacetFeatureUnion.Mention -> LinkTarget.UserDidMention(feature.value.did)
             is FacetFeatureUnion.Tag -> LinkTarget.Tag(feature.value.tag)
+            is FacetFeatureUnion.PollBlueOption -> LinkTarget.PollBlueOption(feature.value.number)
         },
     )
 }

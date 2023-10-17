@@ -33,9 +33,9 @@ fun ThreadFragment(
     modifier: Modifier = Modifier,
     comparator: Comparator<ThreadPost> = compareBy {
         if (it is ThreadPost.ViewablePost) {
-            it.post.indexedAt
+            it.post.indexedAt.instant.epochSeconds
         } else {
-            it.hashCode()
+            it.hashCode().toLong()
         }
     },
     onItemClicked: OnPostClicked = {},
