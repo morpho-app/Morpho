@@ -8,48 +8,60 @@ import radiant.nimbus.api.Handle
 import radiant.nimbus.api.Uri
 
 @Serializable
-data class BskyPostLink(
+data class BskyFacet(
     val start: Int,
     val end: Int,
-    val target: LinkTarget,
+    val target: Target,
 )
 
-sealed interface LinkTarget {
+sealed interface Target {
     @Serializable
     data class UserHandleMention(
         val handle: Handle,
-    ) : LinkTarget
+    ) : Target
 
     @Serializable
     data class UserDidMention(
         val did: Did,
-    ) : LinkTarget
+    ) : Target
 
     @Serializable
     data class ExternalLink(
         val uri: Uri,
-    ) : LinkTarget
+    ) : Target
 
     @Serializable
     data class Tag(
         val tag: String,
-    ) : LinkTarget
+    ) : Target
 
     @Serializable
     data class PollBlueOption(
         val number: Int,
-    ) : LinkTarget
+    ) : Target
+
+    @Serializable
+    data class Format(
+        val format: RichTextFormat
+    ) : Target
 }
 
-fun Facet.toLink(): BskyPostLink {
-    return BskyPostLink(
+enum class RichTextFormat {
+    BOLD,
+    ITALIC,
+    STRIKETHROUGH,
+    UNDERLINE,
+}
+
+fun Facet.toBskyFacet(): BskyFacet {
+    return BskyFacet(
         start = index.byteStart.toInt(),
         end = index.byteEnd.toInt(),
         target = when (val feature = features.first()) {
-            is FacetFeatureUnion.Link -> LinkTarget.ExternalLink(feature.value.uri)
-            is FacetFeatureUnion.Mention -> LinkTarget.UserDidMention(feature.value.did)
-            is FacetFeatureUnion.Tag -> LinkTarget.Tag(feature.value.tag)
-            is FacetFeatureUnion.PollBlueOption -> LinkTarget.PollBlueOption(feature.value.number)
+            is FacetFeatureUnion.Link -> Target.ExternalLink(feature.value.uri)
+            is FacetFeatureUnion.Mention -> Target.UserDidMention(feature.value.did)
+            is FacetFeatureUnion.Tag -> Target.Tag(feature.value.tag)
+            is FacetFeatureUnion.PollBlueOption -> Target.PollBlueOption(feature.value.number)
         },
     )
 }

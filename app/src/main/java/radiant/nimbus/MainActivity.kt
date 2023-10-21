@@ -48,6 +48,7 @@ import radiant.nimbus.screens.destinations.LoginScreenDestination
 import radiant.nimbus.screens.destinations.SkylineScreenDestination
 import radiant.nimbus.screens.skyline.FeedTab
 import radiant.nimbus.ui.common.NimbusNavigation
+import radiant.nimbus.ui.elements.AvatarShape
 import radiant.nimbus.ui.elements.OutlinedAvatar
 import radiant.nimbus.ui.theme.NimbusTheme
 
@@ -186,7 +187,7 @@ class MainActivity : ComponentActivity() {
                                         } else {
                                             Color.Transparent
                                         },
-                                    circle = true
+                                    shape = AvatarShape.Rounded
                                     )
                             }
                         } else {
@@ -199,7 +200,7 @@ class MainActivity : ComponentActivity() {
                 )
             }
             val startRoute = if (!loggedIn) LoginScreenDestination else SkylineScreenDestination
-            NimbusTheme {
+            NimbusTheme(dynamicColor = true) {
                 DestinationsNavHost(
                     engine = engine,
                     navGraph = NavGraphs.root,

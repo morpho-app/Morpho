@@ -6,6 +6,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
@@ -28,7 +29,11 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -39,7 +44,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import com.atproto.repo.StrongRef
-import dev.jeziellago.compose.markdowntext.MarkdownText
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.datetime.Instant
 import radiant.nimbus.api.AtIdentifier
@@ -57,9 +61,12 @@ import radiant.nimbus.model.BskyPostReply
 import radiant.nimbus.model.EmbedImage
 import radiant.nimbus.model.EmbedPost
 import radiant.nimbus.model.Moment
+import radiant.nimbus.model.Target
 import radiant.nimbus.ui.common.OnPostClicked
+import radiant.nimbus.ui.elements.AvatarShape
 import radiant.nimbus.ui.elements.MenuOptions
 import radiant.nimbus.ui.elements.OutlinedAvatar
+import radiant.nimbus.ui.elements.RichTextElement
 import radiant.nimbus.ui.theme.NimbusTheme
 import radiant.nimbus.ui.utils.DevicePreviews
 import radiant.nimbus.ui.utils.indentLevel
@@ -93,7 +100,7 @@ fun PostFragment(
         PostFragmentRole.ThreadRootUnfocused -> Modifier.padding(2.dp)
         PostFragmentRole.ThreadEnd -> Modifier.padding(start = 2.dp, top = 0.dp, end = 2.dp, bottom = 0.dp)
     }}
-    val indent = remember { when(role) {
+    val indent = rememberSaveable { when(role) {
         PostFragmentRole.Solo -> indentLevel.toFloat()
         PostFragmentRole.PrimaryThreadRoot -> indentLevel.toFloat()
         PostFragmentRole.ThreadBranchStart -> 0.0f//indentLevel.toFloat()
@@ -103,6 +110,8 @@ fun PostFragment(
         PostFragmentRole.ThreadEnd -> 0.0f
     }}
     val ctx = LocalContext.current
+    var hidePost by rememberSaveable { mutableStateOf(post.author.mutedByMe) }
+    val muted = rememberSaveable { post.author.mutedByMe }
 
     Column(
         modifier = padding.fillMaxWidth()
@@ -155,238 +164,271 @@ fun PostFragment(
                 .clickable { onItemClicked(post.uri) }
 
         ) {
-            Row(modifier = Modifier
-                .padding(bottom = 4.dp)
-                .padding(start = 0.dp, end = 6.dp)
-                .fillMaxWidth(indentLevel(indent))
+                    Row(modifier = Modifier
+                        .padding(bottom = 2.dp)
+                        .padding(start = 0.dp, end = 6.dp)
+                        .fillMaxWidth(indentLevel(indent))
 
-            ) {
+                    ) {
 
-                if(indent < 2) {
-                    OutlinedAvatar(
-                        url = post.author.avatar.orEmpty(),
-                        contentDescription = "Avatar for ${post.author.handle}",
-                        modifier = Modifier
-                            .size(45.dp),
-                        outlineColor = MaterialTheme.colorScheme.background,
-                        onClicked = { onProfileClicked(AtIdentifier(post.author.did.did)) },
-                        circle = false
-                    )
-                }
-
-                Column(
-                    Modifier
-                        .padding(vertical = 6.dp, horizontal = 6.dp)
-                        .fillMaxWidth(indentLevel(indent)),
-                ) {
-                    if(post.reason is BskyPostReason.BskyPostRepost) {
-                        Row(modifier = Modifier,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Repeat,
-                                contentDescription = "",
-                                tint = MaterialTheme.colorScheme.secondary,
-                                modifier = Modifier.height(15.dp)
-                            )
-                            Text(
-                                text = "Reposted by ${post.reason.repostAuthor.displayName}",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.secondary,
-                                modifier = Modifier.padding(start = 5.dp)
-                            )
-                        }
-                    }
-
-                    SelectionContainer {
-                        FlowRow(
-                            modifier = Modifier
-                                .padding(top = 4.dp)
-                                .padding(horizontal = 4.dp),
-                            horizontalArrangement = Arrangement.End
-
-                        ) {
-                            if(indent >= 2) {
-                                OutlinedAvatar(
-                                    url = post.author.avatar.orEmpty(),
-                                    contentDescription = "Avatar for ${post.author.handle}",
-                                    modifier = Modifier
-                                        //.offset(y = 4.dp)
-                                        .size(30.dp),
-
-                                    outlineColor = MaterialTheme.colorScheme.background,
-                                    onClicked = { onProfileClicked(AtIdentifier(post.author.did.did)) }
-                                )
-                            }
-                            Text(
-                                text = buildAnnotatedString {
-                                    withStyle(
-                                        style = SpanStyle(
-                                            color = MaterialTheme.colorScheme.onSurface,
-                                            fontSize = MaterialTheme.typography.labelLarge.fontSize
-                                                .times(1.2f),
-                                            fontWeight = FontWeight.Medium
-                                        )
-                                    ) {
-                                        append(post.author.displayName.orEmpty())
-                                    }
-                                    withStyle(
-                                        style = SpanStyle(
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                            fontSize = MaterialTheme.typography.labelLarge.fontSize
-                                                .times(1.0f)
-                                        )
-                                    ) {
-                                        append(" @${post.author.handle}")
-                                    }
-
-                                },
-                                maxLines = 1,
-                                style = MaterialTheme.typography.labelLarge,
-                                overflow = TextOverflow.Ellipsis,
+                        if(indent < 2) {
+                            OutlinedAvatar(
+                                url = post.author.avatar.orEmpty(),
+                                contentDescription = "Avatar for ${post.author.handle}",
                                 modifier = Modifier
-                                    .wrapContentWidth(Alignment.Start)
-                                    .weight(10.0F)
-                                    .alignByBaseline(),
-
-                            )
-
-                            Spacer(
-                                modifier = Modifier
-                                    .width(1.dp)
-                                    .weight(0.1F),
-                            )
-                            Text(
-                                text = delta,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                style = MaterialTheme.typography.labelLarge,
-                                fontSize = MaterialTheme.typography.labelLarge
-                                    .fontSize.div(1.2F),
-                                modifier = Modifier
-                                    .wrapContentWidth(Alignment.End)
-                                    //.weight(3.0F)
-                                    .alignByBaseline(),
-                                maxLines = 1,
-                                overflow = TextOverflow.Visible,
-                                softWrap = false,
+                                    .size(45.dp),
+                                outlineColor = MaterialTheme.colorScheme.background,
+                                onClicked = { onProfileClicked(AtIdentifier(post.author.did.did)) },
+                                shape = AvatarShape.Corner
                             )
                         }
-                    }
-                    if(post.reply?.parent != null) {
-                        Row(modifier = Modifier
-                            .offset(x = 4.dp),
-                            verticalAlignment = Alignment.CenterVertically
+
+                        Column(
+                            Modifier
+                                .padding(vertical = 2.dp, horizontal = 6.dp)
+                                .fillMaxWidth(indentLevel(indent)),
                         ) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.Reply,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.secondary,
-                                modifier = Modifier.height(15.dp)
-                            )
-                            Text(
-                                text = "Reply to ${post.reply.parent.author.displayName}",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.secondary,
-                                modifier = Modifier.padding(start = 5.dp)
-                            )
-                        }
-                    }
-
-                    SelectionContainer(Modifier.clickable { onItemClicked(post.uri) }) {
-                        MarkdownText(
-                            markdown = post.text.replace("\n", "  \n"),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurface,
-                            linkColor = MaterialTheme.colorScheme.tertiary,
-                            //disableLinkMovementMethod = true,
-                            modifier = Modifier.padding(start = 8.dp, end = 8.dp, top = 4.dp, bottom = 8.dp).clickable { onItemClicked(post.uri) },
-                            onLinkClicked = {
-                                val urlIntent = Intent(
-                                    Intent.ACTION_VIEW,
-                                    Uri.parse(it)
-                                )
-                                ctx.startActivity(urlIntent)
-                            },
-                        )
-                    }
-                    when (post.feature) {
-                        is BskyPostFeature.ExternalFeature -> PostLinkEmbed(linkData = post.feature,
-                            linkPress = {
-                                val urlIntent = Intent(
-                                    Intent.ACTION_VIEW,
-                                    Uri.parse(it)
-                                )
-                                ctx.startActivity(urlIntent)
-                            },
-                            modifier = Modifier.align(Alignment.CenterHorizontally))
-                        is BskyPostFeature.ImagesFeature -> {
-                            PostImages(imagesFeature = post.feature,
-                                modifier = Modifier.align(Alignment.CenterHorizontally))
-                        }
-                        is BskyPostFeature.MediaPostFeature -> {
-                            when(post.feature.media) {
-                                is BskyPostFeature.ExternalFeature -> {
-                                    PostLinkEmbed(
-                                        linkData = post.feature.media,
-                                        linkPress = {
-                                            val urlIntent = Intent(
-                                                Intent.ACTION_VIEW,
-                                                Uri.parse(it)
-                                            )
-                                            ctx.startActivity(urlIntent)
-                                        },
-                                        modifier = Modifier.align(Alignment.CenterHorizontally)
+                            if(post.reason is BskyPostReason.BskyPostRepost) {
+                                Row(modifier = Modifier,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Repeat,
+                                        contentDescription = "",
+                                        tint = MaterialTheme.colorScheme.secondary,
+                                        modifier = Modifier.height(15.dp)
+                                    )
+                                    Text(
+                                        text = "Reposted by ${post.reason.repostAuthor.displayName}",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.secondary,
+                                        modifier = Modifier.padding(start = 5.dp)
                                     )
                                 }
-                                is BskyPostFeature.ImagesFeature -> {
-                                    PostImages(imagesFeature = post.feature.media,
-                                        modifier = Modifier.align(Alignment.CenterHorizontally))
+                            }
+
+                            SelectionContainer {
+                                FlowRow(
+                                    modifier = Modifier
+                                        .padding(top = 4.dp)
+                                        .padding(horizontal = 4.dp),
+                                    horizontalArrangement = Arrangement.End
+
+                                ) {
+                                    if(indent >= 2) {
+                                        OutlinedAvatar(
+                                            url = post.author.avatar.orEmpty(),
+                                            contentDescription = "Avatar for ${post.author.handle}",
+                                            modifier = Modifier
+                                                //.offset(y = 4.dp)
+                                                .size(30.dp),
+                                            shape = AvatarShape.Rounded,
+                                            outlineColor = MaterialTheme.colorScheme.background,
+                                            onClicked = { onProfileClicked(AtIdentifier(post.author.did.did)) }
+                                        )
+                                    }
+                                    Text(
+                                        text = buildAnnotatedString {
+                                            withStyle(
+                                                style = SpanStyle(
+                                                    color = MaterialTheme.colorScheme.onSurface,
+                                                    fontSize = MaterialTheme.typography.labelLarge.fontSize
+                                                        .times(1.2f),
+                                                    fontWeight = FontWeight.Medium
+                                                )
+                                            ) {
+                                                append(post.author.displayName.orEmpty())
+                                            }
+                                            withStyle(
+                                                style = SpanStyle(
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                    fontSize = MaterialTheme.typography.labelLarge.fontSize
+                                                        .times(1.0f)
+                                                )
+                                            ) {
+                                                append(" @${post.author.handle}")
+                                            }
+
+                                        },
+                                        maxLines = 1,
+                                        style = MaterialTheme.typography.labelLarge,
+                                        overflow = TextOverflow.Ellipsis,
+                                        modifier = Modifier
+                                            .wrapContentWidth(Alignment.Start)
+                                            .weight(10.0F)
+                                            .alignByBaseline(),
+
+                                    )
+
+                                    Spacer(
+                                        modifier = Modifier
+                                            .width(1.dp)
+                                            .weight(0.1F),
+                                    )
+                                    Text(
+                                        text = delta,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        style = MaterialTheme.typography.labelLarge,
+                                        fontSize = MaterialTheme.typography.labelLarge
+                                            .fontSize.div(1.2F),
+                                        modifier = Modifier
+                                            .wrapContentWidth(Alignment.End)
+                                            //.weight(3.0F)
+                                            .alignByBaseline(),
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Visible,
+                                        softWrap = false,
+                                    )
                                 }
                             }
-                            when (post.feature.post) {
-                                is EmbedPost.BlockedEmbedPost -> EmbedBlockedPostFragment(uri = post.feature.post.uri)
-                                is EmbedPost.InvisibleEmbedPost -> EmbedNotFoundPostFragment(uri = post.feature.post.uri)
-                                is EmbedPost.VisibleEmbedPost -> EmbedPostFragment(
-                                    post = post.feature.post,
-                                    onItemClicked =  {onItemClicked(post.feature.post.uri)},
-                                    modifier = Modifier.align(Alignment.CenterHorizontally)
-                                )
+                            if(post.reply?.parent != null) {
+                                ReplyIndicator(post.reply.parent)
                             }
+
+                            RichTextElement(
+                                text = post.text,
+                                facets = post.facets,
+                                onClick = {
+                                    when(it) {
+                                        is Target.ExternalLink -> {
+                                            val urlIntent = Intent(
+                                                Intent.ACTION_VIEW,
+                                                Uri.parse(it.uri.uri)
+                                            )
+                                            ctx.startActivity(urlIntent)
+                                        }
+                                        is Target.Format -> {
+                                            onItemClicked(post.uri)
+                                        }
+                                        is Target.PollBlueOption -> {
+
+                                        }
+                                        is Target.Tag -> {}
+                                        is Target.UserDidMention -> {
+                                            onProfileClicked(AtIdentifier(it.did.did))
+                                        }
+                                        is Target.UserHandleMention -> {
+                                            onProfileClicked(AtIdentifier(it.handle.handle))
+                                        }
+                                        null -> {
+                                            onItemClicked(post.uri)
+                                        }
+                                    }
+                                }
+                            )
+                            PostFeatureElement(post.feature, onItemClicked)
+
+                            PostActions(post = post,
+                                onLikeClicked = {
+                                    onLikeClicked(StrongRef(post.uri, post.cid))
+                                },
+                                onMenuClicked = onMenuClicked,
+                                onReplyClicked = {
+                                    onReplyClicked(post)
+                                },
+                                onRepostClicked = {
+                                    onRepostClicked(post)
+                                },
+                                onUnClicked = onUnClicked,
+                            )
                         }
-                        is BskyPostFeature.PostFeature -> {
-                            when (post.feature.post) {
-                                is EmbedPost.BlockedEmbedPost -> EmbedBlockedPostFragment(uri = post.feature.post.uri)
-                                is EmbedPost.InvisibleEmbedPost -> EmbedNotFoundPostFragment(uri = post.feature.post.uri)
-                                is EmbedPost.VisibleEmbedPost -> EmbedPostFragment(
-                                    post = post.feature.post,
-                                    onItemClicked =  {onItemClicked(post.feature.post.uri)},
-                                    modifier = Modifier.align(Alignment.CenterHorizontally)
-                                )
-                            }
-                        }
-                        null -> {}
                     }
 
-                    PostActions(post = post,
-                        onLikeClicked = {
-                            onLikeClicked(StrongRef(post.uri, post.cid))
-                        },
-                        onMenuClicked = onMenuClicked,
-                        onReplyClicked = {
-                            onReplyClicked(post)
-                        },
-                        onRepostClicked = {
-                            onRepostClicked(post)
-                        },
-                        onUnClicked = onUnClicked,
-                    )
-                }
-            }
+
         }
     }
 
 }
 
+@Composable
+fun ReplyIndicator(
+    parent: BskyPost,
+    onClick: (AtIdentifier) -> Unit = {},
+) {
+    Row(
+        modifier = Modifier
+            .offset(x = 4.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            imageVector = Icons.AutoMirrored.Filled.Reply,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.secondary,
+            modifier = Modifier.height(15.dp)
+        )
+        Text(
+            text = "Reply to ${parent.author.displayName}",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.secondary,
+            modifier = Modifier.padding(start = 5.dp)
+        )
+    }
+}
+
+@Composable
+fun ColumnScope.PostFeatureElement(
+    feature: BskyPostFeature? = null,
+    onItemClicked: OnPostClicked = {},
+) {
+    val ctx = LocalContext.current
+    when (feature) {
+        is BskyPostFeature.ExternalFeature -> PostLinkEmbed(linkData = feature,
+            linkPress = {
+                val urlIntent = Intent(
+                    Intent.ACTION_VIEW,
+                    Uri.parse(it)
+                )
+                ctx.startActivity(urlIntent)
+            },
+            modifier = Modifier.align(Alignment.CenterHorizontally))
+        is BskyPostFeature.ImagesFeature -> {
+            PostImages(imagesFeature = feature,
+                modifier = Modifier.align(Alignment.CenterHorizontally))
+        }
+        is BskyPostFeature.MediaPostFeature -> {
+            when(feature.media) {
+                is BskyPostFeature.ExternalFeature -> {
+                    PostLinkEmbed(
+                        linkData = feature.media,
+                        linkPress = {
+                            val urlIntent = Intent(
+                                Intent.ACTION_VIEW,
+                                Uri.parse(it)
+                            )
+                            ctx.startActivity(urlIntent)
+                        },
+                        modifier = Modifier.align(Alignment.CenterHorizontally)
+                    )
+                }
+                is BskyPostFeature.ImagesFeature -> {
+                    PostImages(imagesFeature = feature.media,
+                        modifier = Modifier.align(Alignment.CenterHorizontally))
+                }
+            }
+            when (feature.post) {
+                is EmbedPost.BlockedEmbedPost -> EmbedBlockedPostFragment(uri = feature.post.uri)
+                is EmbedPost.InvisibleEmbedPost -> EmbedNotFoundPostFragment(uri = feature.post.uri)
+                is EmbedPost.VisibleEmbedPost -> EmbedPostFragment(
+                    post = feature.post,
+                    onItemClicked =  {onItemClicked(feature.post.uri)},
+                    modifier = Modifier.align(Alignment.CenterHorizontally)
+                )
+            }
+        }
+        is BskyPostFeature.PostFeature -> {
+            when (feature.post) {
+                is EmbedPost.BlockedEmbedPost -> EmbedBlockedPostFragment(uri = feature.post.uri)
+                is EmbedPost.InvisibleEmbedPost -> EmbedNotFoundPostFragment(uri = feature.post.uri)
+                is EmbedPost.VisibleEmbedPost -> EmbedPostFragment(
+                    post = feature.post,
+                    onItemClicked =  {onItemClicked(feature.post.uri)},
+                    modifier = Modifier.align(Alignment.CenterHorizontally)
+                )
+            }
+        }
+        null -> {}
+    }
+}
 
 
 @DevicePreviews
@@ -427,7 +469,7 @@ val testPost = BskyPost(
     ),
     tags = persistentListOf(),
     text = "This small terrorist (pictured, indignant about not being fed in the last hour) managed to knock over a chair in the night.",
-    textLinks = persistentListOf(),
+    facets = persistentListOf(),
     createdAt = Moment(instant = Instant.parse("2023-04-11T12:15:26.077Z")),
     feature = BskyPostFeature.ImagesFeature(
         images = persistentListOf(
@@ -487,7 +529,7 @@ val testThreadRoot = BskyPost(
 
     ),
     text = "This small terrorist (pictured, indignant about not being fed in the last hour) managed to knock over a chair in the night.",
-    textLinks = persistentListOf(),
+    facets = persistentListOf(),
     createdAt = Moment(instant = Instant.parse("2023-09-23T12:15:26.077Z")),
     feature = testLinkEmbed,
     replyCount = 0,
@@ -521,7 +563,7 @@ val testReply1 = BskyPost(
 
     ),
     text = "This small terrorist (pictured, indignant about not being fed in the last hour) managed to knock over a chair in the night.",
-    textLinks = persistentListOf(),
+    facets = persistentListOf(),
     createdAt = Moment(instant = Instant.parse("2023-04-11T12:15:26.077Z")),
     feature = BskyPostFeature.ImagesFeature(
         images = persistentListOf(
@@ -569,7 +611,7 @@ val testReply2 = BskyPost(
 
     ),
     text = "This small terrorist (pictured, indignant about not being fed in the last hour) managed to knock over a chair in the night.",
-    textLinks = persistentListOf(),
+    facets = persistentListOf(),
     createdAt = Moment(instant = Instant.parse("2023-04-11T12:15:26.077Z")),
     feature = BskyPostFeature.ImagesFeature(
         images = persistentListOf(

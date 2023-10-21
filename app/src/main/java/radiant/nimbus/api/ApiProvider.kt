@@ -11,6 +11,8 @@ import com.atproto.server.RefreshSessionResponse
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.cio.CIO
 import io.ktor.client.plugins.DefaultRequest
+import io.ktor.client.plugins.HttpRequestRetry
+import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.plugins.logging.DEFAULT
 import io.ktor.client.plugins.logging.LogLevel
 import io.ktor.client.plugins.logging.Logger
@@ -90,6 +92,13 @@ class ApiProvider @Inject constructor(
       url.host = hostUrl.host
       url.port = hostUrl.port
     }
+    install(HttpRequestRetry) {
+      retryOnServerErrors(maxRetries = 5)
+      exponentialDelay()
+    }
+    install(HttpTimeout) {
+      requestTimeoutMillis = Long.MAX_VALUE
+    }
 
     expectSuccess = false
   }
@@ -146,8 +155,6 @@ class ApiProvider @Inject constructor(
     refreshJwt = tokens.refresh,
   )
 
-  public
-
 
   // Pulled this out of where I stuck it in the API so it doesn't get overwritten
   // TODO: Figure out root cause of why that first normal refresh fucks up, wtf did Christian do?
@@ -177,9 +184,12 @@ class ApiProvider @Inject constructor(
         is AtpResponse.Failure -> response
         is AtpResponse.Success -> {
           loginRepository.auth = response.response
+          auth.value = response.response
           loginRepository.credentials = credentials
+          userCredentials.value = credentials
           Log.i(TAG, "Login: ${loginRepository.auth}")
           Log.i(TAG,"Login: ${userCredentials.value}")
+
           response
         }
       }

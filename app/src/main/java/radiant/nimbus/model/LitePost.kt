@@ -9,7 +9,7 @@ import radiant.nimbus.util.mapImmutable
 @Serializable
 data class LitePost(
     val text: String,
-    val links: ImmutableList<BskyPostLink>,
+    val facets: ImmutableList<BskyFacet>,
     val feature: BskyPostFeature?,
     val langs: ImmutableList<Language>,
     val createdAt: Moment,
@@ -18,7 +18,7 @@ data class LitePost(
 fun Post.toLitePost(): LitePost {
     return LitePost(
         text = text,
-        links = facets.mapImmutable { it.toLink() },
+        facets = facets.mapImmutable { it.toBskyFacet() },
         createdAt = Moment(createdAt),
         feature = embed?.toFeature(),
         langs = langs,

@@ -8,13 +8,14 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import radiant.nimbus.api.ApiProvider
 import radiant.nimbus.api.auth.AuthInfo
 import radiant.nimbus.api.auth.Credentials
 import radiant.nimbus.api.auth.ServerInfo
-import radiant.nimbus.base.BaseViewModel
 import radiant.nimbus.api.response.AtpResponse
+import radiant.nimbus.base.BaseViewModel
 import javax.inject.Inject
 
 enum class LoginScreenMode {
@@ -77,22 +78,22 @@ class LoginViewModel @Inject constructor(
     ) = viewModelScope.launch {
         when (val result = apiProvider.makeLoginRequest(credentials)) {
             is AtpResponse.Failure -> {
+                Log.e("Login error", result.toString())
                 state.state = LoginState.ShowingError(
                     mode = state.state.mode,
                     serverInfo = state.state.serverInfo,
                     error = result,
                     credentials = credentials
                 )
-                Log.e("Login error", result.toString())
                 onFailure(result)
             }
             is AtpResponse.Success -> {
+                Log.i("Login success", apiProvider.auth().first().toString())
                 state.state = LoginState.Success(
                     mode = state.state.mode,
                     serverInfo = state.state.serverInfo,
                     result = result.response
                 )
-                Log.i("Login success", result.toString())
                 onSuccess(result.response)
             }
         }

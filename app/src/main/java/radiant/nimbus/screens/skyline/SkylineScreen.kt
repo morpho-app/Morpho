@@ -2,7 +2,6 @@ package radiant.nimbus.screens.skyline
 
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.navigationBars
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -83,7 +82,7 @@ fun SkylineScreen(
         refresh = { cursor ->
             mainViewModel.userPreferences?.feedViewPrefs?.get("home")?.let {
                 viewModel.getSkyline(
-                    mainViewModel.apiProvider, viewModel.skylinePosts.value.cursor,
+                    mainViewModel.apiProvider, cursor,
                     prefs = it
                 )
             }
@@ -129,7 +128,7 @@ fun SkylineView(
     var initialContent: BskyPost? by remember { mutableStateOf(null) }
     var showComposer by remember { mutableStateOf(false)}
     var composerRole by remember { mutableStateOf(ComposerRole.StandalonePost)}
-    val sheetState = rememberModalBottomSheetState()
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     // Probably pull this farther up,
     //      but this means if you don't explicitly cancel you don't lose the post
     var draft by remember{ mutableStateOf(DraftPost()) }
@@ -141,6 +140,8 @@ fun SkylineView(
                 pinnedFeeds[selectedTab-1].uri,
                 cursor = pinnedFeeds[selectedTab-1].cursor
             ))
+        }  else {
+            viewModel.getSkyline(apiProvider, viewModel.skylinePosts.value.cursor)
         }
     }
     ScreenBody(
@@ -266,10 +267,13 @@ fun SkylineView(
                 onDismissRequest = { showComposer = false },
                 sheetState = sheetState,
                 role = composerRole,
-                modifier = Modifier.padding(insets),
+                //modifier = Modifier.padding(insets),
                 initialContent = initialContent,
                 draft = draft,
-                onCancel = { showComposer = false },
+                onCancel = {
+                    showComposer = false
+                    draft = DraftPost()
+                           },
                 onSend = {
                     apiProvider.createRecord(RecordUnion.MakePost(it))
                     showComposer = false

@@ -3,6 +3,7 @@ package radiant.nimbus.ui.post
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.PaddingValues
@@ -39,12 +40,14 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
+import coil.size.Size
 import radiant.nimbus.model.BskyPostFeature
 import radiant.nimbus.model.EmbedImage
 
@@ -61,7 +64,7 @@ fun PostImages(
             contentPadding = PaddingValues(0.dp),
             modifier = modifier
                 .padding(vertical = 6.dp)
-                .heightIn(10.dp, 2000.dp)
+                .heightIn(10.dp, 700.dp)
         ) {
             items(imagesFeature.images) {image ->
                 PostImageThumb(
@@ -73,6 +76,7 @@ fun PostImages(
     } else if (numImages == 1 && imagesFeature.images.isNotEmpty()) {
         PostImageThumb(image = imagesFeature.images.first(), modifier = Modifier
             .padding(vertical = 6.dp)
+            .heightIn(10.dp, 700.dp)
             .fillMaxWidth()
         )
     }
@@ -93,24 +97,48 @@ fun PostImageThumb(
         }
         false -> {
             val showAltText = remember { mutableStateOf(false) }
-            Box(
+            BoxWithConstraints(
                 modifier = modifier.padding(2.dp)
             ) {
-                AsyncImage(
-                    model = ImageRequest.Builder(LocalContext.current)
-                        .data(image.thumb)
-                        .crossfade(true)
-                        .build(),
-                    contentDescription = image.alt,
-                    contentScale = ContentScale.Inside,
-                    //placeholder = painterResource(R.drawable._0tigj8),
-                    modifier = Modifier
-                        .clip(MaterialTheme.shapes.small)
-                        .clickable {
-                            displayFullView.value = true
-                        }
+                if (image.aspectRatio == null) {
+                    AsyncImage(
+                        model = ImageRequest.Builder(LocalContext.current)
+                            .data(image.thumb)
+                            .build(),
+                        contentDescription = image.alt,
+                        contentScale = ContentScale.Inside,
+                        modifier = Modifier
+                            .clip(MaterialTheme.shapes.small)
+                            .clickable {
+                                displayFullView.value = true
+                            }
 
-                )
+                    )
+                } else {
+                    var width = with(LocalDensity.current) { maxWidth.value.dp.toPx() }
+                    var height = with(LocalDensity.current) { maxHeight.value.dp.toPx() }
+                    val ratio = image.aspectRatio.width.toFloat() / image.aspectRatio.height.toFloat()
+                    if (ratio > 1) {
+                        height /= ratio
+                    } else {
+                        width /= ratio
+                    }
+                    AsyncImage(
+                        model = ImageRequest.Builder(LocalContext.current)
+                            .data(image.thumb)
+                            .size(Size(width.toInt(), height.toInt()))
+                            .build(),
+                        contentDescription = image.alt,
+                        contentScale = ContentScale.Inside,
+                        modifier = Modifier
+                            .clip(MaterialTheme.shapes.small)
+                            .clickable {
+                                displayFullView.value = true
+                            }
+
+                    )
+                }
+
                 if (image.alt.isNotEmpty()) {
                     when(showAltText.value) {
                         true -> {

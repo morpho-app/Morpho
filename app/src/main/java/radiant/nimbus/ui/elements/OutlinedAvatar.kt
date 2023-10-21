@@ -16,15 +16,18 @@ package radiant.nimbus.ui.elements
  * limitations under the License.
  */
 
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -41,42 +44,45 @@ import radiant.nimbus.R
 import radiant.nimbus.ui.theme.NimbusTheme
 
 
+enum class AvatarShape {
+    Circle,
+    Rounded,
+    Corner
+}
+
 @Composable
 fun OutlinedAvatar(
     url: String,
     modifier: Modifier = Modifier,
-    outlineSize: Dp = 1.dp,
+    outlineSize: Dp = 0.dp,
     outlineColor: Color = MaterialTheme.colorScheme.surface,
     contentDescription: String = "",
-    circle: Boolean = false,
+    shape: AvatarShape = AvatarShape.Corner,
     onClicked: () -> Unit = {},
+    size: Dp = 30.dp,
 ) {
-    val shape = if(circle) {
-        CircleShape
-    } else {
-        MaterialTheme.shapes.small.copy(topEnd = CornerSize(0.dp), bottomStart =CornerSize(0.dp))
+    val s = when(shape) {
+        AvatarShape.Circle -> CircleShape
+        AvatarShape.Rounded -> MaterialTheme.shapes.small
+        AvatarShape.Corner -> MaterialTheme.shapes.small.copy(topEnd = CornerSize(0.dp), bottomStart =CornerSize(0.dp))
     }
-    Surface(
-        shape = shape,
-        color = outlineColor,
-        onClick = onClicked,
+    AsyncImage(
+        model = ImageRequest.Builder(LocalContext.current)
+            .data(url)
+            .crossfade(true)
+            .build(),
+        contentDescription = contentDescription,
+        contentScale = ContentScale.Crop,
+        fallback = painterResource(R.drawable.placeholder_pfp),
+        placeholder = painterResource(R.drawable.placeholder_pfp),
         modifier = modifier
-    ) {
-        AsyncImage(
-            model = ImageRequest.Builder(LocalContext.current)
-                .data(url)
-                .crossfade(true)
-                .build(),
-            contentDescription = contentDescription,
-            contentScale = ContentScale.Crop,
-            fallback = painterResource(R.drawable.placeholder_pfp),
-            placeholder = painterResource(R.drawable.placeholder_pfp),
-            modifier = Modifier
-                .padding(outlineSize)
-                .fillMaxSize()
-                .clip(shape)
-        )
-    }
+            .clickable { onClicked() }
+            .clip(s)
+            .animateContentSize(spring(stiffness = Spring.StiffnessMediumLow, dampingRatio = Spring.DampingRatioNoBouncy))
+            .size(size+outlineSize)
+            .border(outlineSize, outlineColor,s)
+    )
+
 }
 
 @Preview(
@@ -90,7 +96,7 @@ private fun OutlinedAvatarPreview() {
         Column {
             OutlinedAvatar(url = "")
             Spacer(modifier = Modifier.height(20.dp))
-            OutlinedAvatar(url = "", circle = true)
+            OutlinedAvatar(url = "", shape = AvatarShape.Circle)
         }
     }
 }

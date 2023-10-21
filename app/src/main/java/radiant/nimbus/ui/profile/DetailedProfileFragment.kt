@@ -1,26 +1,40 @@
 package radiant.nimbus.ui.profile
 
 import android.annotation.SuppressLint
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.requiredHeight
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.selection.SelectionContainer
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.LargeTopAppBar
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.TopAppBarScrollBehavior
@@ -37,6 +51,7 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
@@ -53,8 +68,9 @@ import radiant.nimbus.model.DetailedProfile
 import radiant.nimbus.model.Moment
 import radiant.nimbus.screens.profile.ProfileTabs
 import radiant.nimbus.ui.common.TopAppBarPreview
+import radiant.nimbus.ui.elements.AvatarShape
 import radiant.nimbus.ui.elements.OutlinedAvatar
-import radiant.nimbus.ui.elements.RichText
+import radiant.nimbus.ui.elements.RichTextElement
 import radiant.nimbus.ui.theme.NimbusTheme
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
@@ -65,39 +81,51 @@ public fun DetailedProfileFragment(
     modifier: Modifier = Modifier,
     myProfile: Boolean = false,
     isTopLevel:Boolean = false,
-    scrollBehavior: TopAppBarScrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
+    scrollBehavior: TopAppBarScrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(
+        rememberTopAppBarState()),
+    onBackClicked: () -> Unit = {},
 ) {
+    val scrollState = rememberScrollState()
+    val name = profile.displayName ?: profile.handle.handle
+    val bannerHeight = if (scrollBehavior.state.collapsedFraction <= .2) {
+        155.dp
+    } else {
+        (155.dp - (60 * scrollBehavior.state.collapsedFraction).dp)
+    }
+    val collapsed = scrollBehavior.state.collapsedFraction > 0.5
 
-    Column(
+    ConstraintLayout(
         modifier = Modifier
             .fillMaxWidth()
+            .nestedScroll(scrollBehavior.nestedScrollConnection)
             .background(MaterialTheme.colorScheme.background)
-            .padding(bottom = 12.dp)
-            .nestedScroll(scrollBehavior.nestedScrollConnection),
+            .verticalScroll(scrollState)
     ) {
-        ConstraintLayout(
+        val (appbar, userStats, banner, labels, text, collapsedText) = createRefs()
+
+        AsyncImage(
+            model = ImageRequest.Builder(LocalContext.current)
+                .data(profile.banner.orEmpty())
+                .crossfade(true)
+                .build(),
+            placeholder = painterResource(R.drawable.test_banner),
+            contentDescription = "Profile Banner for ${profile.displayName} ${profile.handle}",
+            contentScale = ContentScale.Crop,
+            alignment = Alignment.TopCenter,
             modifier = Modifier
                 .fillMaxWidth()
-                .nestedScroll(scrollBehavior.nestedScrollConnection),
-        ) {
-            val (appbar, userStats, banner, labels) = createRefs()
-            AsyncImage(
-                model = ImageRequest.Builder(LocalContext.current)
-                    .data(profile.banner.orEmpty())
-                    .crossfade(true)
-                    .build(),
-                placeholder = painterResource(R.drawable.test_banner),
-                contentDescription = "Profile Banner for ${profile.displayName} ${profile.handle}",
-                contentScale = ContentScale.Crop,
-                alignment = Alignment.TopCenter,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(155.dp)
-                    .constrainAs(banner) {
-                        top.linkTo(parent.top)
-                    }
-
-            )
+                .constrainAs(banner) {
+                    top.linkTo(parent.top)
+                }
+                .animateContentSize(
+                    spring(
+                        stiffness = Spring.StiffnessMediumLow,
+                        dampingRatio = Spring.DampingRatioNoBouncy
+                    )
+                )
+                .requiredHeight(bannerHeight)
+        )
+        if(!collapsed){
             ProfileLabels(
                 labels = profile.labels,
                 modifier = Modifier
@@ -106,28 +134,22 @@ public fun DetailedProfileFragment(
                         end.linkTo(anchor = parent.end, margin = 8.dp)
                     }
             )
+        }
 
-            LargeTopAppBar(
-                title = {
-                    ConstraintLayout(//constraintSet = ,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(0.dp)
-                    ) {
-                        val (avatar, buttons) = createRefs()
-                        val avatarGuide = createGuidelineFromStart(.1f)
-                        val centreGuide = createGuidelineFromTop(.6f)
+        LargeTopAppBar(
+            title = {
+                ConstraintLayout(//constraintSet = ,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                ) {
+                    val (avatar, buttons, info) = createRefs()
+                    val expanded = scrollBehavior.state.collapsedFraction <= 0.5
+                    val avatarSize = (80.dp - (30.0 * scrollBehavior.state.collapsedFraction).dp)
+                    val centreGuideFraction = if(expanded) .6f else .5f
+                    val avatarGuide = createGuidelineFromStart(.1f )
+                    val centreGuide = createGuidelineFromTop(centreGuideFraction)
 
-                        OutlinedAvatar(
-                            url = profile.avatar.orEmpty(),
-                            contentDescription = "Avatar for ${profile.displayName} ${profile.handle}",
-                            modifier = Modifier
-                                .size(80.dp)
-                                .constrainAs(avatar) {
-                                    centerAround(avatarGuide)
-
-                                }
-                        )
+                    if(expanded){
                         ProfileButtons(
                             myProfile = myProfile,
                             following = profile.followedByMe,
@@ -137,43 +159,101 @@ public fun DetailedProfileFragment(
                                     end.linkTo(parent.end, 12.dp)
                                 }
                         )
-                    }
-                },
-                navigationIcon = {
-                    if (isTopLevel) {
-                        IconButton(
-                            onClick = { /* doSomething() */ },
+                        OutlinedAvatar(
+                            url = profile.avatar.orEmpty(),
+                            contentDescription = "Avatar for ${profile.displayName} ${profile.handle}",
                             modifier = Modifier
-                                .size(30.dp)
+                                .constrainAs(avatar) {
+                                    centerAround(avatarGuide)
+                                },
+                            size = avatarSize,
+                            shape = AvatarShape.Rounded
+                        )
+                    } else {
+                        Surface(
+                            color = MaterialTheme.colorScheme.background,
+                            shape = MaterialTheme.shapes.small,
+                            modifier = Modifier
+                                .height(avatarSize)
+                                .constrainAs(info) {
+                                    centerAround(centreGuide)
+                                    start.linkTo(avatarGuide, (-20).dp)
+                                },
                         ) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Default.ArrowBack,
-                                contentDescription = "Back",
-                                //tint =
-                            )
+                            Row {
+                                OutlinedAvatar(
+                                    url = profile.avatar.orEmpty(),
+                                    contentDescription = "Avatar for ${profile.displayName} ${profile.handle}",
+                                    size = avatarSize,
+                                    shape = AvatarShape.Rounded
+                                )
+                                Column(
+                                    verticalArrangement = Arrangement.Bottom,
+                                    modifier = Modifier.padding(start = 10.dp, end = 8.dp, bottom = 4.dp)
+                                ) {
+                                    Text(
+                                        text = name,
+                                        style = MaterialTheme.typography.headlineSmall,
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                    Text(
+                                        text = " @${profile.handle}",
+                                        color = MaterialTheme.colorScheme.primary,
+                                        style = MaterialTheme.typography.labelMedium,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                }
+                            }
+
                         }
                     }
-                },
-                actions = {
 
-                },
-                scrollBehavior = scrollBehavior,
-                colors = TopAppBarDefaults.largeTopAppBarColors(
-                    containerColor = Color.Transparent
-                ),
-                modifier = Modifier.constrainAs(appbar) {
-                    top.linkTo(parent.top, (-45).dp)
-                },
-                windowInsets = WindowInsets.systemBars
-            )
+                }
+            },
+            navigationIcon = {
+                if (isTopLevel) {
+                    IconButton(
+                        onClick = { onBackClicked() },
+                        modifier = Modifier.size(30.dp),
+                        colors = IconButtonDefaults.filledIconButtonColors(
+                            containerColor = MaterialTheme.colorScheme.onSurface.copy(0.6f),
+                            contentColor = MaterialTheme.colorScheme.surface
+                        )
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Default.ArrowBack,
+                            contentDescription = "Back",
+                        )
+                    }
+                }
+            },
+            actions = {},
+            scrollBehavior = scrollBehavior,
+            colors = TopAppBarDefaults.largeTopAppBarColors(
+                containerColor = Color.Transparent
+            ),
+            modifier = Modifier
+                .constrainAs(appbar) {
+                    top.linkTo(parent.top)
+                }
+                .windowInsetsPadding(WindowInsets.systemBars.only(WindowInsetsSides.Top))
+                .wrapContentHeight(Alignment.Top)
+            ,
+            windowInsets = WindowInsets.systemBars.only(WindowInsetsSides.Top)
+        )
+        if(!collapsed){
             SelectionContainer(
                 modifier = Modifier
                     .padding(end = 10.dp)
                     .constrainAs(userStats) {
-                        bottom.linkTo(appbar.bottom, (-15).dp)
+                        top.linkTo(appbar.bottom, (-10).dp)
                         end.linkTo(parent.end)
                     }
             ) {
+
                 UserStatsFragment(
                     profile = profile,
                     modifier = Modifier
@@ -181,33 +261,37 @@ public fun DetailedProfileFragment(
                 )
             }
 
-        }
+            Column(
+                modifier = Modifier
+                    .constrainAs(text) {
+                        top.linkTo(userStats.bottom, (-10).dp)
+                        start.linkTo(parent.start)
+                    }
+                    .padding(start = 20.dp, end = 20.dp, top = 0.dp)
+            ) {
 
-        Column(
-            modifier = Modifier
-                .padding(start = 20.dp, end = 20.dp, top = 10.dp)
-        ) {
-            val name = profile.displayName ?: profile.handle.handle
-            SelectionContainer {
-                Text(
-                    text = name,
-                    style = MaterialTheme.typography.headlineMedium,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-            }
-            SelectionContainer {
-                Text(
-                    text = " @${profile.handle}",
-                    color = MaterialTheme.colorScheme.primary,
-                    style = MaterialTheme.typography.labelMedium,
-                )
-            }
-            Spacer(modifier = Modifier.height(10.dp))
-            SelectionContainer {
-                RichText(profile)
-            }
-        }
+                SelectionContainer {
+                    Text(
+                        text = name,
+                        style = MaterialTheme.typography.headlineMedium,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+                SelectionContainer {
+                    Text(
+                        text = " @${profile.handle}",
+                        color = MaterialTheme.colorScheme.primary,
+                        style = MaterialTheme.typography.labelMedium,
+                    )
+                }
 
+                Spacer(modifier = Modifier.height(10.dp))
+                SelectionContainer {
+                    RichTextElement(profile.description.orEmpty())
+                }
+            }
+
+        }
     }
 }
 

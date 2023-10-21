@@ -6,9 +6,9 @@ import app.bsky.actor.ProfileViewBasic
 import app.bsky.actor.ProfileViewDetailed
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.serialization.Serializable
-import radiant.nimbus.util.mapImmutable
 import radiant.nimbus.api.Did
 import radiant.nimbus.api.Handle
+import radiant.nimbus.util.mapImmutable
 
 
 enum class ProfileType {
@@ -87,7 +87,7 @@ fun ProfileViewBasic.toProfile(): Profile {
         handle = handle,
         displayName = displayName,
         avatar = avatar,
-        mutedByMe = viewer?.muted != null,
+        mutedByMe = viewer?.muted == true,
         followingMe = viewer?.followedBy != null,
         followedByMe = viewer?.following != null,
         labels = labels.mapImmutable { it.toLabel() },

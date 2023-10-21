@@ -41,6 +41,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import app.bsky.feed.Post
@@ -79,10 +81,12 @@ fun BottomSheetPostComposer(
     onUpdate: (DraftPost) -> Unit = {},
     sheetState:SheetState = rememberModalBottomSheetState(),
 ) {
-    BackHandler {
-        onDismissRequest()
-    }
     val scope = rememberCoroutineScope()
+    BackHandler {
+        scope.launch { sheetState.hide() }
+            .invokeOnCompletion {
+                if (!sheetState.isVisible) {onDismissRequest() } }
+    }
     ModalBottomSheet(
         onDismissRequest = { scope.launch { sheetState.hide() }
             .invokeOnCompletion {
@@ -102,8 +106,14 @@ fun BottomSheetPostComposer(
                         if (!sheetState.isVisible) {onCancel() } } },
             onSend = {
                 onSend(it)
-                scope.launch { sheetState.hide() } },
-            onUpdate = { onUpdate(it) }
+                scope.launch { sheetState.hide() }
+                    .invokeOnCompletion {
+                        if (!sheetState.isVisible) {onDismissRequest() } } },
+            onUpdate = { onUpdate(it) },
+            onDismissRequest = {
+                scope.launch { sheetState.hide() }
+                    .invokeOnCompletion {
+                        if (!sheetState.isVisible) {onDismissRequest() } } },
         )
     }
 }
@@ -118,6 +128,7 @@ fun PostComposer(
     onSend: (Post) -> Unit = {},
     onCancel: () -> Unit = {},
     onUpdate: (DraftPost) -> Unit = {},
+    onDismissRequest: () -> Unit = {},
 ) {
     val focusManager = LocalFocusManager.current
     var postText by rememberSaveable { mutableStateOf(draft.text) }
@@ -162,8 +173,8 @@ fun PostComposer(
         }
 
     }
-    val textLeft = 300 - postText.codePoints().count()
-    val textFractionUsed: Float = postText.codePoints().count() / 300.0f
+    val textLeft = 300 - postText.length
+    val textFractionUsed: Float = postText.length.toFloat() / 300.0f
     LaunchedEffect(postText) {
         onUpdate(
             DraftPost(
@@ -175,6 +186,7 @@ fun PostComposer(
     Column(
         modifier = modifier
             .imePadding(),
+        verticalArrangement = Arrangement.Top
     ) {
         Row(
             horizontalArrangement = Arrangement.SpaceEvenly,
@@ -196,7 +208,7 @@ fun PostComposer(
                 onClick = {
                     onSend(
                         Post(
-                            text = postText,
+                            text = postText.lines().reduce { acc, s ->  acc.trimEnd() + s.trimEnd()},
                             reply = replyRef,
                             embed = if(quoteRef != null) {
                                 PostEmbedUnion.Record(value = app.bsky.embed.Record(quoteRef))
@@ -218,7 +230,11 @@ fun PostComposer(
         Surface(
             tonalElevation = 2.dp
         ) {
-            Column {
+            Column(
+                modifier = modifier
+                    .imePadding(),
+                verticalArrangement = Arrangement.Top
+            ) {
                 if (replyRef != null && initialContent != null) {
                     ComposerPostFragment(
                         post = initialContent,
@@ -230,7 +246,6 @@ fun PostComposer(
 
                 OutlinedTextField(
                     modifier = Modifier
-                        .imePadding()
                         .fillMaxWidth()
                         .padding(4.dp),
                     minLines = 5,
@@ -241,17 +256,61 @@ fun PostComposer(
                                     },
                     supportingText = if (quoteRef != null && initialContent != null) {
                         { ComposerPostFragment(post = initialContent) } } else null,
-                    keyboardOptions = KeyboardOptions(autoCorrect = true),
-                    keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() }),
+                    keyboardOptions = KeyboardOptions(
+                        autoCorrect = true,
+                        capitalization = KeyboardCapitalization.Sentences,
+                        keyboardType = KeyboardType.Text
+                        ),
+                    keyboardActions = KeyboardActions(
+                        onDone = {
+                            focusManager.clearFocus()
+                            onSend(
+                                Post(
+                                    text = postText.lines().reduce { acc, s ->  acc.trimEnd() + s.trimEnd()},
+                                    reply = replyRef,
+                                    embed = if(quoteRef != null) {
+                                        PostEmbedUnion.Record(value = app.bsky.embed.Record(quoteRef))
+                                    } else null,
+                                    createdAt = Clock.System.now(),
+                                    // Placeholder until can pull the system language or check user prefs
+                                    langs = persistentListOf(Language("en")),
+                                    //Deal with facets, etc. later
+
+                                )
+                            )
+                        },
+                        onPrevious = {
+                            focusManager.clearFocus()
+                            onDismissRequest()
+                        },
+                        onSend = {
+                            focusManager.clearFocus()
+                            onSend(
+                                Post(
+                                    text = postText.lines().reduce { acc, s ->  acc.trimEnd() + s.trimEnd()},
+                                    reply = replyRef,
+                                    embed = if(quoteRef != null) {
+                                        PostEmbedUnion.Record(value = app.bsky.embed.Record(quoteRef))
+                                    } else null,
+                                    createdAt = Clock.System.now(),
+                                    // Placeholder until can pull the system language or check user prefs
+                                    langs = persistentListOf(Language("en")),
+                                    //Deal with facets, etc. later
+
+                                )
+                            )
+                        },
+                    ),
                 )
             }
         }
         Row(
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.imePadding()
         ) {
             IconButton(
-                onClick = {},
+                onClick = { },
                 modifier = Modifier.padding(horizontal = 4.dp)
             ) {
                 Icon(imageVector = Icons.Default.Image, contentDescription = "Select Image")

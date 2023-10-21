@@ -3,6 +3,7 @@ package radiant.nimbus.util
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.util.Log
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import radiant.nimbus.api.AtIdentifier
 import radiant.nimbus.api.AtUri
@@ -32,12 +33,14 @@ fun linkVisit(string: String, ctx: Context, navigator: DestinationsNavigator) {
 }
 
 fun parseImageThumbRef(string: String, did: Did): String {
+    Log.v("ImageThumb", string)
     var link = string.substringAfter("""{"${"$"}type":"blob","ref":{"${"$"}link":"""")
     link = link.substringBefore(""""},"mimeType":"image/jpeg","size""")
     return """https://cdn.bsky.app/img/feed_thumbnail/plain/$did/$link@jpeg"""
 }
 
 fun parseImageFullRef(string: String, did: Did): String {
+    Log.v("ImageFull", string)
     var link = string.substringAfter("""{"${"$"}type":"blob","ref":{"${"$"}link":"""")
     link = link.substringBefore(""""},"mimeType":"image/jpeg","size""")
     return """https://cdn.bsky.app/img/feed_fullsize/plain/$did/$link@jpeg"""

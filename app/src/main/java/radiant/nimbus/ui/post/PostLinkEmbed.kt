@@ -1,6 +1,5 @@
 package radiant.nimbus.ui.post
 
-import android.util.Log
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -11,18 +10,16 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
+import coil.size.Size
 import dev.jeziellago.compose.markdowntext.MarkdownText
-import radiant.nimbus.R
 import radiant.nimbus.model.BskyPostFeature
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -33,9 +30,7 @@ fun PostLinkEmbed(
     modifier: Modifier = Modifier,
 ) {
 
-    LaunchedEffect(Unit) {
-        Log.i("LinkThumb", "${linkData.title} | ${linkData.thumb}")
-    }
+
     Surface(
         shape = MaterialTheme.shapes.extraSmall,
         tonalElevation = 3.dp,
@@ -48,11 +43,11 @@ fun PostLinkEmbed(
             AsyncImage(
                 model = ImageRequest.Builder(LocalContext.current)
                     .data(linkData.thumb)
-                    .crossfade(true)
+                    .size(Size.ORIGINAL)
                     .build(),
                 contentDescription = linkData.uri.uri,
                 contentScale = ContentScale.Fit,
-                placeholder = painterResource(R.drawable.screenshot_20230924_200327),
+                //placeholder = painterResource(R.drawable.screenshot_20230924_200327),
                 modifier = Modifier
                     .fillMaxWidth()
                     .align(Alignment.CenterHorizontally)

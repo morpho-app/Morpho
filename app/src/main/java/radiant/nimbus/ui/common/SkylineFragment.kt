@@ -1,6 +1,7 @@
 package radiant.nimbus.ui.common
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -18,14 +19,17 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Create
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.KeyboardDoubleArrowUp
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.pullrefresh.PullRefreshIndicator
+import androidx.compose.material.pullrefresh.pullRefresh
+import androidx.compose.material.pullrefresh.rememberPullRefreshState
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
@@ -41,8 +45,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -50,6 +56,7 @@ import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.atproto.repo.StrongRef
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -68,7 +75,9 @@ import radiant.nimbus.ui.theme.NimbusTheme
 typealias OnPostClicked = (AtUri) -> Unit
 
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class,
+    ExperimentalMaterialApi::class
+)
 @Composable
 fun SkylineFragment (
     navigator: DestinationsNavigator,
@@ -89,32 +98,51 @@ fun SkylineFragment (
 ) {
     val postList by postFlow.collectAsStateWithLifecycle()
     val coroutineScope = rememberCoroutineScope()
+    var refreshing by remember { mutableStateOf(false) }
+
     LaunchedEffect(Unit) {
         if(listState.firstVisibleItemIndex == 0 && !isProfileFeed) listState.animateScrollToItem(0, 50)
     }
     LaunchedEffect(!listState.canScrollForward) {
         refresh(postList.cursor)
     }
+    fun refreshPull() = coroutineScope.launch {
+        refreshing = true
+        launch { refresh(null) }
+        delay(200)
+        refreshing = false
+    }
+
+
+    val refreshState = rememberPullRefreshState(refreshing, ::refreshPull)
+
     val scrolledDownBy by remember { derivedStateOf { listState.firstVisibleItemIndex } }
 
     ConstraintLayout(
         modifier = if(isProfileFeed) {
-            Modifier.fillMaxWidth().systemBarsPadding()
+            Modifier
+                .fillMaxWidth()
+                .systemBarsPadding()
+                .pullRefresh(refreshState)
         }   else {
             Modifier
-            .fillMaxSize()
-            .systemBarsPadding()
+                .fillMaxSize()
+                .systemBarsPadding()
+                .pullRefresh(refreshState)
         },
     ) {
-        val (scrollButton, postButton, skyline) = createRefs()
+        val (scrollButton, postButton, skyline, refreshIndicator) = createRefs()
         val leftGuideline = createGuidelineFromStart(40.dp)
         val rightGuideline = createGuidelineFromEnd(40.dp)
         val buttonGuideline = createGuidelineFromBottom(100.dp)
+
+
         LazyColumn(
             modifier = modifier.constrainAs(skyline) {
-                 top.linkTo(parent.top)
+                top.linkTo(parent.top)
                 bottom.linkTo(parent.bottom)
             },
+            //flingBehavior = rememberSnapFlingBehavior(lazyListState = listState),
             contentPadding = if(isProfileFeed) {
                 contentPadding
             }   else {
@@ -139,7 +167,7 @@ fun SkylineFragment (
                                 .weight(0.4f)
                         )
                         IconButton(
-                            onClick = { refresh(null) },
+                            onClick = { refreshPull() },
                             colors = IconButtonDefaults.iconButtonColors(
                                 containerColor = MaterialTheme.colorScheme.background,
                                 contentColor = MaterialTheme.colorScheme.onSurfaceVariant
@@ -173,10 +201,18 @@ fun SkylineFragment (
                     }
                 }
             }
-            items(postList.posts) { skylineItem ->
-                if (skylineItem.post != null) {
-                    val post = skylineItem.post
-                    val thread = skylineItem.thread
+            items(
+                count = postList.posts.size,
+                key = {
+                    postList.posts[it].hashCode()
+                },
+                contentType = {
+                    postList.posts[it]
+                }
+            ) { index ->
+                if (postList.posts[index].post != null) {
+                    val post = postList.posts[index].post
+                    val thread = postList.posts[index].thread
                     if (thread != null) {
                         SkylineThreadFragment(
                             thread = thread,
@@ -211,7 +247,6 @@ fun SkylineFragment (
 
             }
         }
-        // TODO: Rework the layout to go from the bottom, using constraints
         if (scrolledDownBy > 5) {
             OutlinedIconButton(
                 onClick = {
@@ -269,6 +304,10 @@ fun SkylineFragment (
                 contentDescription = "Post a thing!",
                 )
         }
+        PullRefreshIndicator(refreshing, refreshState, Modifier.constrainAs(refreshIndicator) {
+            top.linkTo(parent.top)
+            centerHorizontallyTo(parent)
+        }, backgroundColor = MaterialTheme.colorScheme.background, contentColor = MaterialTheme.colorScheme.primary)
     }
 
 }

@@ -32,6 +32,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import app.bsky.actor.GetProfileQueryParams
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import radiant.nimbus.MainViewModel
@@ -80,8 +81,10 @@ fun LoginScreen(
                                 ),
                                 {
                                     runBlocking {
+                                        mainViewModel.apiProvider.loginRepository.auth = it
+                                        mainViewModel.apiProvider.auth().first()
                                         mainViewModel.currentUser = mainViewModel.apiProvider.api.getProfile(
-                                            GetProfileQueryParams(AtIdentifier(handle))
+                                            GetProfileQueryParams(AtIdentifier(it.did.did))
                                         ).maybeResponse()?.toProfile()
                                         mainViewModel.userPreferences = mainViewModel.apiProvider.getUserPreferences()
                                             .maybeResponse()?.toPreferences()

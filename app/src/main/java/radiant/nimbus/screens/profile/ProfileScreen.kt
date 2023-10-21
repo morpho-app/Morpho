@@ -1,11 +1,12 @@
 package radiant.nimbus.screens.profile
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBars
-import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
@@ -61,7 +62,7 @@ fun ProfileScreen(
     var profileUIState: ProfileUIState by rememberSaveable { mutableStateOf(ProfileUIState.Loading)}
 
     BackHandler {
-        navigator.navigateUp()
+        navigator.popBackStack()
     }
     if (showLoadingScreen) {
         ScreenBody {
@@ -163,12 +164,16 @@ fun ProfileViewPhone(
     navBar: @Composable () -> Unit = {},
 ){
     var selectedTab by rememberSaveable { mutableStateOf(ProfileTabs.Posts) }
-    val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarState())
+    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(
+        state = rememberTopAppBarState(),
+        snapAnimationSpec = spring(stiffness = Spring.StiffnessMediumLow, dampingRatio = Spring.DampingRatioNoBouncy),
+        //flingAnimationSpec = exponentialDecay()
+    )
     var repostClicked by remember { mutableStateOf(false)}
     var initialContent: BskyPost? by remember { mutableStateOf(null) }
     var showComposer by remember { mutableStateOf(false)}
     var composerRole by remember { mutableStateOf(ComposerRole.StandalonePost)}
-    val sheetState = rememberModalBottomSheetState()
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     // Probably pull this farther up,
     //      but this means if you don't explicitly cancel you don't lose the post
     var draft by remember{ mutableStateOf(DraftPost()) }
@@ -176,7 +181,8 @@ fun ProfileViewPhone(
         topContent = {
             Column(
                 modifier = Modifier
-                    .fillMaxWidth().nestedScroll(scrollBehavior.nestedScrollConnection),
+                    .fillMaxWidth()
+                    .nestedScroll(scrollBehavior.nestedScrollConnection),
             ) {
                 model.state.profile.let {
                     it?.let { it1 ->
@@ -184,12 +190,17 @@ fun ProfileViewPhone(
                             profile = it1,
                             myProfile = myProfile,
                             isTopLevel = true,
-                            scrollBehavior = scrollBehavior
+                            scrollBehavior = scrollBehavior,
+                            onBackClicked = {
+                                navigator.popBackStack()
+                            },
                         )
                     }
                 }
                 if (apiProvider != null) {
-                    ProfileTabRow(selectedTab, apiProvider, model) {
+                    ProfileTabRow(
+                        selected = selectedTab, apiProvider = apiProvider, model = model
+                    ) {
                         selectedTab = it
                     }
                 }
@@ -325,11 +336,17 @@ fun ProfileViewPhone(
                 onDismissRequest = { showComposer = false },
                 sheetState = sheetState,
                 role = composerRole,
-                modifier = Modifier.padding(insets),
+                //modifier = Modifier.padding(insets),
                 initialContent = initialContent,
                 draft = draft,
-                onCancel = { showComposer = false },
-                onSend = { apiProvider?.createRecord(RecordUnion.MakePost(it)) },
+                onCancel = {
+                    showComposer = false
+                    draft = DraftPost()
+                },
+                onSend = {
+                    apiProvider?.createRecord(RecordUnion.MakePost(it))
+                    showComposer = false
+                },
                 onUpdate = { draft = it }
             )
 

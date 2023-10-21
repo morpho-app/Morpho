@@ -57,7 +57,7 @@ fun PostThreadScreen(
 ) {
     var showLoadingScreen by rememberSaveable { mutableStateOf(true) }
     BackHandler {
-        navigator.navigateUp()
+        navigator.popBackStack()
     }
     if((uri != viewModel.thread?.post?.uri) || showLoadingScreen) {
         showLoadingScreen = true
@@ -81,7 +81,7 @@ fun PostThreadScreen(
                         }
                     },
                     onButtonClicked = {
-                        navigator.navigateUp()
+                        navigator.popBackStack()
                     },
                     onChanged = {
                         navigator.navigate(SkylineScreenDestination(it))
@@ -127,7 +127,7 @@ fun PostThreadView(
     var initialContent: BskyPost? by remember { mutableStateOf(null) }
     var showComposer by remember { mutableStateOf(false)}
     var composerRole by remember { mutableStateOf(ComposerRole.StandalonePost)}
-    val sheetState = rememberModalBottomSheetState()
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     // Probably pull this farther up,
     //      but this means if you don't explicitly cancel you don't lose the post
     var draft by remember{ mutableStateOf(DraftPost()) }
@@ -210,11 +210,17 @@ fun PostThreadView(
                 onDismissRequest = { showComposer = false },
                 sheetState = sheetState,
                 role = composerRole,
-                modifier = Modifier.padding(insets),
+                //modifier = Modifier.padding(insets),
                 initialContent = initialContent,
                 draft = draft,
-                onCancel = { showComposer = false },
-                onSend = { apiProvider.createRecord(RecordUnion.MakePost(it)) },
+                onCancel = {
+                    showComposer = false
+                    draft = DraftPost()
+                },
+                onSend = {
+                    apiProvider.createRecord(RecordUnion.MakePost(it))
+                    showComposer = false
+                },
                 onUpdate = { draft = it }
             )
 

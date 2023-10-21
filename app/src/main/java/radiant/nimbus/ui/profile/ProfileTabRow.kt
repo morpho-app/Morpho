@@ -18,6 +18,7 @@ import radiant.nimbus.screens.profile.ProfileViewModel
 
 @Composable
 fun ProfileTabRow(
+    modifier: Modifier = Modifier,
     selected: ProfileTabs = ProfileTabs.Posts,
     apiProvider: ApiProvider,
     model: ProfileViewModel,
