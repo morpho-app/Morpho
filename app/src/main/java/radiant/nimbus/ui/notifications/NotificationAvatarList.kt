@@ -1,5 +1,6 @@
 package radiant.nimbus.ui.notifications
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -122,7 +123,8 @@ fun NotificationAvatarList(
                         overflow = TextOverflow.Ellipsis,
                         modifier = Modifier
                             .padding(4.dp)
-                            .alignByBaseline(),
+                            .alignByBaseline()
+                            .clickable { onClicked(it.author.did) },
                     )
                 }
             }

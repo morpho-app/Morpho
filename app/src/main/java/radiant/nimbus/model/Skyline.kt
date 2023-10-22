@@ -214,6 +214,7 @@ data class Skyline(
                             && (isSelfReply(post) || isThreadRoot(post) || post.reposted
                                 || (post.likeCount <= prefs.hideRepliesByLikeCount) )
                             && (!prefs.hideRepliesByUnfollowed && isFollowingAllAuthors(post, follows)) )
+                        || (post.reply == null && !isQuotePost(post) && post.reason == null)
             }
             //feed = filterbyLanguage(feed, prefs.languages)
             feed = filterByContentLabel(feed, prefs.labelsToHide)

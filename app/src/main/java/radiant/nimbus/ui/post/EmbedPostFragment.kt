@@ -54,12 +54,10 @@ import radiant.nimbus.util.parseImageThumbRef
 fun EmbedPostFragment(
     post: EmbedPost.VisibleEmbedPost,
     modifier: Modifier = Modifier,
-    role: PostFragmentRole = PostFragmentRole.Solo,
     onItemClicked: (AtUri) -> Unit = {},
     onProfileClicked: (AtIdentifier) -> Unit = {},
 ) {
     val delta = remember { getFormattedDateTimeSince(post.litePost.createdAt) }
-    val lineColour = MaterialTheme.colorScheme.onSurfaceVariant
     val ctx = LocalContext.current
     var hidePost by rememberSaveable { mutableStateOf(post.author.mutedByMe) }
     val muted = rememberSaveable { post.author.mutedByMe }
@@ -77,7 +75,6 @@ fun EmbedPostFragment(
                 .fillMaxWidth()
                 .align(Alignment.End)
                 .clickable { onItemClicked(post.uri) }
-
         ) {
             Column(
                 Modifier
@@ -129,8 +126,7 @@ fun EmbedPostFragment(
                             .padding(top = 4.dp, start = 4.dp)
                             .weight(10.0F)
                             .alignByBaseline()
-                            .clickable { onProfileClicked(AtIdentifier(post.author.did.did)) }
-                        ,
+                            .clickable { onProfileClicked(AtIdentifier(post.author.did.did)) },
                     )
                     Spacer(
                         modifier = Modifier

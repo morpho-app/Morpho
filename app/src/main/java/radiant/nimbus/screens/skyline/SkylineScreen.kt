@@ -74,21 +74,26 @@ fun SkylineScreen(
             )
             }
         }
+        mainViewModel.getUnreadCount()
     }
     viewModel.pinnedFeeds = mainViewModel.pinnedFeeds
     SkylineView(
         navigator = navigator,
         viewModel = viewModel,
         refresh = { cursor ->
+
             mainViewModel.userPreferences?.feedViewPrefs?.get("home")?.let {
                 viewModel.getSkyline(
                     mainViewModel.apiProvider, cursor,
                     prefs = it
                 )
             }
+            mainViewModel.getUnreadCount()
         },
         feedRefresh = { uri, cursor -> viewModel
-            .getSkyline(mainViewModel.apiProvider, GetFeedQueryParams(uri), cursor) },
+            .getSkyline(mainViewModel.apiProvider, GetFeedQueryParams(uri), cursor)
+            mainViewModel.getUnreadCount()
+                      },
         apiProvider = mainViewModel.apiProvider,
         navBar = { mainViewModel.navBar?.let { it(0) } },
         mainButton = { onClicked ->

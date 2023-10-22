@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -19,7 +18,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.CornerSize
-import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Reply
 import androidx.compose.material.icons.filled.Repeat
@@ -207,80 +205,80 @@ fun PostFragment(
                                 }
                             }
 
-                            SelectionContainer {
-                                FlowRow(
-                                    modifier = Modifier
-                                        .padding(top = 4.dp)
-                                        .padding(horizontal = 4.dp),
-                                    horizontalArrangement = Arrangement.End
+                            Row(
+                                modifier = Modifier
+                                    .padding(top = 4.dp)
+                                    .padding(horizontal = 4.dp),
+                                horizontalArrangement = Arrangement.End
 
-                                ) {
-                                    if(indent >= 2) {
-                                        OutlinedAvatar(
-                                            url = post.author.avatar.orEmpty(),
-                                            contentDescription = "Avatar for ${post.author.handle}",
-                                            modifier = Modifier
-                                                //.offset(y = 4.dp)
-                                                .size(30.dp),
-                                            shape = AvatarShape.Rounded,
-                                            outlineColor = MaterialTheme.colorScheme.background,
-                                            onClicked = { onProfileClicked(AtIdentifier(post.author.did.did)) }
-                                        )
-                                    }
-                                    Text(
-                                        text = buildAnnotatedString {
-                                            withStyle(
-                                                style = SpanStyle(
-                                                    color = MaterialTheme.colorScheme.onSurface,
-                                                    fontSize = MaterialTheme.typography.labelLarge.fontSize
-                                                        .times(1.2f),
-                                                    fontWeight = FontWeight.Medium
-                                                )
-                                            ) {
-                                                if(post.author.displayName != null) append( "${post.author.displayName} ")
-                                            }
-                                            withStyle(
-                                                style = SpanStyle(
-                                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                                    fontSize = MaterialTheme.typography.labelLarge.fontSize
-                                                        .times(1.0f)
-                                                )
-                                            ) {
-                                                append("@${post.author.handle}")
-                                            }
-
-                                        },
-                                        maxLines = 1,
-                                        style = MaterialTheme.typography.labelLarge,
-                                        overflow = TextOverflow.Ellipsis,
+                            ) {
+                                if(indent >= 2) {
+                                    OutlinedAvatar(
+                                        url = post.author.avatar.orEmpty(),
+                                        contentDescription = "Avatar for ${post.author.handle}",
                                         modifier = Modifier
-                                            .wrapContentWidth(Alignment.Start)
-                                            .weight(10.0F)
-                                            .alignByBaseline(),
-
-                                    )
-
-                                    Spacer(
-                                        modifier = Modifier
-                                            .width(1.dp)
-                                            .weight(0.1F),
-                                    )
-                                    Text(
-                                        text = delta,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        style = MaterialTheme.typography.labelLarge,
-                                        fontSize = MaterialTheme.typography.labelLarge
-                                            .fontSize.div(1.2F),
-                                        modifier = Modifier
-                                            .wrapContentWidth(Alignment.End)
-                                            //.weight(3.0F)
-                                            .alignByBaseline(),
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Visible,
-                                        softWrap = false,
+                                            //.offset(y = 4.dp)
+                                            .size(30.dp),
+                                        shape = AvatarShape.Rounded,
+                                        outlineColor = MaterialTheme.colorScheme.background,
+                                        onClicked = { onProfileClicked(AtIdentifier(post.author.did.did)) }
                                     )
                                 }
+                                Text(
+                                    text = buildAnnotatedString {
+                                        withStyle(
+                                            style = SpanStyle(
+                                                color = MaterialTheme.colorScheme.onSurface,
+                                                fontSize = MaterialTheme.typography.labelLarge.fontSize
+                                                    .times(1.2f),
+                                                fontWeight = FontWeight.Medium
+                                            )
+                                        ) {
+                                            if(post.author.displayName != null) append( "${post.author.displayName} ")
+                                        }
+                                        withStyle(
+                                            style = SpanStyle(
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                fontSize = MaterialTheme.typography.labelLarge.fontSize
+                                                    .times(1.0f)
+                                            )
+                                        ) {
+                                            append("@${post.author.handle}")
+                                        }
+
+                                    },
+                                    maxLines = 1,
+                                    style = MaterialTheme.typography.labelLarge,
+                                    overflow = TextOverflow.Ellipsis,
+                                    modifier = Modifier
+                                        .wrapContentWidth(Alignment.Start)
+                                        .weight(10.0F)
+                                        .alignByBaseline()
+                                        .clickable { onProfileClicked(AtIdentifier(post.author.did.did)) },
+
+                                )
+
+                                Spacer(
+                                    modifier = Modifier
+                                        .width(1.dp)
+                                        .weight(0.1F),
+                                )
+                                Text(
+                                    text = delta,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    style = MaterialTheme.typography.labelLarge,
+                                    fontSize = MaterialTheme.typography.labelLarge
+                                        .fontSize.div(1.2F),
+                                    modifier = Modifier
+                                        .wrapContentWidth(Alignment.End)
+                                        //.weight(3.0F)
+                                        .alignByBaseline(),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Visible,
+                                    softWrap = false,
+                                )
                             }
+
                             if(post.reply?.parent != null) {
                                 ReplyIndicator(post.reply.parent)
                             }

@@ -16,6 +16,9 @@ import androidx.compose.material.icons.outlined.AccountCircle
 import androidx.compose.material.icons.outlined.DynamicFeed
 import androidx.compose.material.icons.outlined.NotificationsNone
 import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -25,20 +28,25 @@ import androidx.compose.material3.NavigationRailItem
 import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRowDefaults
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.ramcosta.composedestinations.navigation.navigate
 import com.ramcosta.composedestinations.navigation.popBackStack
 import com.ramcosta.composedestinations.navigation.popUpTo
 import com.ramcosta.composedestinations.utils.isRouteOnBackStack
-import radiant.nimbus.api.AtIdentifier
+import radiant.nimbus.MainViewModel
 import radiant.nimbus.components.NavBarLocation
 import radiant.nimbus.screens.NavGraphs
 import radiant.nimbus.screens.appCurrentDestinationAsState
@@ -65,30 +73,34 @@ fun NimbusNavigation(
     location: NavBarLocation = NavBarLocation.BottomFull,
     profilePic: (@Composable (Boolean, () -> Unit) -> Unit)? = null,
     selected: Int = 0,
-    actor: AtIdentifier? = null,
+    viewModel: MainViewModel,
 ) {
     if (location == NavBarLocation.BottomFull || location == NavBarLocation.BottomPartial) {
         NimbusBottomNavBar(
             navController = navController,
             modifier = modifier,
             selected,
-            profilePic
+            profilePic,
+            viewModel
         )
     } else {
         NimbusNavRail(
             navController = navController,
             modifier = modifier,
-            profilePic
+            profilePic,
+            viewModel
         )
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NimbusBottomNavBar(
     navController: NavHostController,
     modifier: Modifier = Modifier,
     selected: Int,
     profilePic: @Composable() ((Boolean, () -> Unit) -> Unit)? = null,
+    viewModel: MainViewModel,
     ) {
     val currentDestination: Destination = navController.appCurrentDestinationAsState().value
         ?: NavGraphs.root.startAppDestination
@@ -108,6 +120,11 @@ fun NimbusBottomNavBar(
         PostThreadScreenDestination -> 5
         ProfileScreenDestination -> 5
     }
+    val unread = viewModel.unreadNotifications.collectAsStateWithLifecycle(initialValue = -1)
+    LaunchedEffect(Unit) {
+        viewModel.getUnreadCount()
+    }
+
     Column(
         Modifier.background(
             TabRowDefaults.primaryContainerColor,
@@ -131,6 +148,7 @@ fun NimbusBottomNavBar(
             Tab(
                 selected = selectedTab == 0,
                 onClick = {
+                    viewModel.getUnreadCount()
                     selectedTab = 0
                     if (navController.isRouteOnBackStack(SkylineScreenDestination)) {
                         // When we click again on a bottom bar item and it was already selected
@@ -145,6 +163,7 @@ fun NimbusBottomNavBar(
                             restoreState = true
                         }
                     }
+
                 },
                 icon = {
                     Icon(imageVector = Icons.Filled.Home, contentDescription = "Home Button")
@@ -154,6 +173,7 @@ fun NimbusBottomNavBar(
             Tab(
                 selected = selectedTab == 1,//currentDestination == SkylineScreenDestination,
                 onClick = {
+                    viewModel.getUnreadCount()
                     selectedTab = 1
                     if (navController.isRouteOnBackStack(SearchScreenScreenDestination)) {
                         // When we click again on a bottom bar item and it was already selected
@@ -177,6 +197,7 @@ fun NimbusBottomNavBar(
             Tab(
                 selected = selectedTab == 2,
                 onClick = {
+                    viewModel.getUnreadCount()
                     selectedTab = 2
                     if (navController.isRouteOnBackStack(FeedListScreenDestination)) {
                         // When we click again on a bottom bar item and it was already selected
@@ -203,6 +224,7 @@ fun NimbusBottomNavBar(
             Tab(
                 selected = selectedTab == 3,
                 onClick = {
+                    viewModel.getUnreadCount()
                     selectedTab = 3
                     if (navController.isRouteOnBackStack(NotificationsScreenDestination)) {
                         // When we click again on a bottom bar item and it was already selected
@@ -219,16 +241,32 @@ fun NimbusBottomNavBar(
                     }
                 },
                 icon = {
-                    Icon(
-                        imageVector = Icons.Outlined.NotificationsNone,
-                        contentDescription = "Notifications Button"
-                    )
+                    BadgedBox(
+                        badge = {
+                            if (unread.value > 0) {
+                                Badge {
+                                    Text(unread.value.toString(),
+                                        modifier = Modifier.semantics {
+                                            contentDescription = "$unread.value.toString() new notifications"
+                                        }
+                                    )
+                                }
+                            }
+                        }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.NotificationsNone,
+                            contentDescription = "Notifications Button"
+                        )
+                    }
+
                 },
                 unselectedContentColor = unselectedColor,
             )
             Tab(
                 selected = selectedTab == 4,
                 onClick = {
+                    viewModel.getUnreadCount()
                     selectedTab = 4
                     if (navController.isRouteOnBackStack(MyProfileScreenDestination)) {
                         // When we click again on a bottom bar item and it was already selected
@@ -279,15 +317,22 @@ fun NimbusBottomNavBar(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NimbusNavRail(
     navController: NavHostController,
     modifier: Modifier = Modifier,
     profilePic: @Composable() ((Boolean,() -> Unit) -> Unit)? = null,
+    viewModel: MainViewModel,
     ) {
     val currentDestination: Destination = navController.appCurrentDestinationAsState().value
         ?: NavGraphs.root.startAppDestination
     val isCurrentDestOnBackStack = navController.isRouteOnBackStack(currentDestination)
+    val unread = viewModel.unreadNotifications.collectAsStateWithLifecycle(initialValue = -1)
+
+    LaunchedEffect(Unit) {
+        viewModel.getUnreadCount()
+    }
 
     NavigationRail(
         header = {
@@ -302,6 +347,7 @@ fun NimbusNavRail(
             .weight(0.2F),)
         NavigationRailItem(selected = currentDestination == SkylineScreenDestination,
             onClick = {
+                viewModel.getUnreadCount()
                 if (navController.isRouteOnBackStack(SkylineScreenDestination)) {
                     // When we click again on a bottom bar item and it was already selected
                     // we want to pop the back stack until the initial destination of this bottom bar item
@@ -323,6 +369,7 @@ fun NimbusNavRail(
         )
         NavigationRailItem(selected = false, //currentDestination == SkylineScreenDestination.invoke(),
             onClick = {
+                viewModel.getUnreadCount()
                 if (navController.isRouteOnBackStack(SkylineScreenDestination)) {
                     // When we click again on a bottom bar item and it was already selected
                     // we want to pop the back stack until the initial destination of this bottom bar item
@@ -343,6 +390,7 @@ fun NimbusNavRail(
         )
         NavigationRailItem(selected = currentDestination == FeedListScreenDestination,
             onClick = {
+                viewModel.getUnreadCount()
                 if (navController.isRouteOnBackStack(FeedListScreenDestination)) {
                     // When we click again on a bottom bar item and it was already selected
                     // we want to pop the back stack until the initial destination of this bottom bar item
@@ -364,6 +412,7 @@ fun NimbusNavRail(
         )
         NavigationRailItem(selected = currentDestination == NotificationsScreenDestination,
             onClick = {
+                viewModel.getUnreadCount()
                 if (navController.isRouteOnBackStack(NotificationsScreenDestination)) {
                     // When we click again on a bottom bar item and it was already selected
                     // we want to pop the back stack until the initial destination of this bottom bar item
@@ -378,7 +427,24 @@ fun NimbusNavRail(
                     }
                 }  },
             icon = {
-                Icon(imageVector = Icons.Outlined.NotificationsNone, contentDescription = "Notifications Button")
+                BadgedBox(
+                    badge = {
+                        if (unread.value > 0) {
+                            Badge {
+                                Text(unread.value.toString(),
+                                    modifier = Modifier.semantics {
+                                        contentDescription = "$unread.value.toString() new notifications"
+                                    }
+                                )
+                            }
+                        }
+                    }
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.NotificationsNone,
+                        contentDescription = "Notifications Button"
+                    )
+                }
             },
             //label = {Text("Notifications")},
             alwaysShowLabel = false,
@@ -386,6 +452,7 @@ fun NimbusNavRail(
         NavigationRailItem(
             selected = currentDestination == MyProfileScreenDestination,
             onClick = {
+                viewModel.getUnreadCount()
                 if (navController.isRouteOnBackStack(MyProfileScreenDestination)) {
                     // When we click again on a bottom bar item and it was already selected
                     // we want to pop the back stack until the initial destination of this bottom bar item

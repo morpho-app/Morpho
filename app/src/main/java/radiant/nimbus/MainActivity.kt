@@ -200,8 +200,8 @@ class MainActivity : ComponentActivity() {
                                 contentDescription = "Profile")
                         }
                     },
-                    actor = me?.did?.did?.let { AtIdentifier(it) },
                     selected = selectedTab,
+                    viewModel = viewModel
                 )
             }
             val startRoute = if (!loggedIn) LoginScreenDestination else SkylineScreenDestination

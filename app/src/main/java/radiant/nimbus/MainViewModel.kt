@@ -4,12 +4,20 @@ import android.app.Application
 import androidx.compose.material3.windowsizeclass.WindowSizeClass
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateListOf
+import androidx.lifecycle.viewModelScope
 import androidx.room.Room
+import app.bsky.notification.GetUnreadCountQueryParams
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 import radiant.nimbus.api.ApiProvider
 import radiant.nimbus.api.BskyPreferences
 import radiant.nimbus.api.ServerRepository
 import radiant.nimbus.api.auth.LoginRepository
+import radiant.nimbus.api.response.AtpResponse
 import radiant.nimbus.app.Supervisor
 import radiant.nimbus.base.BaseViewModel
 import radiant.nimbus.model.AppDatabase
@@ -32,7 +40,22 @@ class MainViewModel @Inject constructor(
         .build()
 
     var navBar: @Composable ((index: Int) -> Unit)? = null
+    private val _unreadNotifications = MutableStateFlow(-1L)
+    val unreadNotifications: StateFlow<Long>
+        get() = _unreadNotifications.asStateFlow()
 
+    fun getUnreadCount() = viewModelScope.launch(Dispatchers.IO) {
+        when(
+            val response = apiProvider.api.getUnreadCount(GetUnreadCountQueryParams())
+        ) {
+            is AtpResponse.Failure -> {
+            }
+
+            is AtpResponse.Success -> {
+                _unreadNotifications.emit(response.response.count)
+            }
+        }
+    }
     /*
     private val currentUserPref = app.storage.preference<DetailedProfile>("current_user", null)
     var currentUser by mutableStateOf(currentUserPref)

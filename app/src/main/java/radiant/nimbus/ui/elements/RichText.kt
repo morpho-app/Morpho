@@ -2,6 +2,7 @@ package radiant.nimbus.ui.elements
 
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.ClickableText
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -94,18 +95,23 @@ fun RichTextElement(
         }
         toAnnotatedString()
     }
-    ClickableText(
-        text = formattedText,
-        onClick = { offset ->
-            facets.forEach {
-                if (it.start <= offset && offset <= it.end) {
-                    return@ClickableText onClick(it.target)
+    SelectionContainer(
+        modifier = Modifier.padding(vertical = 6.dp, horizontal = 2.dp)
+    ) {
+        ClickableText(
+            text = formattedText,
+            onClick = { offset ->
+                facets.forEach {
+                    if (it.start <= offset && offset <= it.end) {
+                        return@ClickableText onClick(it.target)
+                    }
                 }
-            }
-            onClick(null)
-        },
-        maxLines = maxLines, // Sorry @retr0.id, no more 200 line posts.
-        overflow = TextOverflow.Ellipsis,
-        modifier = modifier.padding(vertical = 6.dp, horizontal = 2.dp)
-    )
+                onClick(null)
+            },
+            maxLines = maxLines, // Sorry @retr0.id, no more 200 line posts.
+            overflow = TextOverflow.Ellipsis,
+            modifier = modifier
+        )
+    }
+
 }

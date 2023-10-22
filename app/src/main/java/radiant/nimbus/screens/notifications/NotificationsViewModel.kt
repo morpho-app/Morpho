@@ -77,18 +77,7 @@ class NotificationsViewModel @Inject constructor(
         }
     }
 
-    fun getUnreadCount(apiProvider: ApiProvider) = viewModelScope.async(Dispatchers.IO) {
-        when(
-            val response = apiProvider.api.getUnreadCount(GetUnreadCountQueryParams())
-        ) {
-            is AtpResponse.Failure -> {
-            }
 
-            is AtpResponse.Success -> {
-                state = state.copy(numberUnread = response.response.count)
-            }
-        }
-    }
 
     fun getNotifications(apiProvider: ApiProvider, cursor: String? = null) = viewModelScope.launch {
         launch(Dispatchers.IO) {
