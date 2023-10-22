@@ -1,7 +1,6 @@
 package radiant.nimbus
 
 import android.app.Application
-import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.material3.windowsizeclass.WindowSizeClass
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateListOf
@@ -33,7 +32,7 @@ class MainViewModel @Inject constructor(
         .build()
 
     var navBar: @Composable ((index: Int) -> Unit)? = null
-    val savedSrollStates = mutableMapOf<Int, LazyListState>()
+
     /*
     private val currentUserPref = app.storage.preference<DetailedProfile>("current_user", null)
     var currentUser by mutableStateOf(currentUserPref)

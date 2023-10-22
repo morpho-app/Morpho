@@ -1,8 +1,9 @@
 package radiant.nimbus.ui.post
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
@@ -48,7 +49,9 @@ fun PostActions(
     var menuExpanded by remember { mutableStateOf(false) }
     val likeUri: AtUri = rememberSaveable(saver = atUriSaver) { post.likeUri ?: post.uri }
     val repostUri: AtUri = rememberSaveable(saver = atUriSaver) { post.repostUri ?: post.uri }
-    FlowRow {
+    Row(
+        horizontalArrangement = Arrangement.SpaceEvenly
+    ) {
         PostAction(
             parameter = post.replyCount,
             iconNormal = Icons.Outlined.ChatBubbleOutline,
@@ -143,7 +146,7 @@ fun PostAction(
         Text(
             text =  if (num > 0) num.toString() else "",
             color = color.value,
-            modifier = Modifier.padding(horizontal = 6.dp)//.offset(y=(-1).dp)
+            modifier = Modifier.padding(start = 6.dp)//.offset(y=(-1).dp)
         )
     }
 }

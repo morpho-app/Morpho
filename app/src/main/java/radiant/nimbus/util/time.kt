@@ -29,7 +29,7 @@ fun getFormattedDateTimeSince(moment: Moment): String {
                 "$hours h ago"
             }
             (deltaDays == 0 && hours >= 1)-> {
-                "${hours}:${minutes} ago"
+                "${hours}:${"%02d".format(minutes)} ago"
             }
             (deltaDays == 0 && hours.toInt() == 0 && minutes > 1) -> {
                 "$minutes m ago"

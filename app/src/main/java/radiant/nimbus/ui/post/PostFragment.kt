@@ -237,7 +237,7 @@ fun PostFragment(
                                                     fontWeight = FontWeight.Medium
                                                 )
                                             ) {
-                                                append(post.author.displayName.orEmpty())
+                                                if(post.author.displayName != null) append( "${post.author.displayName} ")
                                             }
                                             withStyle(
                                                 style = SpanStyle(
@@ -246,7 +246,7 @@ fun PostFragment(
                                                         .times(1.0f)
                                                 )
                                             ) {
-                                                append(" @${post.author.handle}")
+                                                append("@${post.author.handle}")
                                             }
 
                                         },

@@ -134,13 +134,16 @@ class MainActivity : ComponentActivity() {
                             Log.e(TAG, "Login failure: $response")
                         }
                         is AtpResponse.Success -> {
-                            val p = viewModel.apiProvider.getUserPreferences().maybeResponse()
-                            Log.d(TAG, "Preferences load: $p")
+                            launch {
+                                val p = viewModel.apiProvider.getUserPreferences().maybeResponse()
+                                Log.d(TAG, "Preferences load: $p")
+                                viewModel.userPreferences = p?.toPreferences()
+                            }
                             Log.i(TAG, "Using cached credentials for ${credentials.username}, going to home screen")
                             val profile = viewModel.apiProvider.api.getProfile(GetProfileQueryParams(AtIdentifier(credentials.username.handle)))
                             loggedIn = true
                             viewModel.currentUser = profile.requireResponse().toProfile()
-                            viewModel.userPreferences = p?.toPreferences()
+
                         }
                     }
                 } else {
@@ -148,18 +151,20 @@ class MainActivity : ComponentActivity() {
                     loggedIn = false
                 }
             }
-            viewModel.userPreferences?.savedFeeds?.pinned?.map { feedUri ->
-                when(val response = viewModel.apiProvider.api.getFeedGenerator(
-                    GetFeedGeneratorQueryParams(feedUri)
-                )) {
-                    is AtpResponse.Failure -> {
-                        Log.e("Skyline", "Error getting feed info: $response")}
-                    is AtpResponse.Success -> {
-                        viewModel.pinnedFeeds += FeedTab(response.response.view.displayName, response.response.view.uri)
-                    }   // lol that += was important.
+            launch {
+                viewModel.userPreferences?.savedFeeds?.pinned?.map { feedUri ->
+                    when(val response = viewModel.apiProvider.api.getFeedGenerator(
+                        GetFeedGeneratorQueryParams(feedUri)
+                    )) {
+                        is AtpResponse.Failure -> {
+                            Log.e("Skyline", "Error getting feed info: $response")}
+                        is AtpResponse.Success -> {
+                            viewModel.pinnedFeeds += FeedTab(response.response.view.displayName, response.response.view.uri)
+                        }   // lol that += was important.
                         // Forgot to put it back in earlier when I stripped out
                         // the abortive attempt to store all prefs to disk using KStore.
                         // Broke the feed tabs.
+                    }
                 }
             }
             me = viewModel.currentUser

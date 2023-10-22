@@ -85,7 +85,6 @@ fun SkylineFragment (
     modifier: Modifier = Modifier,
     onItemClicked: OnPostClicked,
     onProfileClicked: (AtIdentifier) -> Unit = {},
-    listState: LazyListState = rememberLazyListState(),
     onPostButtonClicked: () -> Unit = {},
     refresh: (String?) -> Unit = {},
     onReplyClicked: (BskyPost) -> Unit = { },
@@ -99,6 +98,7 @@ fun SkylineFragment (
     val postList by postFlow.collectAsStateWithLifecycle()
     val coroutineScope = rememberCoroutineScope()
     var refreshing by remember { mutableStateOf(false) }
+    val listState: LazyListState = rememberLazyListState()
 
     LaunchedEffect(Unit) {
         if(listState.firstVisibleItemIndex == 0 && !isProfileFeed) listState.animateScrollToItem(0, 50)
@@ -113,7 +113,6 @@ fun SkylineFragment (
         refreshing = false
     }
 
-
     val refreshState = rememberPullRefreshState(refreshing, ::refreshPull)
 
     val scrolledDownBy by remember { derivedStateOf { listState.firstVisibleItemIndex } }
@@ -123,12 +122,11 @@ fun SkylineFragment (
             Modifier
                 .fillMaxWidth()
                 .systemBarsPadding()
-                .pullRefresh(refreshState)
+
         }   else {
             Modifier
                 .fillMaxSize()
                 .systemBarsPadding()
-                .pullRefresh(refreshState)
         },
     ) {
         val (scrollButton, postButton, skyline, refreshIndicator) = createRefs()
@@ -138,7 +136,9 @@ fun SkylineFragment (
 
 
         LazyColumn(
-            modifier = modifier.constrainAs(skyline) {
+            modifier = modifier
+                .pullRefresh(refreshState)
+                .constrainAs(skyline) {
                 top.linkTo(parent.top)
                 bottom.linkTo(parent.bottom)
             },

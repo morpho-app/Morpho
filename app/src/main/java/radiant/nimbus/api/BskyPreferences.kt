@@ -1,11 +1,19 @@
 package radiant.nimbus.api
 
 import android.util.Log
+import androidx.room.Dao
+import androidx.room.Embedded
+import androidx.room.Entity
+import androidx.room.Insert
+import androidx.room.OnConflictStrategy
+import androidx.room.PrimaryKey
+import androidx.room.Relation
 import app.bsky.actor.AdultContentPref
 import app.bsky.actor.GetPreferencesResponse
 import app.bsky.actor.PersonalDetailsPref
 import app.bsky.actor.PreferencesUnion
 import app.bsky.actor.SavedFeedsPref
+import app.bsky.actor.Sort
 import app.bsky.actor.ThreadViewPref
 import app.bsky.actor.Visibility
 import app.bsky.graph.ListViewerState
@@ -52,6 +60,116 @@ public data class BskyPreferences(
     }
 }
 
+@Entity
+data class User(
+    @PrimaryKey val userDid: String,
+    val handle: String,
+    val displayName: String?,
+    val avatar: String?,
+    val description: String?,
+    val banner: String?,
+    val followersCount: Long = 0,
+    val followsCount: Long = 0,
+    val postsCount: Long = 0,
+
+    val birthdate: String?,
+    val mergeFeeds: Boolean = false,
+    val adultContentEnabled: Boolean,
+)
+
+data class UserPreferences(
+    @Embedded val user: User,
+    @Relation(
+        entity = FeedViewPreference::class,
+        parentColumn = "userDid",
+        entityColumn = "userDid"
+    )
+    val feedViewPreferences: List<FeedViewPreference>,
+    @Relation(
+        entity = ContentLabelPreference::class,
+        parentColumn = "userDid",
+        entityColumn = "userDid"
+    )
+    val contentLabelPreferences: List<ContentLabelPreference>,
+    @Relation(
+        entity = PinnedFeedPreference::class,
+        parentColumn = "userDid",
+        entityColumn = "userDid"
+    )
+    val pinnedFeeds: List<PinnedFeedPreference>,
+    @Relation(
+        parentColumn = "userDid",
+        entityColumn = "userDid"
+    )
+    val threadViewPreferences: ThreadViewPreference,
+    @Relation(
+    parentColumn = "userDid",
+    entityColumn = "userDid"
+    )
+    val savedFeeds: SavedFeedsPreference,
+)
+
+@Entity
+data class FeedViewPreference(
+    @PrimaryKey(autoGenerate = true) val feedViewPrefId: Int,
+    val userDid: String,
+    val feedName: String,
+    val hideReplies: Boolean = false,
+    val hideRepliesByUnfollowed: Boolean = false,
+    val hideRepliesByLikeCount: Long = 2,
+    val hideReposts: Boolean = false,
+    val hideQuotePosts: Boolean = false,
+    // Can be per feed, maybe add "warn" to this as well
+    var labelsToHide: List<String> = persistentListOf(),
+    var languages: List<String> = persistentListOf(),
+    var hidePostsByMuted: Boolean = false
+)
+
+@Entity
+data class ContentLabelPreference(
+    @PrimaryKey(autoGenerate = true) val contentPrefId: Int,
+    val userDid: String,
+    val type: String,
+    val visibility: Visibility,
+)
+
+@Entity
+data class ThreadViewPreference(
+    @PrimaryKey(autoGenerate = true) val threadViewPrefId: Int,
+    val userDid: String,
+    val sort: Sort,
+    val prioritizeFollowedUsers: Boolean = true,
+)
+
+@Entity
+data class PinnedFeedPreference(
+    @PrimaryKey(autoGenerate = true) val pinnedFeedPrefId: Int,
+    val userDid: String,
+    val title: String,
+    val uri: AtUri,
+)
+
+@Entity
+data class SavedFeedsPreference(
+    @PrimaryKey(autoGenerate = true) val savedFeedPrefId: Int,
+    val userDid: String,
+    val pinnedUris: List<String>,
+    val savedUris: List<String>,
+)
+
+@Dao
+interface UserPreferencesDao {
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    fun insertUsers(vararg users: User)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    fun insertUserWithPrefs(
+        user: User,
+        feedPref: FeedViewPreference,
+
+        )
+
+}
 
 @Serializable
 data class BskyList(

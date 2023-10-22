@@ -169,6 +169,9 @@ dependencies {
     // Coil
     implementation(libs.coil.compose)
 
+    implementation libs.androidx.datastore.preferences
+    implementation libs.androidx.datastore
+
 
     implementation(libs.ktor.cio)
     implementation(libs.androidx.security.crypto.ktx)
