@@ -18,10 +18,10 @@ enum class MenuOptions(val text: String) {
     ReportPost( "Report Post"),
 }
 @Composable
-fun PostMenu(
+inline fun PostMenu(
     expanded : Boolean = false,
-    onItemClicked: (MenuOptions) -> Unit = {},
-    onDismissRequest: () -> Unit = {},
+    crossinline onItemClicked: (MenuOptions) -> Unit = {},
+    crossinline onDismissRequest: () -> Unit = {},
 ) {
     DropdownMenu(expanded = expanded, onDismissRequest = {onDismissRequest()}) {
         MenuOptions.entries.forEach {

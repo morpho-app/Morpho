@@ -19,10 +19,10 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 
 @Composable
-fun RepostQueryDialog(
-    onDismissRequest: () -> Unit = {},
-    onRepost: () -> Unit = {},
-    onQuotePost: () -> Unit = {},
+inline fun RepostQueryDialog(
+    crossinline onDismissRequest: () -> Unit = {},
+    crossinline onRepost: () -> Unit = {},
+    crossinline onQuotePost: () -> Unit = {},
 ) {
     Dialog(
         onDismissRequest = { onDismissRequest() },

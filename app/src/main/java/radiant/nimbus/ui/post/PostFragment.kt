@@ -65,10 +65,12 @@ import radiant.nimbus.ui.elements.AvatarShape
 import radiant.nimbus.ui.elements.MenuOptions
 import radiant.nimbus.ui.elements.OutlinedAvatar
 import radiant.nimbus.ui.elements.RichTextElement
+import radiant.nimbus.ui.elements.WrappedColumn
 import radiant.nimbus.ui.theme.NimbusTheme
 import radiant.nimbus.ui.utils.DevicePreviews
 import radiant.nimbus.ui.utils.indentLevel
 import radiant.nimbus.util.getFormattedDateTimeSince
+
 
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -87,8 +89,6 @@ fun PostFragment(
     onMenuClicked: (MenuOptions) -> Unit = { },
     onUnClicked: (type: RecordType, uri: AtUri) -> Unit = { _, _ -> },
 ) {
-    val delta = remember { getFormattedDateTimeSince(post.createdAt) }
-    val lineColour = MaterialTheme.colorScheme.onSurfaceVariant
     val padding = remember { when(role) {
         PostFragmentRole.Solo -> Modifier.padding(2.dp)
         PostFragmentRole.PrimaryThreadRoot -> Modifier.padding(2.dp)
@@ -98,33 +98,34 @@ fun PostFragment(
         PostFragmentRole.ThreadRootUnfocused -> Modifier.padding(2.dp)
         PostFragmentRole.ThreadEnd -> Modifier.padding(start = 2.dp, top = 0.dp, end = 2.dp, bottom = 0.dp)
     }}
-    val indent = rememberSaveable { when(role) {
-        PostFragmentRole.Solo -> indentLevel.toFloat()
-        PostFragmentRole.PrimaryThreadRoot -> indentLevel.toFloat()
-        PostFragmentRole.ThreadBranchStart -> 0.0f//indentLevel.toFloat()
-        PostFragmentRole.ThreadBranchMiddle -> 0.0f//indentLevel.toFloat()-1
-        PostFragmentRole.ThreadBranchEnd -> 0.0f//indentLevel.toFloat()-1
-        PostFragmentRole.ThreadRootUnfocused -> indentLevel.toFloat()
-        PostFragmentRole.ThreadEnd -> 0.0f
-    }}
-    val ctx = LocalContext.current
-    var hidePost by rememberSaveable { mutableStateOf(post.author.mutedByMe) }
-    val muted = rememberSaveable { post.author.mutedByMe }
-
-    Column(
+    WrappedColumn(
         modifier = padding.fillMaxWidth()
     ) {
-        val shape = when(role) {
-            PostFragmentRole.Solo -> MaterialTheme.shapes.small
-            PostFragmentRole.PrimaryThreadRoot -> MaterialTheme.shapes.small
+        val delta = remember { getFormattedDateTimeSince(post.createdAt) }
+        val indent = rememberSaveable { when(role) {
+            PostFragmentRole.Solo -> indentLevel.toFloat()
+            PostFragmentRole.PrimaryThreadRoot -> indentLevel.toFloat()
+            PostFragmentRole.ThreadBranchStart -> 0.0f//indentLevel.toFloat()
+            PostFragmentRole.ThreadBranchMiddle -> 0.0f//indentLevel.toFloat()-1
+            PostFragmentRole.ThreadBranchEnd -> 0.0f//indentLevel.toFloat()-1
+            PostFragmentRole.ThreadRootUnfocused -> indentLevel.toFloat()
+            PostFragmentRole.ThreadEnd -> 0.0f
+        }}
+        val ctx = LocalContext.current
+        var hidePost by rememberSaveable { mutableStateOf(post.author.mutedByMe) }
+        val muted = rememberSaveable { post.author.mutedByMe }
+        val baseShape = MaterialTheme.shapes.small
+        val shape =  when(role) {
+            PostFragmentRole.Solo -> baseShape
+            PostFragmentRole.PrimaryThreadRoot -> baseShape
             PostFragmentRole.ThreadBranchStart -> {
-                MaterialTheme.shapes.small.copy(
+                baseShape.copy(
                     bottomEnd = CornerSize(0.dp),
                     bottomStart = CornerSize(0.dp),
                 )
             }
             PostFragmentRole.ThreadBranchMiddle -> {
-                MaterialTheme.shapes.small.copy(
+                baseShape.copy(
                     topEnd = CornerSize(0.dp),
                     topStart = CornerSize(0.dp),
                     bottomEnd = CornerSize(0.dp),
@@ -132,14 +133,14 @@ fun PostFragment(
                 )
             }
             PostFragmentRole.ThreadBranchEnd -> {
-                MaterialTheme.shapes.small.copy(
+                baseShape.copy(
                     topEnd = CornerSize(0.dp),
                     topStart = CornerSize(0.dp),
                 )
             }
-            PostFragmentRole.ThreadRootUnfocused -> MaterialTheme.shapes.small
+            PostFragmentRole.ThreadRootUnfocused -> baseShape
             PostFragmentRole.ThreadEnd -> {
-                MaterialTheme.shapes.small.copy(
+                baseShape.copy(
                     topEnd = CornerSize(0.dp),
                     topStart = CornerSize(0.dp),
                 )
@@ -162,175 +163,175 @@ fun PostFragment(
                 .clickable { onItemClicked(post.uri) }
 
         ) {
-                    Row(modifier = Modifier
-                        .padding(bottom = 2.dp)
-                        .padding(start = 0.dp, end = 6.dp)
-                        .fillMaxWidth(indentLevel(indent))
+            Row(modifier = Modifier
+                .padding(bottom = 2.dp)
+                .padding(start = 0.dp, end = 6.dp)
+                .fillMaxWidth(indentLevel(indent))
+
+            ) {
+
+                if(indent < 2) {
+                    OutlinedAvatar(
+                        url = post.author.avatar.orEmpty(),
+                        contentDescription = "Avatar for ${post.author.handle}",
+                        modifier = Modifier
+                            .size(45.dp),
+                        outlineColor = MaterialTheme.colorScheme.background,
+                        onClicked = { onProfileClicked(AtIdentifier(post.author.did.did)) },
+                        shape = AvatarShape.Corner
+                    )
+                }
+
+                Column(
+                    Modifier
+                        .padding(vertical = 2.dp, horizontal = 6.dp)
+                        .fillMaxWidth(indentLevel(indent)),
+                ) {
+                    if(post.reason is BskyPostReason.BskyPostRepost) {
+                        Row(modifier = Modifier,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Repeat,
+                                contentDescription = "",
+                                tint = MaterialTheme.colorScheme.secondary,
+                                modifier = Modifier.height(15.dp)
+                            )
+                            Text(
+                                text = "Reposted by ${post.reason.repostAuthor.displayName}",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.secondary,
+                                modifier = Modifier.padding(start = 5.dp)
+                            )
+                        }
+                    }
+
+                    Row(
+                        modifier = Modifier
+                            .padding(top = 4.dp)
+                            .padding(horizontal = 4.dp),
+                        horizontalArrangement = Arrangement.End
 
                     ) {
-
-                        if(indent < 2) {
+                        if(indent >= 2) {
                             OutlinedAvatar(
                                 url = post.author.avatar.orEmpty(),
                                 contentDescription = "Avatar for ${post.author.handle}",
                                 modifier = Modifier
-                                    .size(45.dp),
+                                    //.offset(y = 4.dp)
+                                    .size(30.dp),
+                                shape = AvatarShape.Rounded,
                                 outlineColor = MaterialTheme.colorScheme.background,
-                                onClicked = { onProfileClicked(AtIdentifier(post.author.did.did)) },
-                                shape = AvatarShape.Corner
+                                onClicked = { onProfileClicked(AtIdentifier(post.author.did.did)) }
                             )
                         }
-
-                        Column(
-                            Modifier
-                                .padding(vertical = 2.dp, horizontal = 6.dp)
-                                .fillMaxWidth(indentLevel(indent)),
-                        ) {
-                            if(post.reason is BskyPostReason.BskyPostRepost) {
-                                Row(modifier = Modifier,
-                                    verticalAlignment = Alignment.CenterVertically
+                        Text(
+                            text = buildAnnotatedString {
+                                withStyle(
+                                    style = SpanStyle(
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                        fontSize = MaterialTheme.typography.labelLarge.fontSize
+                                            .times(1.2f),
+                                        fontWeight = FontWeight.Medium
+                                    )
                                 ) {
-                                    Icon(
-                                        imageVector = Icons.Default.Repeat,
-                                        contentDescription = "",
-                                        tint = MaterialTheme.colorScheme.secondary,
-                                        modifier = Modifier.height(15.dp)
-                                    )
-                                    Text(
-                                        text = "Reposted by ${post.reason.repostAuthor.displayName}",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.secondary,
-                                        modifier = Modifier.padding(start = 5.dp)
-                                    )
+                                    if(post.author.displayName != null) append( "${post.author.displayName} ")
                                 }
-                            }
-
-                            Row(
-                                modifier = Modifier
-                                    .padding(top = 4.dp)
-                                    .padding(horizontal = 4.dp),
-                                horizontalArrangement = Arrangement.End
-
-                            ) {
-                                if(indent >= 2) {
-                                    OutlinedAvatar(
-                                        url = post.author.avatar.orEmpty(),
-                                        contentDescription = "Avatar for ${post.author.handle}",
-                                        modifier = Modifier
-                                            //.offset(y = 4.dp)
-                                            .size(30.dp),
-                                        shape = AvatarShape.Rounded,
-                                        outlineColor = MaterialTheme.colorScheme.background,
-                                        onClicked = { onProfileClicked(AtIdentifier(post.author.did.did)) }
+                                withStyle(
+                                    style = SpanStyle(
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        fontSize = MaterialTheme.typography.labelLarge.fontSize
+                                            .times(1.0f)
                                     )
+                                ) {
+                                    append("@${post.author.handle}")
                                 }
-                                Text(
-                                    text = buildAnnotatedString {
-                                        withStyle(
-                                            style = SpanStyle(
-                                                color = MaterialTheme.colorScheme.onSurface,
-                                                fontSize = MaterialTheme.typography.labelLarge.fontSize
-                                                    .times(1.2f),
-                                                fontWeight = FontWeight.Medium
-                                            )
-                                        ) {
-                                            if(post.author.displayName != null) append( "${post.author.displayName} ")
-                                        }
-                                        withStyle(
-                                            style = SpanStyle(
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                                fontSize = MaterialTheme.typography.labelLarge.fontSize
-                                                    .times(1.0f)
-                                            )
-                                        ) {
-                                            append("@${post.author.handle}")
-                                        }
 
-                                    },
-                                    maxLines = 1,
-                                    style = MaterialTheme.typography.labelLarge,
-                                    overflow = TextOverflow.Ellipsis,
-                                    modifier = Modifier
-                                        .wrapContentWidth(Alignment.Start)
-                                        .weight(10.0F)
-                                        .alignByBaseline()
-                                        .clickable { onProfileClicked(AtIdentifier(post.author.did.did)) },
+                            },
+                            maxLines = 1,
+                            style = MaterialTheme.typography.labelLarge,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier
+                                .wrapContentWidth(Alignment.Start)
+                                .weight(10.0F)
+                                .alignByBaseline()
+                                .clickable { onProfileClicked(AtIdentifier(post.author.did.did)) },
 
-                                )
+                        )
 
-                                Spacer(
-                                    modifier = Modifier
-                                        .width(1.dp)
-                                        .weight(0.1F),
-                                )
-                                Text(
-                                    text = delta,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    style = MaterialTheme.typography.labelLarge,
-                                    fontSize = MaterialTheme.typography.labelLarge
-                                        .fontSize.div(1.2F),
-                                    modifier = Modifier
-                                        .wrapContentWidth(Alignment.End)
-                                        //.weight(3.0F)
-                                        .alignByBaseline(),
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Visible,
-                                    softWrap = false,
-                                )
-                            }
-
-                            if(post.reply?.parent != null) {
-                                ReplyIndicator(post.reply.parent)
-                            }
-
-                            RichTextElement(
-                                text = post.text,
-                                facets = post.facets,
-                                onClick = {
-                                    when(it) {
-                                        is Target.ExternalLink -> {
-                                            val urlIntent = Intent(
-                                                Intent.ACTION_VIEW,
-                                                Uri.parse(it.uri.uri)
-                                            )
-                                            ctx.startActivity(urlIntent)
-                                        }
-                                        is Target.Format -> {
-                                            onItemClicked(post.uri)
-                                        }
-                                        is Target.PollBlueOption -> {
-
-                                        }
-                                        is Target.Tag -> {}
-                                        is Target.UserDidMention -> {
-                                            onProfileClicked(AtIdentifier(it.did.did))
-                                        }
-                                        is Target.UserHandleMention -> {
-                                            onProfileClicked(AtIdentifier(it.handle.handle))
-                                        }
-                                        null -> {
-                                            onItemClicked(post.uri)
-                                        }
-                                    }
-                                }
-                            )
-                            PostFeatureElement(post.feature, onItemClicked)
-
-                            PostActions(post = post,
-                                onLikeClicked = {
-                                    onLikeClicked(StrongRef(post.uri, post.cid))
-                                },
-                                onMenuClicked = onMenuClicked,
-                                onReplyClicked = {
-                                    onReplyClicked(post)
-                                },
-                                onRepostClicked = {
-                                    onRepostClicked(post)
-                                },
-                                onUnClicked = onUnClicked,
-                            )
-                        }
+                        Spacer(
+                            modifier = Modifier
+                                .width(1.dp)
+                                .weight(0.1F),
+                        )
+                        Text(
+                            text = delta,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            style = MaterialTheme.typography.labelLarge,
+                            fontSize = MaterialTheme.typography.labelLarge
+                                .fontSize.div(1.2F),
+                            modifier = Modifier
+                                .wrapContentWidth(Alignment.End)
+                                //.weight(3.0F)
+                                .alignByBaseline(),
+                            maxLines = 1,
+                            overflow = TextOverflow.Visible,
+                            softWrap = false,
+                        )
                     }
+
+                    if(post.reply?.parent != null) {
+                        ReplyIndicator(post.reply.parent)
+                    }
+
+                    RichTextElement(
+                        text = post.text,
+                        facets = post.facets,
+                        onClick = {
+                            when(it) {
+                                is Target.ExternalLink -> {
+                                    val urlIntent = Intent(
+                                        Intent.ACTION_VIEW,
+                                        Uri.parse(it.uri.uri)
+                                    )
+                                    ctx.startActivity(urlIntent)
+                                }
+                                is Target.Format -> {
+                                    onItemClicked(post.uri)
+                                }
+                                is Target.PollBlueOption -> {
+
+                                }
+                                is Target.Tag -> {}
+                                is Target.UserDidMention -> {
+                                    onProfileClicked(AtIdentifier(it.did.did))
+                                }
+                                is Target.UserHandleMention -> {
+                                    onProfileClicked(AtIdentifier(it.handle.handle))
+                                }
+                                null -> {
+                                    onItemClicked(post.uri)
+                                }
+                            }
+                        }
+                    )
+                    PostFeatureElement(post.feature, onItemClicked)
+
+                    PostActions(post = post,
+                        onLikeClicked = {
+                            onLikeClicked(StrongRef(post.uri, post.cid))
+                        },
+                        onMenuClicked = onMenuClicked,
+                        onReplyClicked = {
+                            onReplyClicked(post)
+                        },
+                        onRepostClicked = {
+                            onRepostClicked(post)
+                        },
+                        onUnClicked = onUnClicked,
+                    )
+                }
+            }
 
 
         }
@@ -339,7 +340,7 @@ fun PostFragment(
 }
 
 @Composable
-fun ReplyIndicator(
+inline fun ReplyIndicator(
     parent: BskyPost,
     onClick: (AtIdentifier) -> Unit = {},
 ) {
@@ -364,9 +365,9 @@ fun ReplyIndicator(
 }
 
 @Composable
-fun ColumnScope.PostFeatureElement(
+inline fun ColumnScope.PostFeatureElement(
     feature: BskyPostFeature? = null,
-    onItemClicked: OnPostClicked = {},
+    crossinline onItemClicked: OnPostClicked = {},
 ) {
     val ctx = LocalContext.current
     when (feature) {

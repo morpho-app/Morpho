@@ -47,7 +47,7 @@ fun NotificationAvatarList(
         ) {
             if (!expand) {
                 if (item.notifications.size > 1) {
-                    item.notifications.subList(0, min(6, item.notifications.size - 1)).forEach {
+                    item.notifications.subList(0, min(7, item.notifications.size)).forEach {
                         OutlinedAvatar(
                             url = it.author.avatar.orEmpty(),
                             onClicked = { onClicked(it.author.did) },

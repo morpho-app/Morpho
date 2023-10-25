@@ -12,19 +12,23 @@ import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.viewModelScope
 import app.bsky.feed.GetFeedQueryParams
 import app.bsky.feed.GetTimelineQueryParams
+import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
-import radiant.nimbus.api.ApiProvider
+import radiant.nimbus.api.AtIdentifier
 import radiant.nimbus.api.AtUri
 import radiant.nimbus.api.BskyFeedPref
 import radiant.nimbus.api.model.RecordUnion
 import radiant.nimbus.api.response.AtpResponse
+import radiant.nimbus.apiProvider
 import radiant.nimbus.base.BaseViewModel
 import radiant.nimbus.model.BasicProfile
 import radiant.nimbus.model.Skyline
@@ -32,11 +36,14 @@ import radiant.nimbus.model.Skyline.Companion.filterByPrefs
 import radiant.nimbus.model.TunerFunction
 import radiant.nimbus.model.toBskyPostList
 import radiant.nimbus.model.tune
+import radiant.nimbus.screens.destinations.PostThreadScreenDestination
+import radiant.nimbus.screens.destinations.ProfileScreenDestination
 import javax.inject.Inject
 
 data class SkylineState(
     val isLoading : Boolean = false,
-    val feedUri: AtUri? = null
+    val feedUri: AtUri? = null,
+    val hasNewPosts: Boolean = false,
 )
 
 private const val TAG = "Skyline"
@@ -45,24 +52,58 @@ private const val TAG = "Skyline"
 class SkylineViewModel @Inject constructor(
     app: Application,
 ) : BaseViewModel(app), DefaultLifecycleObserver {
-
+    val apiProvider = app.apiProvider
     var state by mutableStateOf(SkylineState())
         private set
 
-    private val _skylinePosts = MutableStateFlow(Skyline(emptyList(), null))
+    private val _skylinePosts = MutableStateFlow(Skyline(cursor = null))
     val skylinePosts: StateFlow<Skyline> = _skylinePosts.asStateFlow()
-    val feedPosts = mutableStateMapOf(Pair(AtUri(""),MutableStateFlow( Skyline(emptyList(), null))))
+    val feedPosts = mutableStateMapOf(Pair(AtUri(""),MutableStateFlow( Skyline(cursor = null))))
     var pinnedFeeds = mutableStateListOf<FeedTab>()
+
+    fun hasPosts() = viewModelScope.async {
+        if (state.hasNewPosts) return@async
+        launch(Dispatchers.IO) {
+            when(val result = apiProvider.api.getTimeline(GetTimelineQueryParams(limit = 1, cursor = null))) {
+                is AtpResponse.Failure -> {}
+                is AtpResponse.Success -> {
+                    if (result.response.feed.isNotEmpty()) {
+                        val cid = result.response.feed.first().post.cid
+                        if (!skylinePosts.value.contains(cid)) {
+                            _skylinePosts.update { it.copy(hasNewPosts = true) }
+                            state = state.copy(hasNewPosts = true)
+                            return@launch
+                        }
+                    }
+                }
+            }
+        }.join()
+        pinnedFeeds.fastMap {
+            launch(Dispatchers.IO) {
+                when(val result = apiProvider.api.getFeed(GetFeedQueryParams(limit = 1, cursor = null, feed = it.uri))) {
+                    is AtpResponse.Failure -> {}
+                    is AtpResponse.Success -> {
+                        if (result.response.feed.isNotEmpty()) {
+                            val cid = result.response.feed.first().post.cid
+                            if (feedPosts[it.uri]?.value?.contains(cid) != true) {
+                                state = state.copy(hasNewPosts = true)
+                                feedPosts[it.uri]?.update { it.copy(hasNewPosts = true) }
+                                return@launch
+                            }
+                        }
+                    }
+                }
+            }
+        }.joinAll()
+    }
 
     fun createRecord(
         record: RecordUnion,
-        apiProvider: ApiProvider,
     ) = CoroutineScope(Dispatchers.Default).launch {
         apiProvider.createRecord(record)
     }
 
     fun getSkyline(
-        apiProvider: ApiProvider,
         cursor: String? = null,
         limit: Long = 100,
         prefs: BskyFeedPref = BskyFeedPref(),
@@ -87,14 +128,13 @@ class SkylineViewModel @Inject constructor(
                 } else {
                     Log.v(TAG,"Posts: ${result.response.feed}")
                     //_skylinePosts.update { Skyline.from(newPosts, result.response.cursor) }
-                    _skylinePosts.update { Skyline.collectThreads(apiProvider,result.response.cursor,newPosts).await() }
+                    _skylinePosts.emit(Skyline.collectThreads(apiProvider,result.response.cursor,newPosts).await())
                 }
             }
         }
     }
 
     fun getSkyline(
-        apiProvider: ApiProvider,
         feedQuery: GetFeedQueryParams,
         cursor: String? = null,
     ) = viewModelScope.launch(Dispatchers.IO) {
@@ -113,24 +153,24 @@ class SkylineViewModel @Inject constructor(
                         Log.v(TAG, "Update Feed Posts:, ${result.response.feed}")
                         feedPosts[feedQuery.feed]?.update { Skyline.concat(it, newPosts) }
                     } else {
-                        if(result.response.feed.first().post.indexedAt.toEpochMilliseconds() >
-                                (feedPosts[feedQuery.feed]?.value?.posts?.first()?.post?.indexedAt?.instant?.toEpochMilliseconds() ?: 0)
-                        ) {
-                            Log.v(TAG, "Prepend Feed Posts:, ${result.response.feed}")
-                            if(feedPosts.containsKey(feedQuery.feed)) {
-                                feedPosts[feedQuery.feed]!!.update { Skyline.concat(newPosts, it, result.response.cursor) }
-                            } else {
-                                feedPosts[feedQuery.feed] = MutableStateFlow(newPosts)
-                            }
-                        } else {
-                            Log.v(TAG,"Feed Posts: ${result.response.feed}")
-                            feedPosts[feedQuery.feed] = MutableStateFlow(newPosts)
+                        Log.v(TAG,"Feed Posts: ${result.response.feed}")
+                        if (feedPosts.containsKey(feedQuery.feed)) {
+                            feedPosts[feedQuery.feed]?.emit(newPosts)
                         }
+                        feedPosts[feedQuery.feed] = MutableStateFlow(newPosts)
                     }
                 }
                 //Log.v(TAG, "Feed: ${feedPosts[feedQuery.feed]?.value}")
             }
         }
+    }
+
+    fun onItemClicked(uri: AtUri, navigator: DestinationsNavigator) {
+        navigator.navigate(PostThreadScreenDestination(uri))
+    }
+
+    fun onProfileClicked(actor: AtIdentifier, navigator: DestinationsNavigator) {
+        navigator.navigate(ProfileScreenDestination(actor))
     }
 
 }

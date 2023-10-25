@@ -32,7 +32,6 @@ import radiant.nimbus.api.model.RecordType
 import radiant.nimbus.model.BskyPost
 import radiant.nimbus.ui.elements.MenuOptions
 import radiant.nimbus.ui.elements.PostMenu
-import radiant.nimbus.util.atUriSaver
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -47,8 +46,6 @@ fun PostActions(
     onUnClicked: (type: RecordType, uri: AtUri) -> Unit = { _, _ -> },
 ) {
     var menuExpanded by remember { mutableStateOf(false) }
-    val likeUri: AtUri = rememberSaveable(saver = atUriSaver) { post.likeUri ?: post.uri }
-    val repostUri: AtUri = rememberSaveable(saver = atUriSaver) { post.repostUri ?: post.uri }
     Row(
         horizontalArrangement = Arrangement.SpaceEvenly
     ) {
@@ -64,7 +61,7 @@ fun PostActions(
             iconNormal = Icons.Outlined.Repeat,
             contentDescription = "Repost ",
             onClicked = onRepostClicked,
-            onUnClicked = { onUnClicked(RecordType.Repost, repostUri) },
+            onUnClicked = { onUnClicked(RecordType.Repost, post.repostUri ?: post.uri) },
             active = post.reposted
         )
         PostAction(
@@ -73,7 +70,7 @@ fun PostActions(
             iconActive = Icons.Default.Favorite,
             contentDescription = "Like ",
             onClicked = onLikeClicked,
-            onUnClicked = { onUnClicked(RecordType.Like, likeUri) },
+            onUnClicked = { onUnClicked(RecordType.Like, post.likeUri ?: post.uri) },
             active = post.liked
         )
         if (showMenu) {
@@ -98,15 +95,15 @@ fun PostActions(
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun PostAction(
+inline fun PostAction(
     parameter: Long,
     iconNormal: ImageVector,
     modifier: Modifier = Modifier,
     iconActive: ImageVector = iconNormal,
     activeColor: Color = MaterialTheme.colorScheme.primary,
     contentDescription: String,
-    onClicked: () -> Unit = { },
-    onUnClicked: () -> Unit = {},
+    crossinline onClicked: () -> Unit = { },
+    crossinline onUnClicked: () -> Unit = {},
     active: Boolean = false,
     uri: AtUri? =null,
 ) {

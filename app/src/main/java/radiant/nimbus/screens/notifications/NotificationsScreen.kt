@@ -39,6 +39,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -50,9 +51,9 @@ import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.launch
 import radiant.nimbus.MainViewModel
-import radiant.nimbus.api.ApiProvider
 import radiant.nimbus.api.AtUri
 import radiant.nimbus.api.model.RecordUnion
+import radiant.nimbus.apiProvider
 import radiant.nimbus.components.ScreenBody
 import radiant.nimbus.extensions.activityViewModel
 import radiant.nimbus.model.BskyPost
@@ -72,17 +73,14 @@ fun NotificationsScreen(
     mainViewModel: MainViewModel = activityViewModel(),
     viewModel: NotificationsViewModel = hiltViewModel()
 ) {
-    val unread = mainViewModel.unreadNotifications.collectAsStateWithLifecycle(initialValue = -1)
     BackHandler {
         navigator.popBackStack()
     }
-    LaunchedEffect(unread.value > 0) {
-        viewModel.getNotifications(mainViewModel.apiProvider, null)
-    }
+    viewModel.connectNotifications(mainViewModel.unreadNotifications)
     NotificationsView(
         viewModel, navigator,
         navBar = {mainViewModel.navBar?.let {it(5)}},
-        getPost = { viewModel.getPost(it, mainViewModel.apiProvider) },
+        getPost = { viewModel.getPost(it) },
         mainButton = { onClicked ->
             OutlinedAvatar(url = mainViewModel.currentUser?.avatar.orEmpty(),
                 modifier = Modifier.size(40.dp),
@@ -90,7 +88,6 @@ fun NotificationsScreen(
                 outlineSize = 0.dp
             )
         },
-        apiProvider = mainViewModel.apiProvider
     )
 }
 
@@ -105,10 +102,10 @@ fun NotificationsView(
     mainButton: @Composable() ((()->Unit) -> Unit)? = null,
     onButtonClicked: () -> Unit = {},
     getPost: suspend (AtUri) -> Deferred<BskyPost?>,
-    apiProvider: ApiProvider,
 ){
     var showSettings by remember { mutableStateOf(false)}
-    var unread by remember { mutableStateOf(viewModel.state.numberUnread > 0)}
+    val unreadCount by viewModel.unreadCount.collectAsStateWithLifecycle()
+    var hasUnread = remember { unreadCount > 0 }
     val notifications by viewModel.notifications.collectAsStateWithLifecycle()
     val refreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
     val listState = rememberLazyListState()
@@ -122,13 +119,15 @@ fun NotificationsView(
     // Probably pull this farther up,
     //      but this means if you don't explicitly cancel you don't lose the post
     var draft by remember{ mutableStateOf(DraftPost()) }
+    val apiProvider = LocalContext.current.apiProvider
 
     LaunchedEffect(!listState.canScrollForward) {
-        viewModel.getNotifications(apiProvider, viewModel.state.cursor)
+        viewModel.getNotifications(viewModel.state.cursor)
     }
     val refreshState = rememberPullRefreshState(refreshing,
-        {   viewModel.updateSeen(apiProvider)
-            viewModel.getNotifications(apiProvider, null)
+        {   viewModel.updateSeen()
+            viewModel.getNotifications(null)
+            if (viewModel.unreadCount.value > 0) hasUnread = true
         })
     ScreenBody(
         modifier = Modifier.fillMaxSize(),
@@ -169,11 +168,11 @@ fun NotificationsView(
                     }
                 },
                 actions = {
-                    if(unread) {
+                    if(hasUnread) {
                         TextButton(
                             onClick = {
-                                viewModel.updateSeen(apiProvider)
-                                unread = false
+                                viewModel.updateSeen()
+                                hasUnread = false
                             },
                         ) {
                             Text(text = "Mark as Read")

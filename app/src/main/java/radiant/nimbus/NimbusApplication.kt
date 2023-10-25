@@ -1,7 +1,11 @@
 package radiant.nimbus
 
 import android.app.Application
+import android.app.NotificationChannel
+import android.app.NotificationManager
 import android.content.Context
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.preferencesDataStore
@@ -12,21 +16,41 @@ import coil.ImageLoaderFactory
 import coil.disk.DiskCache
 import coil.memory.MemoryCache
 import dagger.hilt.android.HiltAndroidApp
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import radiant.nimbus.api.ApiProvider
+import radiant.nimbus.api.ServerRepository
+import radiant.nimbus.api.auth.LoginRepository
+import radiant.nimbus.storage.storage
 import javax.inject.Inject
 
 val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
+val Context.apiProvider: ApiProvider
+    get() = ApiProvider(ServerRepository(storage), LoginRepository(storage))
 
 @HiltAndroidApp
 class NimbusApplication : Application(), Configuration.Provider, ImageLoaderFactory {
-
     @Inject
     lateinit var workerFactory: HiltWorkerFactory
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    override fun onCreate() {
+        super.onCreate()
+        val notificationChannel= NotificationChannel(
+            "nimbus_notification",
+            "Nimbus",
+            NotificationManager.IMPORTANCE_DEFAULT
+        )
+        val notificationManager=getSystemService(NOTIFICATION_SERVICE) as NotificationManager
+        notificationManager.createNotificationChannel(notificationChannel)
+    }
 
     override fun getWorkManagerConfiguration() =
         Configuration.Builder()
             .setWorkerFactory(workerFactory)
             .build()
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     override fun newImageLoader(): ImageLoader {
         return ImageLoader.Builder(applicationContext).memoryCache {
             MemoryCache.Builder(applicationContext)
@@ -37,7 +61,8 @@ class NimbusApplication : Application(), Configuration.Provider, ImageLoaderFact
                     .directory(applicationContext.cacheDir.resolve("image_cache"))
                     .maxSizePercent(0.02)
                     .build()
-            }.build()
+            }.dispatcher(Dispatchers.Default.limitedParallelism(8))
+            .build()
     }
 
 }

@@ -13,10 +13,10 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import radiant.nimbus.api.ApiProvider
 import radiant.nimbus.api.AtUri
 import radiant.nimbus.api.model.RecordUnion
 import radiant.nimbus.api.response.AtpResponse
+import radiant.nimbus.apiProvider
 import radiant.nimbus.base.BaseViewModel
 import radiant.nimbus.model.BskyPostThread
 import radiant.nimbus.model.toThread
@@ -33,6 +33,7 @@ data class PostThreadState(
 class PostThreadViewModel @Inject constructor(
     app: Application,
 ) : BaseViewModel(app), DefaultLifecycleObserver {
+    val apiProvider = app.apiProvider
 
     var state by mutableStateOf(PostThreadState())
         private set
@@ -42,13 +43,12 @@ class PostThreadViewModel @Inject constructor(
 
     fun createRecord(
         record: RecordUnion,
-        apiProvider: ApiProvider,
     ) = CoroutineScope(Dispatchers.Default).launch {
         apiProvider.createRecord(record)
     }
 
 
-    fun loadThread(uri: AtUri, apiProvider: ApiProvider, onComplete: () -> Unit) = viewModelScope.launch(Dispatchers.IO) {
+    fun loadThread(uri: AtUri, onComplete: () -> Unit) = viewModelScope.launch(Dispatchers.IO) {
         when (val result = apiProvider.api.getPostThread(GetPostThreadQueryParams(uri))) {
             is AtpResponse.Failure -> {
                 Log.e("Thread Load Err", result.toString())

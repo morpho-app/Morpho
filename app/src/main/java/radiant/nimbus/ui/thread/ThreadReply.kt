@@ -16,18 +16,18 @@ import radiant.nimbus.ui.post.PostFragment
 import radiant.nimbus.ui.post.PostFragmentRole
 
 @Composable
-fun ThreadReply(
+inline fun ThreadReply(
     item: ThreadPost,
     modifier: Modifier = Modifier,
     indentLevel: Int = 1,
     role: PostFragmentRole = PostFragmentRole.ThreadBranchMiddle,
-    onItemClicked: OnPostClicked = {},
-    onProfileClicked: (AtIdentifier) -> Unit = {},
-    onReplyClicked: (BskyPost) -> Unit = { },
-    onRepostClicked: (BskyPost) -> Unit = { },
-    onLikeClicked: (StrongRef) -> Unit = { },
-    onMenuClicked: (MenuOptions) -> Unit = { },
-    onUnClicked: (type: RecordType, uri: AtUri) -> Unit = { _, _ -> },
+    crossinline onItemClicked: OnPostClicked = {},
+    crossinline onProfileClicked: (AtIdentifier) -> Unit = {},
+    crossinline onReplyClicked: (BskyPost) -> Unit = { },
+    crossinline onRepostClicked: (BskyPost) -> Unit = { },
+    crossinline onLikeClicked: (StrongRef) -> Unit = { },
+    crossinline onMenuClicked: (MenuOptions) -> Unit = { },
+    crossinline onUnClicked: (type: RecordType, uri: AtUri) -> Unit = { _, _ -> },
 ) {
     when(item) {
         is ThreadPost.ViewablePost -> {
@@ -41,13 +41,13 @@ fun ThreadReply(
                 role = r,
                 indentLevel = indentLevel,
                 modifier = modifier,
-                onItemClicked = onItemClicked,
-                onProfileClicked = onProfileClicked,
-                onUnClicked = onUnClicked,
-                onRepostClicked = onRepostClicked,
-                onReplyClicked = onReplyClicked,
-                onMenuClicked = onMenuClicked,
-                onLikeClicked = onLikeClicked,
+                onItemClicked = {onItemClicked(it) },
+                onProfileClicked = { onProfileClicked(it) },
+                onUnClicked =  { type,uri-> onUnClicked(type,uri) },
+                onRepostClicked = { onRepostClicked(it) },
+                onReplyClicked = { onReplyClicked(it) },
+                onMenuClicked = { onMenuClicked(it) },
+                onLikeClicked = { onLikeClicked(it) },
             )
         }
         is ThreadPost.BlockedPost -> {

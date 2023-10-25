@@ -31,6 +31,7 @@ ktor = "2.3.4"
 lifecycle-viewmodel-ktx = "2.6.2"
 material-icons-extended = "1.6.0-alpha07"
 maven-publish = "0.25.3"
+metrics-performance = "1.0.0-alpha04"
 moshi = "1.15.0"
 multidex = "2.0.1"
 navigation-compose = "2.7.4"
@@ -78,6 +79,7 @@ androidx-lifecycle-livedata-core-ktx = { module = "androidx.lifecycle:lifecycle-
 androidx-lifecycle-runtime-compose = { module = "androidx.lifecycle:lifecycle-runtime-compose", version.ref = "lifecycle-viewmodel-ktx" }
 androidx-lifecycle-viewmodel-ktx = { module = "androidx.lifecycle:lifecycle-viewmodel-ktx", version.ref = "lifecycle-viewmodel-ktx" }
 androidx-material-icons-extended-v160alpha06 = { module = "androidx.compose.material:material-icons-extended", version.ref = "material-icons-extended" }
+androidx-metrics-performance = { module = "androidx.metrics:metrics-performance", version.ref = "metrics-performance" }
 androidx-multidex = { module = "androidx.multidex:multidex", version.ref = "multidex" }
 androidx-navigation-compose = { module = "androidx.navigation:navigation-compose", version.ref = "navigation-compose" }
 androidx-paging-common-ktx = { module = "androidx.paging:paging-common-ktx", version.ref = "paging-common-ktx" }

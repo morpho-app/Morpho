@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeContent
@@ -19,6 +20,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.icons.Icons
@@ -30,6 +32,7 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.pullrefresh.PullRefreshIndicator
 import androidx.compose.material.pullrefresh.pullRefresh
 import androidx.compose.material.pullrefresh.rememberPullRefreshState
+import androidx.compose.material3.Badge
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
@@ -55,7 +58,6 @@ import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.atproto.repo.StrongRef
-import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -80,7 +82,6 @@ typealias OnPostClicked = (AtUri) -> Unit
 )
 @Composable
 fun SkylineFragment (
-    navigator: DestinationsNavigator,
     postFlow: StateFlow<Skyline>,
     modifier: Modifier = Modifier,
     onItemClicked: OnPostClicked,
@@ -139,9 +140,9 @@ fun SkylineFragment (
             modifier = modifier
                 .pullRefresh(refreshState)
                 .constrainAs(skyline) {
-                top.linkTo(parent.top)
-                bottom.linkTo(parent.bottom)
-            },
+                    top.linkTo(parent.top)
+                    bottom.linkTo(parent.bottom)
+                },
             //flingBehavior = rememberSnapFlingBehavior(lazyListState = listState),
             contentPadding = if(isProfileFeed) {
                 contentPadding
@@ -202,22 +203,20 @@ fun SkylineFragment (
                 }
             }
             items(
-                count = postList.posts.size,
-                key = {
-                    postList.posts[it].hashCode()
-                },
+                postList.posts, key = {it.hashCode()},
                 contentType = {
-                    postList.posts[it]
+                    when(it) {
+                        is SkylineItem.PostItem -> SkylineItem.PostItem::class
+                        is SkylineItem.ThreadItem -> SkylineItem.ThreadItem::class
+                    }
                 }
-            ) { index ->
-                if (postList.posts[index].post != null) {
-                    val post = postList.posts[index].post
-                    val thread = postList.posts[index].thread
-                    if (thread != null) {
+            ) {item ->
+                when(item) {
+                    is SkylineItem.ThreadItem -> {
                         SkylineThreadFragment(
-                            thread = thread,
+                            thread = item.thread,
                             modifier = Modifier
-                                .fillParentMaxWidth()
+                                .fillMaxWidth()
                                 .padding(vertical = 2.dp, horizontal = 4.dp),
                             onItemClicked = onItemClicked,
                             onProfileClicked = onProfileClicked,
@@ -227,12 +226,13 @@ fun SkylineFragment (
                             onMenuClicked = onMenuClicked,
                             onLikeClicked = onLikeClicked,
                         )
-                    } else if (post != null) {
+                    }
+                    is SkylineItem.PostItem -> {
                         PostFragment(
                             modifier = Modifier
-                                .fillParentMaxWidth()
+                                .fillMaxWidth()
                                 .padding(vertical = 2.dp, horizontal = 4.dp),
-                            post = post,
+                            post = item.post,
                             onItemClicked = onItemClicked,
                             onProfileClicked = onProfileClicked,
                             elevate = true,
@@ -244,10 +244,10 @@ fun SkylineFragment (
                         )
                     }
                 }
-
             }
         }
-        if (scrolledDownBy > 5) {
+        if (scrolledDownBy > 5 || postList.hasNewPosts) {
+
             OutlinedIconButton(
                 onClick = {
                     coroutineScope.launch {
@@ -266,29 +266,39 @@ fun SkylineFragment (
                     ).copy(alpha = 0.8f)
                 ),
                 modifier = Modifier
-                    .size(50.dp)
                     .constrainAs(scrollButton) {
                         centerAround(buttonGuideline)
                         centerAround(leftGuideline)
                     }
+                    .size(50.dp)
             ) {
-                if (scrolledDownBy > 20) {
-                    Icon(
-                        Icons.Default.KeyboardDoubleArrowUp,
-                        "Scroll to top",
-                        modifier = Modifier
-                            .size(40.dp)
-                            .padding(5.dp)
-                    )
-                } else {
-                    Icon(
-                        Icons.Default.KeyboardArrowUp,
-                        "Scroll to top",
-                        modifier = Modifier
-                            .size(40.dp)
-                            .padding(5.dp)
-                    )
-                }
+                    if (scrolledDownBy > 20) {
+                        Icon(
+                            Icons.Default.KeyboardDoubleArrowUp,
+                            "Scroll to top",
+                            modifier = Modifier
+                                .size(40.dp)
+                                .padding(5.dp)
+                        )
+                    } else {
+                        Icon(
+                            Icons.Default.KeyboardArrowUp,
+                            "Scroll to top",
+                            modifier = Modifier
+                                .size(40.dp)
+                                .padding(5.dp)
+                        )
+                    }
+                    if (postList.hasNewPosts) {
+                        Badge(
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier
+                                .size(10.dp)
+                                .offset(12.dp, (-12).dp)
+                        ) {
+                            //Icon(imageVector = Icons.Default.Circle, contentDescription = "New posts available")
+                        }
+                    }
             }
         }
         FloatingActionButton(
@@ -320,7 +330,7 @@ fun PreviewSkyline() {
         ScreenBody(modifier = Modifier.height(1000.dp)) {
             val posts = mutableListOf<SkylineItem>()
             for (i in 1..10) {
-                posts.add(SkylineItem(testPost))
+                posts.add(SkylineItem.PostItem(testPost))
             }
             val postsFlow = MutableStateFlow(Skyline(posts, null))
             //SkylineFragment(postFlow = postsFlow.asStateFlow(), {})

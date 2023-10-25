@@ -12,7 +12,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import radiant.nimbus.api.ApiProvider
 import radiant.nimbus.screens.profile.ProfileTabs
 import radiant.nimbus.screens.profile.ProfileViewModel
 
@@ -20,7 +19,6 @@ import radiant.nimbus.screens.profile.ProfileViewModel
 fun ProfileTabRow(
     modifier: Modifier = Modifier,
     selected: ProfileTabs = ProfileTabs.Posts,
-    apiProvider: ApiProvider,
     model: ProfileViewModel,
     onTabChanged: (ProfileTabs)-> Unit,
 ) {
@@ -43,7 +41,7 @@ fun ProfileTabRow(
             onClick = {
                 selectedTab = ProfileTabs.Posts
                 onTabChanged(ProfileTabs.Posts)
-                model.getProfileFeed(ProfileTabs.Posts, apiProvider)
+                model.getProfileFeed(ProfileTabs.Posts)
             },
 
             ) {
@@ -58,7 +56,7 @@ fun ProfileTabRow(
             onClick = {
                 selectedTab = ProfileTabs.PostsReplies
                 onTabChanged(ProfileTabs.PostsReplies)
-                model.getProfileFeed(ProfileTabs.PostsReplies, apiProvider)
+                model.getProfileFeed(ProfileTabs.PostsReplies)
             },
 
             ) {
@@ -73,7 +71,7 @@ fun ProfileTabRow(
             onClick = {
                 selectedTab = ProfileTabs.Media
                 onTabChanged(ProfileTabs.Media)
-                model.getProfileFeed(ProfileTabs.Media, apiProvider)
+                model.getProfileFeed(ProfileTabs.Media)
             },
         ) {
             Text(
@@ -87,7 +85,7 @@ fun ProfileTabRow(
             onClick = {
                 selectedTab = ProfileTabs.Feeds
                 onTabChanged(ProfileTabs.Feeds)
-                model.getProfileFeed(ProfileTabs.Feeds, apiProvider)
+                model.getProfileFeed(ProfileTabs.Feeds)
             },
         ) {
             Text(
@@ -101,7 +99,7 @@ fun ProfileTabRow(
             onClick = {
                 selectedTab = ProfileTabs.Lists
                 onTabChanged(ProfileTabs.Lists)
-                model.getProfileFeed(ProfileTabs.Lists, apiProvider)
+                model.getProfileFeed(ProfileTabs.Lists)
             },
         ) {
             Text(

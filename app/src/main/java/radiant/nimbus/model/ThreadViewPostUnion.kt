@@ -1,3 +1,5 @@
+package radiant.nimbus.model
+
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialName
 import radiant.nimbus.api.runtime.valueClassSerializer

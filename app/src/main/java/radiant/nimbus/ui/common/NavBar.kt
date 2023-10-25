@@ -244,7 +244,9 @@ fun NimbusBottomNavBar(
                     BadgedBox(
                         badge = {
                             if (unread.value > 0) {
-                                Badge {
+                                Badge(
+                                    containerColor = MaterialTheme.colorScheme.primary
+                                ) {
                                     Text(unread.value.toString(),
                                         modifier = Modifier.semantics {
                                             contentDescription = "$unread.value.toString() new notifications"
@@ -430,7 +432,9 @@ fun NimbusNavRail(
                 BadgedBox(
                     badge = {
                         if (unread.value > 0) {
-                            Badge {
+                            Badge(
+                                containerColor = MaterialTheme.colorScheme.primary
+                            ) {
                                 Text(unread.value.toString(),
                                     modifier = Modifier.semantics {
                                         contentDescription = "$unread.value.toString() new notifications"

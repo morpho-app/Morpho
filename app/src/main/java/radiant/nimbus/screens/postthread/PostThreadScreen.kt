@@ -21,6 +21,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -28,9 +29,9 @@ import com.atproto.repo.StrongRef
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import radiant.nimbus.MainViewModel
-import radiant.nimbus.api.ApiProvider
 import radiant.nimbus.api.AtUri
 import radiant.nimbus.api.model.RecordUnion
+import radiant.nimbus.apiProvider
 import radiant.nimbus.components.Center
 import radiant.nimbus.components.ScreenBody
 import radiant.nimbus.extensions.activityViewModel
@@ -95,7 +96,7 @@ fun PostThreadScreen(
                 CircularProgressIndicator()
             }
         }
-        viewModel.loadThread(uri, mainViewModel.apiProvider) {
+        viewModel.loadThread(uri) {
             showLoadingScreen = false
         }
     } else {
@@ -103,7 +104,6 @@ fun PostThreadScreen(
             viewModel.thread?.let {
                 PostThreadView(
                     thread = it,
-                    apiProvider = mainViewModel.apiProvider,
                     navigator = navigator,
                     navBar = { mainViewModel.navBar?.let { it(5) } },
                     tabList = mainViewModel.pinnedFeeds
@@ -118,11 +118,11 @@ fun PostThreadScreen(
 @Composable
 fun PostThreadView(
     thread: BskyPostThread,
-    apiProvider: ApiProvider,
     navigator: DestinationsNavigator,
     navBar: @Composable () -> Unit = {},
     tabList: List<FeedTab> = listOf(),
 ){
+    val apiProvider = LocalContext.current.apiProvider
     var repostClicked by remember { mutableStateOf(false)}
     var initialContent: BskyPost? by remember { mutableStateOf(null) }
     var showComposer by remember { mutableStateOf(false)}

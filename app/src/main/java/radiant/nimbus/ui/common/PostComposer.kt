@@ -70,15 +70,15 @@ enum class ComposerRole {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun BottomSheetPostComposer(
+inline fun BottomSheetPostComposer(
     modifier: Modifier = Modifier,
-    onDismissRequest: ()-> Unit = {},
+    crossinline onDismissRequest: ()-> Unit = {},
     initialContent: BskyPost? = null,
     role: ComposerRole = ComposerRole.StandalonePost,
     draft: DraftPost = DraftPost(),
-    onSend: (Post) -> Unit = {},
-    onCancel: () -> Unit = {},
-    onUpdate: (DraftPost) -> Unit = {},
+    crossinline onSend: (Post) -> Unit = {},
+    crossinline onCancel: () -> Unit = {},
+    crossinline onUpdate: (DraftPost) -> Unit = {},
     sheetState:SheetState = rememberModalBottomSheetState(),
 ) {
     val scope = rememberCoroutineScope()

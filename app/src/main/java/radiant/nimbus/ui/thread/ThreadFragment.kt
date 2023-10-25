@@ -12,6 +12,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.util.fastForEach
 import com.atproto.repo.StrongRef
 import radiant.nimbus.api.AtIdentifier
 import radiant.nimbus.api.AtUri
@@ -55,6 +56,9 @@ fun ThreadFragment(
     LaunchedEffect(Unit) {
         listState.scrollToItem(rootIndex)
     }
+    val replies = remember {
+        threadPost.replies.filterIsInstance<ThreadPost.ViewablePost>()
+    }
 
     LazyColumn(
         modifier = modifier,
@@ -68,13 +72,13 @@ fun ThreadFragment(
                         item(key = threadPost.post.cid) {
                             FullPostFragment(
                                 post = root.post,
-                                onItemClicked = onItemClicked,
-                                onProfileClicked = onProfileClicked,
-                                onUnClicked = onUnClicked,
-                                onRepostClicked = onRepostClicked,
-                                onReplyClicked = onReplyClicked,
-                                onMenuClicked = onMenuClicked,
-                                onLikeClicked = onLikeClicked,
+                                onItemClicked = {onItemClicked(it) },
+                                onProfileClicked = { onProfileClicked(it) },
+                                onUnClicked =  { type,uri-> onUnClicked(type,uri) },
+                                onRepostClicked = { onRepostClicked(it) },
+                                onReplyClicked = { onReplyClicked(it) },
+                                onMenuClicked = { onMenuClicked(it) },
+                                onLikeClicked = { onLikeClicked(it) },
                             )
                         }
                     } else {
@@ -156,27 +160,26 @@ fun ThreadFragment(
                     onUnClicked = onUnClicked,
                     onRepostClicked = onRepostClicked,
                     onReplyClicked = onReplyClicked,
-                    onMenuClicked = onMenuClicked,
                     onLikeClicked = onLikeClicked,
+                    onMenuClicked = onMenuClicked,
                 )
             }
         }
         if (hasReplies){
-            threadPost.replies.forEach { reply ->
-                if(reply is ThreadPost.ViewablePost) {
+            replies.fastForEach { reply ->
                     if (reply.replies.isNotEmpty()) {
                         item {
                             ThreadTree(
                                 reply = reply, modifier = Modifier.padding(4.dp),
                                 indentLevel = 1,
                                 comparator = comparator,
-                                onItemClicked = onItemClicked,
-                                onProfileClicked = onProfileClicked,
-                                onReplyClicked = onReplyClicked,
-                                onRepostClicked = onRepostClicked,
-                                onLikeClicked = onLikeClicked,
-                                onMenuClicked = onMenuClicked,
-                                onUnClicked = onUnClicked,
+                                onItemClicked = {onItemClicked(it) },
+                                onProfileClicked = { onProfileClicked(it) },
+                                onUnClicked =  { type,uri-> onUnClicked(type,uri) },
+                                onRepostClicked = { onRepostClicked(it) },
+                                onReplyClicked = { onReplyClicked(it) },
+                                onMenuClicked = { onMenuClicked(it) },
+                                onLikeClicked = { onLikeClicked(it) },
                             )
                         }
                     } else {
@@ -194,7 +197,7 @@ fun ThreadFragment(
                             )
                         }
                     }
-                }
+
             }
         }
     }

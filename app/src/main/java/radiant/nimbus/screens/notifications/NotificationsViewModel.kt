@@ -20,9 +20,10 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
-import radiant.nimbus.api.ApiProvider
+import radiant.nimbus.NimbusApplication
 import radiant.nimbus.api.AtUri
 import radiant.nimbus.api.response.AtpResponse
+import radiant.nimbus.apiProvider
 import radiant.nimbus.base.BaseViewModel
 import radiant.nimbus.model.NotificationsList
 import radiant.nimbus.model.toBskyNotification
@@ -31,7 +32,6 @@ import javax.inject.Inject
 
 data class NotificationsState(
     val isLoading : Boolean = false,
-    val numberUnread: Long = -1,
     val cursor: String? = null,
     val hideRead: Boolean = false,
     val showPosts: Boolean = true,
@@ -62,10 +62,15 @@ class NotificationsViewModel @Inject constructor(
     val isRefreshing: StateFlow<Boolean>
         get() = _isRefreshing.asStateFlow()
 
+    lateinit var unreadCount: StateFlow<Long>
 
-    private suspend fun getUnread(apiProvider: ApiProvider) = viewModelScope.async(Dispatchers.IO) {
+    fun connectNotifications(unread: StateFlow<Long>) {
+        unreadCount = unread
+    }
+
+    suspend fun getUnread() = viewModelScope.async(Dispatchers.IO) {
         return@async when(
-            val response = apiProvider.api.getUnreadCount(GetUnreadCountQueryParams())
+            val response = getApplication<NimbusApplication>().apiProvider.api.getUnreadCount(GetUnreadCountQueryParams())
         ) {
             is AtpResponse.Failure -> {
                 -1
@@ -77,13 +82,10 @@ class NotificationsViewModel @Inject constructor(
         }
     }
 
-
-
-    fun getNotifications(apiProvider: ApiProvider, cursor: String? = null) = viewModelScope.launch {
+    fun getNotifications(cursor: String? = null) = viewModelScope.launch {
         launch(Dispatchers.IO) {
-            val unread = getUnread(apiProvider)
             when(
-                val response = apiProvider.api.listNotifications(
+                val response = getApplication<NimbusApplication>().apiProvider.api.listNotifications(
                     ListNotificationsQueryParams(
                     limit = 50,
                     cursor = cursor,
@@ -103,7 +105,7 @@ class NotificationsViewModel @Inject constructor(
                             old.concat(response.response.notifications)
                         }
                     }
-                    state = state.copy(isLoading = false, numberUnread = unread.await(),
+                    state = state.copy(isLoading = false,
                         cursor = response.response.cursor)
                 }
             }
@@ -111,16 +113,16 @@ class NotificationsViewModel @Inject constructor(
         _isRefreshing.emit(false)
     }
 
-    fun updateSeen(apiProvider: ApiProvider) = viewModelScope.launch(Dispatchers.IO) {
-        apiProvider.api.updateSeen(UpdateSeenRequest(Clock.System.now()))
+    fun updateSeen() = viewModelScope.launch(Dispatchers.IO) {
+        getApplication<NimbusApplication>().apiProvider.api.updateSeen(UpdateSeenRequest(Clock.System.now()))
     }
 
     fun toggleUnread() {
         state = state.copy(hideRead = !state.hideRead)
     }
 
-    suspend fun getPost(uri: AtUri, apiProvider: ApiProvider) = viewModelScope.async(Dispatchers.IO) {
-        when(val response = apiProvider.api.getPosts(GetPostsQueryParams(
+    suspend fun getPost(uri: AtUri) = viewModelScope.async(Dispatchers.IO) {
+        when(val response = getApplication<NimbusApplication>().apiProvider.api.getPosts(GetPostsQueryParams(
             persistentListOf(uri)
         ))) {
             is AtpResponse.Failure -> return@async null

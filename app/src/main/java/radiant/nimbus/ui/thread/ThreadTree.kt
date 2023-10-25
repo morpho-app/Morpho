@@ -8,12 +8,14 @@ import androidx.compose.foundation.lazy.LazyScopeMarker
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.util.fastForEach
 import com.atproto.repo.StrongRef
 import radiant.nimbus.api.AtIdentifier
 import radiant.nimbus.api.AtUri
@@ -46,8 +48,9 @@ fun ThreadTree(
     onMenuClicked: (MenuOptions) -> Unit = { },
     onUnClicked: (type: RecordType, uri: AtUri) -> Unit = { _, _ -> },
 ) {
-    if(reply is ThreadPost.ViewablePost) {
 
+
+    if(reply is ThreadPost.ViewablePost) {
         if (reply.replies.isEmpty()) {
             ThreadReply(
                 item = reply, role = PostFragmentRole.Solo, indentLevel = indentLevel,
@@ -62,6 +65,7 @@ fun ThreadTree(
 
             )
         } else {
+            val replies = remember { reply.replies.sortedWith(comparator) }
             Column(
                 modifier = modifier
                     .fillMaxWidth()
@@ -100,26 +104,25 @@ fun ThreadTree(
                             role = PostFragmentRole.ThreadBranchStart,
                             indentLevel = indentLevel,
                             modifier = Modifier.padding(top = 2.dp),
-                            onItemClicked = onItemClicked,
-                            onProfileClicked = onProfileClicked,
-                            onUnClicked = onUnClicked,
-                            onRepostClicked = onRepostClicked,
-                            onReplyClicked = onReplyClicked,
-                            onMenuClicked = onMenuClicked,
-                            onLikeClicked = onLikeClicked,
+                            onItemClicked = {onItemClicked(it) },
+                            onProfileClicked = { onProfileClicked(it) },
+                            onUnClicked =  { type,uri-> onUnClicked(type,uri) },
+                            onRepostClicked = { onRepostClicked(it) },
+                            onReplyClicked = { onReplyClicked(it) },
+                            onMenuClicked = { onMenuClicked(it) },   
+                            onLikeClicked = { onLikeClicked(it) },
                         )
 
-                        val nextIndent = indentLevel
-                        reply.replies.sortedWith(comparator).forEach {
+                        replies.fastForEach { reply ->
                             ThreadTree(
-                                reply = it, modifier = modifier, indentLevel = nextIndent,
-                                onItemClicked = onItemClicked,
-                                onProfileClicked = onProfileClicked,
-                                onReplyClicked = onReplyClicked,
-                                onRepostClicked = onRepostClicked,
-                                onLikeClicked = onLikeClicked,
-                                onMenuClicked = onMenuClicked,
-                                onUnClicked = onUnClicked,
+                                reply = reply, modifier = modifier, indentLevel = indentLevel,
+                                onItemClicked = { onItemClicked(it) },
+                                onProfileClicked = { onProfileClicked(it) },
+                                onUnClicked = { type, uri -> onUnClicked(type, uri) },
+                                onRepostClicked = { onRepostClicked(it) },
+                                onReplyClicked = { onReplyClicked(it) },
+                                onMenuClicked = { onMenuClicked(it) },
+                                onLikeClicked = { onLikeClicked(it) },
                             )
                         }
                     }

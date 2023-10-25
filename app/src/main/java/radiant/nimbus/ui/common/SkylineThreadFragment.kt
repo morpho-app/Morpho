@@ -21,6 +21,8 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.util.fastForEach
+import androidx.compose.ui.util.fastForEachIndexed
 import com.atproto.repo.StrongRef
 import radiant.nimbus.api.AtIdentifier
 import radiant.nimbus.api.AtUri
@@ -35,16 +37,16 @@ import radiant.nimbus.ui.thread.ThreadItem
 import radiant.nimbus.ui.thread.ThreadTree
 
 @Composable
-fun SkylineThreadFragment(
+inline fun SkylineThreadFragment(
     thread: BskyPostThread,
     modifier: Modifier = Modifier,
-    onItemClicked: OnPostClicked = {},
-    onProfileClicked: (AtIdentifier) -> Unit = {},
-    onReplyClicked: (BskyPost) -> Unit = { },
-    onRepostClicked: (BskyPost) -> Unit = { },
-    onLikeClicked: (StrongRef) -> Unit = { },
-    onMenuClicked: (MenuOptions) -> Unit = { },
-    onUnClicked: (type: RecordType, uri: AtUri) -> Unit = { _, _ -> },
+    crossinline onItemClicked: OnPostClicked = {},
+    crossinline onProfileClicked: (AtIdentifier) -> Unit = {},
+    crossinline onReplyClicked: (BskyPost) -> Unit = { },
+    crossinline onRepostClicked: (BskyPost) -> Unit = { },
+    crossinline onLikeClicked: (StrongRef) -> Unit = { },
+    noinline onMenuClicked: (MenuOptions) -> Unit = { },
+    crossinline onUnClicked: (type: RecordType, uri: AtUri) -> Unit = { _, _ -> },
 ) {
     val threadPost = remember { ThreadPost.ViewablePost(thread.post, thread.replies) }
     val hasReplies = rememberSaveable { threadPost.replies.isNotEmpty() }
@@ -73,13 +75,13 @@ fun SkylineThreadFragment(
                                 role = PostFragmentRole.ThreadBranchStart,
                                 elevate = true,
                                 modifier = Modifier,
-                                onItemClicked = onItemClicked,
-                                onProfileClicked = onProfileClicked,
-                                onUnClicked = onUnClicked,
-                                onRepostClicked = onRepostClicked,
-                                onReplyClicked = onReplyClicked,
-                                onMenuClicked = onMenuClicked,
-                                onLikeClicked = onLikeClicked,
+                                onItemClicked = {onItemClicked(it) },
+                                onProfileClicked = { onProfileClicked(it) },
+                                onUnClicked =  { type,uri-> onUnClicked(type,uri) },
+                                onRepostClicked = { onRepostClicked(it) },
+                                onReplyClicked = { onReplyClicked(it) },
+                                onMenuClicked = { onMenuClicked(it) },
+                                onLikeClicked = { onLikeClicked(it) },
                             )
                         }
                     } else {
@@ -138,7 +140,7 @@ fun SkylineThreadFragment(
 
 
                                     if (showFullThread) {
-                                        thread.parents.forEachIndexed { index, post ->
+                                        thread.parents.fastForEachIndexed { index, post ->
                                             val reason = remember {
                                                 when (post) {
                                                     is ThreadPost.BlockedPost -> null
@@ -187,7 +189,7 @@ fun SkylineThreadFragment(
                                         onMenuClicked = onMenuClicked,
                                     )
                                 } else {
-                                    thread.parents.forEachIndexed { index, post ->
+                                    thread.parents.fastForEachIndexed { index, post ->
                                         val reason = remember {
                                             when (post) {
                                                 is ThreadPost.BlockedPost -> null
@@ -313,23 +315,24 @@ fun SkylineThreadFragment(
                             }
                         }
                         if (showReplies) {
-                            threadPost.replies.forEach { it: ThreadPost ->
-                                if (it is ThreadPost.ViewablePost) {
-                                    if (it.replies.isNotEmpty()) {
+                            val replies = remember {threadPost.replies.filterIsInstance<ThreadPost.ViewablePost>()}
+                            replies.fastForEach { post: ThreadPost ->
+                                if (post is ThreadPost.ViewablePost) {
+                                    if (post.replies.isNotEmpty()) {
                                         ThreadTree(
-                                            reply = it, indentLevel = 1,
+                                            reply = post, indentLevel = 1,
                                             modifier = Modifier.padding(4.dp),
-                                            onItemClicked = onItemClicked,
-                                            onProfileClicked = onProfileClicked,
-                                            onUnClicked = onUnClicked,
-                                            onRepostClicked = onRepostClicked,
-                                            onReplyClicked = onReplyClicked,
-                                            onLikeClicked = onLikeClicked,
-                                            onMenuClicked = onMenuClicked,
+                                            onItemClicked = {onItemClicked(it) },
+                                            onProfileClicked = { onProfileClicked(it) },
+                                            onUnClicked =  { type,uri-> onUnClicked(type,uri) },
+                                            onRepostClicked = { onRepostClicked(it) },
+                                            onReplyClicked = { onReplyClicked(it) },
+                                            onMenuClicked = { onMenuClicked(it) },
+                                            onLikeClicked = { onLikeClicked(it) },
                                         )
                                     } else {
                                         ThreadItem(
-                                            item = it,
+                                            item = post,
                                             role = PostFragmentRole.ThreadRootUnfocused,
                                             indentLevel = 1,
                                             modifier = Modifier.padding(4.dp),

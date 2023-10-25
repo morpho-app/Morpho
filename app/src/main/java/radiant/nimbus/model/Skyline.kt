@@ -30,10 +30,12 @@ import kotlin.time.Duration
 typealias TunerFunction = (List<BskyPost>) -> List<BskyPost>
 
 data class Skyline(
-    var posts: List<SkylineItem>,
+    private var _posts: MutableList<SkylineItem> = mutableListOf(),
     var cursor: String?,
     var feed: String = "home",
+    var hasNewPosts: Boolean = false,
 ) {
+    val posts = _posts.toImmutableList()
     companion object {
 
         fun from(
@@ -41,8 +43,8 @@ data class Skyline(
             cursor: String? = null,
         ): Skyline {
             return Skyline(
-                posts = posts.mapImmutable { SkylineItem(it) },
-                cursor = cursor,
+                _posts = posts.map { SkylineItem.PostItem(it) }.toMutableList(),
+                cursor = cursor, hasNewPosts = cursor == null
             )
         }
 
@@ -52,8 +54,15 @@ data class Skyline(
             cursor: String? = skyline.cursor,
         ): Skyline {
             return Skyline(
-                posts = (posts.mapImmutable { SkylineItem(it.toPost()) } union skyline.posts).toList().sortedByDescending { it.post?.createdAt },
-                cursor = cursor,
+                _posts = (posts.mapImmutable { SkylineItem.PostItem(it.toPost()) } union skyline._posts).toList()
+                    .sortedByDescending {
+                        when(it) {
+                            is SkylineItem.PostItem -> it.post.createdAt
+                            is SkylineItem.ThreadItem -> it.thread.post.createdAt
+                        }
+                    }.toMutableList(),
+
+                cursor = cursor, hasNewPosts = cursor == null
             )
         }
         fun concat(
@@ -62,8 +71,14 @@ data class Skyline(
             cursor: String? = skyline.cursor,
         ): Skyline {
             return Skyline(
-                posts = (skyline.posts union posts.mapImmutable { SkylineItem(it.toPost()) }).toList().sortedByDescending { it.post?.createdAt },
-                cursor = cursor,
+                _posts = (skyline._posts union posts.mapImmutable { SkylineItem.PostItem(it.toPost()) }).toList()
+                    .sortedByDescending {
+                        when(it) {
+                            is SkylineItem.PostItem -> it.post.createdAt
+                            is SkylineItem.ThreadItem -> it.thread.post.createdAt
+                        }
+                    }.toMutableList(),
+                cursor = cursor, hasNewPosts = cursor == null
             )
         }
 
@@ -73,8 +88,14 @@ data class Skyline(
             cursor: String? = last.cursor
         ): Skyline {
             return Skyline(
-                posts = (first.posts union last.posts).toList().sortedByDescending { it.post?.createdAt },
-                cursor = cursor,
+                _posts = (first._posts union last._posts).toList()
+                    .sortedByDescending {
+                       when(it) {
+                           is SkylineItem.PostItem -> it.post.createdAt
+                           is SkylineItem.ThreadItem -> it.thread.post.createdAt
+                       }
+                }.toMutableList(),
+                cursor = cursor, hasNewPosts = cursor == null
             )
         }
 
@@ -95,10 +116,10 @@ data class Skyline(
         ) = CoroutineScope(Dispatchers.Default).async {
             val threadCandidates = mutableMapOf<Cid, MutableMap<Cid, BskyPost>>()
             async {
-                skyline.posts.map { item ->
-                    val post = item.post
-                    if (post != null) {
-                        if(post.reply != null && item.thread == null) {
+                skyline._posts.map { item ->
+                    if (item is SkylineItem.PostItem) {
+                        val post = item.post
+                        if(post.reply != null) {
                             val itemCid = post.cid
                             val parent = post.reply.parent
                             val root = post.reply.root
@@ -112,7 +133,6 @@ data class Skyline(
                                         if (root != null && root.cid !in thread.value.keys) {
                                             thread.value[root.cid] = root
                                         }
-                                        item.post = null
                                         found = true
                                         return@forEach
                                     } else if (parent != null && parent.cid in thread.value.keys) {
@@ -143,7 +163,6 @@ data class Skyline(
                                 if (root != null && threadCandidates[itemCid]?.keys?.contains(root.cid) != true ) {
                                     threadCandidates[itemCid]?.set(root.cid, root )
                                 }
-                                item.post = null
                             }
                         }
                     }
@@ -151,14 +170,13 @@ data class Skyline(
             }.await()
             val threads = mutableMapOf<Cid, List<BskyPost>>()
             awaitAll(
-                async { skyline.posts.filterNot { it.post == null && it.thread == null } },
                 async { threadCandidates.map { thread ->
                     if (thread.value.values.isNotEmpty()) threads[thread.key] = thread.value.values.toMutableList()
                 } },
             )
-            skyline.posts.map { item ->
-                val post = item.post
-                if (post != null){
+            skyline._posts.mapIndexed { index, item ->
+                if (item is SkylineItem.PostItem){
+                    val post = item.post
                     val itemCid = post.cid
                     if( itemCid in threads.keys) {
                         val level = 1
@@ -180,13 +198,18 @@ data class Skyline(
                                 ThreadPost.ViewablePost(p, findReplies(level, depth, p, thread).await())
                             }.orEmpty()
                         }
-                        item.thread = BskyPostThread(post, parents.await(), replies.await().toImmutableList())
+                        skyline._posts[index] = SkylineItem.ThreadItem(BskyPostThread(post, parents.await(), replies.await().toImmutableList()))
                     }
                 }
 
             }
-            skyline.posts.sortedByDescending { it.post?.createdAt }
-            return@async Skyline(skyline.posts, cursor)
+            skyline._posts.sortedByDescending {
+                when(it) {
+                    is SkylineItem.PostItem -> it.post.createdAt
+                    is SkylineItem.ThreadItem -> it.thread.post.createdAt
+                }
+            }
+            return@async Skyline(skyline._posts, cursor)
         }
 
         private fun findReplies(level: Int, depth: Int, post: BskyPost, list: List<BskyPost>
@@ -302,18 +325,19 @@ data class Skyline(
                 }
             }
             var skylineItems: List<SkylineItem> = posts.fastMap {
-                if (threads.containsKey(it.uri)) {
-                    SkylineItem(it, threads[it.uri])
+                val thread = threads[it.uri]
+                if (threads.containsKey(it.uri) && thread != null) {
+                    SkylineItem.ThreadItem(thread)
                 } else {
-                    SkylineItem(it)
+                    SkylineItem.PostItem(it)
                 }
             }
             skylineItems = skylineItems.fastFilter { item ->
                 threads.none {
-                    item.thread == null && it.value.contains(item.post?.uri)
+                    item is SkylineItem.PostItem && it.value.contains(item.post.uri)
                 }
             }
-            return@async Skyline(posts = skylineItems, cursor)
+            return@async Skyline(_posts = skylineItems.toMutableList(), cursor, hasNewPosts = cursor == null)
         }
 
 
@@ -328,20 +352,24 @@ data class Skyline(
     }
 
     operator fun plus(skyline: Skyline) {
-        posts = posts + skyline.posts
+        _posts = (_posts + skyline._posts).toMutableList()
         cursor = skyline.cursor
     }
 
     operator fun contains(cid: Cid): Boolean {
-        posts.map { if ((it.post?.cid ?: Cid("")) == cid || (it.thread?.contains(cid) == true)) return true }
-        return false
+        return _posts.fastAny {
+            when(it) {
+                is SkylineItem.PostItem -> it.post.cid == cid
+                is SkylineItem.ThreadItem -> it.thread.contains(cid)
+            }
+        }
     }
 
 
 
 }
 fun List<FeedViewPost>.toBskyPostList(): List<BskyPost> {
-    return this.map { it.toPost() }
+    return this.fastMap { it.toPost() }
 }
 
 fun List<BskyPost>.tune(

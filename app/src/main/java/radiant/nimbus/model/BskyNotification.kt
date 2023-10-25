@@ -1,5 +1,6 @@
 package radiant.nimbus.model
 
+import androidx.compose.runtime.Immutable
 import app.bsky.feed.Like
 import app.bsky.feed.Post
 import app.bsky.feed.PostReplyRef
@@ -18,6 +19,7 @@ import radiant.nimbus.util.deserialize
 import radiant.nimbus.util.mapImmutable
 import radiant.nimbus.util.recordType
 
+@Immutable
 @Serializable
 sealed interface BskyNotification {
     val uri: AtUri
@@ -31,6 +33,8 @@ sealed interface BskyNotification {
     val isRead: Boolean
     val indexedAt: Moment
     val labels: List<BskyLabel>
+
+    @Immutable
     @Serializable
     data class Like(
         override val uri: AtUri,
@@ -45,6 +49,7 @@ sealed interface BskyNotification {
         val createdAt: Moment,
     ): BskyNotification
 
+    @Immutable
     @Serializable
     data class Repost(
         override val uri: AtUri,
@@ -59,6 +64,7 @@ sealed interface BskyNotification {
         val createdAt: Moment,
     ): BskyNotification
 
+    @Immutable
     @Serializable
     data class Follow(
         override val uri: AtUri,
@@ -73,6 +79,7 @@ sealed interface BskyNotification {
         val createdAt: Moment,
     ): BskyNotification
 
+    @Immutable
     @Serializable
     data class Post(
         override val uri: AtUri,
@@ -86,7 +93,7 @@ sealed interface BskyNotification {
         val post: BskyPost,
     ): BskyNotification
 
-
+    @Immutable
     @Serializable
     data class Unknown(
         override val uri: AtUri,

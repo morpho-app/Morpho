@@ -2,6 +2,7 @@
 
 package radiant.nimbus.model
 
+import androidx.compose.runtime.Immutable
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import app.bsky.feed.ThreadViewPost
@@ -10,6 +11,7 @@ import app.bsky.feed.ThreadViewPostReplieUnion
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.serialization.Serializable
+import okhttp3.internal.toImmutableList
 import radiant.nimbus.api.AtUri
 import radiant.nimbus.api.Cid
 import radiant.nimbus.model.ThreadPost.BlockedPost
@@ -25,12 +27,14 @@ data class BskyDbThread(
     val replyIds: List<Long> = mutableListOf(),
 )
 
+@Immutable
 @Serializable
 data class BskyPostThread(
     val post: BskyPost,
-    val parents: List<ThreadPost>,
+    private val _parents: List<ThreadPost>,
     val replies: ImmutableList<ThreadPost>,
 ) {
+    val parents = _parents.toImmutableList()
     operator fun contains(other: Any?) : Boolean {
         when(other) {
             null -> return false
@@ -58,8 +62,12 @@ data class BskyPostThread(
     }
 }
 
+
+@Immutable
 @Serializable
 sealed interface ThreadPost {
+
+    @Immutable
     @Serializable
     data class ViewablePost(
         val post: BskyPost,
@@ -135,6 +143,7 @@ sealed interface ThreadPost {
         }
     }
 
+    @Immutable
     @Serializable
     data class NotFoundPost(
         val uri: AtUri? = null,
@@ -149,6 +158,7 @@ sealed interface ThreadPost {
         }
     }
 
+    @Immutable
     @Serializable
     data class BlockedPost(
         val uri: AtUri? = null,
@@ -169,7 +179,7 @@ sealed interface ThreadPost {
 fun ThreadViewPost.toThread(): BskyPostThread {
     return BskyPostThread(
         post = post.toPost(),
-        parents = generateSequence(parent) { parentPost ->
+        _parents = generateSequence(parent) { parentPost ->
             when (parentPost) {
                 is ThreadViewPostParentUnion.BlockedPost -> null
                 is ThreadViewPostParentUnion.NotFoundPost -> null
@@ -178,7 +188,7 @@ fun ThreadViewPost.toThread(): BskyPostThread {
         }
             .map { it.toThreadPost() }
             .toList()
-            .reversed(),
+            .reversed().toImmutableList(),
         replies = replies.mapImmutable { reply -> reply.toThreadPost() },
     )
 }

@@ -14,10 +14,10 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
+import radiant.nimbus.api.AtUri
 import radiant.nimbus.util.deserialize
 import radiant.nimbus.util.mapImmutable
 import radiant.nimbus.util.serialize
-import radiant.nimbus.api.AtUri
 
 @Dao
 interface BskyPostDao {
@@ -188,7 +188,7 @@ interface BskyPostDao {
         return flowOf(
             BskyPostThread(
                 post = BskyPost.serializer().deserialize(post.cacheEntry),
-                parents = parents.first(),
+                _parents = parents.first(),
                 replies = replies.first()
             )
         ).distinctUntilChanged()

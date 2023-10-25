@@ -9,14 +9,15 @@ import androidx.room.Room
 import app.bsky.notification.GetUnreadCountQueryParams
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import radiant.nimbus.api.ApiProvider
 import radiant.nimbus.api.BskyPreferences
-import radiant.nimbus.api.ServerRepository
-import radiant.nimbus.api.auth.LoginRepository
 import radiant.nimbus.api.response.AtpResponse
 import radiant.nimbus.app.Supervisor
 import radiant.nimbus.base.BaseViewModel
@@ -26,23 +27,38 @@ import radiant.nimbus.screens.skyline.FeedTab
 import javax.inject.Inject
 
 
+
 @HiltViewModel
 class MainViewModel @Inject constructor(
     app: Application,
-    val apiProvider: ApiProvider = ApiProvider(ServerRepository(app), LoginRepository(app)),
 ) : BaseViewModel(app) {
+    val apiProvider: ApiProvider = app.apiProvider
     var supervisors: Set<Supervisor> = setOf()
     var currentUser: DetailedProfile? = null
+
     var pinnedFeeds = mutableStateListOf<FeedTab>()
     var userPreferences: BskyPreferences? = null
     var windowSizeClass: WindowSizeClass? = null
-    val db: AppDatabase = Room.databaseBuilder(app.applicationContext, AppDatabase::class.java, "nimbus_db")
-        .build()
+    val db: AppDatabase = Room.databaseBuilder(
+            app.applicationContext, AppDatabase::class.java, "nimbus_db"
+        ).build()
 
     var navBar: @Composable ((index: Int) -> Unit)? = null
     private val _unreadNotifications = MutableStateFlow(-1L)
     val unreadNotifications: StateFlow<Long>
         get() = _unreadNotifications.asStateFlow()
+
+    init {
+        updateNotifications()
+
+    }
+
+    private fun updateNotifications(): Job = viewModelScope.launch(SupervisorJob() + Dispatchers.Default) {
+        while (true) {
+            getUnreadCount()
+            delay(30000L)
+        }
+    }
 
     fun getUnreadCount() = viewModelScope.launch(Dispatchers.IO) {
         when(
@@ -55,6 +71,10 @@ class MainViewModel @Inject constructor(
                 _unreadNotifications.emit(response.response.count)
             }
         }
+    }
+
+    fun initPushNotifications() = viewModelScope.launch(Dispatchers.IO) {
+
     }
     /*
     private val currentUserPref = app.storage.preference<DetailedProfile>("current_user", null)

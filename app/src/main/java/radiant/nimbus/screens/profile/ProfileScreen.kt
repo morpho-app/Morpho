@@ -30,16 +30,15 @@ import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import io.github.xxfast.kstore.utils.ExperimentalKStoreApi
 import radiant.nimbus.MainViewModel
-import radiant.nimbus.api.ApiProvider
 import radiant.nimbus.api.AtIdentifier
+import radiant.nimbus.api.AtUri
+import radiant.nimbus.api.model.RecordType
 import radiant.nimbus.api.model.RecordUnion
 import radiant.nimbus.components.Center
 import radiant.nimbus.components.ScreenBody
 import radiant.nimbus.extensions.activityViewModel
 import radiant.nimbus.model.BskyPost
 import radiant.nimbus.model.DraftPost
-import radiant.nimbus.screens.destinations.PostThreadScreenDestination
-import radiant.nimbus.screens.destinations.ProfileScreenDestination
 import radiant.nimbus.ui.common.BottomSheetPostComposer
 import radiant.nimbus.ui.common.ComposerRole
 import radiant.nimbus.ui.common.RepostQueryDialog
@@ -74,7 +73,6 @@ fun ProfileScreen(
         }
         if (actor != null) {
             viewModel.getProfile(
-                mainViewModel.apiProvider,
                 actor,
                 {
                     profileUIState = ProfileUIState.Done
@@ -88,7 +86,6 @@ fun ProfileScreen(
         } else {
             if (mainViewModel.currentUser!= null) {
                 viewModel.getProfile(
-                    mainViewModel.apiProvider,
                     AtIdentifier(mainViewModel.currentUser!!.did.did),
                     {
                         profileUIState = ProfileUIState.Done
@@ -113,7 +110,6 @@ fun ProfileScreen(
 
             ProfileViewPhone(
                 model = viewModel,
-                apiProvider = mainViewModel.apiProvider,
                 navigator = navigator,
                 navBar = { mainViewModel.navBar?.let { it(4) } },
 
@@ -133,13 +129,12 @@ fun MyProfileScreen(
 ) {
     if (viewModel.useCachedProfile(mainViewModel.currentUser)) {
         LaunchedEffect(Unit) {
-            viewModel.getProfileFeed(ProfileTabs.Posts, mainViewModel.apiProvider)
-            viewModel.getProfileFeed(ProfileTabs.PostsReplies, mainViewModel.apiProvider)
-            viewModel.getProfileFeed(ProfileTabs.Media, mainViewModel.apiProvider)
+            viewModel.getProfileFeed(ProfileTabs.Posts)
+            viewModel.getProfileFeed(ProfileTabs.PostsReplies)
+            viewModel.getProfileFeed(ProfileTabs.Media)
         }
         ProfileViewPhone(
             model = viewModel,
-            apiProvider = mainViewModel.apiProvider,
             myProfile = true,
             navigator = navigator,
             navBar = { mainViewModel.navBar?.let { it(4) } },
@@ -158,11 +153,11 @@ enum class ProfileUIState {
 fun ProfileViewPhone(
     model: ProfileViewModel,
     modifier: Modifier = Modifier,
-    apiProvider: ApiProvider? = null,
     navigator: DestinationsNavigator,
     myProfile: Boolean = false,
     navBar: @Composable () -> Unit = {},
 ){
+    val apiProvider = model.apiProvider
     var selectedTab by rememberSaveable { mutableStateOf(ProfileTabs.Posts) }
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(
         state = rememberTopAppBarState(),
@@ -177,6 +172,29 @@ fun ProfileViewPhone(
     // Probably pull this farther up,
     //      but this means if you don't explicitly cancel you don't lose the post
     var draft by remember{ mutableStateOf(DraftPost()) }
+
+    val onProfileClicked:(actor: AtIdentifier, navigator: DestinationsNavigator) -> Unit = remember { return@remember model::onProfileClicked }
+    val onItemClicked:(uri: AtUri, navigator: DestinationsNavigator) -> Unit = remember { return@remember model::onItemClicked }
+    val onUnClicked:(type: RecordType, rkey: AtUri) -> Unit = remember { return@remember model.apiProvider::deleteRecord }
+    val onLikeClicked:(ref: StrongRef) -> Unit = remember { return@remember {
+        model.createRecord(RecordUnion.Like(it))
+    } }
+    val onReplyClicked:(post: BskyPost) -> Unit = remember {return@remember {
+        initialContent = it
+        composerRole = ComposerRole.Reply
+        showComposer = true
+    }}
+
+    val onRepostClicked:(post: BskyPost) -> Unit = remember {return@remember {
+        initialContent = it
+        repostClicked = true
+    }}
+
+    val onPostButtonClicked:() -> Unit = remember {return@remember {
+        composerRole = ComposerRole.StandalonePost
+        showComposer = true
+    }}
+
     ScreenBody(
         topContent = {
             Column(
@@ -197,12 +215,10 @@ fun ProfileViewPhone(
                         )
                     }
                 }
-                if (apiProvider != null) {
-                    ProfileTabRow(
-                        selected = selectedTab, apiProvider = apiProvider, model = model
-                    ) {
-                        selectedTab = it
-                    }
+                ProfileTabRow(
+                    selected = selectedTab, model = model
+                ) {
+                    selectedTab = it
                 }
 
             }
@@ -214,97 +230,59 @@ fun ProfileViewPhone(
         when (selectedTab) {
             ProfileTabs.Posts -> {
                 SkylineFragment(
-                    navigator = navigator,
                     postFlow = model.profilePosts,
                     contentPadding = insets,
-                    onItemClicked = {
-                        navigator.navigate(PostThreadScreenDestination(it))
-                    },
-                    onProfileClicked = {
-                        navigator.navigate(ProfileScreenDestination(it))
-                    },
+                    onItemClicked = {onItemClicked(it, navigator)},
+                    onProfileClicked = {onProfileClicked(it, navigator)},
                     refresh = {cursor ->
-                        if (apiProvider != null) {
-                            model.getProfileFeed(selectedTab,apiProvider, cursor)
-                        }
+                        model.getProfileFeed(ProfileTabs.Posts, cursor)
                     },
-                    onUnClicked = {type, uri ->  apiProvider?.deleteRecord(type, uri = uri)},
-                    onRepostClicked = {
-                        apiProvider?.createRecord(RecordUnion.Repost(StrongRef(it.uri,it.cid)))
-                        /* TODO: Add dialog/quote post option */
+                    onUnClicked = {type, rkey ->   onUnClicked(type, rkey)},
+                    onRepostClicked = {onRepostClicked(it)},
+                    onReplyClicked = {onReplyClicked(it)},
+                    onMenuClicked = {
                     },
-                    onReplyClicked = { },
-                    onMenuClicked = { },
-                    onLikeClicked = {
-                        apiProvider?.createRecord(RecordUnion.Like(it))
-                    },
+                    onLikeClicked = {onLikeClicked(it)},
+                    onPostButtonClicked = {onPostButtonClicked()},
                     isProfileFeed = true
                 )
             }
 
             ProfileTabs.PostsReplies -> {
                 SkylineFragment(
-                    navigator = navigator,
                     postFlow = model.profilePostsReplies,
                     contentPadding = insets,
-                    onItemClicked = {
-                        navigator.navigate(PostThreadScreenDestination(it))
-                    },
-                    onProfileClicked = {
-                        navigator.navigate(ProfileScreenDestination(it))
-                    },
+                    onItemClicked = {onItemClicked(it, navigator)},
+                    onProfileClicked = {onProfileClicked(it, navigator)},
                     refresh = {cursor ->
-                        if (apiProvider != null) {
-                            model.getProfileFeed(selectedTab,apiProvider, cursor)
-                        }
+                        model.getProfileFeed(ProfileTabs.PostsReplies, cursor)
                     },
-                    onUnClicked = {type, uri ->  apiProvider?.deleteRecord(type, uri = uri)},
-                    onRepostClicked = {
-                        initialContent = it
-                        repostClicked = true
+                    onUnClicked = {type, rkey ->   onUnClicked(type, rkey)},
+                    onRepostClicked = {onRepostClicked(it)},
+                    onReplyClicked = {onReplyClicked(it)},
+                    onMenuClicked = {
                     },
-                    onReplyClicked = {
-                        initialContent = it
-                        composerRole = ComposerRole.Reply
-                        showComposer = true
-                    },
-                    onMenuClicked = { },
-                    onLikeClicked = {
-                        apiProvider?.createRecord(RecordUnion.Like(it))
-                    },
+                    onLikeClicked = {onLikeClicked(it)},
+                    onPostButtonClicked = {onPostButtonClicked()},
                     isProfileFeed = true
                 )
             }
             ProfileTabs.Media -> {
                 SkylineFragment(
-                    navigator = navigator,
                     postFlow = model.profileMedia,
                     contentPadding = insets,
-                    onItemClicked = {
-                        navigator.navigate(PostThreadScreenDestination(it))
-                    },
-                    onProfileClicked = {
-                        navigator.navigate(ProfileScreenDestination(it))
-                    },
+                    onItemClicked = {onItemClicked(it, navigator)},
+                    onProfileClicked = {onProfileClicked(it, navigator)},
                     refresh = {cursor ->
-                        if (apiProvider != null) {
-                            model.getProfileFeed(selectedTab,apiProvider, cursor)
-                        }
+                        model.getProfileFeed(ProfileTabs.Media, cursor)
                     },
-                    onUnClicked = {type, uri ->  apiProvider?.deleteRecord(type, uri = uri)},
-                    onRepostClicked = {
-                        initialContent = it
-                        repostClicked = true
+                    onUnClicked = {type, rkey ->   onUnClicked(type, rkey)},
+                    onRepostClicked = {onRepostClicked(it)},
+                    onReplyClicked = {onReplyClicked(it)},
+                    onMenuClicked = {
                     },
-                    onReplyClicked = {
-                        initialContent = it
-                        composerRole = ComposerRole.Reply
-                        showComposer = true
-                    },
-                    onMenuClicked = { },
-                    onLikeClicked = {
-                        apiProvider?.createRecord(RecordUnion.Like(it))
-                    },
+                    onLikeClicked = {onLikeClicked(it)},
+                    onPostButtonClicked = {onPostButtonClicked()},
                     isProfileFeed = true
                 )
             }
@@ -323,7 +301,7 @@ fun ProfileViewPhone(
                         RecordUnion.Repost(
                             StrongRef(post.uri,post.cid)
                         )
-                    }?.let { apiProvider?.createRecord(it) }
+                    }?.let { apiProvider.createRecord(it) }
                 },
                 onQuotePost = {
                     showComposer = true
@@ -344,7 +322,7 @@ fun ProfileViewPhone(
                     draft = DraftPost()
                 },
                 onSend = {
-                    apiProvider?.createRecord(RecordUnion.MakePost(it))
+                    apiProvider.createRecord(RecordUnion.MakePost(it))
                     showComposer = false
                 },
                 onUpdate = { draft = it }

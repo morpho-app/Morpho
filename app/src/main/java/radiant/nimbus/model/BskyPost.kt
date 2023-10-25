@@ -1,5 +1,6 @@
 package radiant.nimbus.model
 
+import androidx.compose.runtime.Immutable
 import androidx.room.Entity
 import androidx.room.Fts4
 import app.bsky.feed.FeedViewPost
@@ -13,7 +14,7 @@ import radiant.nimbus.api.Cid
 import radiant.nimbus.api.Language
 import radiant.nimbus.util.deserialize
 import radiant.nimbus.util.mapImmutable
-import javax.annotation.concurrent.Immutable
+
 
 enum class PostType {
     BlockedThread,

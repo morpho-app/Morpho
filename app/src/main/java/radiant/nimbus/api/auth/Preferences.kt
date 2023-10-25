@@ -8,6 +8,7 @@ import radiant.nimbus.api.runtime.valueClassSerializer
 
 @Serializable
 public sealed interface PreferencesUnion {
+
   public class AdultContentPrefSerializer : KSerializer<AdultContentPref> by valueClassSerializer()
 
   @Serializable(with = AdultContentPrefSerializer::class)
