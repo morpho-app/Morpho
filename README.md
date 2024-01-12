@@ -1,3 +1,4 @@
+![Icon of the Morpho Bluesky app](./morpho_icon.png)
 # Morpho
 Fast, flexible native Android client for Bluesky (and possibly other ATProto applications)
 
