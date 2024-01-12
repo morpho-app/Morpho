@@ -29,3 +29,4 @@ Have a (pre)-pre-alpha-level app. Stil a ways to go before comfy doing a public 
    - Subscribe to lists, feeds
    - Ability to block/mute/report
    
+Icon by [Icons8](https://icons8.com/)
