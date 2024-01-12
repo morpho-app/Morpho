@@ -2,6 +2,7 @@ package radiant.nimbus.ui.profile
 
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.SecondaryScrollableTabRow
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
@@ -15,6 +16,7 @@ import androidx.compose.ui.unit.dp
 import radiant.nimbus.screens.profile.ProfileTabs
 import radiant.nimbus.screens.profile.ProfileViewModel
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileTabRow(
     modifier: Modifier = Modifier,
@@ -110,6 +112,7 @@ fun ProfileTabRow(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PreviewProfileTabRow(
     selected: ProfileTabs = ProfileTabs.Posts,
