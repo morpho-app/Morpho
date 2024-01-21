@@ -7,9 +7,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBars
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -66,9 +64,10 @@ fun ProfileScreen(
     if (showLoadingScreen) {
         ScreenBody {
             Center {
-                CircularProgressIndicator(
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
+                Text("Loading")
+                //CircularProgressIndicator(
+                //    color = MaterialTheme.colorScheme.onSurface,
+                //)
             }
         }
         if (actor != null) {

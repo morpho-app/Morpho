@@ -30,6 +30,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import radiant.nimbus.screens.skyline.FeedTab
+import kotlin.math.min
 
 @Composable
 @OptIn(ExperimentalMaterial3Api::class)
@@ -96,7 +97,7 @@ fun SkylineTopBar(
                 tabList.forEachIndexed { index, tab ->
                     Tab(selected = selectedTab == (1 + index),
                         onClick = {
-                            selectedTab = 1 + index
+                            selectedTab = min((1 + index), tabList.size)
                             onChanged(selectedTab)
                         },
                         text = {
