@@ -13,11 +13,11 @@ plugins {
 }
 
 android {
-    namespace "radiant.nimbus"
+    namespace "morpho.app"
     compileSdk 34
 
     defaultConfig {
-        applicationId "radiant.nimbus"
+        applicationId "morpho.app"
         minSdk 24
         //noinspection OldTargetApi
         targetSdk 33
