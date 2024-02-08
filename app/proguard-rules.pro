@@ -24,11 +24,11 @@
 # If you have any, replace classes with those containing named companion objects.
 
 -keepattributes *Annotation*, InnerClasses
--keep,includedescriptorclasses class radiant.nimbus.**$$serializer { *; } # <-- change package name to your app's
--keepclassmembers class radiant.nimbus.** { # <-- change package name to your app's
+-keep,includedescriptorclasses class morpho.app.**$$serializer { *; } # <-- change package name to your app's
+-keepclassmembers class morpho.app.** { # <-- change package name to your app's
     *** Companion;
 }
--keepclasseswithmembers class radiant.nimbus.** { # <-- change package name to your app's
+-keepclasseswithmembers class morpho.app.** { # <-- change package name to your app's
     kotlinx.serialization.KSerializer serializer(...);
 }
 
@@ -101,14 +101,14 @@ com.atproto.moderation.CreateReportRequestSubjectUnion,
 com.atproto.moderation.CreateReportResponseSubjectUnion,
 com.atproto.sync.SubscribeReposMessageUnion,
 com.atproto.admin.BlobViewDetailsUnion,
-radiant.nimbus.model.ThreadPost,
-radiant.nimbus.model.ThreadViewPostUnion,
-radiant.nimbus.model.SkylineItem,
-radiant.nimbus.model.BskyNotification,
-radiant.nimbus.model.Target,
-radiant.nimbus.model.BskyPostFeature,
-radiant.nimbus.model.EmbedPost,
-radiant.nimbus.model.BskyPostReason
+morpho.app.model.ThreadPost,
+morpho.app.model.ThreadViewPostUnion,
+morpho.app.model.SkylineItem,
+morpho.app.model.BskyNotification,
+morpho.app.model.Target,
+morpho.app.model.BskyPostFeature,
+morpho.app.model.EmbedPost,
+morpho.app.model.BskyPostReason
 {
     static **$* *;
 }

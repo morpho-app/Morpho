@@ -8,7 +8,7 @@ plugins {
 }
 
 android {
-    namespace = "radiant.nimbus.baselineprofile"
+    namespace = "morpho.app.baselineprofile"
     compileSdk = 34
 
     compileOptions {

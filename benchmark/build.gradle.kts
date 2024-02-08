@@ -5,7 +5,7 @@ plugins {
 }
 
 android {
-    namespace = "radiant.nimbus.benchmark"
+    namespace = "morpho.app.benchmark"
     compileSdk = 34
 
     compileOptions {
