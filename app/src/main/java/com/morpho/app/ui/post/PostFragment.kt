@@ -59,7 +59,7 @@ import morpho.app.model.BskyPostReply
 import morpho.app.model.EmbedImage
 import morpho.app.model.EmbedPost
 import morpho.app.model.Moment
-import morpho.app.model.Target
+import morpho.app.model.FacetType
 import morpho.app.ui.common.OnPostClicked
 import morpho.app.ui.elements.AvatarShape
 import morpho.app.ui.elements.MenuOptions
@@ -289,24 +289,24 @@ fun PostFragment(
                         facets = post.facets,
                         onClick = {
                             when(it) {
-                                is Target.ExternalLink -> {
+                                is FacetType.ExternalLink -> {
                                     val urlIntent = Intent(
                                         Intent.ACTION_VIEW,
                                         Uri.parse(it.uri.uri)
                                     )
                                     ctx.startActivity(urlIntent)
                                 }
-                                is Target.Format -> {
+                                is FacetType.Format -> {
                                     onItemClicked(post.uri)
                                 }
-                                is Target.PollBlueOption -> {
+                                is FacetType.PollBlueOption -> {
 
                                 }
-                                is Target.Tag -> {}
-                                is Target.UserDidMention -> {
+                                is FacetType.Tag -> {}
+                                is FacetType.UserDidMention -> {
                                     onProfileClicked(AtIdentifier(it.did.did))
                                 }
-                                is Target.UserHandleMention -> {
+                                is FacetType.UserHandleMention -> {
                                     onProfileClicked(AtIdentifier(it.handle.handle))
                                 }
                                 null -> {

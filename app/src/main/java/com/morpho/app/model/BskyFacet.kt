@@ -11,39 +11,42 @@ import morpho.app.api.Uri
 data class BskyFacet(
     val start: Int,
     val end: Int,
-    val target: Target,
+    val facetType: FacetType,
 )
 
-sealed interface Target {
+sealed interface FacetType {
     @Serializable
     data class UserHandleMention(
         val handle: Handle,
-    ) : Target
+    ) : FacetType
 
     @Serializable
     data class UserDidMention(
         val did: Did,
-    ) : Target
+    ) : FacetType
 
     @Serializable
     data class ExternalLink(
         val uri: Uri,
-    ) : Target
+    ) : FacetType
 
     @Serializable
     data class Tag(
         val tag: String,
-    ) : Target
+    ) : FacetType
 
     @Serializable
     data class PollBlueOption(
         val number: Int,
-    ) : Target
+    ) : FacetType
+
+    @Serializable
+    data object PollBlueQuestion : FacetType
 
     @Serializable
     data class Format(
         val format: RichTextFormat
-    ) : Target
+    ) : FacetType
 }
 
 enum class RichTextFormat {
@@ -57,12 +60,12 @@ fun Facet.toBskyFacet(): BskyFacet {
     return BskyFacet(
         start = index.byteStart.toInt(),
         end = index.byteEnd.toInt(),
-        target = when (val feature = features.first()) {
-            is FacetFeatureUnion.Link -> Target.ExternalLink(feature.value.uri)
-            is FacetFeatureUnion.Mention -> Target.UserDidMention(feature.value.did)
-            is FacetFeatureUnion.Tag -> Target.Tag(feature.value.tag)
-            is FacetFeatureUnion.PollBlueOption -> Target.PollBlueOption(feature.value.number)
-            is FacetFeatureUnion.PollBlueQuestion -> Target.PollBlueOption(feature.value.number)
+        facetType = when (val feature = features.first()) {
+            is FacetFeatureUnion.Link -> FacetType.ExternalLink(feature.value.uri)
+            is FacetFeatureUnion.Mention -> FacetType.UserDidMention(feature.value.did)
+            is FacetFeatureUnion.Tag -> FacetType.Tag(feature.value.tag)
+            is FacetFeatureUnion.PollBlueOption -> FacetType.PollBlueOption(feature.value.number)
+            is FacetFeatureUnion.PollBlueQuestion -> FacetType.PollBlueQuestion
         },
     )
 }

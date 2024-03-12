@@ -62,6 +62,6 @@ inline fun doMenuOperation(
         MenuOptions.MuteThread -> {
             /* TODO: come back to this button when notification backend is a thing */
         }
-        MenuOptions.ReportPost ->  reportCallback()
+        MenuOptions.ReportPost -> {}
     }
 }

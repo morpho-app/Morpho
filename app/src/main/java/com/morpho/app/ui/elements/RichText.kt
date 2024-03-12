@@ -19,7 +19,7 @@ import morpho.app.model.RichTextFormat.BOLD
 import morpho.app.model.RichTextFormat.ITALIC
 import morpho.app.model.RichTextFormat.STRIKETHROUGH
 import morpho.app.model.RichTextFormat.UNDERLINE
-import morpho.app.model.Target
+import morpho.app.model.FacetType
 import kotlin.math.min
 
 @Composable
@@ -27,25 +27,25 @@ fun RichTextElement(
     text: String,
     modifier: Modifier = Modifier,
     facets: List<BskyFacet> = persistentListOf(),
-    onClick: (Target?) -> Unit = {},
+    onClick: (FacetType?) -> Unit = {},
     maxLines: Int = 20,
 
-) {
+    ) {
     val formattedText = buildAnnotatedString {
         pushStyle(SpanStyle(MaterialTheme.colorScheme.onSurface))
         append(text)
         facets.forEach {
-            when(it.target) {
-                is Target.ExternalLink -> {
-                    addStringAnnotation(tag = "Link", it.target.uri.uri, min(it.start, text.length-1), min(it.end, text.length-1))
+            when(it.facetType) {
+                is FacetType.ExternalLink -> {
+                    addStringAnnotation(tag = "Link", it.facetType.uri.uri, min(it.start, text.length-1), min(it.end, text.length-1))
                     addStyle(
                         style = SpanStyle(MaterialTheme.colorScheme.tertiary),
                         start = min(it.start, text.length-1),
                         end = min(it.end, text.length-1)
                     )
                 }
-                is Target.PollBlueOption -> {
-                    addStringAnnotation(tag = "PollBlue", it.target.number.toString(), min(it.start, text.length-1), min(it.end, text.length-1))
+                is FacetType.PollBlueOption -> {
+                    addStringAnnotation(tag = "PollBlue", it.facetType.number.toString(), min(it.start, text.length-1), min(it.end, text.length-1))
                     addStyle(
                         style = SpanStyle(MaterialTheme.colorScheme.tertiary),
                         start = min(it.start, text.length-1),
@@ -53,32 +53,32 @@ fun RichTextElement(
                     )
                 }
 
-                is Target.Tag -> {
-                    addStringAnnotation(tag = "Tag", it.target.tag, min(it.start, text.length-1), min(it.end, text.length-1))
+                is FacetType.Tag -> {
+                    addStringAnnotation(tag = "Tag", it.facetType.tag, min(it.start, text.length-1), min(it.end, text.length-1))
                     addStyle(
                         style = SpanStyle(MaterialTheme.colorScheme.tertiary),
                         start = min(it.start, text.length-1),
                         end = min(it.end, text.length-1)
                     )
                 }
-                is Target.UserDidMention -> {
-                    addStringAnnotation(tag = "Mention", it.target.did.did, min(it.start, text.length-1), min(it.end, text.length-1))
+                is FacetType.UserDidMention -> {
+                    addStringAnnotation(tag = "Mention", it.facetType.did.did, min(it.start, text.length-1), min(it.end, text.length-1))
                     addStyle(
                         style = SpanStyle(MaterialTheme.colorScheme.tertiary),
                         start = min(it.start, text.length-1),
                         end = min(it.end, text.length-1)
                     )
                 }
-                is Target.UserHandleMention -> {
-                    addStringAnnotation(tag = "Mention", it.target.handle.handle, min(it.start, text.length-1), min(it.end, text.length-1))
+                is FacetType.UserHandleMention -> {
+                    addStringAnnotation(tag = "Mention", it.facetType.handle.handle, min(it.start, text.length-1), min(it.end, text.length-1))
                     addStyle(
                         style = SpanStyle(MaterialTheme.colorScheme.tertiary),
                         start = min(it.start, text.length-1),
                         end = min(it.end, text.length-1)
                     )
                 }
-                is Target.Format -> {
-                    val style = when(it.target.format) {
+                is FacetType.Format -> {
+                    val style = when(it.facetType.format) {
                         BOLD -> SpanStyle(fontWeight = FontWeight.Bold)
                         ITALIC -> SpanStyle(fontStyle = FontStyle.Italic)
                         STRIKETHROUGH ->SpanStyle(textDecoration = TextDecoration.LineThrough)
@@ -90,6 +90,8 @@ fun RichTextElement(
                         end = min(it.end, text.length-1)
                     )
                 }
+
+                else -> {}
             }
 
         }
@@ -103,7 +105,7 @@ fun RichTextElement(
             onClick = { offset ->
                 facets.forEach {
                     if (it.start <= offset && offset <= it.end) {
-                        return@ClickableText onClick(it.target)
+                        return@ClickableText onClick(it.facetType)
                     }
                 }
                 onClick(null)
