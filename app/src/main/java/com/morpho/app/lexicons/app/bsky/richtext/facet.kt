@@ -36,14 +36,23 @@ public sealed interface FacetFeatureUnion {
   ) : FacetFeatureUnion
 
 
-  public class PollBlueFacetSerializer : KSerializer<PollBlueOption> by valueClassSerializer()
-  @Serializable(with = PollBlueFacetSerializer::class)
+  public class PollBlueOptionFacetSerializer : KSerializer<PollBlueOption> by valueClassSerializer()
+  @Serializable(with = PollBlueOptionFacetSerializer::class)
   @JvmInline
-  @SerialName("app.pollblue.poll.facet#option")
+  @SerialName("blue.poll.post.facet#option")
   public value class PollBlueOption(
     public val `value`: PollBlueOptionFacet,
   ) : FacetFeatureUnion
+
+  public class PollBlueQuestionFacetSerializer : KSerializer<PollBlueQuestion> by valueClassSerializer()
+  @Serializable(with = PollBlueQuestionFacetSerializer::class)
+  @JvmInline
+  @SerialName("blue.poll.post.facet#question")
+  public value class PollBlueQuestion(
+    public val `value`: PollBlueOptionFacet,
+  ) : FacetFeatureUnion
 }
+
 
 @Serializable
 public data class Facet(

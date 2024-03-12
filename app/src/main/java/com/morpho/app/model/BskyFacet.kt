@@ -62,6 +62,7 @@ fun Facet.toBskyFacet(): BskyFacet {
             is FacetFeatureUnion.Mention -> Target.UserDidMention(feature.value.did)
             is FacetFeatureUnion.Tag -> Target.Tag(feature.value.tag)
             is FacetFeatureUnion.PollBlueOption -> Target.PollBlueOption(feature.value.number)
+            is FacetFeatureUnion.PollBlueQuestion -> Target.PollBlueOption(feature.value.number)
         },
     )
 }
