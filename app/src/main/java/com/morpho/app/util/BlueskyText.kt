@@ -1,6 +1,9 @@
 package com.morpho.app.util
 
 import android.net.Uri
+import androidx.compose.ui.util.fastFlatMap
+import androidx.compose.ui.util.fastForEach
+import androidx.compose.ui.util.fastMap
 import com.google.common.collect.ImmutableList
 import kotlinx.serialization.Serializable
 import morpho.app.model.BskyFacet
@@ -20,43 +23,44 @@ fun getGraphemeLength(value: String): Long {
 }
 
 sealed interface Segment {
+    val text: String
     @Serializable
     data class Text(
         val raw: String,
-        val text: String,
+        override val text: String,
     ) : Segment
 
     @Serializable
     data class Escape(
         val raw: String,
-        val text: String,
+        override val text: String,
     ) : Segment
 
     @Serializable
     data class Link(
         val raw: String,
-        val text: String,
+        override val text: String,
         val url: String,
     ) : Segment
 
     @Serializable
     data class MarkdownLink(
         val raw: List<String>,
-        val text: String,
+        override val text: String,
         val url: String,
         val valid: Boolean,
     ) : Segment
     @Serializable
     data class Tag(
         val raw: String,
-        val text: String,
+        override val text: String,
         val tag: String,
     ) : Segment
 
     @Serializable
     data class Mention(
         val raw: String,
-        val text: String,
+        override val text: String,
         val handle: String,
     ) : Segment
 
@@ -64,7 +68,7 @@ sealed interface Segment {
     @Serializable
     data class Format(
         val raw: List<String>,
-        val text: String,
+        override val text: String,
         val format: RichTextFormat,
         val valid: Boolean,
     ) : Segment
@@ -228,5 +232,9 @@ fun parseBlueskyText(text: String): SegmentedText {
 
     }
     return SegmentedText(segments, links)
+}
+
+fun concatText(segText: SegmentedText): String {
+    return segText.segments.fastMap { seg: Segment -> seg.text }.joinToString(separator = "").
 }
 
