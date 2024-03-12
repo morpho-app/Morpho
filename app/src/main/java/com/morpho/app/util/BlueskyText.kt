@@ -3,12 +3,23 @@ package com.morpho.app.util
 import android.net.Uri
 import androidx.compose.ui.util.fastFlatMap
 import androidx.compose.ui.util.fastForEach
+import androidx.compose.ui.util.fastForEachIndexed
 import androidx.compose.ui.util.fastMap
+import com.atproto.identity.ResolveHandleQueryParams
+import com.google.common.base.Utf8
 import com.google.common.collect.ImmutableList
 import kotlinx.serialization.Serializable
+import morpho.app.api.ApiProvider
+import morpho.app.api.Handle
+import morpho.app.api.response.AtpResponse
 import morpho.app.model.BskyFacet
+import morpho.app.model.FacetType
 import morpho.app.model.RichTextFormat
 import morpho.app.util.safeUrlParse
+import java.nio.ByteBuffer
+import java.nio.CharBuffer
+import java.nio.charset.Charset
+import java.nio.charset.CharsetEncoder
 import kotlin.math.max
 import kotlin.math.min
 
@@ -78,7 +89,13 @@ data class SegmentedText(
     val segments: List<Segment>,
     val links: List<Uri>,
 )
-fun parseBlueskyText(text: String): SegmentedText {
+
+/**
+ * Segments text according to mentions, links (bare and Markdown), tags, and potentially formatting characters
+ * Intent is to run this repeatedly in the post composer to highlight stuff, ideally with some sort of caching.
+ * As a post is sent, then it will resolve it all to actual app.bsky.richtext facets and so on
+ */
+fun segmentText(text: String): SegmentedText {
     val segments: MutableList<Segment> = mutableListOf()
     var links: MutableList<Uri> = mutableListOf()
     var index = 0
@@ -234,7 +251,67 @@ fun parseBlueskyText(text: String): SegmentedText {
     return SegmentedText(segments, links)
 }
 
+/**
+ * Takes segmented text and parses it fully into BlueskyText, with facets
+ */
+suspend fun makeBlueskyText(segText: SegmentedText, apiProvider: ApiProvider) {
+    val segments = segText.segments
+    val facets: MutableList<BskyFacet> = mutableListOf()
+
+    var byteLength = 0
+
+    segments.fastForEach {seg ->
+        val facetStart = byteLength
+        val l = utf8Length(seg.text)
+        if (l != null) byteLength += l else return@fastForEach // If the else clause here actually happens, add checks upstream
+        val facetEnd = byteLength
+
+        when(seg) {
+            is Segment.Format -> return@fastForEach // Come back to this when doing fancy text formatting
+            is Segment.Link -> facets += BskyFacet(facetStart, facetEnd, FacetType.ExternalLink(uri = morpho.app.api.Uri(seg.url)))
+            is Segment.MarkdownLink -> facets += BskyFacet(facetStart, facetEnd, FacetType.ExternalLink(uri = morpho.app.api.Uri(seg.url)))
+            is Segment.Mention -> {
+                when(val response = apiProvider.api.resolveHandle(ResolveHandleQueryParams(Handle(seg.handle)))) {
+                    is AtpResponse.Failure -> return@fastForEach
+                    is AtpResponse.Success -> {
+                        facets += BskyFacet(facetStart, facetEnd, FacetType.UserDidMention(response.response.did))
+                    }
+                }
+            }
+            is Segment.Tag -> facets += BskyFacet(facetStart, facetEnd, FacetType.Tag(seg.tag))
+            else -> return@fastForEach // plaintext or escape characters
+        }
+    }
+}
+
+/**
+ * Offline version of the above that just tags the handle without trying to resolve it
+ * Potentially useful in the post composer loop
+ */
+fun makeBlueskyText(segText: SegmentedText) {
+    val segments = segText.segments
+    val facets: MutableList<BskyFacet> = mutableListOf()
+
+    var byteLength = 0
+
+    segments.fastForEach{ seg ->
+        val facetStart = byteLength
+        val l = utf8Length(seg.text)
+        if (l != null) byteLength += l else return@fastForEach // If the else clause here actually happens, add checks upstream
+        val facetEnd = byteLength
+
+        when(seg) {
+            is Segment.Format -> return@fastForEach // Come back to this when doing fancy text formatting
+            is Segment.Link -> facets += BskyFacet(facetStart, facetEnd, FacetType.ExternalLink(uri = morpho.app.api.Uri(seg.url)))
+            is Segment.MarkdownLink -> facets += BskyFacet(facetStart, facetEnd, FacetType.ExternalLink(uri = morpho.app.api.Uri(seg.url)))
+            is Segment.Mention -> facets += BskyFacet(facetStart, facetEnd, FacetType.UserHandleMention(Handle(seg.handle)))
+            is Segment.Tag -> facets += BskyFacet(facetStart, facetEnd, FacetType.Tag(seg.tag))
+            else -> return@fastForEach // plaintext or escape characters
+        }
+    }
+}
 fun concatText(segText: SegmentedText): String {
-    return segText.segments.fastMap { seg: Segment -> seg.text }.joinToString(separator = "").
+
+    return segText.segments.fastMap { seg: Segment -> seg.text }.joinToString(separator = "")
 }
 
