@@ -213,6 +213,8 @@ fun FullPostFragment(
                         null -> {
                             onItemClicked(post.uri)
                         }
+
+                        else -> {}
                     }
                 }
             )

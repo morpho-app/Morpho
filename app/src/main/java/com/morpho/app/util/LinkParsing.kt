@@ -25,7 +25,7 @@ fun linkVisit(string: String, ctx: Context, navigator: DestinationsNavigator) {
     } else if (string.startsWith("http")){
         val urlIntent = Intent(
             Intent.ACTION_VIEW,
-            Uri.parse(string)
+            safeUrlParse(string)
         )
         ctx.startActivity(urlIntent)
     }
@@ -49,4 +49,9 @@ fun parseImageFullRef(string: String, did: Did): String {
 fun getRkey(uri: AtUri?) : String {
     val str = uri?.atUri.orEmpty()
     return str.substringAfterLast("/")
+}
+
+fun safeUrlParse(uri: String): Uri? {
+    val url = Uri.parse(uri)
+    if(url.scheme != "https" || url.scheme != "http") return null else return url
 }

@@ -312,6 +312,8 @@ fun PostFragment(
                                 null -> {
                                     onItemClicked(post.uri)
                                 }
+
+                                else -> {}
                             }
                         }
                     )
@@ -403,6 +405,8 @@ inline fun ColumnScope.PostFeatureElement(
                     PostImages(imagesFeature = feature.media,
                         modifier = Modifier.align(Alignment.CenterHorizontally))
                 }
+
+                else -> {}
             }
             when (feature.post) {
                 is EmbedPost.BlockedEmbedPost -> EmbedBlockedPostFragment(uri = feature.post.uri)
@@ -412,6 +416,8 @@ inline fun ColumnScope.PostFeatureElement(
                     onItemClicked =  {onItemClicked(feature.post.uri)},
                     modifier = Modifier.align(Alignment.CenterHorizontally)
                 )
+
+                else -> {}
             }
         }
         is BskyPostFeature.PostFeature -> {
@@ -423,9 +429,12 @@ inline fun ColumnScope.PostFeatureElement(
                     onItemClicked =  {onItemClicked(feature.post.uri)},
                     modifier = Modifier.align(Alignment.CenterHorizontally)
                 )
+
+                else -> {}
             }
         }
         null -> {}
+        else -> {}
     }
 }
 

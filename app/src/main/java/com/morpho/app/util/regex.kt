@@ -77,9 +77,9 @@ public const val invalidDomainCharacters = punct + spaces + invalidCharsGroup + 
 /// This constant can be used to create a [RegExp] object to check whether
 /// a given string or part of a string conforms to the character
 /// restrictions of domain names.
-public const val validDomainChars = "[^${invalidDomainCharacters}]"
+public const val validDomainChars = "[^$invalidDomainCharacters]"
 /// Regex to match a complete valid domain name
-public const val validDomainName = "(?:(?:${validDomainChars}(?:-|${validDomainChars})*)?${validDomainChars}\\.)"
+public const val validDomainName = "(?:(?:$validDomainChars(?:-|$validDomainChars)*)?$validDomainChars\\.)"
 /// `validCctld` is a constant [RegExp] pattern string constructed to match
 /// a wide range of valid country code top-level domains (ccTLDs). The string
 /// encompasses an extensive list of ccTLDs representing various countries
@@ -199,23 +199,29 @@ public const val validGtld = "(?:(?:" +
         "accountant|accenture|academy|abudhabi|abogado|able|abc|abbvie|abbott|abb|abarth|aarp|aaa|" +
         """onion)(?=[^0-9a-zA-Z@+-]|${"$"}))"""
 public const val validPunycode = """(?:xn--[\-0-9a-z]+)"""
-public const val validSubdomain = """(?:(?:${validDomainChars}(?:[_-]|${validDomainChars})*)?${validDomainChars}\.)"""
-public const val validDomain = "(?:${validSubdomain}*${validDomainName}(?:${validGtld}|${validCctld}|${validPunycode}))"
+public const val validSubdomain = """(?:(?:$validDomainChars(?:[_-]|$validDomainChars)*)?$validDomainChars\.)"""
+public const val validDomain = "(?:$validSubdomain*$validDomainName(?:$validGtld|$validCctld|$validPunycode))"
 public const val validUrlPrecedingChars = "(?:[^A-Za-z0-9@＠\$#＃$invalidCharsGroup]|[$directionalMarkers]|^)"
 public const val latinAccentChars = """\u00C0-\u00D6\u00D8-\u00F6\u00F8-\u00FF\u0100-\u024F\u0253\u0254\u0256\u0257\u0259\u025B\u0263\u0268\u026F\u0272\u0289\u028B\u02BB\u0300-\u036F\u1E00-\u1EFF"""
 public const val cyrillicLettersAndMarks = """\u0400-\u04FF"""
 public const val validUrlQueryChars = """[a-z0-9!?\*'@\(\);:&=\+\${'$'}/%#\[\]\-_\.,~|]"""
 public const val validUrlQueryEndingChars = """[a-z0-9\-_&=#/]"""
-public const val validGeneralUrlPathChars = """[a-z${cyrillicLettersAndMarks}0-9!\*';:=\+,\.\${'$'}/%#\[\]\-\u2013_~@\|&${latinAccentChars}]"""
+public const val validGeneralUrlPathChars = """[a-z${cyrillicLettersAndMarks}0-9!\*';:=\+,\.\${'$'}/%#\[\]\-\u2013_~@\|&$latinAccentChars]"""
 public const val validUrlBalancedParens = """\((?:$validGeneralUrlPathChars+|(?:$validGeneralUrlPathChars*\($validGeneralUrlPathChars+\)$validGeneralUrlPathChars*))\)"""
-public const val validUrlPathEndingChars = """[\+\-a-z${cyrillicLettersAndMarks}0-9=_#/$latinAccentChars]|(?:${validUrlBalancedParens})"""
-public const val validUrlPath = "(?:(?:${validGeneralUrlPathChars}(?:${validUrlBalancedParens}${validGeneralUrlPathChars}*)*${validUrlPathEndingChars})|(?:@${validGeneralUrlPathChars}+/))"
+public const val validUrlPathEndingChars = """[\+\-a-z${cyrillicLettersAndMarks}0-9=_#/$latinAccentChars]|(?:$validUrlBalancedParens)"""
+public const val validUrlPath = "(?:(?:$validGeneralUrlPathChars(?:$validUrlBalancedParens$validGeneralUrlPathChars*)*$validUrlPathEndingChars)|(?:@$validGeneralUrlPathChars+/))"
 public const val validUrl = "(" +
-        "(${validUrlPrecedingChars})" +
+        "($validUrlPrecedingChars)" +
         "(" +
         "(https?:\\/\\/)?" +
-        "(${validDomain})" +
-        "(?::(${validPortNumber}))?" +
+        "($validDomain)" +
+        "(?::($validPortNumber))?" +
         "(\\/$validUrlPath*)?" +
         "(\\?$validUrlQueryChars*$validUrlQueryEndingChars)?" +
         ")" + ")"
+public val urlRegex = Regex(validUrl)
+public const val validMentionPrecedingChars = """(?:^|[^a-zA-Z0-9_!#${'$'}%&*@＠]|(?:^|[^a-zA-Z0-9_+~.-]))"""
+public const val validMention = "($validMentionPrecedingChars)([@])($validDomain)"
+public val mentionRegex = Regex(validMention)
+public val whitespageRegex = Regex("""/ +(?=\n)""")
+public val whitespageEofRegex = Regex("""/\s+${'$'}| +(?=\n)""")
