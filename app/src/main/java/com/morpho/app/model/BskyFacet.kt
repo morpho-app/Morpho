@@ -37,6 +37,7 @@ sealed interface FacetType {
         val uri: Uri,
     ) : FacetType
 
+
     @Serializable
     data class Tag(
         val tag: String,
