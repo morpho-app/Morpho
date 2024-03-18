@@ -8,6 +8,7 @@ import com.atproto.repo.CreateRecordRequest
 import com.atproto.repo.DeleteRecordRequest
 import com.atproto.server.CreateSessionRequest
 import com.atproto.server.RefreshSessionResponse
+import com.morpho.butterfly.model.ReadOnlyList
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.cio.CIO
 import io.ktor.client.plugins.DefaultRequest
@@ -37,7 +38,6 @@ import kotlinx.serialization.json.encodeToJsonElement
 import morpho.app.api.auth.AuthInfo
 import morpho.app.api.auth.Credentials
 import morpho.app.api.auth.LoginRepository
-import morpho.app.api.model.ReadOnlyList
 import morpho.app.api.model.RecordType
 import morpho.app.api.model.RecordUnion
 import morpho.app.api.model.Timestamp

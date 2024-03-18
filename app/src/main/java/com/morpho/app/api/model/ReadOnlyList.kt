@@ -1,4 +1,4 @@
-package morpho.app.api.model
+package com.morpho.butterfly.model
 
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.serialization.Serializable
