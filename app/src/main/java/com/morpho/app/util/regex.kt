@@ -199,29 +199,33 @@ public const val validGtld = "(?:(?:" +
         "accountant|accenture|academy|abudhabi|abogado|able|abc|abbvie|abbott|abb|abarth|aarp|aaa|" +
         """onion)(?=[^0-9a-zA-Z@+-]|${"$"}))"""
 public const val validPunycode = """(?:xn--[\-0-9a-z]+)"""
-public const val validSubdomain = """(?:(?:$validDomainChars(?:[_-]|$validDomainChars)*)?$validDomainChars\.)"""
-public const val validDomain = "(?:$validSubdomain*$validDomainName(?:$validGtld|$validCctld|$validPunycode))"
-public const val validUrlPrecedingChars = "(?:[^A-Za-z0-9@＠\$#＃$invalidCharsGroup]|[$directionalMarkers]|^)"
+public const val validSubdomain = """(?:(?:${validDomainChars}(?:[_-]|${validDomainChars})*)?${validDomainChars}\.)"""
+public const val validDomain = "(?:${validSubdomain}*${validDomainName}(?:${validGtld}|${validCctld}|${validPunycode}))"
+public const val validUrlPrecedingChars = "(?:[^A-Za-z0-9@＠\$#＃${invalidCharsGroup}]|[${directionalMarkers}]|^)"
 public const val latinAccentChars = """\u00C0-\u00D6\u00D8-\u00F6\u00F8-\u00FF\u0100-\u024F\u0253\u0254\u0256\u0257\u0259\u025B\u0263\u0268\u026F\u0272\u0289\u028B\u02BB\u0300-\u036F\u1E00-\u1EFF"""
 public const val cyrillicLettersAndMarks = """\u0400-\u04FF"""
 public const val validUrlQueryChars = """[a-z0-9!?\*'@\(\);:&=\+\${'$'}/%#\[\]\-_\.,~|]"""
 public const val validUrlQueryEndingChars = """[a-z0-9\-_&=#/]"""
-public const val validGeneralUrlPathChars = """[a-z${cyrillicLettersAndMarks}0-9!\*';:=\+,\.\${'$'}/%#\[\]\-\u2013_~@\|&$latinAccentChars]"""
-public const val validUrlBalancedParens = """\((?:$validGeneralUrlPathChars+|(?:$validGeneralUrlPathChars*\($validGeneralUrlPathChars+\)$validGeneralUrlPathChars*))\)"""
-public const val validUrlPathEndingChars = """[\+\-a-z${cyrillicLettersAndMarks}0-9=_#/$latinAccentChars]|(?:$validUrlBalancedParens)"""
-public const val validUrlPath = "(?:(?:$validGeneralUrlPathChars(?:$validUrlBalancedParens$validGeneralUrlPathChars*)*$validUrlPathEndingChars)|(?:@$validGeneralUrlPathChars+/))"
+public const val validGeneralUrlPathChars = """[a-z${cyrillicLettersAndMarks}0-9!\*';:=\+,\.\${'$'}/%#\[\]\-\u2013_~@\|&${latinAccentChars}]"""
+public const val validUrlBalancedParens = """\((?:${validGeneralUrlPathChars}+|(?:${validGeneralUrlPathChars}*\(${validGeneralUrlPathChars}+\)${validGeneralUrlPathChars}*))\)"""
+public const val validUrlPathEndingChars = """[\+\-a-z${cyrillicLettersAndMarks}0-9=_#/${latinAccentChars}]|(?:${validUrlBalancedParens})"""
+public const val validUrlPath = "(?:(?:${validGeneralUrlPathChars}(?:${validUrlBalancedParens}${validGeneralUrlPathChars}*)*${validUrlPathEndingChars})|(?:@${validGeneralUrlPathChars}+/))"
 public const val validUrl = "(" +
-        "($validUrlPrecedingChars)" +
+        "(${validUrlPrecedingChars})" +
         "(" +
         "(https?:\\/\\/)?" +
-        "($validDomain)" +
-        "(?::($validPortNumber))?" +
-        "(\\/$validUrlPath*)?" +
-        "(\\?$validUrlQueryChars*$validUrlQueryEndingChars)?" +
+        "(${validDomain})" +
+        "(?::(${validPortNumber}))?" +
+        "(\\/${validUrlPath}*)?" +
+        "(\\?${validUrlQueryChars}*${validUrlQueryEndingChars})?" +
         ")" + ")"
 public val urlRegex = Regex(validUrl)
 public const val validMentionPrecedingChars = """(?:^|[^a-zA-Z0-9_!#${'$'}%&*@＠]|(?:^|[^a-zA-Z0-9_+~.-]))"""
-public const val validMention = "($validMentionPrecedingChars)([@])($validDomain)"
+public const val validMention = "(${validMentionPrecedingChars})([@])(${validDomain})"
 public val mentionRegex = Regex(validMention)
-public val whitespageRegex = Regex("""/ +(?=\n)""")
-public val whitespageEofRegex = Regex("""/\s+${'$'}| +(?=\n)""")
+public val whitespaceRegex = Regex("""/ +(?=\n)""")
+public val whitespaceEofRegex = Regex("""/\s+${'$'}| +(?=\n)""")
+public const val validMarkdownLink = """\[([^]]+)\]\((${validUrl})\)"""
+public val markdownLinkRegex = Regex(validMarkdownLink)
+
+public val combinedRegex = """${validMention}|${validMarkdownLink}|${validUrl}""".toRegex()
