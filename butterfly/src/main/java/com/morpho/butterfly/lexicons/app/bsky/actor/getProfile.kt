@@ -17,4 +17,6 @@ public data class GetProfileQueryParams(
   }.toImmutableList()
 }
 
+data class
+
 public typealias GetProfileResponse = ProfileViewDetailed

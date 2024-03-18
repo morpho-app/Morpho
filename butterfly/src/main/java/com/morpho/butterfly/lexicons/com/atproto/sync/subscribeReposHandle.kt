@@ -2,9 +2,9 @@ package com.atproto.sync
 
 import kotlin.Long
 import kotlinx.serialization.Serializable
-import morpho.app.api.Did
-import morpho.app.api.Handle
-import morpho.app.api.model.Timestamp
+import com.morpho.butterfly.Did
+import com.morpho.butterfly.Handle
+import com.morpho.butterfly.model.Timestamp
 
 @Serializable
 public data class SubscribeReposHandle(

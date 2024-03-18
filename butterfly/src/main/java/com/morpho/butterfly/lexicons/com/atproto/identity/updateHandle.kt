@@ -1,7 +1,7 @@
 package com.atproto.identity
 
 import kotlinx.serialization.Serializable
-import morpho.app.api.Handle
+import com.morpho.butterfly.Handle
 
 @Serializable
 public data class UpdateHandleRequest(

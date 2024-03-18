@@ -6,9 +6,9 @@ import kotlin.jvm.JvmInline
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import morpho.app.api.Cid
-import morpho.app.api.model.Timestamp
-import morpho.app.api.runtime.valueClassSerializer
+import com.morpho.butterfly.Cid
+import com.morpho.butterfly.model.Timestamp
+import com.morpho.butterfly.valueClassSerializer
 
 @Serializable
 public sealed interface BlobViewDetailsUnion {

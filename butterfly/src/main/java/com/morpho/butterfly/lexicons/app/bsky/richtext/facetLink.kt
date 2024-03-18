@@ -1,7 +1,7 @@
 package app.bsky.richtext
 
 import kotlinx.serialization.Serializable
-import morpho.app.api.Uri
+import com.morpho.butterfly.Uri
 
 /**
  * A facet feature for links.

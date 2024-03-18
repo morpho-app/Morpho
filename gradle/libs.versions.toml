@@ -110,7 +110,9 @@ kotlin-reflect = { module = "org.jetbrains.kotlin:kotlin-reflect", version.ref =
 kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "kotlinx-coroutines-guava" }
 kotlinx-coroutines-guava = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-guava", version.ref = "kotlinx-coroutines-guava" }
 ksp = { module = "io.github.raamcosta.compose-destinations:ksp", version.ref = "github-ksp" }
+ktor-client-auth = { module = "io.ktor:ktor-client-auth", version.ref = "ktor" }
 ktor-client-okhttp = { module = "io.ktor:ktor-client-okhttp", version.ref = "ktor" }
+ktor-client-resources = { module = "io.ktor:ktor-client-resources", version.ref = "ktor" }
 retainedactivity = { module = "dev.marcellogalhardo:retained-activity", version = "1.0.1" }
 
 appdirs = { module = "ca.gosyer:kotlin-multiplatform-appdirs", version = "1.1.0" }

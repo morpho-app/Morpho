@@ -2,7 +2,7 @@ package com.atproto.repo
 
 import kotlin.String
 import kotlinx.serialization.Serializable
-import morpho.app.api.Nsid
+import com.morpho.butterfly.Nsid
 
 /**
  * Delete an existing record.

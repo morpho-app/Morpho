@@ -1,7 +1,7 @@
 package app.bsky.unspecced
 
 import kotlinx.serialization.Serializable
-import morpho.app.api.Did
+import com.morpho.butterfly.Did
 
 @Serializable
 public data class SkeletonSearchActor(

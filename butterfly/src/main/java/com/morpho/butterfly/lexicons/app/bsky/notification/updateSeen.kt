@@ -1,7 +1,7 @@
 package app.bsky.notification
 
 import kotlinx.serialization.Serializable
-import morpho.app.api.model.Timestamp
+import com.morpho.butterfly.model.Timestamp
 
 @Serializable
 public data class UpdateSeenRequest(

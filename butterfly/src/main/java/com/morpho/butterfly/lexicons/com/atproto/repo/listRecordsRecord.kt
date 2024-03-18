@@ -2,8 +2,8 @@ package com.atproto.repo
 
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonElement
-import morpho.app.api.AtUri
-import morpho.app.api.Cid
+import com.morpho.butterfly.AtUri
+import com.morpho.butterfly.Cid
 
 @Serializable
 public data class ListRecordsRecord(

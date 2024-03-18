@@ -3,8 +3,8 @@ package com.atproto.sync
 import kotlin.Long
 import kotlin.String
 import kotlinx.serialization.Serializable
-import morpho.app.api.Did
-import morpho.app.api.model.Timestamp
+import com.morpho.butterfly.Did
+import com.morpho.butterfly.model.Timestamp
 
 @Serializable
 public data class SubscribeReposMigrate(

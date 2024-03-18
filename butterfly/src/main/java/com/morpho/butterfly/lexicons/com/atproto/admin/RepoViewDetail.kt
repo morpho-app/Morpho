@@ -7,10 +7,10 @@ import kotlin.String
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonElement
-import morpho.app.api.Did
-import morpho.app.api.Handle
-import morpho.app.api.model.ReadOnlyList
-import morpho.app.api.model.Timestamp
+import com.morpho.butterfly.Did
+import com.morpho.butterfly.Handle
+import com.morpho.butterfly.model.ReadOnlyList
+import com.morpho.butterfly.model.Timestamp
 
 @Serializable
 public data class RepoViewDetail(

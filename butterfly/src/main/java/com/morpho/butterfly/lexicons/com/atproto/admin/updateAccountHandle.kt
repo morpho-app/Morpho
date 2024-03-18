@@ -1,8 +1,8 @@
 package com.atproto.admin
 
 import kotlinx.serialization.Serializable
-import morpho.app.api.Did
-import morpho.app.api.Handle
+import com.morpho.butterfly.Did
+import com.morpho.butterfly.Handle
 
 @Serializable
 public data class UpdateAccountHandleRequest(

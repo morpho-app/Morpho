@@ -2,7 +2,7 @@ package com.atproto.server
 
 import kotlin.String
 import kotlinx.serialization.Serializable
-import morpho.app.api.model.ReadOnlyList
+import com.morpho.butterfly.model.ReadOnlyList
 
 @Serializable
 public data class CreateInviteCodesAccountCodes(

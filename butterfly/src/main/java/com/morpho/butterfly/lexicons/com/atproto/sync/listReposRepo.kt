@@ -1,8 +1,8 @@
 package com.atproto.sync
 
 import kotlinx.serialization.Serializable
-import morpho.app.api.Cid
-import morpho.app.api.Did
+import com.morpho.butterfly.Cid
+import com.morpho.butterfly.Did
 
 @Serializable
 public data class ListReposRepo(

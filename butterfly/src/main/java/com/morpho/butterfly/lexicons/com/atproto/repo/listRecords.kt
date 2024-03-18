@@ -7,9 +7,9 @@ import kotlin.Pair
 import kotlin.String
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.serialization.Serializable
-import morpho.app.api.AtIdentifier
-import morpho.app.api.Nsid
-import morpho.app.api.model.ReadOnlyList
+import com.morpho.butterfly.AtIdentifier
+import com.morpho.butterfly.Nsid
+import com.morpho.butterfly.model.ReadOnlyList
 
 @Serializable
 public data class ListRecordsQueryParams(

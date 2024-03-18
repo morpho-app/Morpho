@@ -1,7 +1,7 @@
 package app.bsky.graph
 
 import kotlinx.serialization.Serializable
-import morpho.app.api.AtIdentifier
+import com.morpho.butterfly.AtIdentifier
 
 @Serializable
 public data class UnmuteActorRequest(

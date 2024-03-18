@@ -158,7 +158,7 @@ import com.atproto.sync.ListReposResponse
 import com.atproto.sync.NotifyOfUpdateRequest
 import com.atproto.sync.RequestCrawlRequest
 import com.atproto.sync.SubscribeReposQueryParams
-import com.morpho.butterfly.auth.TokenInfo
+import com.morpho.butterfly.auth.AuthInfo
 import kotlinx.coroutines.flow.Flow
 
 public interface BlueskyApi {
@@ -572,7 +572,7 @@ public interface BlueskyApi {
     /**
      * refresh with provided auth
      */
-    public suspend fun refreshSession(auth: TokenInfo): Result<RefreshSessionResponse>
+    public suspend fun refreshSession(auth: AuthInfo): Result<RefreshSessionResponse>
 
     /**
      * Register for push notifications with a service

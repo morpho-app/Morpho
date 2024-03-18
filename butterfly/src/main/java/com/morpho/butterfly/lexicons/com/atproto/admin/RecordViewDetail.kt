@@ -4,10 +4,10 @@ import com.atproto.label.Label
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonElement
-import morpho.app.api.AtUri
-import morpho.app.api.Cid
-import morpho.app.api.model.ReadOnlyList
-import morpho.app.api.model.Timestamp
+import com.morpho.butterfly.AtUri
+import com.morpho.butterfly.Cid
+import com.morpho.butterfly.model.ReadOnlyList
+import com.morpho.butterfly.model.Timestamp
 
 @Serializable
 public data class RecordViewDetail(

@@ -3,7 +3,7 @@ package com.atproto.repo
 import kotlin.String
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonElement
-import morpho.app.api.Nsid
+import com.morpho.butterfly.Nsid
 
 /**
  * Create a new record.

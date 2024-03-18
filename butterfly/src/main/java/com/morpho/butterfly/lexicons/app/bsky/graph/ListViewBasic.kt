@@ -2,9 +2,9 @@ package app.bsky.graph
 
 import kotlin.String
 import kotlinx.serialization.Serializable
-import morpho.app.api.AtUri
-import morpho.app.api.Cid
-import morpho.app.api.model.Timestamp
+import com.morpho.butterfly.AtUri
+import com.morpho.butterfly.Cid
+import com.morpho.butterfly.model.Timestamp
 
 @Serializable
 public data class ListViewBasic(

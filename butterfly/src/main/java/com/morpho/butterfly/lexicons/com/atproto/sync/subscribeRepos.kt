@@ -9,8 +9,8 @@ import kotlinx.collections.immutable.toImmutableList
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import morpho.app.api.model.ReadOnlyList
-import morpho.app.api.runtime.valueClassSerializer
+import com.morpho.butterfly.model.ReadOnlyList
+import com.morpho.butterfly.valueClassSerializer
 
 @Serializable
 public sealed interface SubscribeReposMessageUnion {

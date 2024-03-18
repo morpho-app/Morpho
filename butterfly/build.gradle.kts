@@ -22,4 +22,6 @@ dependencies {
     implementation(libs.ktor.contentnegotiation)
     implementation(libs.ktor.serialization.json)
     implementation(libs.ktor.websockets)
+    implementation(libs.ktor.client.resources)
+    implementation(libs.ktor.client.auth)
 }

@@ -2,7 +2,7 @@ package app.bsky.notification
 
 import kotlin.String
 import kotlinx.serialization.Serializable
-import morpho.app.api.Did
+import com.morpho.butterfly.Did
 
 @Serializable
 public data class RegisterPushRequest(

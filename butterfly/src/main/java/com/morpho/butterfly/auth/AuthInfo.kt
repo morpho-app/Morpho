@@ -4,7 +4,7 @@ import com.morpho.butterfly.Handle
 import kotlinx.serialization.*
 
 @Serializable
-data class TokenInfo (
+data class AuthInfo (
     val accessJwt: String,
     val refreshJwt: String,
     val handle: Handle,

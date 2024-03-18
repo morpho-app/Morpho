@@ -1,7 +1,7 @@
 package com.atproto.label
 
 import kotlinx.serialization.Serializable
-import morpho.app.api.model.ReadOnlyList
+import com.morpho.butterfly.model.ReadOnlyList
 
 /**
  * Metadata tags on an atproto record, published by the author within the record.

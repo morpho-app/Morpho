@@ -6,8 +6,8 @@ import kotlin.Pair
 import kotlin.String
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.serialization.Serializable
-import morpho.app.api.model.ReadOnlyList
-import morpho.app.api.model.Timestamp
+import com.morpho.butterfly.model.ReadOnlyList
+import com.morpho.butterfly.model.Timestamp
 
 @Serializable
 public data class GetUnreadCountQueryParams(

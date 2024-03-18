@@ -3,10 +3,10 @@ package com.atproto.label
 import kotlin.Boolean
 import kotlin.String
 import kotlinx.serialization.Serializable
-import morpho.app.api.Cid
-import morpho.app.api.Did
-import morpho.app.api.Uri
-import morpho.app.api.model.Timestamp
+import com.morpho.butterfly.Cid
+import com.morpho.butterfly.Did
+import com.morpho.butterfly.Uri
+import com.morpho.butterfly.model.Timestamp
 
 /**
  * Metadata tag on an atproto resource (eg, repo or record)

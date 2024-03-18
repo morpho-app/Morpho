@@ -4,10 +4,10 @@ import kotlin.Boolean
 import kotlin.String
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonElement
-import morpho.app.api.AtIdentifier
-import morpho.app.api.AtUri
-import morpho.app.api.Cid
-import morpho.app.api.Nsid
+import com.morpho.butterfly.AtIdentifier
+import com.morpho.butterfly.AtUri
+import com.morpho.butterfly.Cid
+import com.morpho.butterfly.Nsid
 
 @Serializable
 public data class PutRecordRequest(
