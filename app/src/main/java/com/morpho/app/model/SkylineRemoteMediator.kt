@@ -1,10 +1,10 @@
-package morpho.app.model
+package com.morpho.app.model
 
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.serialization.Serializable
-import morpho.app.api.AtIdentifier
-import morpho.app.api.AtUri
+import com.morpho.butterfly.AtIdentifier
+import com.morpho.butterfly.AtUri
 
 @Serializable
 sealed interface SkylineQuery {

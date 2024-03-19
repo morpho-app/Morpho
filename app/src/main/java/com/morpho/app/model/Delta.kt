@@ -1,4 +1,4 @@
-package morpho.app.model
+package com.morpho.app.model
 
 import kotlinx.serialization.Serializable
 import kotlin.time.Duration

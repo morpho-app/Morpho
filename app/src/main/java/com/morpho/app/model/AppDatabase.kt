@@ -1,4 +1,4 @@
-package morpho.app.model
+package com.morpho.app.model
 
 import androidx.room.Database
 import androidx.room.RoomDatabase

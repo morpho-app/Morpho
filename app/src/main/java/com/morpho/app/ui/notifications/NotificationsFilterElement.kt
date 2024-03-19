@@ -1,4 +1,4 @@
-package morpho.app.ui.notifications
+package com.morpho.app.ui.notifications
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -20,7 +20,7 @@ import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import morpho.app.screens.notifications.NotificationsViewModel
+import com.morpho.app.screens.notifications.NotificationsViewModel
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable

@@ -1,10 +1,10 @@
-package morpho.app.model
+package com.morpho.app.model
 
 import app.bsky.feed.Post
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.serialization.Serializable
-import morpho.app.api.Language
-import morpho.app.util.mapImmutable
+import com.morpho.butterfly.Language
+import com.morpho.app.util.mapImmutable
 
 @Serializable
 data class LitePost(

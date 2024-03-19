@@ -23,36 +23,32 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowCompat
-import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavHostController
-import app.bsky.actor.GetProfileQueryParams
-import app.bsky.feed.GetFeedGeneratorQueryParams
+import app.bsky.actor.GetProfileQuery
+import app.bsky.feed.GetFeedGeneratorQuery
 import com.google.accompanist.navigation.material.ExperimentalMaterialNavigationApi
 import com.ramcosta.composedestinations.DestinationsNavHost
 import com.ramcosta.composedestinations.animations.rememberAnimatedNavHostEngine
 import com.ramcosta.composedestinations.navigation.navigate
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.Clock
-import morpho.app.api.AtIdentifier
-import morpho.app.api.response.AtpResponse
-import morpho.app.api.toPreferences
-import morpho.app.extensions.lifecycleViewModels
-import morpho.app.model.DetailedProfile
-import morpho.app.model.toProfile
-import morpho.app.screens.NavGraphs
-import morpho.app.screens.appCurrentDestinationAsState
-import morpho.app.screens.destinations.LoginScreenDestination
-import morpho.app.screens.destinations.SkylineScreenDestination
-import morpho.app.screens.skyline.FeedTab
-import morpho.app.ui.common.MorphoNavigation
-import morpho.app.ui.elements.AvatarShape
-import morpho.app.ui.elements.OutlinedAvatar
-import morpho.app.ui.theme.MorphoTheme
+import com.morpho.butterfly.AtIdentifier
+import com.morpho.app.model.toPreferences
+import com.morpho.app.extensions.lifecycleViewModels
+import com.morpho.app.model.DetailedProfile
+import com.morpho.app.model.toProfile
+import com.morpho.app.screens.NavGraphs
+import com.morpho.app.screens.appCurrentDestinationAsState
+import com.morpho.app.screens.destinations.LoginScreenDestination
+import com.morpho.app.screens.destinations.SkylineScreenDestination
+import com.morpho.app.screens.skyline.FeedTab
+import com.morpho.app.ui.common.MorphoNavigation
+import com.morpho.app.ui.elements.AvatarShape
+import com.morpho.app.ui.elements.OutlinedAvatar
+import com.morpho.app.ui.theme.MorphoTheme
 
 
 private const val TAG = "Main"
@@ -74,14 +70,6 @@ class MainActivity : ComponentActivity() {
 
         var me: DetailedProfile? = null
 
-        viewModel.supervisors.plus(apiProvider)
-        viewModel.supervisors.forEach { supervisor ->
-            with(supervisor) {
-                lifecycleScope.launch(SupervisorJob() + Dispatchers.Default) {
-                    onStart()
-                }
-            }
-        }
         /**
          * Authentication routine:
          *
@@ -94,85 +82,68 @@ class MainActivity : ComponentActivity() {
          */
         runBlocking {
             launch(Dispatchers.IO) {
-                val authInfo = viewModel.apiProvider.auth().first()
-                val credentials = viewModel.apiProvider.credentials().first()
-                if(authInfo != null) {
-                    Log.i(TAG, "Auth Info: $authInfo")
-                    // Got around it (maybe) by adding a manual function to the api
-                    // that does the refresh with provided auth tokens
-                    when(val prefs = viewModel.apiProvider.getUserPreferences()) {
-                        is AtpResponse.Failure -> {
-                            Log.e(TAG, "Couldn't get Preferences: $prefs")
+                val authInfo = applicationContext.user.auth
+                val credentials = applicationContext.user.credentials
+                runCatching {
+                    if (authInfo != null) {
+                        Log.i(TAG, "Auth Info: $authInfo")
+                        viewModel.butterfly.getUserPreferences().onFailure { prefsFail->
+                            Log.e(TAG, "Couldn't get Preferences: $prefsFail")
                             if(credentials != null) {
-                                when (val response = viewModel.apiProvider.makeLoginRequest(credentials)) {
-                                    is AtpResponse.Failure -> {
-                                        Log.e(TAG, "Login failure: $response")
-                                    }
-                                    is AtpResponse.Success -> {
-                                        val p = viewModel.apiProvider.getUserPreferences().maybeResponse()
+                                viewModel.butterfly.makeLoginRequest(credentials).onFailure {loginFail ->
+                                    Log.e(TAG, "Login failure: $loginFail")
+                                }.onSuccess {
+                                    launch {
+                                        val p = viewModel.butterfly.getUserPreferences().getOrNull()
                                         Log.d(TAG, "Preferences load: $p")
-                                        Log.i(TAG, "Using cached credentials for ${credentials.username}, going to home screen")
-                                        viewModel.apiProvider.loginRepository.auth = response.response
-                                        val profile = viewModel.apiProvider.api.getProfile(GetProfileQueryParams(AtIdentifier(credentials.username.handle)))
-                                        loggedIn = true
-                                        viewModel.currentUser = profile.requireResponse().toProfile()
                                         viewModel.userPreferences = p?.toPreferences()
                                     }
+                                    Log.i(TAG, "Using cached credentials for ${credentials.username}, going to home screen")
+                                    val profile = viewModel.butterfly.api.getProfile(GetProfileQuery(AtIdentifier(credentials.username.handle)))
+                                    loggedIn = true
+                                    viewModel.currentUser = profile.getOrThrow().toProfile()
                                 }
-                            } else {
-                                Log.d(TAG, "No cached credentials, punting to login screen")
-                                loggedIn = false
                             }
-                        }
-                        is AtpResponse.Success -> {
-                            Log.d(TAG, "Preferences load successful: $prefs, going to home screen")
-                            val profile = viewModel.apiProvider.api.getProfile(GetProfileQueryParams(AtIdentifier(authInfo.did.did)))
+
+                        }.onSuccess {
+                            Log.d(TAG, "Preferences load successful: $it, going to home screen")
+                            val profile = viewModel.butterfly.api.getProfile(GetProfileQuery(AtIdentifier(authInfo.did.did)))
                             loggedIn = true
-                            viewModel.currentUser = profile.requireResponse().toProfile()
-                            viewModel.userPreferences = prefs.response.toPreferences()
+                            viewModel.currentUser = profile.getOrThrow().toProfile()
+                            viewModel.userPreferences = it.toPreferences()
                         }
-                    }
-                } else {
-                    if(credentials != null) {
-                        when (val response = viewModel.apiProvider.makeLoginRequest(credentials)) {
-                            is AtpResponse.Failure -> {
-                                Log.e(TAG, "Login failure: $response")
-                            }
-                            is AtpResponse.Success -> {
+
+                    } else {
+                        if(credentials != null) {
+                            viewModel.butterfly.makeLoginRequest(credentials).onFailure {
+                                Log.e(TAG, "Login failure: $it")
+                            }.onSuccess {
                                 launch {
-                                    val p = viewModel.apiProvider.getUserPreferences().maybeResponse()
+                                    val p = viewModel.butterfly.getUserPreferences().getOrNull()
                                     Log.d(TAG, "Preferences load: $p")
                                     viewModel.userPreferences = p?.toPreferences()
                                 }
                                 Log.i(TAG, "Using cached credentials for ${credentials.username}, going to home screen")
-                                val profile = viewModel.apiProvider.api.getProfile(GetProfileQueryParams(AtIdentifier(credentials.username.handle)))
+                                val profile = viewModel.butterfly.api.getProfile(GetProfileQuery(AtIdentifier(credentials.username.handle)))
                                 loggedIn = true
-                                viewModel.currentUser = profile.requireResponse().toProfile()
-
+                                viewModel.currentUser = profile.getOrThrow().toProfile()
                             }
+                        } else {
+                            Log.d(TAG, "No cached credentials, punting to login screen")
+                            loggedIn = false
                         }
-                    } else {
-                        Log.d(TAG, "No cached credentials, punting to login screen")
-                        loggedIn = false
+                    }
+                }
+            }
 
-                    }
-                }
-                launch {
+            launch {
                     viewModel.userPreferences?.savedFeeds?.pinned?.map { feedUri ->
-                        when(val response = viewModel.apiProvider.api.getFeedGenerator(
-                            GetFeedGeneratorQueryParams(feedUri)
-                        )) {
-                            is AtpResponse.Failure -> {
-                                Log.e("Skyline", "Error getting feed info: $response")}
-                            is AtpResponse.Success -> {
-                                viewModel.pinnedFeeds += FeedTab(response.response.view.displayName, response.response.view.uri)
-                            }   // lol that += was important.
-                            // Forgot to put it back in earlier when I stripped out
-                            // the abortive attempt to store all prefs to disk using KStore.
-                            // Broke the feed tabs.
+                        viewModel.butterfly.api.getFeedGenerator(GetFeedGeneratorQuery(feedUri)).onFailure {
+                                Log.e("Skyline", "Error getting feed info: $it")
+                        }.onSuccess {
+                            viewModel.pinnedFeeds += FeedTab(it.view.displayName, it.view.uri)
                         }
                     }
-                }
                 me = viewModel.currentUser
                 waiting = false
             }

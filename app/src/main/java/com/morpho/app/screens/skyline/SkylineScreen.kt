@@ -1,4 +1,4 @@
-package morpho.app.screens.skyline
+package com.morpho.app.screens.skyline
 
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.navigationBars
@@ -17,7 +17,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import app.bsky.feed.GetFeedQueryParams
+import app.bsky.feed.GetFeedQuery
 import com.atproto.repo.StrongRef
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.RootNavGraph
@@ -27,22 +27,22 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.datetime.Clock
 import com.morpho.app.MainViewModel
 import kotlinx.serialization.Serializable
-import morpho.app.api.AtIdentifier
-import morpho.app.api.AtUri
-import morpho.app.api.model.RecordType
-import morpho.app.api.model.RecordUnion
-import morpho.app.components.ScreenBody
-import morpho.app.extensions.activityViewModel
-import morpho.app.model.BskyPost
-import morpho.app.model.DraftPost
-import morpho.app.model.Skyline
-import morpho.app.screens.destinations.MyProfileScreenDestination
-import morpho.app.ui.common.BottomSheetPostComposer
-import morpho.app.ui.common.ComposerRole
-import morpho.app.ui.common.RepostQueryDialog
-import morpho.app.ui.common.SkylineFragment
-import morpho.app.ui.common.SkylineTopBar
-import morpho.app.ui.elements.OutlinedAvatar
+import com.morpho.butterfly.AtIdentifier
+import com.morpho.butterfly.AtUri
+import com.morpho.butterfly.model.RecordType
+import com.morpho.butterfly.model.RecordUnion
+import com.morpho.app.components.ScreenBody
+import com.morpho.app.extensions.activityViewModel
+import com.morpho.app.model.BskyPost
+import com.morpho.app.model.DraftPost
+import com.morpho.app.model.Skyline
+import com.morpho.app.screens.destinations.MyProfileScreenDestination
+import com.morpho.app.ui.common.BottomSheetPostComposer
+import com.morpho.app.ui.common.ComposerRole
+import com.morpho.app.ui.common.RepostQueryDialog
+import com.morpho.app.ui.common.SkylineFragment
+import com.morpho.app.ui.common.SkylineTopBar
+import com.morpho.app.ui.elements.OutlinedAvatar
 import kotlin.math.max
 
 @OptIn(ExperimentalKStoreApi::class)
@@ -69,7 +69,7 @@ fun SkylineScreen(
             }
             mainViewModel.pinnedFeeds.forEach {
             viewModel.getSkyline(
-                GetFeedQueryParams(
+                GetFeedQuery(
                     it.uri,
                     cursor = it.cursor
                 )
@@ -93,7 +93,7 @@ fun SkylineScreen(
             mainViewModel.getUnreadCount()
         },
         feedRefresh = { uri, cursor -> viewModel
-            .getSkyline(GetFeedQueryParams(uri), cursor)
+            .getSkyline(GetFeedQuery(uri), cursor)
             mainViewModel.getUnreadCount()
                       },
         navBar = { mainViewModel.navBar?.let { it(0) } },
@@ -166,7 +166,7 @@ fun SkylineView(
             selectedTab = index
             if (selectedTab > 0) {
                 viewModel.getSkyline(
-                    GetFeedQueryParams(
+                    GetFeedQuery(
                         viewModel.pinnedFeeds[max(index-1, 0)].uri,
                         cursor = viewModel.pinnedFeeds[max(index-1, 0)].cursor
                     )
@@ -184,7 +184,7 @@ fun SkylineView(
 
     LaunchedEffect(selectedTab) {
         if(selectedTab > 0) {
-            viewModel.getSkyline(GetFeedQueryParams(
+            viewModel.getSkyline(GetFeedQuery(
                 pinnedFeeds[selectedTab-1].uri,
                 cursor = pinnedFeeds[selectedTab-1].cursor
             ))

@@ -1,4 +1,4 @@
-package morpho.app.model
+package com.morpho.app.model
 
 import app.bsky.richtext.Facet
 import app.bsky.richtext.FacetByteSlice
@@ -6,12 +6,11 @@ import app.bsky.richtext.FacetFeatureUnion
 import app.bsky.richtext.FacetLink
 import app.bsky.richtext.FacetMention
 import app.bsky.richtext.FacetTag
-import kotlinx.collections.immutable.persistentListOf
 import kotlinx.serialization.Serializable
-import morpho.app.api.Did
-import morpho.app.api.Handle
-import morpho.app.api.Uri
-import morpho.app.api.model.ReadOnlyList
+import com.morpho.butterfly.Did
+import com.morpho.butterfly.Handle
+import com.morpho.butterfly.Uri
+import com.morpho.butterfly.model.ReadOnlyList
 import okhttp3.internal.immutableListOf
 
 @Serializable

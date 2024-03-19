@@ -1,4 +1,4 @@
-package morpho.app.ui.post
+package com.morpho.app.ui.post
 
 import android.content.Intent
 import android.net.Uri
@@ -36,18 +36,18 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import kotlinx.collections.immutable.toImmutableList
-import morpho.app.api.AtIdentifier
-import morpho.app.api.AtUri
-import morpho.app.model.BskyPost
-import morpho.app.model.BskyPostFeature
-import morpho.app.model.EmbedImage
-import morpho.app.model.EmbedPost
-import morpho.app.model.FacetType
-import morpho.app.ui.elements.OutlinedAvatar
-import morpho.app.ui.elements.RichTextElement
-import morpho.app.util.getFormattedDateTimeSince
-import morpho.app.util.parseImageFullRef
-import morpho.app.util.parseImageThumbRef
+import com.morpho.butterfly.AtIdentifier
+import com.morpho.butterfly.AtUri
+import com.morpho.app.model.BskyPost
+import com.morpho.app.model.BskyPostFeature
+import com.morpho.app.model.EmbedImage
+import com.morpho.app.model.EmbedPost
+import com.morpho.app.model.FacetType
+import com.morpho.app.ui.elements.OutlinedAvatar
+import com.morpho.app.ui.elements.RichTextElement
+import com.morpho.app.util.getFormattedDateTimeSince
+import com.morpho.app.util.parseImageFullRef
+import com.morpho.app.util.parseImageThumbRef
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable

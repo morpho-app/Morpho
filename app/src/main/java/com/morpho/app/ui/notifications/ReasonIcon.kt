@@ -1,4 +1,4 @@
-package morpho.app.ui.notifications
+package com.morpho.app.ui.notifications
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Reply

@@ -1,11 +1,11 @@
-package morpho.app.ui.profile
+package com.morpho.app.ui.profile
 
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import kotlinx.collections.immutable.ImmutableList
-import morpho.app.model.BskyLabel
+import com.morpho.app.model.BskyLabel
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable

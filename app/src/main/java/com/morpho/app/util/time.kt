@@ -1,4 +1,4 @@
-package morpho.app.util
+package com.morpho.app.util
 
 import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
@@ -6,7 +6,7 @@ import kotlinx.datetime.minus
 import kotlinx.datetime.toInstant
 import kotlinx.datetime.toLocalDateTime
 import kotlinx.datetime.todayIn
-import morpho.app.model.Moment
+import com.morpho.app.model.Moment
 
 fun getFormattedDateTimeSince(moment: Moment): String {
     val postDate = moment.instant.toLocalDateTime(TimeZone.currentSystemDefault()).date

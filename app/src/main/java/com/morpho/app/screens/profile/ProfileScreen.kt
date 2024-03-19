@@ -1,4 +1,4 @@
-package morpho.app.screens.profile
+package com.morpho.app.screens.profile
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.Spring
@@ -28,21 +28,21 @@ import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import io.github.xxfast.kstore.utils.ExperimentalKStoreApi
 import com.morpho.app.MainViewModel
-import morpho.app.api.AtIdentifier
-import morpho.app.api.AtUri
-import morpho.app.api.model.RecordType
-import morpho.app.api.model.RecordUnion
-import morpho.app.components.Center
-import morpho.app.components.ScreenBody
-import morpho.app.extensions.activityViewModel
-import morpho.app.model.BskyPost
-import morpho.app.model.DraftPost
-import morpho.app.ui.common.BottomSheetPostComposer
-import morpho.app.ui.common.ComposerRole
-import morpho.app.ui.common.RepostQueryDialog
-import morpho.app.ui.common.SkylineFragment
-import morpho.app.ui.profile.DetailedProfileFragment
-import morpho.app.ui.profile.ProfileTabRow
+import com.morpho.butterfly.AtIdentifier
+import com.morpho.butterfly.AtUri
+import com.morpho.butterfly.model.RecordType
+import com.morpho.butterfly.model.RecordUnion
+import com.morpho.app.components.Center
+import com.morpho.app.components.ScreenBody
+import com.morpho.app.extensions.activityViewModel
+import com.morpho.app.model.BskyPost
+import com.morpho.app.model.DraftPost
+import com.morpho.app.ui.common.BottomSheetPostComposer
+import com.morpho.app.ui.common.ComposerRole
+import com.morpho.app.ui.common.RepostQueryDialog
+import com.morpho.app.ui.common.SkylineFragment
+import com.morpho.app.ui.profile.DetailedProfileFragment
+import com.morpho.app.ui.profile.ProfileTabRow
 import morpho.app.ui.utils.DevicePreviews
 import morpho.app.ui.utils.FontScalePreviews
 

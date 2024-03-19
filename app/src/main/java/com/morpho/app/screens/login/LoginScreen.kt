@@ -1,4 +1,4 @@
-package morpho.app.screens.login
+package com.morpho.app.screens.login
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -29,21 +29,21 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import app.bsky.actor.GetProfileQueryParams
+import app.bsky.actor.GetProfileQuery
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
-import kotlinx.coroutines.flow.first
+
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import com.morpho.app.MainViewModel
-import morpho.app.api.AtIdentifier
-import morpho.app.api.Handle
-import morpho.app.api.auth.Credentials
-import morpho.app.api.toPreferences
-import morpho.app.components.ScreenBody
-import morpho.app.extensions.activityViewModel
-import morpho.app.model.toProfile
-import morpho.app.screens.destinations.SkylineScreenDestination
+import com.morpho.butterfly.AtIdentifier
+import com.morpho.butterfly.Handle
+import com.morpho.butterfly.auth.Credentials
+import com.morpho.app.model.toPreferences
+import com.morpho.app.components.ScreenBody
+import com.morpho.app.extensions.activityViewModel
+import com.morpho.app.model.toProfile
+import com.morpho.app.screens.destinations.SkylineScreenDestination
 
 @Destination
 @Composable
@@ -72,7 +72,7 @@ fun LoginScreen(
                         password,
                         onLoginClick = {
                             viewModel.login(
-                                mainViewModel.apiProvider,
+                                mainViewModel.butterfly,
                                 Credentials(
                                     email,
                                     Handle(handle),
@@ -81,13 +81,11 @@ fun LoginScreen(
                                 ),
                                 {
                                     runBlocking {
-                                        mainViewModel.apiProvider.loginRepository.auth = it
-                                        mainViewModel.apiProvider.auth().first()
-                                        mainViewModel.currentUser = mainViewModel.apiProvider.api.getProfile(
-                                            GetProfileQueryParams(AtIdentifier(it.did.did))
-                                        ).maybeResponse()?.toProfile()
-                                        mainViewModel.userPreferences = mainViewModel.apiProvider.getUserPreferences()
-                                            .maybeResponse()?.toPreferences()
+                                        mainViewModel.currentUser = mainViewModel.butterfly.api.getProfile(
+                                            GetProfileQuery(AtIdentifier(it.did.did))
+                                        ).getOrNull()?.toProfile()
+                                        mainViewModel.userPreferences = mainViewModel.butterfly.getUserPreferences()
+                                            .getOrNull()?.toPreferences()
                                     }
 
 
@@ -116,7 +114,7 @@ fun LoginScreen(
         }
         is LoginState.SigningIn -> {
             viewModel.login(
-                mainViewModel.apiProvider,
+                mainViewModel.butterfly,
                 (loginState as LoginState.SigningIn).credentials,
                 {
                     navigator.navigate(

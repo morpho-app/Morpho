@@ -1,14 +1,14 @@
-package morpho.app.util
+package com.morpho.app.util
 
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.util.Log
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
-import morpho.app.api.AtIdentifier
-import morpho.app.api.AtUri
-import morpho.app.api.Did
-import morpho.app.screens.destinations.ProfileScreenDestination
+import com.morpho.butterfly.AtIdentifier
+import com.morpho.butterfly.AtUri
+import com.morpho.butterfly.Did
+import com.morpho.app.screens.destinations.ProfileScreenDestination
 
 fun linkVisit(string: String, ctx: Context, navigator: DestinationsNavigator) {
     if(string.startsWith("@")) {

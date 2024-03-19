@@ -1,13 +1,13 @@
-package morpho.app.model
+package com.morpho.app.model
 
 import app.bsky.feed.GeneratorView
 import app.bsky.richtext.Facet
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.serialization.Serializable
-import morpho.app.api.AtUri
-import morpho.app.api.Cid
-import morpho.app.api.Did
+import com.morpho.butterfly.AtUri
+import com.morpho.butterfly.Cid
+import com.morpho.butterfly.Did
 
 @Serializable
 data class FeedGenerator(
@@ -26,7 +26,7 @@ data class FeedGenerator(
 )
 
 
-fun GeneratorView.toFeedGenerator() : FeedGenerator  {
+fun GeneratorView.toFeedGenerator() : FeedGenerator {
     return FeedGenerator(
         uri = uri,
         cid = cid,

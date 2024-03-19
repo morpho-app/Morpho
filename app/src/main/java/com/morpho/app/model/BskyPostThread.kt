@@ -1,6 +1,6 @@
 @file:Suppress("MemberVisibilityCanBePrivate")
 
-package morpho.app.model
+package com.morpho.app.model
 
 import androidx.compose.runtime.Immutable
 import androidx.room.Entity
@@ -12,12 +12,12 @@ import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.serialization.Serializable
 import okhttp3.internal.toImmutableList
-import morpho.app.api.AtUri
-import morpho.app.api.Cid
-import morpho.app.model.ThreadPost.BlockedPost
-import morpho.app.model.ThreadPost.NotFoundPost
-import morpho.app.model.ThreadPost.ViewablePost
-import morpho.app.util.mapImmutable
+import com.morpho.butterfly.AtUri
+import com.morpho.butterfly.Cid
+import com.morpho.app.model.ThreadPost.BlockedPost
+import com.morpho.app.model.ThreadPost.NotFoundPost
+import com.morpho.app.model.ThreadPost.ViewablePost
+import com.morpho.app.util.mapImmutable
 
 
 @Entity(tableName = "threads")
@@ -147,7 +147,7 @@ sealed interface ThreadPost {
     @Serializable
     data class NotFoundPost(
         val uri: AtUri? = null,
-    ) :ThreadPost {
+    ) : ThreadPost {
         override fun equals(other: Any?) : Boolean {
             if (other is AtUri) return uri == other
             return this.hashCode() == other.hashCode()

@@ -1,4 +1,4 @@
-package morpho.app.ui.post
+package com.morpho.app.ui.post
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable
@@ -48,8 +48,8 @@ import androidx.compose.ui.window.DialogProperties
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import coil.size.Size
-import morpho.app.model.BskyPostFeature
-import morpho.app.model.EmbedImage
+import com.morpho.app.model.BskyPostFeature
+import com.morpho.app.model.EmbedImage
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable

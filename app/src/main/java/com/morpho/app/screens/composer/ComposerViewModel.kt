@@ -1,11 +1,11 @@
-package morpho.app.screens.composer
+package com.morpho.app.screens.composer
 
 import android.app.Application
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.DefaultLifecycleObserver
-import morpho.app.base.BaseViewModel
+import com.morpho.app.base.BaseViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 

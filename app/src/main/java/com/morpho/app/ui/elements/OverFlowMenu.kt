@@ -1,4 +1,4 @@
-package morpho.app.ui.elements
+package com.morpho.app.ui.elements
 
 import android.content.Context
 import android.content.Intent
@@ -7,8 +7,8 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import morpho.app.api.Language
-import morpho.app.model.BskyPost
+import com.morpho.butterfly.Language
+import com.morpho.app.model.BskyPost
 
 
 enum class MenuOptions(val text: String) {

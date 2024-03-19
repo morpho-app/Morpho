@@ -1,4 +1,4 @@
-package morpho.app.ui.lists
+package com.morpho.app.ui.lists
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -36,8 +36,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import com.atproto.repo.StrongRef
-import morpho.app.model.FeedGenerator
-import morpho.app.ui.elements.OutlinedAvatar
+import com.morpho.app.model.FeedGenerator
+import com.morpho.app.ui.elements.OutlinedAvatar
 
 @Composable
 fun FeedListEntryFragment(

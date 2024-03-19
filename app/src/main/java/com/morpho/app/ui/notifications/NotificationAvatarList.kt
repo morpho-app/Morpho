@@ -1,4 +1,4 @@
-package morpho.app.ui.notifications
+package com.morpho.app.ui.notifications
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
@@ -27,9 +27,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
-import morpho.app.api.Did
-import morpho.app.model.NotificationsListItem
-import morpho.app.ui.elements.OutlinedAvatar
+import com.morpho.butterfly.Did
+import com.morpho.app.model.NotificationsListItem
+import com.morpho.app.ui.elements.OutlinedAvatar
 import kotlin.math.min
 
 @Composable

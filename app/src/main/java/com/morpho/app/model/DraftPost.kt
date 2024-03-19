@@ -1,10 +1,11 @@
-package morpho.app.model
+package com.morpho.app.model
 
 import app.bsky.feed.PostEmbedUnion
 import app.bsky.feed.PostLabelsUnion
 import app.bsky.richtext.Facet
+import com.morpho.app.model.BskyPost
 import kotlinx.serialization.Serializable
-import morpho.app.api.Language
+import com.morpho.butterfly.Language
 
 @Serializable
 data class DraftPost(
@@ -20,4 +21,4 @@ data class DraftPost(
      */
     val tags: MutableList<String> = mutableListOf(),
 
-)
+    )

@@ -1,4 +1,4 @@
-package morpho.app.ui.notifications
+package com.morpho.app.ui.notifications
 
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme

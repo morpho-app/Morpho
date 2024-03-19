@@ -1,8 +1,8 @@
-package morpho.app.model
+package com.morpho.app.model
 
 import kotlinx.serialization.Serializable
-import morpho.app.api.AtUri
-import morpho.app.api.Cid
+import com.morpho.butterfly.AtUri
+import com.morpho.butterfly.Cid
 
 @Serializable
 data class Reference(
