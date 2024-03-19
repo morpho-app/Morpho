@@ -1,4 +1,4 @@
-package morpho.app.screens.profile
+package com.morpho.app.screens.profile
 
 import android.app.Application
 import android.util.Log
@@ -7,11 +7,12 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.viewModelScope
-import app.bsky.actor.GetProfileQueryParams
-import app.bsky.feed.GetActorFeedsQueryParams
+import app.bsky.actor.GetProfileQuery
+import app.bsky.feed.GetActorFeedsQuery
 import app.bsky.feed.GetAuthorFeedFilter
-import app.bsky.feed.GetAuthorFeedQueryParams
-import app.bsky.graph.GetListsQueryParams
+import app.bsky.feed.GetAuthorFeedQuery
+import app.bsky.graph.GetListsQuery
+import com.morpho.app.butterfly
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CoroutineScope
@@ -21,18 +22,16 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import morpho.app.api.AtIdentifier
-import morpho.app.api.AtUri
-import morpho.app.api.model.RecordUnion
-import morpho.app.api.response.AtpResponse
-import com.morpho.app.apiProvider
-import morpho.app.base.BaseViewModel
-import morpho.app.model.DetailedProfile
-import morpho.app.model.Skyline
-import morpho.app.model.toBskyPostList
-import morpho.app.model.toProfile
-import morpho.app.screens.destinations.PostThreadScreenDestination
-import morpho.app.screens.destinations.ProfileScreenDestination
+import com.morpho.butterfly.AtIdentifier
+import com.morpho.butterfly.AtUri
+import com.morpho.butterfly.model.RecordUnion
+import com.morpho.app.base.BaseViewModel
+import com.morpho.app.model.DetailedProfile
+import com.morpho.app.model.Skyline
+import com.morpho.app.model.toBskyPostList
+import com.morpho.app.model.toProfile
+import com.morpho.app.screens.destinations.PostThreadScreenDestination
+import com.morpho.app.screens.destinations.ProfileScreenDestination
 import javax.inject.Inject
 
 
@@ -58,8 +57,8 @@ enum class ProfileTabs {
 class ProfileViewModel @Inject constructor(
     app: Application,
 ) : BaseViewModel(app), DefaultLifecycleObserver {
-    val apiProvider = app.apiProvider
-    val api = apiProvider.api
+    val apiProvider = app.butterfly
+    val api = app.butterfly.api
 
     var state by mutableStateOf(ProfileState())
         private set
@@ -86,23 +85,18 @@ class ProfileViewModel @Inject constructor(
         onSuccess: () -> Unit,
         onFailure: () -> Unit
     ) = viewModelScope.launch(Dispatchers.IO) {
-        when (val result = api.getProfile(GetProfileQueryParams(actor))) {
-            is AtpResponse.Failure -> {
-                Log.e("P Load Err", result.toString())
-                state = ProfileState(actor, null, isLoading = false, isError = true)
-                onFailure()
-            }
-
-            is AtpResponse.Success -> {
-                val profile = result.response.toProfile()
-                Log.i("P Load Success", result.toString())
-                state = ProfileState(actor, profile, false)
-                getProfileFeed(ProfileTabs.Posts)
-                onSuccess()
-                getProfileFeed(ProfileTabs.PostsReplies)
-                getProfileFeed(ProfileTabs.Media)
-
-            }
+        api.getProfile(GetProfileQuery(actor)).onFailure {
+            Log.e("P Load Err", it.toString())
+            state = ProfileState(actor, null, isLoading = false, isError = true)
+            onFailure()
+        }.onSuccess {
+            val profile = it.toProfile()
+            Log.i("P Load Success", it.toString())
+            state = ProfileState(actor, profile, false)
+            getProfileFeed(ProfileTabs.Posts)
+            onSuccess()
+            getProfileFeed(ProfileTabs.PostsReplies)
+            getProfileFeed(ProfileTabs.Media)
         }
     }
 
@@ -116,68 +110,67 @@ class ProfileViewModel @Inject constructor(
     fun getProfileFeed(feed: ProfileTabs, cursor: String? = null, actor: AtIdentifier? = null
     ) = viewModelScope.launch(Dispatchers.IO) {
         val _actor = actor ?: state.actor
-        if (_actor != null) {
+        if (_actor != null) runCatching {
             when (feed) {
                 ProfileTabs.Posts -> {
-                    val result = api.getAuthorFeed(GetAuthorFeedQueryParams(_actor, 100,cursor, GetAuthorFeedFilter.POSTS_NO_REPLIES))
-                    if (result is AtpResponse.Success) {
-                        val newPosts = Skyline.from(result.response.feed.toBskyPostList(), result.response.cursor)
-                        if (cursor != null) {
-                            Log.v("UpdatePosts", result.response.feed.toString())
-                            _profilePosts.update { skyline -> Skyline.concat(skyline, newPosts) }
-                        } else {
-                            Log.v("Posts", result.response.feed.toString())
-                            _profilePosts.value = newPosts
+                    api.getAuthorFeed(GetAuthorFeedQuery(_actor, 100,cursor, GetAuthorFeedFilter.POSTS_NO_REPLIES))
+                        .onSuccess {
+                            val newPosts = Skyline.from(it.feed.toBskyPostList(), it.cursor)
+                            if (cursor != null) {
+                                Log.v("UpdatePosts", it.feed.toString())
+                                _profilePosts.update { skyline -> Skyline.concat(skyline, newPosts) }
+                            } else {
+                                Log.v("Posts", it.feed.toString())
+                                _profilePosts.value = newPosts
 
+                            }
                         }
-                    }
-
                 }
                 ProfileTabs.PostsReplies -> {
-                    val result = api.getAuthorFeed(GetAuthorFeedQueryParams(_actor, 100, cursor, GetAuthorFeedFilter.POSTS_WITH_REPLIES))
-                    if (result is AtpResponse.Success) {
-                        Log.d("Posts+Replies", result.response.feed.toString())
-                        val newPosts = Skyline.from(result.response.feed.toBskyPostList(), result.response.cursor)
-                        if (cursor != null) {
-                            Log.v("UpdatePosts+Replies", result.response.feed.toString())
-                            _profilePostsReplies.update { skyline -> Skyline.concat(skyline, newPosts) }
-                        } else {
-                            Log.v("Posts+Replies", result.response.feed.toString())
-                            _profilePostsReplies.value = newPosts
+                    api.getAuthorFeed(GetAuthorFeedQuery(_actor, 100, cursor, GetAuthorFeedFilter.POSTS_WITH_REPLIES))
+                        .onSuccess {
+                            Log.d("Posts+Replies", it.feed.toString())
+                            val newPosts = Skyline.from(it.feed.toBskyPostList(), it.cursor)
+                            if (cursor != null) {
+                                Log.v("UpdatePosts+Replies", it.feed.toString())
+                                _profilePostsReplies.update { skyline -> Skyline.concat(skyline, newPosts) }
+                            } else {
+                                Log.v("Posts+Replies", it.feed.toString())
+                                _profilePostsReplies.value = newPosts
 
+                            }
                         }
-                    }
                 }
                 ProfileTabs.Media -> {
-                    val result = api.getAuthorFeed(GetAuthorFeedQueryParams(_actor, 100, cursor, GetAuthorFeedFilter.POSTS_WITH_MEDIA))
-                    if (result is AtpResponse.Success) {
-                        Log.d("Media", result.response.feed.toString())
-                        val newPosts = Skyline.from(result.response.feed.toBskyPostList(), result.response.cursor)
-                        if (cursor != null) {
-                            Log.v("UpdateMedia", result.response.feed.toString())
-                            _profileMedia.update { skyline -> Skyline.concat(skyline, newPosts) }
-                        } else {
-                            Log.v("Media", result.response.feed.toString())
-                            _profileMedia.value = newPosts
+                    api.getAuthorFeed(GetAuthorFeedQuery(_actor, 100, cursor, GetAuthorFeedFilter.POSTS_WITH_MEDIA))
+                        .onSuccess {
+                            Log.d("Media", it.feed.toString())
+                            val newPosts = Skyline.from(it.feed.toBskyPostList(), it.cursor)
+                            if (cursor != null) {
+                                Log.v("UpdateMedia", it.feed.toString())
+                                _profileMedia.update { skyline -> Skyline.concat(skyline, newPosts) }
+                            } else {
+                                Log.v("Media", it.feed.toString())
+                                _profileMedia.value = newPosts
 
+                            }
                         }
-                    }
                 }
                 ProfileTabs.Feeds -> {
-                    val result = api.getActorFeeds(GetActorFeedsQueryParams(_actor, 100))
-                    if (result is AtpResponse.Success) {
-                        Log.v("Feeds", result.response.feeds.toString())
-                        //_profileMedia.value = Skyline.from(result.response.feed, profileMedia.value.cursor)
+                    api.getActorFeeds(GetActorFeedsQuery(_actor, 100)).onSuccess {
+                        Log.v("Feeds", it.feeds.toString())
+                        //_profileMedia.value = Skyline.from(it.feed, profileMedia.value.cursor)
                     }
                 }
                 ProfileTabs.Lists -> {
-                    val result = api.getLists(GetListsQueryParams(_actor, 100))
-                    if (result is AtpResponse.Success) {
-                        Log.v("Lists", result.response.lists.toString())
-                        //_profileMedia.value = Skyline.from(result.response.feed, profileMedia.value.cursor)
+                    api.getLists(GetListsQuery(_actor, 100)).onSuccess {
+                        Log.v("Lists", it.lists.toString())
+                        //_profileMedia.value = Skyline.from(it.feed, profileMedia.value.cursor)
                     }
                 }
             }
+        }.recover {
+            Log.e("Profile", it.toString())
         }
 
     }

@@ -1,4 +1,4 @@
-package morpho.app.model
+package com.morpho.app.model
 
 import androidx.compose.ui.util.fastAny
 import androidx.compose.ui.util.fastDistinctBy
@@ -6,7 +6,7 @@ import androidx.compose.ui.util.fastFilter
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastMap
 import app.bsky.feed.FeedViewPost
-import app.bsky.feed.GetPostThreadQueryParams
+import app.bsky.feed.GetPostThreadQuery
 import app.bsky.feed.GetPostThreadResponseThreadUnion
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
@@ -16,14 +16,12 @@ import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
-import morpho.app.api.ApiProvider
-import morpho.app.api.AtUri
-import morpho.app.api.BskyFeedPref
-import morpho.app.api.Cid
-import morpho.app.api.Did
-import morpho.app.api.Language
-import morpho.app.api.response.AtpResponse
-import morpho.app.util.mapImmutable
+import com.morpho.butterfly.AtUri
+import com.morpho.butterfly.Cid
+import com.morpho.butterfly.Did
+import com.morpho.butterfly.Language
+import com.morpho.app.util.mapImmutable
+import com.morpho.butterfly.Butterfly
 import kotlin.time.Duration
 
 
@@ -198,7 +196,13 @@ data class Skyline(
                                 ThreadPost.ViewablePost(p, findReplies(level, depth, p, thread).await())
                             }.orEmpty()
                         }
-                        skyline._posts[index] = SkylineItem.ThreadItem(BskyPostThread(post, parents.await(), replies.await().toImmutableList()))
+                        skyline._posts[index] = SkylineItem.ThreadItem(
+                            BskyPostThread(
+                                post,
+                                parents.await(),
+                                replies.await().toImmutableList()
+                            )
+                        )
                     }
                 }
 
@@ -285,7 +289,7 @@ data class Skyline(
         }
 
         suspend fun collectThreads(
-            apiProvider: ApiProvider,
+            apiProvider: Butterfly,
             cursor: String? = null,
             posts: List<BskyPost>,
             depth: Long = 1, height: Long = 10,
@@ -300,19 +304,14 @@ data class Skyline(
                     if (reply.author.did == post.reply?.root?.author?.did
                         && post.author.did == post.reply.root.author.did
                     ) {
-                        when (val response = apiProvider.api.getPostThread(
-                            GetPostThreadQueryParams(
+                        apiProvider.api.getPostThread(
+                            GetPostThreadQuery(
                                 reply.uri,
                                 depth,
                                 height
                             )
-                        )) {
-                            is AtpResponse.Failure -> {
-
-                            }
-
-                            is AtpResponse.Success -> {
-                                when (val thread = response.response.thread) {
+                        ).onSuccess {
+                                when (val thread = it.thread) {
                                     is GetPostThreadResponseThreadUnion.BlockedPost -> {}
                                     is GetPostThreadResponseThreadUnion.NotFoundPost -> {}
                                     is GetPostThreadResponseThreadUnion.ThreadViewPost -> {
@@ -320,7 +319,6 @@ data class Skyline(
                                     }
                                 }
                             }
-                        }
                     }
                 }
             }
@@ -348,7 +346,7 @@ data class Skyline(
         depth: Int = 3, height: Int = 10,
         timeRange: Delta = Delta(Duration.parse("4h"))
     ) = CoroutineScope(Dispatchers.Default).async {
-        return@async Companion.collectThreads(this@Skyline, depth, height, timeRange).await()
+        return@async collectThreads(this@Skyline, depth, height, timeRange).await()
     }
 
     operator fun plus(skyline: Skyline) {
@@ -382,7 +380,7 @@ fun List<BskyPost>.tune(
     return feed
 }
 
-fun isFollowingAllAuthors(post:BskyPost, follows: List<Did>): Boolean {
+fun isFollowingAllAuthors(post: BskyPost, follows: List<Did>): Boolean {
     return follows.fastAny {
         (post.author.did == it
             || post.reply?.parent?.author?.did == it

@@ -8,8 +8,8 @@ import okio.Path.Companion.toPath
 
 
 class LoginRepository(
-    private val dir: String,
-    private val key: String = ""
+    val dir: String,
+    val key: String = ""
 ) {
     private val authStore: KStore<AuthInfo> = storeOf(
         file = "$dir/jwt_$key.json".toPath(),
@@ -38,4 +38,13 @@ class LoginRepository(
         set(value) { runBlocking { credentialsStore.set(value) } }
 
     fun credentials(): Flow<Credentials?> = credentialsStore.updates
+
+    constructor(
+        dir: String,
+        key: String = "",
+        auth: AuthInfo,
+        credentials: Credentials) : this(dir, key) {
+            this.auth = auth
+            this.credentials = credentials
+        }
 }

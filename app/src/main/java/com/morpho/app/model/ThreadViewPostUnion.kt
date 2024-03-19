@@ -1,8 +1,8 @@
-package morpho.app.model
+package com.morpho.app.model
 
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialName
-import morpho.app.api.runtime.valueClassSerializer
+import com.morpho.butterfly.valueClassSerializer
 
 
 @kotlinx.serialization.Serializable

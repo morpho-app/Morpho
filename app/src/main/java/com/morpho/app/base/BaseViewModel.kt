@@ -1,4 +1,4 @@
-package morpho.app.base
+package com.morpho.app.base
 
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel

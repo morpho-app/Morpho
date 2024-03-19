@@ -1,4 +1,4 @@
-package morpho.app.components
+package com.morpho.app.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
@@ -42,7 +42,7 @@ fun ScreenBody(
     snackbarHost: @Composable () -> Unit = { },
     topContent: @Composable () -> Unit = { },
     navBar: @Composable () -> Unit = {},
-    contentWindowInsets: WindowInsets = WindowInsets.navigationBars ,
+    contentWindowInsets: WindowInsets = WindowInsets.navigationBars,
     content2: @Composable (PaddingValues) -> Unit = {},
     content1: @Composable (PaddingValues) -> Unit,
 ) {

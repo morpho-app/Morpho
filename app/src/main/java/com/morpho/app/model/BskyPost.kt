@@ -1,4 +1,4 @@
-package morpho.app.model
+package com.morpho.app.model
 
 import androidx.compose.runtime.Immutable
 import androidx.room.Entity
@@ -9,11 +9,11 @@ import app.bsky.feed.PostView
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.serialization.Serializable
-import morpho.app.api.AtUri
-import morpho.app.api.Cid
-import morpho.app.api.Language
-import morpho.app.util.deserialize
-import morpho.app.util.mapImmutable
+import com.morpho.butterfly.AtUri
+import com.morpho.butterfly.Cid
+import com.morpho.butterfly.Language
+import com.morpho.app.util.deserialize
+import com.morpho.app.util.mapImmutable
 
 
 enum class PostType {

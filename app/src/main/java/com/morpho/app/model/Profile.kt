@@ -1,4 +1,4 @@
-package morpho.app.model
+package com.morpho.app.model
 
 import androidx.annotation.Size
 import app.bsky.actor.ProfileView
@@ -6,9 +6,9 @@ import app.bsky.actor.ProfileViewBasic
 import app.bsky.actor.ProfileViewDetailed
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.serialization.Serializable
-import morpho.app.api.Did
-import morpho.app.api.Handle
-import morpho.app.util.mapImmutable
+import com.morpho.butterfly.Did
+import com.morpho.butterfly.Handle
+import com.morpho.app.util.mapImmutable
 
 
 enum class ProfileType {

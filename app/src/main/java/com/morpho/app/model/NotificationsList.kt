@@ -1,10 +1,10 @@
-package morpho.app.model
+package com.morpho.app.model
 
 import app.bsky.notification.ListNotificationsNotification
 import app.bsky.notification.ListNotificationsReason
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.serialization.Serializable
-import morpho.app.api.AtUri
+import com.morpho.butterfly.AtUri
 
 /**
  * Notifications combined for display
@@ -13,7 +13,7 @@ import morpho.app.api.AtUri
  */
 @Serializable
 data class NotificationsList(
-    private val notifications: List<BskyNotification> = persistentListOf(),
+    val notifications: List<BskyNotification> = persistentListOf(),
 ) {
     private var _notificationsList = mutableListOf<NotificationsListItem>()
     var notificationsList: List<NotificationsListItem> = _notificationsList.toList()

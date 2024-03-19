@@ -1,4 +1,4 @@
-package morpho.app.ui.post
+package com.morpho.app.ui.post
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -12,7 +12,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.max
-import morpho.app.api.AtUri
+import com.morpho.butterfly.AtUri
 import morpho.app.ui.utils.indentLevel
 
 @Composable

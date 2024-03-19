@@ -1,4 +1,4 @@
-package com.morpho.app.util
+package com.morpho.butterfly
 
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.encodeToString
@@ -28,3 +28,7 @@ fun <T : Any> KSerializer<T>.serialize(value: T): JsonElement {
     return json.parseToJsonElement(json.encodeToString(this, value))
 }
 
+fun getRkey(uri: AtUri?) : String {
+    val str = uri?.atUri.orEmpty()
+    return str.substringAfterLast("/")
+}

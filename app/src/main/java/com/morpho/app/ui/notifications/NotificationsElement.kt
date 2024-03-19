@@ -1,4 +1,4 @@
-package morpho.app.ui.notifications
+package com.morpho.app.ui.notifications
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -26,16 +26,16 @@ import androidx.compose.ui.unit.dp
 import com.atproto.repo.StrongRef
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.launch
-import morpho.app.api.AtIdentifier
-import morpho.app.api.AtUri
-import morpho.app.api.model.RecordType
-import morpho.app.model.BskyNotification
-import morpho.app.model.BskyPost
-import morpho.app.model.NotificationsListItem
-import morpho.app.ui.common.OnPostClicked
-import morpho.app.ui.elements.MenuOptions
-import morpho.app.ui.post.PostFragment
-import morpho.app.util.getFormattedDateTimeSince
+import com.morpho.butterfly.AtIdentifier
+import com.morpho.butterfly.AtUri
+import com.morpho.butterfly.model.RecordType
+import com.morpho.app.model.BskyNotification
+import com.morpho.app.model.BskyPost
+import com.morpho.app.model.NotificationsListItem
+import com.morpho.app.ui.common.OnPostClicked
+import com.morpho.app.ui.elements.MenuOptions
+import com.morpho.app.ui.post.PostFragment
+import com.morpho.app.util.getFormattedDateTimeSince
 
 @Composable
 fun NotificationsElement(
@@ -70,6 +70,8 @@ fun NotificationsElement(
                     post = getPost(notif.reasonSubject!!).await()
                 }
             }
+
+            else -> {}
         }
     }
     val firstName = remember {

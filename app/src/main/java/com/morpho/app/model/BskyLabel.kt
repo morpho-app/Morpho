@@ -1,4 +1,4 @@
-package morpho.app.model
+package com.morpho.app.model
 
 import app.bsky.actor.ContentLabelPref
 import kotlinx.serialization.Serializable

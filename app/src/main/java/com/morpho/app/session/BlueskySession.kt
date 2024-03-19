@@ -1,6 +1,6 @@
 package morpho.app.session
 
-import morpho.app.api.Did;
+import com.morpho.butterfly.Did;
 
 data class BlueskySession(
     val did: Did

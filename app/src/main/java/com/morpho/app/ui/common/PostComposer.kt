@@ -1,4 +1,4 @@
-package morpho.app.ui.common
+package com.morpho.app.ui.common
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
@@ -52,12 +52,12 @@ import com.atproto.repo.StrongRef
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
-import morpho.app.api.Language
-import morpho.app.model.BskyPost
-import morpho.app.model.DraftPost
-import morpho.app.ui.post.ComposerPostFragment
-import morpho.app.ui.post.testPost
-import morpho.app.ui.theme.MorphoTheme
+import com.morpho.butterfly.Language
+import com.morpho.app.model.BskyPost
+import com.morpho.app.model.DraftPost
+import com.morpho.app.ui.post.ComposerPostFragment
+import com.morpho.app.ui.post.testPost
+import com.morpho.app.ui.theme.MorphoTheme
 
 
 enum class ComposerRole {
@@ -181,7 +181,8 @@ fun PostComposer(
             text = postText,
             reply = if (replyRef != null && role == ComposerRole.Reply) initialContent else null,
             quote = if (quoteRef != null && role == ComposerRole.QuotePost) initialContent else null,
-        ))
+        )
+        )
     }
     Column(
         modifier = modifier

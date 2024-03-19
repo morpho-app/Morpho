@@ -1,4 +1,4 @@
-package morpho.app.extensions
+package com.morpho.app.extensions
 
 import androidx.activity.ComponentActivity
 import androidx.annotation.MainThread

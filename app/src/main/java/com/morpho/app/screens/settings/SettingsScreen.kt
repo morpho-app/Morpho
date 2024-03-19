@@ -1,4 +1,4 @@
-package morpho.app.screens.settings
+package com.morpho.app.screens.settings
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.fillMaxSize
@@ -10,9 +10,9 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import com.morpho.app.MainViewModel
-import morpho.app.components.Center
-import morpho.app.components.ScreenBody
-import morpho.app.extensions.activityViewModel
+import com.morpho.app.components.Center
+import com.morpho.app.components.ScreenBody
+import com.morpho.app.extensions.activityViewModel
 
 @Destination
 @Composable

@@ -1,4 +1,4 @@
-package morpho.app.ui.elements
+package com.morpho.app.ui.elements
 
 import android.content.res.Resources
 import androidx.compose.material3.MaterialTheme

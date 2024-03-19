@@ -1,4 +1,4 @@
-package morpho.app.ui.theme
+package com.morpho.app.ui.theme
 
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.compositeOver

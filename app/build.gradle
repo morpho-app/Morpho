@@ -13,7 +13,7 @@ plugins {
 }
 
 android {
-    namespace "morpho.app"
+    namespace "com.morpho.app"
     compileSdk 34
 
     defaultConfig {
@@ -73,6 +73,7 @@ kotlin {
 dependencies {
     implementation libs.profileinstaller
     implementation libs.androidx.material3.android
+    implementation project(':butterfly')
     baselineProfile project(":baselineprofile")
     def room_version = "2.5.2"
 
@@ -210,6 +211,7 @@ dependencies {
     ksp("androidx.room:room-compiler:$room_version")
 
     implementation(libs.androidx.room.paging)
+
 
 
 

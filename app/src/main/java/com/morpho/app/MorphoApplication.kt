@@ -18,15 +18,25 @@ import coil.memory.MemoryCache
 import dagger.hilt.android.HiltAndroidApp
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import morpho.app.api.ApiProvider
-import morpho.app.api.ServerRepository
-import morpho.app.api.auth.LoginRepository
-import morpho.app.storage.storage
+import com.morpho.butterfly.Butterfly
+import com.morpho.butterfly.auth.LoginRepository
+import com.morpho.butterfly.auth.RelayRepository
 import javax.inject.Inject
 
 val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
-val Context.apiProvider: ApiProvider
-    get() = ApiProvider(ServerRepository(storage), LoginRepository(storage))
+
+val Context.butterfly: Butterfly
+    get() = Butterfly(RelayRepository(applicationContext.cacheDir.path.toString(), "default"), user)
+
+var Context.user: LoginRepository
+    get() = LoginRepository(applicationContext.cacheDir.path.toString(), "default")
+    set(value) {
+        value.auth?.let { auth-> value.credentials?.let { credentials ->
+            LoginRepository(value.dir, value.key, auth,
+                credentials
+            )
+        } }
+    }
 
 @HiltAndroidApp
 class MorphoApplication : Application(), Configuration.Provider, ImageLoaderFactory {

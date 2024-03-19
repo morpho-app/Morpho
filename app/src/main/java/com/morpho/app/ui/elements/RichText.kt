@@ -1,4 +1,4 @@
-package morpho.app.ui.elements
+package com.morpho.app.ui.elements
 
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.ClickableText
@@ -14,12 +14,12 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import kotlinx.collections.immutable.persistentListOf
-import morpho.app.model.BskyFacet
-import morpho.app.model.RichTextFormat.BOLD
-import morpho.app.model.RichTextFormat.ITALIC
-import morpho.app.model.RichTextFormat.STRIKETHROUGH
-import morpho.app.model.RichTextFormat.UNDERLINE
-import morpho.app.model.FacetType
+import com.morpho.app.model.BskyFacet
+import com.morpho.app.model.RichTextFormat.BOLD
+import com.morpho.app.model.RichTextFormat.ITALIC
+import com.morpho.app.model.RichTextFormat.STRIKETHROUGH
+import com.morpho.app.model.RichTextFormat.UNDERLINE
+import com.morpho.app.model.FacetType
 import kotlin.math.min
 
 @Composable

@@ -1,4 +1,4 @@
-package morpho.app.ui.common
+package com.morpho.app.ui.common
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.fillMaxWidth
