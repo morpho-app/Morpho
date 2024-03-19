@@ -11,7 +11,7 @@ import com.morpho.butterfly.model.ReadOnlyList
 import com.morpho.butterfly.valueClassSerializer
 
 @Serializable
-public sealed interface ApplyWritesRequestWriteUnion {
+public sealed interface WritesUnion {
   public class CreateSerializer : KSerializer<Create> by valueClassSerializer()
 
   @Serializable(with = CreateSerializer::class)
@@ -19,7 +19,7 @@ public sealed interface ApplyWritesRequestWriteUnion {
   @SerialName("com.atproto.repo.applyWrites#create")
   public value class Create(
     public val `value`: ApplyWritesCreate,
-  ) : ApplyWritesRequestWriteUnion
+  ) : WritesUnion
 
   public class UpdateSerializer : KSerializer<Update> by valueClassSerializer()
 
@@ -28,7 +28,7 @@ public sealed interface ApplyWritesRequestWriteUnion {
   @SerialName("com.atproto.repo.applyWrites#update")
   public value class Update(
     public val `value`: ApplyWritesUpdate,
-  ) : ApplyWritesRequestWriteUnion
+  ) : WritesUnion
 
   public class DeleteSerializer : KSerializer<Delete> by valueClassSerializer()
 
@@ -37,7 +37,7 @@ public sealed interface ApplyWritesRequestWriteUnion {
   @SerialName("com.atproto.repo.applyWrites#delete")
   public value class Delete(
     public val `value`: ApplyWritesDelete,
-  ) : ApplyWritesRequestWriteUnion
+  ) : WritesUnion
 }
 
 @Serializable
@@ -50,6 +50,6 @@ public data class ApplyWritesRequest(
    * Validate the records?
    */
   public val validate: Boolean? = true,
-  public val writes: ReadOnlyList<ApplyWritesRequestWriteUnion>,
+  public val writes: ReadOnlyList<WritesUnion>,
   public val swapCommit: Cid? = null,
 )

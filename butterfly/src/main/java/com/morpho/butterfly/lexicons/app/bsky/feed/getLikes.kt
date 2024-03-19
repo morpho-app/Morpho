@@ -11,7 +11,7 @@ import com.morpho.butterfly.Cid
 import com.morpho.butterfly.model.ReadOnlyList
 
 @Serializable
-public data class GetLikesQueryParams(
+public data class GetLikesQuery(
   public val uri: AtUri,
   public val cid: Cid? = null,
   public val limit: Long? = 50,

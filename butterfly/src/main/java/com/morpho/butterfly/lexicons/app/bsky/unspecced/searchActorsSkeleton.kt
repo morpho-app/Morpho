@@ -10,7 +10,7 @@ import kotlinx.serialization.Serializable
 import com.morpho.butterfly.model.ReadOnlyList
 
 @Serializable
-public data class SearchActorsSkeletonQueryParams(
+public data class SearchActorsSkeletonQuery(
   /**
    * search query string; syntax, phrase, boolean, and faceting is unspecified, but Lucene query
    * syntax is recommended. For typeahead search, only simple term match is supported, not full syntax

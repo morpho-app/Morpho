@@ -9,7 +9,7 @@ import kotlinx.serialization.Serializable
 import com.morpho.butterfly.model.ReadOnlyList
 
 @Serializable
-public data class GetAccountInviteCodesQueryParams(
+public data class GetAccountInviteCodesQuery(
   public val includeUsed: Boolean? = true,
   public val createAvailable: Boolean? = true,
 ) {

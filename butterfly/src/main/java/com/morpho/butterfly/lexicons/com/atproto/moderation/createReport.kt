@@ -13,7 +13,7 @@ import com.morpho.butterfly.model.Timestamp
 import com.morpho.butterfly.valueClassSerializer
 
 @Serializable
-public sealed interface CreateReportRequestSubjectUnion {
+public sealed interface ReportRequestSubject {
   public class AdminRepoRefSerializer : KSerializer<AdminRepoRef> by valueClassSerializer()
 
   @Serializable(with = AdminRepoRefSerializer::class)
@@ -21,7 +21,7 @@ public sealed interface CreateReportRequestSubjectUnion {
   @SerialName("com.atproto.admin.defs#repoRef")
   public value class AdminRepoRef(
     public val `value`: RepoRef,
-  ) : CreateReportRequestSubjectUnion
+  ) : ReportRequestSubject
 
   public class RepoStrongRefSerializer : KSerializer<RepoStrongRef> by valueClassSerializer()
 
@@ -30,11 +30,11 @@ public sealed interface CreateReportRequestSubjectUnion {
   @SerialName("com.atproto.repo.strongRef")
   public value class RepoStrongRef(
     public val `value`: StrongRef,
-  ) : CreateReportRequestSubjectUnion
+  ) : ReportRequestSubject
 }
 
 @Serializable
-public sealed interface CreateReportResponseSubjectUnion {
+public sealed interface ReportResponseSubject {
   public class AdminRepoRefSerializer : KSerializer<AdminRepoRef> by valueClassSerializer()
 
   @Serializable(with = AdminRepoRefSerializer::class)
@@ -42,7 +42,7 @@ public sealed interface CreateReportResponseSubjectUnion {
   @SerialName("com.atproto.admin.defs#repoRef")
   public value class AdminRepoRef(
     public val `value`: RepoRef,
-  ) : CreateReportResponseSubjectUnion
+  ) : ReportResponseSubject
 
   public class RepoStrongRefSerializer : KSerializer<RepoStrongRef> by valueClassSerializer()
 
@@ -51,14 +51,14 @@ public sealed interface CreateReportResponseSubjectUnion {
   @SerialName("com.atproto.repo.strongRef")
   public value class RepoStrongRef(
     public val `value`: StrongRef,
-  ) : CreateReportResponseSubjectUnion
+  ) : ReportResponseSubject
 }
 
 @Serializable
 public data class CreateReportRequest(
   public val reasonType: Token,
   public val reason: String? = null,
-  public val subject: CreateReportRequestSubjectUnion,
+  public val subject: ReportRequestSubject,
 )
 
 @Serializable
@@ -66,7 +66,7 @@ public data class CreateReportResponse(
   public val id: Long,
   public val reasonType: Token,
   public val reason: String? = null,
-  public val subject: CreateReportResponseSubjectUnion,
+  public val subject: ReportResponseSubject,
   public val reportedBy: Did,
   public val createdAt: Timestamp,
 )

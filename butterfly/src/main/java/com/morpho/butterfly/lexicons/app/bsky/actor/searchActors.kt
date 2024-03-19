@@ -9,7 +9,7 @@ import kotlinx.serialization.Serializable
 import com.morpho.butterfly.model.ReadOnlyList
 
 @Serializable
-public data class SearchActorsQueryParams(
+public data class SearchActorsQuery(
   /**
    * DEPRECATED: use 'q' instead
    */

@@ -10,7 +10,7 @@ import com.morpho.butterfly.AtIdentifier
 import com.morpho.butterfly.model.ReadOnlyList
 
 @Serializable
-public data class GetActorFeedsQueryParams(
+public data class GetActorFeedsQuery(
   public val actor: AtIdentifier,
   public val limit: Long? = 50,
   public val cursor: String? = null,

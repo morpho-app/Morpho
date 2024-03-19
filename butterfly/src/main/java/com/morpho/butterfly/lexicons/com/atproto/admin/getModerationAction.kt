@@ -9,7 +9,7 @@ import kotlinx.serialization.Serializable
 import com.morpho.butterfly.model.ReadOnlyList
 
 @Serializable
-public data class GetModerationActionQueryParams(
+public data class GetModerationActionQuery(
   public val id: Long,
 ) {
   public fun asList(): ReadOnlyList<Pair<String, Any?>> = buildList {

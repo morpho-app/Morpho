@@ -9,7 +9,7 @@ import kotlinx.serialization.Serializable
 import com.morpho.butterfly.model.ReadOnlyList
 
 @Serializable
-public data class GetSuggestedFeedsQueryParams(
+public data class GetSuggestedFeedsQuery(
   public val limit: Long? = 50,
   public val cursor: String? = null,
 ) {

@@ -10,7 +10,7 @@ import com.morpho.butterfly.model.ReadOnlyList
 import com.morpho.butterfly.model.Timestamp
 
 @Serializable
-public data class GetUnreadCountQueryParams(
+public data class GetUnreadCountQuery(
   public val seenAt: Timestamp? = null,
 ) {
   public fun asList(): ReadOnlyList<Pair<String, Any?>> = buildList {

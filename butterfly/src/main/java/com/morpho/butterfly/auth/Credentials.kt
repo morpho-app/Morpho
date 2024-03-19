@@ -1,4 +1,4 @@
-package morpho.app.api.auth
+package com.morpho.butterfly.auth
 
 import kotlinx.serialization.Serializable
 import com.morpho.butterfly.Handle

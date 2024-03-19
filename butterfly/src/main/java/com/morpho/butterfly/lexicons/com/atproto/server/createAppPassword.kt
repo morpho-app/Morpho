@@ -8,4 +8,4 @@ public data class CreateAppPasswordRequest(
   public val name: String,
 )
 
-public typealias CreateAppPasswordResponse = CreateAppPasswordAppPassword
+public typealias CreateAppPasswordResponse = AppPasswordInfo

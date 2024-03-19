@@ -9,7 +9,7 @@ import kotlinx.serialization.Serializable
 import com.morpho.butterfly.model.ReadOnlyList
 
 @Serializable
-public data class GetListBlocksQueryParams(
+public data class GetListBlocksQuery(
   public val limit: Long? = 50,
   public val cursor: String? = null,
 ) {

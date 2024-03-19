@@ -9,7 +9,7 @@ import kotlinx.serialization.Serializable
 import com.morpho.butterfly.model.ReadOnlyList
 
 @Serializable
-public data class ListReposQueryParams(
+public data class ListReposQuery(
   public val limit: Long? = 500,
   public val cursor: String? = null,
 ) {

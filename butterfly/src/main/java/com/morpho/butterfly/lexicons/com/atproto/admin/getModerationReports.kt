@@ -12,7 +12,7 @@ import com.morpho.butterfly.Did
 import com.morpho.butterfly.model.ReadOnlyList
 
 @Serializable
-public data class GetModerationReportsQueryParams(
+public data class GetModerationReportsQuery(
   public val subject: String? = null,
   public val ignoreSubjects: ReadOnlyList<String> = persistentListOf(),
   /**

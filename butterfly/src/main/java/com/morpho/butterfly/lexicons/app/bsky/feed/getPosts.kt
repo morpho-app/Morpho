@@ -9,7 +9,7 @@ import com.morpho.butterfly.AtUri
 import com.morpho.butterfly.model.ReadOnlyList
 
 @Serializable
-public data class GetPostsQueryParams(
+public data class GetPostsQuery(
   public val uris: ReadOnlyList<AtUri>,
 ) {
   init {

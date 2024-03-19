@@ -9,7 +9,7 @@ import kotlinx.serialization.Serializable
 import com.morpho.butterfly.model.ReadOnlyList
 
 @Serializable
-public data class SearchPostsSkeletonQueryParams(
+public data class SearchPostsSkeletonQuery(
   /**
    * search query string; syntax, phrase, boolean, and faceting is unspecified, but Lucene query
    * syntax is recommended

@@ -14,7 +14,7 @@ import com.morpho.butterfly.Nsid
 import com.morpho.butterfly.model.ReadOnlyList
 
 @Serializable
-public data class DescribeRepoQueryParams(
+public data class DescribeRepoQuery(
   /**
    * The handle or DID of the repo.
    */

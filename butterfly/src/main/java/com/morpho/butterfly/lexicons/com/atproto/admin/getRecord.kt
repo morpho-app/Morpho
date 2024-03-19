@@ -10,7 +10,7 @@ import com.morpho.butterfly.Cid
 import com.morpho.butterfly.model.ReadOnlyList
 
 @Serializable
-public data class GetRecordQueryParams(
+public data class GetRecordQuery(
   public val uri: AtUri,
   public val cid: Cid? = null,
 ) {

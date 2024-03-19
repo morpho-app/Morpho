@@ -9,7 +9,7 @@ import com.morpho.butterfly.Did
 import com.morpho.butterfly.model.ReadOnlyList
 
 @Serializable
-public data class GetCheckoutQueryParams(
+public data class GetCheckoutQuery(
   /**
    * The DID of the repo.
    */

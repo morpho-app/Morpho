@@ -44,7 +44,7 @@ public sealed interface GetPostThreadResponseThreadUnion {
 }
 
 @Serializable
-public data class GetPostThreadQueryParams(
+public data class GetPostThreadQuery(
   public val uri: AtUri,
   public val depth: Long? = 6,
   public val parentHeight: Long? = 80,

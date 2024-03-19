@@ -34,7 +34,7 @@ public sealed interface SubscribeLabelsMessageUnion {
 }
 
 @Serializable
-public data class SubscribeLabelsQueryParams(
+public data class SubscribeLabelsQuery(
   /**
    * The last known event to backfill from.
    */

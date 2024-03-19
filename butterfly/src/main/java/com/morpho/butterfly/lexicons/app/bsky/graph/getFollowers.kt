@@ -11,7 +11,7 @@ import com.morpho.butterfly.AtIdentifier
 import com.morpho.butterfly.model.ReadOnlyList
 
 @Serializable
-public data class GetFollowersQueryParams(
+public data class GetFollowersQuery(
   public val actor: AtIdentifier,
   public val limit: Long? = 50,
   public val cursor: String? = null,

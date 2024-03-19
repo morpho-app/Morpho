@@ -13,7 +13,7 @@ dependencies {
     implementation(libs.ktor.logging)
 
     implementation(libs.kotlin.reflect)
-
+    implementation(libs.okio)
     implementation(libs.ktor.cio)
     implementation(libs.kotlinx.datetime)
     implementation(libs.kotlinx.immutable)
@@ -24,4 +24,7 @@ dependencies {
     implementation(libs.ktor.websockets)
     implementation(libs.ktor.client.resources)
     implementation(libs.ktor.client.auth)
+
+    implementation(libs.kstore)
+    implementation(libs.kstore.file)
 }

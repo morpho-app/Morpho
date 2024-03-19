@@ -9,7 +9,7 @@ import com.morpho.butterfly.Did
 import com.morpho.butterfly.model.ReadOnlyList
 
 @Serializable
-public data class GetRepoQueryParams(
+public data class GetRepoQuery(
   public val did: Did,
 ) {
   public fun asList(): ReadOnlyList<Pair<String, Any?>> = buildList {

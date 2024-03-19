@@ -11,7 +11,7 @@ import kotlinx.serialization.Serializable
 import com.morpho.butterfly.model.ReadOnlyList
 
 @Serializable
-public data class GetPopularQueryParams(
+public data class GetPopularQuery(
   public val includeNsfw: Boolean? = false,
   public val limit: Long? = 50,
   public val cursor: String? = null,

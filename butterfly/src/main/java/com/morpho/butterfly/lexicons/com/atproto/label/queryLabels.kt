@@ -11,7 +11,7 @@ import com.morpho.butterfly.Did
 import com.morpho.butterfly.model.ReadOnlyList
 
 @Serializable
-public data class QueryLabelsQueryParams(
+public data class QueryLabels(
   /**
    * List of AT URI patterns to match (boolean 'OR'). Each may be a prefix (ending with '*'; will
    * match inclusive of the string leading to '*'), or a full URI

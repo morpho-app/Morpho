@@ -9,7 +9,7 @@ import com.morpho.butterfly.AtIdentifier
 import com.morpho.butterfly.model.ReadOnlyList
 
 @Serializable
-public data class GetProfilesQueryParams(
+public data class GetProfilesQuery(
   public val actors: ReadOnlyList<AtIdentifier>,
 ) {
   init {

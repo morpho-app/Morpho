@@ -10,7 +10,7 @@ import com.morpho.butterfly.Did
 import com.morpho.butterfly.model.ReadOnlyList
 
 @Serializable
-public data class GetBlobQueryParams(
+public data class GetBlobQuery(
   /**
    * The DID of the repo.
    */

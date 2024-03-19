@@ -19,10 +19,7 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.serialization.ExperimentalSerializationApi
-
 import morpho.app.api.response.StatusCode
-import com.morpho.butterfly.xrpc.XrpcSubscriptionParseException
-import com.morpho.butterfly.xrpc.XrpcSubscriptionResponse
 
 suspend inline fun HttpClient.query(
   path: String,

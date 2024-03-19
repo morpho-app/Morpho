@@ -10,7 +10,7 @@ import com.morpho.butterfly.Handle
 import com.morpho.butterfly.model.ReadOnlyList
 
 @Serializable
-public data class ResolveHandleQueryParams(
+public data class ResolveHandleQuery(
   /**
    * The handle to resolve.
    */

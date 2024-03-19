@@ -12,7 +12,7 @@ import com.morpho.butterfly.Cid
 import com.morpho.butterfly.model.ReadOnlyList
 
 @Serializable
-public data class GetRepostedByQueryParams(
+public data class GetRepostedByQuery(
   public val uri: AtUri,
   public val cid: Cid? = null,
   public val limit: Long? = 50,

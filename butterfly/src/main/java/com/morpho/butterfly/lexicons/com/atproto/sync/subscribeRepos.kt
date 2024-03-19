@@ -61,7 +61,7 @@ public sealed interface SubscribeReposMessageUnion {
 }
 
 @Serializable
-public data class SubscribeReposQueryParams(
+public data class SubscribeReposQuery(
   /**
    * The last known event to backfill from.
    */

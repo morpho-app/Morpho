@@ -10,7 +10,7 @@ import kotlinx.serialization.Serializable
 import com.morpho.butterfly.model.ReadOnlyList
 
 @Serializable
-public data class GetPopularFeedGeneratorsQueryParams(
+public data class GetPopularFeedGeneratorsQuery(
   public val limit: Long? = 50,
   public val cursor: String? = null,
   public val query: String? = null,

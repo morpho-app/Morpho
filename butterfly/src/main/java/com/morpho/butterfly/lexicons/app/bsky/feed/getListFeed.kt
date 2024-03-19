@@ -10,7 +10,7 @@ import com.morpho.butterfly.AtUri
 import com.morpho.butterfly.model.ReadOnlyList
 
 @Serializable
-public data class GetListFeedQueryParams(
+public data class GetListFeedQuery(
   public val list: AtUri,
   public val limit: Long? = 50,
   public val cursor: String? = null,

@@ -10,7 +10,7 @@ import kotlinx.serialization.Serializable
 import com.morpho.butterfly.model.ReadOnlyList
 
 @Serializable
-public data class GetInviteCodesQueryParams(
+public data class GetInviteCodesQuery(
   public val sort: GetInviteCodesSort? = GetInviteCodesSort.RECENT,
   public val limit: Long? = 100,
   public val cursor: String? = null,

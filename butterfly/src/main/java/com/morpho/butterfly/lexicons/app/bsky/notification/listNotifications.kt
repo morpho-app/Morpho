@@ -10,7 +10,7 @@ import com.morpho.butterfly.model.ReadOnlyList
 import com.morpho.butterfly.model.Timestamp
 
 @Serializable
-public data class ListNotificationsQueryParams(
+public data class ListNotificationsQuery(
   public val limit: Long? = 50,
   public val cursor: String? = null,
   public val seenAt: Timestamp? = null,

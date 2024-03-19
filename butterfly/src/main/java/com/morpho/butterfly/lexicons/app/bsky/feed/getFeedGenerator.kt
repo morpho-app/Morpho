@@ -10,7 +10,7 @@ import com.morpho.butterfly.AtUri
 import com.morpho.butterfly.model.ReadOnlyList
 
 @Serializable
-public data class GetFeedGeneratorQueryParams(
+public data class GetFeedGeneratorQuery(
   public val feed: AtUri,
 ) {
   public fun asList(): ReadOnlyList<Pair<String, Any?>> = buildList {

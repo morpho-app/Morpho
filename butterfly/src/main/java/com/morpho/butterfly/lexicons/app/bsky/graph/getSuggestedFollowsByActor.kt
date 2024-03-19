@@ -10,7 +10,7 @@ import com.morpho.butterfly.AtIdentifier
 import com.morpho.butterfly.model.ReadOnlyList
 
 @Serializable
-public data class GetSuggestedFollowsByActorQueryParams(
+public data class GetSuggestedFollowsByActorQuery(
   public val actor: AtIdentifier,
 ) {
   public fun asList(): ReadOnlyList<Pair<String, Any?>> = buildList {

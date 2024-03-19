@@ -10,7 +10,7 @@ import com.morpho.butterfly.Did
 import com.morpho.butterfly.model.ReadOnlyList
 
 @Serializable
-public data class GetLatestCommitQueryParams(
+public data class GetLatestCommitQuery(
   /**
    * The DID of the repo.
    */
