@@ -53,7 +53,7 @@ class MainViewModel @Inject constructor(
 
     private fun updateNotifications(): Job = viewModelScope.launch(SupervisorJob() + Dispatchers.Default) {
         while (true) {
-            getUnreadCount()
+            if (currentUser != null) getUnreadCount()
             delay(30000L)
         }
     }

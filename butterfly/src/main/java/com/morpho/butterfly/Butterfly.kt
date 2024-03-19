@@ -35,6 +35,10 @@ import io.ktor.client.request.post
 import io.ktor.http.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.last
+import kotlinx.coroutines.flow.lastOrNull
+import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.datetime.Clock
@@ -51,6 +55,7 @@ class Butterfly(
 
     // TODO: implement this cache in a better way
     private val rkeyCache: MutableMap<AtUri, RkeyCacheEntry> = mutableMapOf()
+    private val authCache = mutableListOf<BearerTokens>()
 
     var atpClient = HttpClient(CIO) {
 
@@ -60,7 +65,7 @@ class Butterfly(
         }
 
         install(HttpCache) {
-            val cache = "./cache".toPath().relativeTo(FileSystem.SYSTEM_TEMPORARY_DIRECTORY).toFile()
+            val cache = FileSystem.SYSTEM_TEMPORARY_DIRECTORY.toFile()
             publicStorage(FileStorage(cache))
         }
 
@@ -74,25 +79,30 @@ class Butterfly(
         install(Auth) {
             bearer {
                 loadTokens {
-                    user.auth?.toTokens()
+                    if (user.auth != null) authCache.add(user.auth!!.toTokens())
+                    authCache.last()
                 }
 
                 refreshTokens {
                     val refresh = user.auth?.refreshJwt
-                    val refreshResponse:AuthInfo = client.post("/xrpc/com.atproto.server.refreshSession") {
+                    val refreshResponse = client.post("/xrpc/com.atproto.server.refreshSession") {
                         if (refresh != null) {
                             bearerAuth(refresh)
                         }
                         markAsRefreshTokenRequest()
-                    }.body()
-                    user.auth = refreshResponse
-                    refreshResponse.toTokens()
+                    }.toAtpResult<AuthInfo>().getOrNull()
+                    if (refreshResponse != null) {
+                        user.auth = refreshResponse
+                        authCache.add(refreshResponse.toTokens())
+                        refreshResponse.toTokens()
+                    } else {
+                       BearerTokens("","")
+                    }
                 }
-                realm
-
-                //sendWithoutRequest {
-                // figure out how to detect xrpc api calls that don't need authentication
-                //}
+                sendWithoutRequest {request ->
+                    // figure out how to programmatically detect xrpc api calls that don't need authentication
+                    request.url.host == relay.server.host
+                }
             }
         }
     }

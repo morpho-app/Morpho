@@ -17,7 +17,7 @@ android {
     compileSdk 34
 
     defaultConfig {
-        applicationId "morpho.app"
+        applicationId "com.morpho.app"
         minSdk 24
         //noinspection OldTargetApi
         targetSdk 33
@@ -90,8 +90,8 @@ dependencies {
     implementation "androidx.compose.ui:ui-text-android"
     implementation "androidx.compose.ui:ui-graphics"
     implementation "androidx.compose.ui:ui-tooling-preview"
-    implementation "androidx.compose.material3:material3"
-    implementation "androidx.compose.material:material"
+    implementation("androidx.compose.material3:material3")
+    implementation("androidx.compose.material:material")
 
     implementation libs.androidx.window
     implementation "androidx.compose.material3:material3-window-size-class:1.1.2"

@@ -67,7 +67,8 @@ fun PostThreadScreen(
                 .fillMaxSize()
                 .systemBarsPadding(),
             topContent = {
-                SkylineTopBar( mainViewModel.pinnedFeeds,
+                SkylineTopBar(
+                    tabList = mainViewModel.pinnedFeeds,
                     mainButton = {
                         IconButton(onClick = { it() },
                             modifier = Modifier
@@ -85,7 +86,7 @@ fun PostThreadScreen(
                         navigator.popBackStack()
                     },
                     onChanged = {
-                        navigator.navigate(SkylineScreenDestination(it))
+                        if(it < mainViewModel.pinnedFeeds.size) navigator.navigate(SkylineScreenDestination(it))
                     },
                 )
             },
@@ -155,7 +156,7 @@ fun PostThreadView(
                     navigator.navigateUp()
                 },
                 onChanged = {
-                    navigator.navigate(SkylineScreenDestination(it))
+                    if(it < tabList.size) navigator.navigate(SkylineScreenDestination(it))
                 },
             )
         },
