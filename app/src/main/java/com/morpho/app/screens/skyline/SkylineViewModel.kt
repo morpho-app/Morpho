@@ -7,6 +7,7 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastMap
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.viewModelScope
@@ -62,34 +63,37 @@ class SkylineViewModel @Inject constructor(
 
     fun hasPosts() = viewModelScope.async {
         if (state.hasNewPosts) return@async
-        launch(Dispatchers.IO) {
-            apiProvider.api.getTimeline(GetTimelineQuery(limit = 1, cursor = null))
-                .onSuccess { response ->
-                    if (response.feed.isNotEmpty()) {
-                        val cid = response.feed.first().post.cid
-                        if (!skylinePosts.value.contains(cid)) {
-                            _skylinePosts.update { it.copy(hasNewPosts = true) }
-                            state = state.copy(hasNewPosts = true)
-                            return@launch
-                        }
-                    }
-                }
-        }.join()
-        pinnedFeeds.fastMap { tab ->
-            launch(Dispatchers.IO) {
-                apiProvider.api.getFeed(GetFeedQuery(limit = 1, cursor = null, feed = tab.uri))
-                    .onSuccess { response ->
-                        if (response.feed.isNotEmpty()) {
-                            val cid = response.feed.first().post.cid
-                            if (feedPosts[tab.uri]?.value?.contains(cid) != true) {
-                                state = state.copy(hasNewPosts = true)
-                                feedPosts[tab.uri]?.update { it.copy(hasNewPosts = true) }
-                                return@launch
+        pinnedFeeds.fastForEach { tab ->
+            if (tab.uri.atUri == "__home__")  {
+                launch(Dispatchers.IO) {
+                    apiProvider.api.getTimeline(GetTimelineQuery(limit = 1, cursor = null))
+                        .onSuccess { response ->
+                            if (response.feed.isNotEmpty()) {
+                                val cid = response.feed.first().post.cid
+                                if (!skylinePosts.value.contains(cid)) {
+                                    _skylinePosts.update { it.copy(hasNewPosts = true) }
+                                    state = state.copy(hasNewPosts = true)
+                                    return@launch
+                                }
                             }
                         }
-                    }
+                }
+            } else if (tab.uri.atUri != "__end__") {
+                launch(Dispatchers.IO) {
+                    apiProvider.api.getFeed(GetFeedQuery(limit = 1, cursor = null, feed = tab.uri))
+                        .onSuccess { response ->
+                            if (response.feed.isNotEmpty()) {
+                                val cid = response.feed.first().post.cid
+                                if (feedPosts[tab.uri]?.value?.contains(cid) != true) {
+                                    state = state.copy(hasNewPosts = true)
+                                    feedPosts[tab.uri]?.update { it.copy(hasNewPosts = true) }
+                                    return@launch
+                                }
+                            }
+                        }
+                }
             }
-        }.joinAll()
+        }
     }
 
     fun createRecord(

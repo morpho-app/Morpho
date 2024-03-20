@@ -44,6 +44,7 @@ import com.morpho.app.ui.common.SkylineFragment
 import com.morpho.app.ui.common.SkylineTopBar
 import com.morpho.app.ui.elements.OutlinedAvatar
 import kotlin.math.max
+import kotlin.math.min
 
 @OptIn(ExperimentalKStoreApi::class)
 @RootNavGraph(start = true)
@@ -167,8 +168,8 @@ fun SkylineView(
             if (selectedTab > 0) {
                 viewModel.getSkyline(
                     GetFeedQuery(
-                        viewModel.pinnedFeeds[max(index-1, 0)].uri,
-                        cursor = viewModel.pinnedFeeds[max(index-1, 0)].cursor
+                        viewModel.pinnedFeeds[max(index, 1)].uri,
+                        cursor = viewModel.pinnedFeeds[max(index, 1)].cursor
                     )
                 )
             } else {
@@ -185,8 +186,8 @@ fun SkylineView(
     LaunchedEffect(selectedTab) {
         if(selectedTab > 0) {
             viewModel.getSkyline(GetFeedQuery(
-                pinnedFeeds[selectedTab-1].uri,
-                cursor = pinnedFeeds[selectedTab-1].cursor
+                pinnedFeeds[selectedTab].uri,
+                cursor = pinnedFeeds[selectedTab].cursor
             ))
         }  else {
             viewModel.getSkyline(viewModel.skylinePosts.value.cursor)
@@ -224,13 +225,13 @@ fun SkylineView(
                 )
             }
             else -> {
-                viewModel.feedPosts[viewModel.pinnedFeeds[max(selectedTab-1, 0)].uri]?.let { it: MutableStateFlow<Skyline> ->
+                viewModel.feedPosts[viewModel.pinnedFeeds[min(selectedTab, viewModel.pinnedFeeds.lastIndex)].uri]?.let { it: MutableStateFlow<Skyline> ->
                     SkylineFragment(
                         postFlow = it,
                         onItemClicked = {onItemClicked(it, navigator)},
                         onProfileClicked = {onProfileClicked(it, navigator)},
                         refresh = { cursor->
-                            feedRefresh(viewModel.pinnedFeeds[max(selectedTab-1, 0)].uri, cursor)
+                            feedRefresh(viewModel.pinnedFeeds[min(selectedTab, viewModel.pinnedFeeds.lastIndex)].uri, cursor)
                         },
                         contentPadding = insets,
                         onUnClicked = {type, rkey ->   onUnClicked(type, rkey)},

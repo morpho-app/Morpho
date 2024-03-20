@@ -78,26 +78,17 @@ fun SkylineTopBar(
             }
 
             SecondaryScrollableTabRow(
-                selectedTabIndex = selectedTab,
+                selectedTabIndex = min(selectedTab, tabList.lastIndex),
                 modifier = Modifier
                     .padding(0.dp)
                     .offset(y = (-8).dp),
                 edgePadding = 10.dp,
                 //divider = {}
             ) {
-                Tab(selected = selectedTab == 0,
-                    onClick = {
-                        selectedTab = 0
-                        onChanged(selectedTab)
-                    },
-                    text = {
-                        Text("Home")
-                    }
-                )
                 tabList.forEachIndexed { index, tab ->
-                    Tab(selected = selectedTab == (1 + index),
+                    Tab(selected = selectedTab == index,
                         onClick = {
-                            selectedTab = min((1 + index), tabList.size)
+                            selectedTab = min(index, tabList.lastIndex)
                             onChanged(selectedTab)
                         },
                         text = {

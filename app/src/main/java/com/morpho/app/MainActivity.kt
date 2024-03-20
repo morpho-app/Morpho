@@ -25,6 +25,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.util.fastForEach
+import androidx.compose.ui.util.fastForEachIndexed
 import androidx.core.view.WindowCompat
 import androidx.navigation.NavHostController
 import app.bsky.actor.GetProfileQuery
@@ -52,6 +54,9 @@ import com.morpho.app.ui.common.MorphoNavigation
 import com.morpho.app.ui.elements.AvatarShape
 import com.morpho.app.ui.elements.OutlinedAvatar
 import com.morpho.app.ui.theme.MorphoTheme
+import com.morpho.butterfly.AtUri
+import com.ramcosta.composedestinations.rememberNavHostEngine
+import okhttp3.internal.wait
 
 
 private const val TAG = "Main"
@@ -85,9 +90,9 @@ class MainActivity : ComponentActivity() {
          */
         runBlocking {
 
-                val authInfo = applicationContext.user.auth
-                val credentials = applicationContext.user.credentials
-
+            val authInfo = applicationContext.user.auth
+            val credentials = applicationContext.user.credentials
+            launch {
                 if (authInfo != null) {
                     Log.i(TAG, "Auth Info: $authInfo")
                     viewModel.butterfly.getUserPreferences().onFailure { prefsFail ->
@@ -157,27 +162,30 @@ class MainActivity : ComponentActivity() {
                         loggedIn = false
                     }
                 }
-
-
-            Log.i(TAG, "logged in = $loggedIn")
-            launch {
-                    viewModel.userPreferences?.savedFeeds?.pinned?.map { feedUri ->
-                        viewModel.butterfly.api.getFeedGenerator(GetFeedGeneratorQuery(feedUri)).onFailure {
-                                Log.e("Skyline", "Error getting feed info: $it")
-                        }.onSuccess {
-                            viewModel.pinnedFeeds += FeedTab(it.view.displayName, it.view.uri)
-
-                            waiting = false
-                        }
-                    }
-
-            }.join()
+            }
         }
+        runBlocking {
+            viewModel.pinnedFeeds.add(FeedTab("Home", AtUri("__home__")))
+            viewModel.userPreferences?.savedFeeds?.pinned?.forEachIndexed { index, feedUri ->
+                launch {
+                    viewModel.butterfly.api.getFeedGenerator(GetFeedGeneratorQuery(feedUri)).onFailure {
+                        Log.e("Skyline", "Error getting feed info: $it")
+                    }.onSuccess {
+                        viewModel.pinnedFeeds.add(FeedTab(it.view.displayName, it.view.uri))
+                    }
+                }.invokeOnCompletion {
+                    waiting = index == viewModel.pinnedFeeds.lastIndex
+                    Log.i("Skyline", "waiting = $waiting")
+                }
 
+            }
+        }
+        Log.i("Main", "loggedIn = $loggedIn")
+        Log.i("Main", "waiting = $waiting")
 
         if(!waiting) setContent {
 
-            val engine = rememberAnimatedNavHostEngine()
+            val engine = rememberNavHostEngine()
             val navController = engine.rememberNavController()
             val selectedTab by rememberSaveable { mutableIntStateOf(0) }
             viewModel.windowSizeClass = calculateWindowSizeClass(this)
@@ -208,7 +216,7 @@ class MainActivity : ComponentActivity() {
                     viewModel = viewModel
                 )
             }
-            val startRoute = if (viewModel.currentUser == null) LoginScreenDestination else NavGraphs.root.startRoute
+            val startRoute = if (viewModel.currentUser == null) LoginScreenDestination else SkylineScreenDestination
             MorphoTheme(dynamicColor = true) {
                 DestinationsNavHost(
                     engine = engine,
@@ -216,10 +224,14 @@ class MainActivity : ComponentActivity() {
                     navController = navController,
                     startRoute = startRoute
                 )
+                ShowLoginWhenLoggedOut(viewModel, navController)
                 LaunchedEffect(Clock.System.now().epochSeconds % 60L == 0L) {
                     if (loggedIn) viewModel.getUnreadCount()
                 }
-                ShowLoginWhenLoggedOut(viewModel, navController)
+                LaunchedEffect(loggedIn) {
+                    if (loggedIn) navController.navigate(SkylineScreenDestination())
+                }
+
             }
         }
     }

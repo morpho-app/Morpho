@@ -86,7 +86,7 @@ fun PostThreadScreen(
                         navigator.popBackStack()
                     },
                     onChanged = {
-                        if(it < mainViewModel.pinnedFeeds.size) navigator.navigate(SkylineScreenDestination(it))
+                        navigator.navigate(SkylineScreenDestination(it))
                     },
                 )
             },

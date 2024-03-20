@@ -39,6 +39,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
@@ -52,6 +53,7 @@ import com.morpho.app.screens.NavGraphs
 import com.morpho.app.screens.appCurrentDestinationAsState
 import com.morpho.app.screens.destinations.*
 import com.morpho.app.screens.startAppDestination
+import kotlin.math.min
 
 
 @Composable
@@ -107,6 +109,7 @@ fun MorphoBottomNavBar(
         TemplateScreenDestination -> 0
         PostThreadScreenDestination -> 5
         ProfileScreenDestination -> 5
+        else -> {5}
     }
     val unread = viewModel.unreadNotifications.collectAsStateWithLifecycle(initialValue = -1)
     LaunchedEffect(Unit) {
@@ -124,14 +127,25 @@ fun MorphoBottomNavBar(
         )
     ) {
         PrimaryTabRow(
-            selectedTabIndex = selectedTab,
+            selectedTabIndex = min(selectedTab, 4),
             modifier = Modifier.clip(
                 MaterialTheme.shapes.medium.copy(
                     bottomEnd = CornerSize(0.dp),
                     bottomStart = CornerSize(0.dp),
                     topStart = CornerSize(0.dp),
                 )
-            )
+            ),
+            indicator = {
+                if (selectedTab <= 4) {
+                    TabRowDefaults.PrimaryIndicator(
+                        modifier = Modifier.tabIndicatorOffset(
+                            selectedTab,
+                            matchContentSize = true
+                        ),
+                        width = Dp.Unspecified,
+                    )
+                }
+            }
         ) {
             Tab(
                 selected = selectedTab == 0,

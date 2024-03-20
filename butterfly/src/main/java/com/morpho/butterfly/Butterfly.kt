@@ -65,8 +65,8 @@ class Butterfly(
         }
 
         install(HttpCache) {
-            val cache = FileSystem.SYSTEM_TEMPORARY_DIRECTORY.toFile()
-            publicStorage(FileStorage(cache))
+            //val cache = FileSystem.SYSTEM_TEMPORARY_DIRECTORY.toFile()
+            //publicStorage(FileStorage(cache))
         }
 
         defaultRequest {
@@ -75,6 +75,8 @@ class Butterfly(
             url.host = hostUrl.host
             url.port = hostUrl.port
         }
+
+
 
         install(Auth) {
             bearer {
@@ -101,10 +103,16 @@ class Butterfly(
                 }
                 sendWithoutRequest {request ->
                     // figure out how to programmatically detect xrpc api calls that don't need authentication
-                    request.url.host == relay.server.host
+                    request.url.toString().contains(relay.server.host)
                 }
             }
         }
+
+        install(HttpTimeout) {
+            requestTimeoutMillis = Long.MAX_VALUE
+        }
+
+        expectSuccess = false
     }
 
     var api: BlueskyApi = XrpcBlueskyApi(atpClient)

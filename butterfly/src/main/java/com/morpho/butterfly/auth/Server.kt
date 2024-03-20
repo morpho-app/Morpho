@@ -14,6 +14,12 @@ sealed interface Server {
   }
 
   @Serializable
+  @SerialName("bluesky-appview")
+  object BlueskyAppview : Server {
+    override val host: String = "https://public.api.bsky.app"
+  }
+
+  @Serializable
   @SerialName("custom-server")
   data class CustomServer(
     override val host: String,
