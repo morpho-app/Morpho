@@ -45,6 +45,7 @@ import com.morpho.app.model.EmbedPost
 import com.morpho.app.model.FacetType
 import com.morpho.app.ui.elements.OutlinedAvatar
 import com.morpho.app.ui.elements.RichTextElement
+import com.morpho.app.ui.elements.WrappedColumn
 import com.morpho.app.util.getFormattedDateTimeSince
 import com.morpho.app.util.parseImageFullRef
 import com.morpho.app.util.parseImageThumbRef
@@ -61,7 +62,7 @@ fun EmbedPostFragment(
     val ctx = LocalContext.current
     var hidePost by rememberSaveable { mutableStateOf(post.author.mutedByMe) }
     val muted = rememberSaveable { post.author.mutedByMe }
-    Column(
+    WrappedColumn(
         modifier
             .fillMaxWidth()
             .padding(2.dp)

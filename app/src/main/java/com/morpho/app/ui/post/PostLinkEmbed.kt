@@ -21,6 +21,7 @@ import coil.request.ImageRequest
 import coil.size.Size
 import dev.jeziellago.compose.markdowntext.MarkdownText
 import com.morpho.app.model.BskyPostFeature
+import com.morpho.app.ui.elements.WrappedColumn
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -39,7 +40,7 @@ fun PostLinkEmbed(
         //border = BorderStroke(1.dp,MaterialTheme.colorScheme.secondary)
     ) {
 
-        Column(Modifier.clickable { }) {
+        WrappedColumn(Modifier.clickable { }) {
             AsyncImage(
                 model = ImageRequest.Builder(LocalContext.current)
                     .data(linkData.thumb)

@@ -24,6 +24,7 @@ import com.morpho.app.model.BskyPost
 import com.morpho.app.model.ThreadPost
 import com.morpho.app.ui.common.OnPostClicked
 import com.morpho.app.ui.elements.MenuOptions
+import com.morpho.app.ui.elements.WrappedColumn
 import com.morpho.app.ui.post.PostFragmentRole
 import morpho.app.ui.utils.indentLevel
 
@@ -66,7 +67,7 @@ fun ThreadTree(
             )
         } else {
             val replies = remember { reply.replies.sortedWith(comparator) }
-            Column(
+            WrappedColumn(
                 modifier = modifier
                     .fillMaxWidth()
                     .padding(top = 2.dp)
@@ -97,7 +98,7 @@ fun ThreadTree(
 
 
                 ) {
-                    Column(
+                    WrappedColumn(
                     ) {
                         ThreadReply(
                             item = reply,

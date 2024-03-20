@@ -93,92 +93,101 @@ class MainActivity : ComponentActivity() {
             val authInfo = applicationContext.user.auth
             val credentials = applicationContext.user.credentials
             launch {
-                if (authInfo != null) {
-                    Log.i(TAG, "Auth Info: $authInfo")
-                    viewModel.butterfly.getUserPreferences().onFailure { prefsFail ->
-                        Log.e(TAG, "Couldn't get Preferences: $prefsFail")
-                        if (credentials != null) {
-                            viewModel.butterfly.makeLoginRequest(credentials)
-                                .onFailure { loginFail ->
-                                    Log.e(TAG, "Login failure: $loginFail")
-                                }.onSuccess {
-                                    launch {
-                                        val p =
-                                            viewModel.butterfly.getUserPreferences().getOrNull()
-                                        Log.d(TAG, "Preferences load: $p")
-                                        viewModel.userPreferences = p?.toPreferences()
+                runCatching {
+                    if (authInfo != null) {
+                        Log.i(TAG, "Auth Info: $authInfo")
+                        viewModel.butterfly.getUserPreferences().onFailure { prefsFail ->
+                            Log.e(TAG, "Couldn't get Preferences: $prefsFail")
+                            if (credentials != null) {
+                                viewModel.butterfly.makeLoginRequest(credentials)
+                                    .onFailure { loginFail ->
+                                        Log.e(TAG, "Login failure: $loginFail")
+                                    }.onSuccess {
+                                        launch {
+                                            val p =
+                                                viewModel.butterfly.getUserPreferences().getOrNull()
+                                            Log.d(TAG, "Preferences load: $p")
+                                            viewModel.userPreferences = p?.toPreferences()
+                                        }
+                                        Log.i(
+                                            TAG,
+                                            "Using cached credentials for ${credentials.username}, going to home screen"
+                                        )
+                                        val profile = viewModel.butterfly.api.getProfile(
+                                            GetProfileQuery(AtIdentifier(credentials.username.handle))
+                                        )
+                                        loggedIn = true
+                                        viewModel.currentUser = profile.getOrThrow().toProfile()
+                                        me = viewModel.currentUser
                                     }
-                                    Log.i(
-                                        TAG,
-                                        "Using cached credentials for ${credentials.username}, going to home screen"
-                                    )
-                                    val profile = viewModel.butterfly.api.getProfile(
-                                        GetProfileQuery(AtIdentifier(credentials.username.handle))
-                                    )
-                                    loggedIn = true
-                                    viewModel.currentUser = profile.getOrThrow().toProfile()
-                                    me = viewModel.currentUser
-                                }
-                        }
-
-                    }.onSuccess {
-                        Log.d(TAG, "Preferences load successful: $it, going to home screen")
-                        val profile = viewModel.butterfly.api.getProfile(
-                            GetProfileQuery(
-                                AtIdentifier(authInfo.did.did)
-                            )
-                        )
-                        loggedIn = true
-                        viewModel.currentUser = profile.getOrThrow().toProfile()
-                        viewModel.userPreferences = it.toPreferences()
-                        me = viewModel.currentUser
-                    }
-
-                } else {
-                    if (credentials != null) {
-                        viewModel.butterfly.makeLoginRequest(credentials).onFailure {
-                            Log.e(TAG, "Login failure: $it")
-                        }.onSuccess {
-                            launch {
-                                val p = viewModel.butterfly.getUserPreferences().getOrNull()
-                                Log.d(TAG, "Preferences load: $p")
-                                viewModel.userPreferences = p?.toPreferences()
                             }
-                            Log.i(
-                                TAG,
-                                "Using cached credentials for ${credentials.username}, going to home screen"
-                            )
+
+                        }.onSuccess {
+                            Log.d(TAG, "Preferences load successful: $it, going to home screen")
                             val profile = viewModel.butterfly.api.getProfile(
                                 GetProfileQuery(
-                                    AtIdentifier(credentials.username.handle)
+                                    AtIdentifier(authInfo.did.did)
                                 )
                             )
                             loggedIn = true
                             viewModel.currentUser = profile.getOrThrow().toProfile()
+                            viewModel.userPreferences = it.toPreferences()
                             me = viewModel.currentUser
                         }
+
                     } else {
-                        Log.d(TAG, "No cached credentials, punting to login screen")
-                        loggedIn = false
+                        if (credentials != null) {
+                            viewModel.butterfly.makeLoginRequest(credentials).onFailure {
+                                Log.e(TAG, "Login failure: $it")
+                            }.onSuccess {
+                                launch {
+                                    val p = viewModel.butterfly.getUserPreferences().getOrNull()
+                                    Log.d(TAG, "Preferences load: $p")
+                                    viewModel.userPreferences = p?.toPreferences()
+                                }
+                                Log.i(
+                                    TAG,
+                                    "Using cached credentials for ${credentials.username}, going to home screen"
+                                )
+                                val profile = viewModel.butterfly.api.getProfile(
+                                    GetProfileQuery(
+                                        AtIdentifier(credentials.username.handle)
+                                    )
+                                )
+                                loggedIn = true
+                                viewModel.currentUser = profile.getOrThrow().toProfile()
+                                me = viewModel.currentUser
+                            }
+                        } else {
+                            Log.d(TAG, "No cached credentials, punting to login screen")
+                            loggedIn = false
+                        }
                     }
-                }
+                }.recover { Log.e(TAG, "Error: $it") }
+
             }
         }
         runBlocking {
             viewModel.pinnedFeeds.add(FeedTab("Home", AtUri("__home__")))
-            viewModel.userPreferences?.savedFeeds?.pinned?.forEachIndexed { index, feedUri ->
-                launch {
-                    viewModel.butterfly.api.getFeedGenerator(GetFeedGeneratorQuery(feedUri)).onFailure {
-                        Log.e("Skyline", "Error getting feed info: $it")
-                    }.onSuccess {
-                        viewModel.pinnedFeeds.add(FeedTab(it.view.displayName, it.view.uri))
+            val tabs: MutableMap<Int, FeedTab> = mutableMapOf()
+            launch {
+                viewModel.userPreferences?.savedFeeds?.pinned?.fastForEachIndexed { index, feedUri ->
+                    launch {
+                        viewModel.butterfly.api.getFeedGenerator(GetFeedGeneratorQuery(feedUri)).onFailure {
+                            Log.e("Skyline", "Error getting feed info: $it")
+                        }.onSuccess {
+                            tabs[index+1] = FeedTab(it.view.displayName, it.view.uri)
+                        }
+                    }.invokeOnCompletion {
+                        waiting = index == viewModel.pinnedFeeds.lastIndex
+                        Log.v("Skyline", "waiting = $waiting")
                     }
-                }.invokeOnCompletion {
-                    waiting = index == viewModel.pinnedFeeds.lastIndex
-                    Log.i("Skyline", "waiting = $waiting")
-                }
 
+                }
+            }.invokeOnCompletion {
+                tabs.toSortedMap().forEach { entry-> viewModel.pinnedFeeds.add(entry.value) }
             }
+
         }
         Log.i("Main", "loggedIn = $loggedIn")
         Log.i("Main", "waiting = $waiting")

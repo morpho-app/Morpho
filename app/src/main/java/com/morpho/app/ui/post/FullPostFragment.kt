@@ -54,6 +54,7 @@ import com.morpho.app.ui.elements.MenuOptions
 import com.morpho.app.ui.elements.OutlinedAvatar
 import com.morpho.app.ui.elements.PostMenu
 import com.morpho.app.ui.elements.RichTextElement
+import com.morpho.app.ui.elements.WrappedColumn
 import com.morpho.app.ui.theme.MorphoTheme
 import morpho.app.ui.utils.DevicePreviews
 import morpho.app.ui.utils.FontScalePreviews
@@ -78,7 +79,7 @@ fun FullPostFragment(
     val ctx = LocalContext.current
     var hidePost by rememberSaveable { mutableStateOf(post.author.mutedByMe) }
 
-    Column(
+    WrappedColumn(
         Modifier
             .fillMaxWidth()
             .background(MaterialTheme.colorScheme.background)

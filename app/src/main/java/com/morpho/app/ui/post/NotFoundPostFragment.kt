@@ -12,6 +12,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.max
+import com.morpho.app.ui.elements.WrappedColumn
 import com.morpho.butterfly.AtUri
 import morpho.app.ui.utils.indentLevel
 
@@ -22,7 +23,7 @@ fun NotFoundPostFragment(
     indentLevel: Int = 0,
     role: PostFragmentRole = PostFragmentRole.Solo,
  ) {
-    Column(
+    WrappedColumn(
         modifier = Modifier
             .fillMaxWidth()
             .padding(2.dp)
