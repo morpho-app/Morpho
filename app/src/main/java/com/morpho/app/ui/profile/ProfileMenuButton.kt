@@ -1,4 +1,4 @@
-package morpho.app.ui.profile
+package com.morpho.app.ui.profile
 
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.sizeIn

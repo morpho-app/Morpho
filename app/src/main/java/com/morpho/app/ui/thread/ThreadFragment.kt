@@ -1,4 +1,4 @@
-package morpho.app.ui.thread
+package com.morpho.app.ui.thread
 
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
@@ -14,18 +14,18 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
 import com.atproto.repo.StrongRef
-import morpho.app.api.AtIdentifier
-import morpho.app.api.AtUri
-import morpho.app.api.model.RecordType
-import morpho.app.model.BskyPost
-import morpho.app.model.BskyPostThread
-import morpho.app.model.ThreadPost
-import morpho.app.ui.common.OnPostClicked
-import morpho.app.ui.elements.MenuOptions
-import morpho.app.ui.post.BlockedPostFragment
-import morpho.app.ui.post.FullPostFragment
-import morpho.app.ui.post.NotFoundPostFragment
-import morpho.app.ui.post.PostFragmentRole
+import com.morpho.butterfly.AtIdentifier
+import com.morpho.butterfly.AtUri
+import com.morpho.butterfly.model.RecordType
+import com.morpho.app.model.BskyPost
+import com.morpho.app.model.BskyPostThread
+import com.morpho.app.model.ThreadPost
+import com.morpho.app.ui.common.OnPostClicked
+import com.morpho.app.ui.elements.MenuOptions
+import com.morpho.app.ui.post.BlockedPostFragment
+import com.morpho.app.ui.post.FullPostFragment
+import com.morpho.app.ui.post.NotFoundPostFragment
+import com.morpho.app.ui.post.PostFragmentRole
 
 
 @Composable

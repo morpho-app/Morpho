@@ -1,4 +1,4 @@
-package morpho.app.screens.notifications
+package com.morpho.app.screens.notifications
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Column
@@ -51,20 +51,20 @@ import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.launch
 import com.morpho.app.MainViewModel
-import morpho.app.api.AtUri
-import morpho.app.api.model.RecordUnion
-import com.morpho.app.apiProvider
-import morpho.app.components.ScreenBody
-import morpho.app.extensions.activityViewModel
-import morpho.app.model.BskyPost
-import morpho.app.model.DraftPost
-import morpho.app.screens.destinations.PostThreadScreenDestination
-import morpho.app.screens.destinations.ProfileScreenDestination
-import morpho.app.ui.common.BottomSheetPostComposer
-import morpho.app.ui.common.ComposerRole
-import morpho.app.ui.elements.OutlinedAvatar
-import morpho.app.ui.notifications.NotificationsElement
-import morpho.app.ui.notifications.NotificationsFilterElement
+import com.morpho.butterfly.AtUri
+import com.morpho.butterfly.model.RecordUnion
+import com.morpho.app.butterfly
+import com.morpho.app.components.ScreenBody
+import com.morpho.app.extensions.activityViewModel
+import com.morpho.app.model.BskyPost
+import com.morpho.app.model.DraftPost
+import com.morpho.app.screens.destinations.PostThreadScreenDestination
+import com.morpho.app.screens.destinations.ProfileScreenDestination
+import com.morpho.app.ui.common.BottomSheetPostComposer
+import com.morpho.app.ui.common.ComposerRole
+import com.morpho.app.ui.elements.OutlinedAvatar
+import com.morpho.app.ui.notifications.NotificationsElement
+import com.morpho.app.ui.notifications.NotificationsFilterElement
 
 @Destination
 @Composable
@@ -119,7 +119,7 @@ fun NotificationsView(
     // Probably pull this farther up,
     //      but this means if you don't explicitly cancel you don't lose the post
     var draft by remember{ mutableStateOf(DraftPost()) }
-    val apiProvider = LocalContext.current.apiProvider
+    val apiProvider = LocalContext.current.butterfly
 
     LaunchedEffect(!listState.canScrollForward) {
         viewModel.getNotifications(viewModel.state.cursor)

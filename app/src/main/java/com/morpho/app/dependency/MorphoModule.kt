@@ -1,4 +1,4 @@
-package morpho.app.dependency
+package com.morpho.app.dependency
 
 
 import android.content.Context

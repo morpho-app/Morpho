@@ -1,4 +1,4 @@
-package morpho.app.model
+package com.morpho.app.model
 
 import androidx.compose.runtime.Immutable
 import app.bsky.feed.Like
@@ -12,12 +12,12 @@ import com.atproto.repo.StrongRef
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonElement
-import morpho.app.api.AtUri
-import morpho.app.api.Cid
-import morpho.app.api.Did
-import morpho.app.util.deserialize
-import morpho.app.util.mapImmutable
-import morpho.app.util.recordType
+import com.morpho.butterfly.AtUri
+import com.morpho.butterfly.Cid
+import com.morpho.butterfly.Did
+import com.morpho.app.util.deserialize
+import com.morpho.app.util.mapImmutable
+import com.morpho.app.util.recordType
 
 @Immutable
 @Serializable
@@ -143,15 +143,15 @@ fun ListNotificationsNotification.toBskyNotification() : BskyNotification {
                     author = author.toProfile(),
                     text = postRecord.text,
                     facets = postRecord.facets.mapImmutable { it.toBskyFacet() },
-                    tags = postRecord.tags.mapImmutable{it},
+                    tags = postRecord.tags.mapImmutable { it },
                     createdAt = Moment(postRecord.createdAt),
                     feature = postRecord.embed?.toFeature(),
                     replyCount = 0,
                     repostCount = 0,
-                    likeCount =  0,
+                    likeCount = 0,
                     indexedAt = Moment(indexedAt),
                     reposted = this.reason == ListNotificationsReason.QUOTE,
-                    repostUri =  null,
+                    repostUri = null,
                     liked = false,
                     likeUri = null,
                     labels = labels.mapImmutable { it.toLabel() },

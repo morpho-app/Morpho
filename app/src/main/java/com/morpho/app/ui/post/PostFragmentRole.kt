@@ -1,4 +1,4 @@
-package morpho.app.ui.post
+package com.morpho.app.ui.post
 
 enum class PostFragmentRole {
     Solo,

@@ -1,4 +1,4 @@
-package morpho.app.util
+package com.morpho.app.util
 
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList

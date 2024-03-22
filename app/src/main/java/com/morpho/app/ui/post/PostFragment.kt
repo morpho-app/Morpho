@@ -1,4 +1,4 @@
-package morpho.app.ui.post
+package com.morpho.app.ui.post
 
 import android.content.Intent
 import android.net.Uri
@@ -44,32 +44,32 @@ import androidx.compose.ui.unit.dp
 import com.atproto.repo.StrongRef
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.datetime.Instant
-import morpho.app.api.AtIdentifier
-import morpho.app.api.AtUri
-import morpho.app.api.Cid
-import morpho.app.api.Did
-import morpho.app.api.Handle
-import morpho.app.api.model.RecordType
-import morpho.app.model.BasicProfile
-import morpho.app.model.BskyLabel
-import morpho.app.model.BskyPost
-import morpho.app.model.BskyPostFeature
-import morpho.app.model.BskyPostReason
-import morpho.app.model.BskyPostReply
-import morpho.app.model.EmbedImage
-import morpho.app.model.EmbedPost
-import morpho.app.model.Moment
-import morpho.app.model.FacetType
-import morpho.app.ui.common.OnPostClicked
-import morpho.app.ui.elements.AvatarShape
-import morpho.app.ui.elements.MenuOptions
-import morpho.app.ui.elements.OutlinedAvatar
-import morpho.app.ui.elements.RichTextElement
-import morpho.app.ui.elements.WrappedColumn
-import morpho.app.ui.theme.MorphoTheme
+import com.morpho.butterfly.AtIdentifier
+import com.morpho.butterfly.AtUri
+import com.morpho.butterfly.Cid
+import com.morpho.butterfly.Did
+import com.morpho.butterfly.Handle
+import com.morpho.butterfly.model.RecordType
+import com.morpho.app.model.BasicProfile
+import com.morpho.app.model.BskyLabel
+import com.morpho.app.model.BskyPost
+import com.morpho.app.model.BskyPostFeature
+import com.morpho.app.model.BskyPostReason
+import com.morpho.app.model.BskyPostReply
+import com.morpho.app.model.EmbedImage
+import com.morpho.app.model.EmbedPost
+import com.morpho.app.model.Moment
+import com.morpho.app.model.FacetType
+import com.morpho.app.ui.common.OnPostClicked
+import com.morpho.app.ui.elements.AvatarShape
+import com.morpho.app.ui.elements.MenuOptions
+import com.morpho.app.ui.elements.OutlinedAvatar
+import com.morpho.app.ui.elements.RichTextElement
+import com.morpho.app.ui.elements.WrappedColumn
+import com.morpho.app.ui.theme.MorphoTheme
 import morpho.app.ui.utils.DevicePreviews
 import morpho.app.ui.utils.indentLevel
-import morpho.app.util.getFormattedDateTimeSince
+import com.morpho.app.util.getFormattedDateTimeSince
 
 
 

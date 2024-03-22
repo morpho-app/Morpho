@@ -1,4 +1,4 @@
-package morpho.app.ui.elements
+package com.morpho.app.ui.elements
 
 /*
  * Copyright 2020 The Android Open Source Project
@@ -40,8 +40,8 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
-import morpho.app.R
-import morpho.app.ui.theme.MorphoTheme
+import com.morpho.app.R
+import com.morpho.app.ui.theme.MorphoTheme
 
 
 enum class AvatarShape {

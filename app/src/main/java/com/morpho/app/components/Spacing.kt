@@ -1,4 +1,4 @@
-package morpho.app.components
+package com.morpho.app.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column

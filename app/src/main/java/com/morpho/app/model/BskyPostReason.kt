@@ -1,8 +1,8 @@
-package morpho.app.model
+package com.morpho.app.model
 
 import app.bsky.feed.FeedViewPostReasonUnion
 import app.bsky.feed.SkeletonFeedPostReasonUnion
-import morpho.app.api.AtUri
+import com.morpho.butterfly.AtUri
 
 sealed interface BskyPostReason {
     data class BskyPostRepost(
@@ -12,7 +12,7 @@ sealed interface BskyPostReason {
 
     data class BskyPostFeedPost(
         val repost: AtUri
-    ) :BskyPostReason
+    ) : BskyPostReason
 }
 
 fun FeedViewPostReasonUnion.toReason(): BskyPostReason {

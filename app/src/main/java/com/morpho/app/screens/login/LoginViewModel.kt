@@ -1,4 +1,4 @@
-package morpho.app.screens.login
+package com.morpho.app.screens.login
 
 import android.app.Application
 import android.util.Log
@@ -8,14 +8,12 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import morpho.app.api.ApiProvider
-import morpho.app.api.auth.AuthInfo
-import morpho.app.api.auth.Credentials
-import morpho.app.api.auth.ServerInfo
-import morpho.app.api.response.AtpResponse
-import morpho.app.base.BaseViewModel
+import com.morpho.butterfly.Butterfly
+import com.morpho.butterfly.auth.AuthInfo
+import com.morpho.butterfly.auth.Credentials
+import com.morpho.butterfly.auth.ServerInfo
+import com.morpho.app.base.BaseViewModel
 import javax.inject.Inject
 
 enum class LoginScreenMode {
@@ -41,7 +39,7 @@ sealed interface LoginState {
     data class ShowingError(
         override val mode: LoginScreenMode,
         override val serverInfo: ServerInfo?,
-        val error: AtpResponse.Failure<*>,
+        val error: Throwable,
         val credentials: Credentials,
     ) : LoginState
 
@@ -71,33 +69,29 @@ class LoginViewModel @Inject constructor(
 
 
     fun login(
-        apiProvider: ApiProvider,
+        apiProvider: Butterfly,
         credentials: Credentials,
         onSuccess: (AuthInfo) -> Unit,
-        onFailure: (AtpResponse.Failure<AuthInfo>) -> Unit
+        onFailure: (Throwable) -> Unit
     ) = viewModelScope.launch {
-        when (val result = apiProvider.makeLoginRequest(credentials)) {
-            is AtpResponse.Failure -> {
-                Log.e("Login error", result.toString())
+        apiProvider.makeLoginRequest(credentials).onFailure {
+                Log.e("Login error", it.toString())
                 state.state = LoginState.ShowingError(
                     mode = state.state.mode,
                     serverInfo = state.state.serverInfo,
-                    error = result,
+                    error = it,
                     credentials = credentials
                 )
-                onFailure(result)
+                onFailure(it)
             }
-            is AtpResponse.Success -> {
-                Log.i("Login success", apiProvider.auth().first().toString())
+            .onSuccess {
+                Log.i("Login success", it.toString())
                 state.state = LoginState.Success(
                     mode = state.state.mode,
                     serverInfo = state.state.serverInfo,
-                    result = result.response
+                    result = it
                 )
-                onSuccess(result.response)
+                onSuccess(it)
             }
-        }
-
     }
-
 }

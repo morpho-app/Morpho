@@ -1,4 +1,4 @@
-package morpho.app.screens.postthread
+package com.morpho.app.screens.postthread
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.WindowInsets
@@ -29,24 +29,24 @@ import com.atproto.repo.StrongRef
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import com.morpho.app.MainViewModel
-import morpho.app.api.AtUri
-import morpho.app.api.model.RecordUnion
-import com.morpho.app.apiProvider
-import morpho.app.components.Center
-import morpho.app.components.ScreenBody
-import morpho.app.extensions.activityViewModel
-import morpho.app.model.BskyPost
-import morpho.app.model.BskyPostThread
-import morpho.app.model.DraftPost
-import morpho.app.screens.destinations.PostThreadScreenDestination
-import morpho.app.screens.destinations.ProfileScreenDestination
-import morpho.app.screens.destinations.SkylineScreenDestination
-import morpho.app.screens.skyline.FeedTab
-import morpho.app.ui.common.BottomSheetPostComposer
-import morpho.app.ui.common.ComposerRole
-import morpho.app.ui.common.RepostQueryDialog
-import morpho.app.ui.common.SkylineTopBar
-import morpho.app.ui.thread.ThreadFragment
+import com.morpho.app.butterfly
+import com.morpho.butterfly.AtUri
+import com.morpho.butterfly.model.RecordUnion
+import com.morpho.app.components.Center
+import com.morpho.app.components.ScreenBody
+import com.morpho.app.extensions.activityViewModel
+import com.morpho.app.model.BskyPost
+import com.morpho.app.model.BskyPostThread
+import com.morpho.app.model.DraftPost
+import com.morpho.app.screens.destinations.PostThreadScreenDestination
+import com.morpho.app.screens.destinations.ProfileScreenDestination
+import com.morpho.app.screens.destinations.SkylineScreenDestination
+import com.morpho.app.screens.skyline.FeedTab
+import com.morpho.app.ui.common.BottomSheetPostComposer
+import com.morpho.app.ui.common.ComposerRole
+import com.morpho.app.ui.common.RepostQueryDialog
+import com.morpho.app.ui.common.SkylineTopBar
+import com.morpho.app.ui.thread.ThreadFragment
 
 @Destination
 @Composable
@@ -67,7 +67,8 @@ fun PostThreadScreen(
                 .fillMaxSize()
                 .systemBarsPadding(),
             topContent = {
-                SkylineTopBar( mainViewModel.pinnedFeeds,
+                SkylineTopBar(
+                    tabList = mainViewModel.pinnedFeeds,
                     mainButton = {
                         IconButton(onClick = { it() },
                             modifier = Modifier
@@ -123,7 +124,7 @@ fun PostThreadView(
     navBar: @Composable () -> Unit = {},
     tabList: List<FeedTab> = listOf(),
 ){
-    val apiProvider = LocalContext.current.apiProvider
+    val apiProvider = LocalContext.current.butterfly
     var repostClicked by remember { mutableStateOf(false)}
     var initialContent: BskyPost? by remember { mutableStateOf(null) }
     var showComposer by remember { mutableStateOf(false)}
@@ -155,7 +156,7 @@ fun PostThreadView(
                     navigator.navigateUp()
                 },
                 onChanged = {
-                    navigator.navigate(SkylineScreenDestination(it))
+                    if(it < tabList.size) navigator.navigate(SkylineScreenDestination(it))
                 },
             )
         },

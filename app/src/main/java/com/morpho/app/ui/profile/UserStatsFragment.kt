@@ -1,4 +1,4 @@
-package morpho.app.ui.profile
+package com.morpho.app.ui.profile
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -14,7 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import morpho.app.model.DetailedProfile
+import com.morpho.app.model.DetailedProfile
 
 @Composable
 @OptIn(ExperimentalLayoutApi::class)

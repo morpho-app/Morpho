@@ -1,4 +1,4 @@
-package morpho.app.ui.post
+package com.morpho.app.ui.post
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
@@ -20,7 +20,8 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import coil.size.Size
 import dev.jeziellago.compose.markdowntext.MarkdownText
-import morpho.app.model.BskyPostFeature
+import com.morpho.app.model.BskyPostFeature
+import com.morpho.app.ui.elements.WrappedColumn
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -39,7 +40,7 @@ fun PostLinkEmbed(
         //border = BorderStroke(1.dp,MaterialTheme.colorScheme.secondary)
     ) {
 
-        Column(Modifier.clickable { }) {
+        WrappedColumn(Modifier.clickable { }) {
             AsyncImage(
                 model = ImageRequest.Builder(LocalContext.current)
                     .data(linkData.thumb)
@@ -85,7 +86,7 @@ fun PostLinkEmbed(
 
 
 val testLinkEmbed = BskyPostFeature.ExternalFeature(
-    uri = morpho.app.api.Uri("https://www.youtube.com/watch?v=_q85LZqY5Ok"),
+    uri = com.morpho.butterfly.Uri("https://www.youtube.com/watch?v=_q85LZqY5Ok"),
     title = "(Hearthstone) Big Ol' Tendies - Yogg Rogue",
     description = "\n" +
             "14,866 views  Sep 24, 2023\n" +

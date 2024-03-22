@@ -1,21 +1,21 @@
-package morpho.app.ui.thread
+package com.morpho.app.ui.thread
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import com.atproto.repo.StrongRef
-import morpho.app.api.AtIdentifier
-import morpho.app.api.AtUri
-import morpho.app.api.model.RecordType
-import morpho.app.model.BskyPost
-import morpho.app.model.BskyPostReason
-import morpho.app.model.ThreadPost
-import morpho.app.ui.common.OnPostClicked
-import morpho.app.ui.elements.MenuOptions
-import morpho.app.ui.post.BlockedPostFragment
-import morpho.app.ui.post.FullPostFragment
-import morpho.app.ui.post.NotFoundPostFragment
-import morpho.app.ui.post.PostFragment
-import morpho.app.ui.post.PostFragmentRole
+import com.morpho.butterfly.AtIdentifier
+import com.morpho.butterfly.AtUri
+import com.morpho.butterfly.model.RecordType
+import com.morpho.app.model.BskyPost
+import com.morpho.app.model.BskyPostReason
+import com.morpho.app.model.ThreadPost
+import com.morpho.app.ui.common.OnPostClicked
+import com.morpho.app.ui.elements.MenuOptions
+import com.morpho.app.ui.post.BlockedPostFragment
+import com.morpho.app.ui.post.FullPostFragment
+import com.morpho.app.ui.post.NotFoundPostFragment
+import com.morpho.app.ui.post.PostFragment
+import com.morpho.app.ui.post.PostFragmentRole
 
 @Composable
 inline fun ThreadItem(

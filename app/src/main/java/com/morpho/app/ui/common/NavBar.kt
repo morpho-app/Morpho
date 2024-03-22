@@ -1,4 +1,4 @@
-package morpho.app.ui.common
+package com.morpho.app.ui.common
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
@@ -39,6 +39,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
@@ -47,23 +48,12 @@ import com.ramcosta.composedestinations.navigation.popBackStack
 import com.ramcosta.composedestinations.navigation.popUpTo
 import com.ramcosta.composedestinations.utils.isRouteOnBackStack
 import com.morpho.app.MainViewModel
-import morpho.app.components.NavBarLocation
-import morpho.app.screens.NavGraphs
-import morpho.app.screens.appCurrentDestinationAsState
-import morpho.app.screens.destinations.BottomSheetScreenDestination
-import morpho.app.screens.destinations.Destination
-import morpho.app.screens.destinations.FeedDiscoveryScreenDestination
-import morpho.app.screens.destinations.FeedListScreenDestination
-import morpho.app.screens.destinations.LoginScreenDestination
-import morpho.app.screens.destinations.MyProfileScreenDestination
-import morpho.app.screens.destinations.NotificationsScreenDestination
-import morpho.app.screens.destinations.PostThreadScreenDestination
-import morpho.app.screens.destinations.ProfileScreenDestination
-import morpho.app.screens.destinations.SearchScreenScreenDestination
-import morpho.app.screens.destinations.SettingsScreenDestination
-import morpho.app.screens.destinations.SkylineScreenDestination
-import morpho.app.screens.destinations.TemplateScreenDestination
-import morpho.app.screens.startAppDestination
+import com.morpho.app.components.NavBarLocation
+import com.morpho.app.screens.NavGraphs
+import com.morpho.app.screens.appCurrentDestinationAsState
+import com.morpho.app.screens.destinations.*
+import com.morpho.app.screens.startAppDestination
+import kotlin.math.min
 
 
 @Composable
@@ -119,6 +109,7 @@ fun MorphoBottomNavBar(
         TemplateScreenDestination -> 0
         PostThreadScreenDestination -> 5
         ProfileScreenDestination -> 5
+        else -> {5}
     }
     val unread = viewModel.unreadNotifications.collectAsStateWithLifecycle(initialValue = -1)
     LaunchedEffect(Unit) {
@@ -136,14 +127,25 @@ fun MorphoBottomNavBar(
         )
     ) {
         PrimaryTabRow(
-            selectedTabIndex = selectedTab,
+            selectedTabIndex = min(selectedTab, 4),
             modifier = Modifier.clip(
                 MaterialTheme.shapes.medium.copy(
                     bottomEnd = CornerSize(0.dp),
                     bottomStart = CornerSize(0.dp),
                     topStart = CornerSize(0.dp),
                 )
-            )
+            ),
+            indicator = {
+                if (selectedTab <= 4) {
+                    TabRowDefaults.PrimaryIndicator(
+                        modifier = Modifier.tabIndicatorOffset(
+                            selectedTab,
+                            matchContentSize = true
+                        ),
+                        width = Dp.Unspecified,
+                    )
+                }
+            }
         ) {
             Tab(
                 selected = selectedTab == 0,

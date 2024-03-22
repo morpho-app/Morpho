@@ -1,4 +1,4 @@
-package morpho.app.ui.common
+package com.morpho.app.ui.common
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -62,17 +62,17 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
-import morpho.app.api.AtIdentifier
-import morpho.app.api.AtUri
-import morpho.app.api.model.RecordType
-import morpho.app.components.ScreenBody
-import morpho.app.model.BskyPost
-import morpho.app.model.Skyline
-import morpho.app.model.SkylineItem
-import morpho.app.ui.elements.MenuOptions
-import morpho.app.ui.post.PostFragment
-import morpho.app.ui.post.testPost
-import morpho.app.ui.theme.MorphoTheme
+import com.morpho.butterfly.AtIdentifier
+import com.morpho.butterfly.AtUri
+import com.morpho.butterfly.model.RecordType
+import com.morpho.app.components.ScreenBody
+import com.morpho.app.model.BskyPost
+import com.morpho.app.model.Skyline
+import com.morpho.app.model.SkylineItem
+import com.morpho.app.ui.elements.MenuOptions
+import com.morpho.app.ui.post.PostFragment
+import com.morpho.app.ui.post.testPost
+import com.morpho.app.ui.theme.MorphoTheme
 
 typealias OnPostClicked = (AtUri) -> Unit
 
@@ -208,6 +208,7 @@ fun SkylineFragment (
                     when(it) {
                         is SkylineItem.PostItem -> SkylineItem.PostItem::class
                         is SkylineItem.ThreadItem -> SkylineItem.ThreadItem::class
+                        else -> {}
                     }
                 }
             ) {item ->
@@ -243,6 +244,8 @@ fun SkylineFragment (
                             onLikeClicked = onLikeClicked,
                         )
                     }
+
+                    else -> {}
                 }
             }
         }

@@ -1,16 +1,16 @@
 package com.morpho.app.util
 
-import androidx.compose.ui.util.fastFilter
+import androidx.compose.ui.util.fastFilterNotNull
 import androidx.compose.ui.util.fastMap
-import com.atproto.identity.ResolveHandleQueryParams
+import com.atproto.identity.ResolveHandleQuery
 import com.google.common.collect.ImmutableList
 import kotlinx.serialization.Serializable
-import morpho.app.api.ApiProvider
-import morpho.app.api.Handle
-import morpho.app.api.response.AtpResponse
-import morpho.app.model.BskyFacet
-import morpho.app.model.FacetType
-import morpho.app.model.RichTextFormat
+import com.morpho.butterfly.Butterfly
+import com.morpho.butterfly.Handle
+import com.morpho.app.model.BskyFacet
+import com.morpho.app.model.FacetType
+import com.morpho.app.model.RichTextFormat
+import com.morpho.butterfly.Uri
 import okio.ByteString.Companion.encodeUtf8
 
 
@@ -94,12 +94,16 @@ fun makeBlueskyText(text: String): BlueskyText {
         val linkMatch = match.groups[2]
         if (labelMatch != null && linkMatch != null) {
             segments += Pair(labelMatch.value, BskyFacet(labelMatch.range.first, labelMatch.range.last, FacetType.ExternalLink(
-                morpho.app.api.Uri(linkMatch.value)
-            )))
+                Uri(linkMatch.value)
+            ))
+            )
         }
     }
     bareLinkMatches.forEach { match ->
-        segments += Pair(match.value, BskyFacet(match.range.first, match.range.last, FacetType.ExternalLink(morpho.app.api.Uri(match.value))))
+        segments += Pair(match.value, BskyFacet(match.range.first, match.range.last, FacetType.ExternalLink(
+            Uri(match.value)
+        ))
+        )
     }
     val outString = StringBuilder(text.length)
     if (segments.first().second?.start == 0) {
@@ -132,19 +136,17 @@ fun makeBlueskyText(text: String): BlueskyText {
     return BlueskyText( outString.toString(), facets as ImmutableList<BskyFacet>)
 }
 
-suspend fun resolveBlueskyText(text: BlueskyText, apiProvider: ApiProvider): BlueskyText {
-    val facets = text.facets.fastMap { facet ->
+suspend fun resolveBlueskyText(text: BlueskyText, api: Butterfly): Result<BlueskyText> = runCatching {
+    val facets:List<BskyFacet> = text.facets.fastMap { facet: BskyFacet ->
         if (facet.facetType is FacetType.UserHandleMention) {
             // Resolve handles
-            when(val response = apiProvider.api.resolveHandle(ResolveHandleQueryParams(facet.facetType.handle))) {
-                is AtpResponse.Failure -> facet
-                is AtpResponse.Success -> {
-                    BskyFacet(facet.start, facet.end, FacetType.UserDidMention(response.response.did))
-                }
-            }
+            val response = api.api.resolveHandle(ResolveHandleQuery(facet.facetType.handle)).getOrNull()
+            if (response != null) facet.copy(facetType = FacetType.UserDidMention(response.did))
+            else null
+
         } else {
             facet
         }
-    }.fastFilter { facet -> facet.facetType !is FacetType.UserHandleMention } // delete facets for any that couldn't be resolved
-    return BlueskyText(text.text, facets as ImmutableList<BskyFacet>)
+    }.fastFilterNotNull()
+    return Result.success(BlueskyText(text.text, facets as ImmutableList<BskyFacet>))
 }

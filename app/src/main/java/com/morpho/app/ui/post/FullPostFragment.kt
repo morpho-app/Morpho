@@ -1,4 +1,4 @@
-package morpho.app.ui.post
+package com.morpho.app.ui.post
 
 import android.content.Intent
 import android.net.Uri
@@ -45,16 +45,17 @@ import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import kotlinx.datetime.todayIn
-import morpho.app.api.AtIdentifier
-import morpho.app.api.AtUri
-import morpho.app.api.model.RecordType
-import morpho.app.model.BskyPost
-import morpho.app.model.FacetType
-import morpho.app.ui.elements.MenuOptions
-import morpho.app.ui.elements.OutlinedAvatar
-import morpho.app.ui.elements.PostMenu
-import morpho.app.ui.elements.RichTextElement
-import morpho.app.ui.theme.MorphoTheme
+import com.morpho.butterfly.AtIdentifier
+import com.morpho.butterfly.AtUri
+import com.morpho.butterfly.model.RecordType
+import com.morpho.app.model.BskyPost
+import com.morpho.app.model.FacetType
+import com.morpho.app.ui.elements.MenuOptions
+import com.morpho.app.ui.elements.OutlinedAvatar
+import com.morpho.app.ui.elements.PostMenu
+import com.morpho.app.ui.elements.RichTextElement
+import com.morpho.app.ui.elements.WrappedColumn
+import com.morpho.app.ui.theme.MorphoTheme
 import morpho.app.ui.utils.DevicePreviews
 import morpho.app.ui.utils.FontScalePreviews
 
@@ -78,7 +79,7 @@ fun FullPostFragment(
     val ctx = LocalContext.current
     var hidePost by rememberSaveable { mutableStateOf(post.author.mutedByMe) }
 
-    Column(
+    WrappedColumn(
         Modifier
             .fillMaxWidth()
             .background(MaterialTheme.colorScheme.background)

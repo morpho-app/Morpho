@@ -1,4 +1,4 @@
-package morpho.app.model
+package com.morpho.app.model
 
 import app.bsky.embed.ExternalView
 import app.bsky.embed.ImagesAspectRatio
@@ -10,11 +10,11 @@ import app.bsky.feed.PostEmbedUnion
 import app.bsky.feed.PostViewEmbedUnion
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.serialization.Serializable
-import morpho.app.api.AtUri
-import morpho.app.api.Cid
-import morpho.app.api.Uri
-import morpho.app.util.deserialize
-import morpho.app.util.mapImmutable
+import com.morpho.butterfly.AtUri
+import com.morpho.butterfly.Cid
+import com.morpho.butterfly.Uri
+import com.morpho.app.util.deserialize
+import com.morpho.app.util.mapImmutable
 
 sealed interface BskyPostFeature {
     @Serializable

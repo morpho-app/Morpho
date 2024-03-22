@@ -1,5 +1,6 @@
-package morpho.app.screens.login
+package com.morpho.app.screens.login
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -29,21 +30,26 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import app.bsky.actor.GetProfileQueryParams
+import app.bsky.actor.GetProfileQuery
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
-import kotlinx.coroutines.flow.first
+
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import com.morpho.app.MainViewModel
-import morpho.app.api.AtIdentifier
-import morpho.app.api.Handle
-import morpho.app.api.auth.Credentials
-import morpho.app.api.toPreferences
-import morpho.app.components.ScreenBody
-import morpho.app.extensions.activityViewModel
-import morpho.app.model.toProfile
-import morpho.app.screens.destinations.SkylineScreenDestination
+import com.morpho.butterfly.AtIdentifier
+import com.morpho.butterfly.Handle
+import com.morpho.butterfly.auth.Credentials
+import com.morpho.app.model.toPreferences
+import com.morpho.app.components.ScreenBody
+import com.morpho.app.extensions.activityViewModel
+import com.morpho.app.model.toProfile
+import com.morpho.app.screens.NavGraphs
+import com.morpho.app.screens.destinations.LoginScreenDestination
+import com.morpho.app.screens.destinations.SkylineScreenDestination
+import com.ramcosta.composedestinations.navigation.popUpTo
+import com.ramcosta.composedestinations.spec.DirectionDestinationSpec
+import com.ramcosta.composedestinations.utils.startDestination
 
 @Destination
 @Composable
@@ -52,86 +58,120 @@ fun LoginScreen(
     mainViewModel: MainViewModel = activityViewModel(),
     viewModel: LoginViewModel = hiltViewModel()
 ) {
+    BackHandler(true) { /* We want to disable back clicks */ }
     var email by rememberSaveable {mutableStateOf("") }
     var handle by rememberSaveable {mutableStateOf("") }
     var password by rememberSaveable {mutableStateOf("") }
     var service by rememberSaveable {mutableStateOf("bsky.social") }
     val loginState = viewModel.state.state
+    val hasNavigatedUp = remember { mutableStateOf(false) }
+    if (mainViewModel.currentUser != null) {
+        hasNavigatedUp.value = true // avoids double navigation
 
-    when (viewModel.state.state) {
-        is LoginState.ShowingError -> {
-
-        }
-        is LoginState.ShowingLogin -> {
-            when (loginState.mode) {
-                LoginScreenMode.SIGN_UP -> TODO()
-                LoginScreenMode.SIGN_IN -> {
-                    LoginView(
-                        service,
-                        handle,
-                        password,
-                        onLoginClick = {
-                            viewModel.login(
-                                mainViewModel.apiProvider,
-                                Credentials(
-                                    email,
-                                    Handle(handle),
-                                    password,
-                                    null
-                                ),
-                                {
-                                    runBlocking {
-                                        mainViewModel.apiProvider.loginRepository.auth = it
-                                        mainViewModel.apiProvider.auth().first()
-                                        mainViewModel.currentUser = mainViewModel.apiProvider.api.getProfile(
-                                            GetProfileQueryParams(AtIdentifier(it.did.did))
-                                        ).maybeResponse()?.toProfile()
-                                        mainViewModel.userPreferences = mainViewModel.apiProvider.getUserPreferences()
-                                            .maybeResponse()?.toPreferences()
-                                    }
-
-
-                                    navigator.navigate(
-                                        SkylineScreenDestination()
-                                    )
-                                },
-                                {}
-                            )
-                        },
-                        onServiceChange = { service = it },
-                        onHandleChange = {
-                            if (it.contains('@')) {
-                                email = it
-                            } else {
-                                handle = it
-                            }
-                        },
-                        onPasswordChange = {
-                            password = it
-
-                        }
-                    )
+        if (!navigator.navigateUp()) {
+            // Sometimes we are starting on LoginScreen (to avoid UI jumps)
+            // In those cases, navigateUp fails, so we just navigate to the registered start destination
+            navigator.navigate(NavGraphs.root.startDestination as DirectionDestinationSpec) {
+                popUpTo(LoginScreenDestination) {
+                    inclusive = true
                 }
             }
         }
-        is LoginState.SigningIn -> {
-            viewModel.login(
-                mainViewModel.apiProvider,
-                (loginState as LoginState.SigningIn).credentials,
-                {
-                    navigator.navigate(
-                        SkylineScreenDestination()
-                    )
-                },
-                {}
-            )
-        }
-        is LoginState.Success -> {
-            navigator.navigate(
-                SkylineScreenDestination()
-            )
+    }
+    else {
+        when (viewModel.state.state) {
+            is LoginState.ShowingError -> {
+
+            }
+            is LoginState.ShowingLogin -> {
+                when (loginState.mode) {
+                    LoginScreenMode.SIGN_UP -> TODO()
+                    LoginScreenMode.SIGN_IN -> {
+                        LoginView(
+                            service,
+                            handle,
+                            password,
+                            onLoginClick = {
+                                viewModel.login(
+                                    mainViewModel.butterfly,
+                                    Credentials(
+                                        email,
+                                        Handle(handle),
+                                        password,
+                                        null
+                                    ),
+                                    {
+                                        runBlocking {
+                                            mainViewModel.currentUser = mainViewModel.butterfly.api.getProfile(
+                                                GetProfileQuery(AtIdentifier(it.did.did))
+                                            ).getOrNull()?.toProfile()
+                                            mainViewModel.userPreferences = mainViewModel.butterfly.getUserPreferences()
+                                                .getOrNull()?.toPreferences()
+                                        }
+
+
+                                        navigator.navigate(
+                                            SkylineScreenDestination()
+                                        ){
+                                            popUpTo(NavGraphs.root) {
+                                                saveState = true
+                                            }
+                                            launchSingleTop = true
+                                            restoreState = true
+                                        }
+                                    },
+                                    {}
+                                )
+                            },
+                            onServiceChange = { service = it },
+                            onHandleChange = {
+                                if (it.contains('@')) {
+                                    email = it
+                                } else {
+                                    handle = it
+                                }
+                            },
+                            onPasswordChange = {
+                                password = it
+
+                            }
+                        )
+                    }
+                }
+            }
+            is LoginState.SigningIn -> {
+                viewModel.login(
+                    mainViewModel.butterfly,
+                    (loginState as LoginState.SigningIn).credentials,
+                    {
+                        navigator.navigate(
+                            SkylineScreenDestination()
+                        ){
+                            popUpTo(NavGraphs.root) {
+                                saveState = true
+                            }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                    },
+                    {}
+                )
+            }
+            is LoginState.Success -> {
+                navigator.navigate(
+                    SkylineScreenDestination()
+                ){
+                    popUpTo(NavGraphs.root) {
+                        saveState = true
+                    }
+                    launchSingleTop = true
+                    restoreState = true
+                }
+            }
         }
     }
+
+
 }
 
 

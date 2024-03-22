@@ -1,4 +1,4 @@
-package morpho.app.ui.profile
+package com.morpho.app.ui.profile
 
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
@@ -9,7 +9,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import morpho.app.model.BskyLabel
+import com.morpho.app.model.BskyLabel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

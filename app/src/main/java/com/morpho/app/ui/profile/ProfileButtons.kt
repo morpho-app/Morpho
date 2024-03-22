@@ -1,4 +1,4 @@
-package morpho.app.ui.profile
+package com.morpho.app.ui.profile
 
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding

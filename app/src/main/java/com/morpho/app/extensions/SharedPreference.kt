@@ -1,4 +1,4 @@
-package morpho.app.extensions
+package com.morpho.app.extensions
 
 import android.content.SharedPreferences
 import com.google.gson.Gson

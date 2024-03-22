@@ -1,4 +1,4 @@
-package morpho.app.model
+package com.morpho.app.model
 
 import androidx.room.Dao
 import androidx.room.Insert
@@ -14,10 +14,10 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
-import morpho.app.api.AtUri
-import morpho.app.util.deserialize
-import morpho.app.util.mapImmutable
-import morpho.app.util.serialize
+import com.morpho.butterfly.AtUri
+import com.morpho.app.util.deserialize
+import com.morpho.app.util.mapImmutable
+import com.morpho.app.util.serialize
 
 @Dao
 interface BskyPostDao {
@@ -31,13 +31,15 @@ interface BskyPostDao {
     suspend fun insertPost(post: CachePost) : Long
 
     suspend fun insertThread(thread: BskyPostThread) = coroutineScope {
-        insertPost(CachePost(
+        insertPost(
+            CachePost(
             uri = thread.post.uri.atUri, cid = thread.post.cid.cid,
             authorDid = thread.post.author.did.did,
             timestamp = thread.post.createdAt.instant.toEpochMilliseconds(),
             type = PostType.BskyPost,
             cacheEntry = BskyPost.serializer().serialize(thread.post).toString()
-        ))
+        )
+        )
         val parentIds = mutableListOf<Long>()
         val replyIds = mutableListOf<Long>()
         val p = async {
@@ -119,9 +121,11 @@ interface BskyPostDao {
             }
         }
         awaitAll(p,r)
-        insertThread(BskyDbThread(
+        insertThread(
+            BskyDbThread(
             startUri = thread.post.uri.atUri, parentIds = parentIds, replyIds = replyIds
-        ))
+        )
+        )
     }
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)

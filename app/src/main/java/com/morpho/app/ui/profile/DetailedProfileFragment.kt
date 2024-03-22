@@ -1,4 +1,4 @@
-package morpho.app.ui.profile
+package com.morpho.app.ui.profile
 
 import android.annotation.SuppressLint
 import androidx.compose.animation.animateContentSize
@@ -59,19 +59,19 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.datetime.Instant
-import morpho.app.R
-import morpho.app.api.Did
-import morpho.app.api.Handle
-import morpho.app.components.ScreenBody
-import morpho.app.model.BskyLabel
-import morpho.app.model.DetailedProfile
-import morpho.app.model.Moment
-import morpho.app.screens.profile.ProfileTabs
-import morpho.app.ui.common.TopAppBarPreview
-import morpho.app.ui.elements.AvatarShape
-import morpho.app.ui.elements.OutlinedAvatar
-import morpho.app.ui.elements.RichTextElement
-import morpho.app.ui.theme.MorphoTheme
+import com.morpho.app.R
+import com.morpho.butterfly.Did
+import com.morpho.butterfly.Handle
+import com.morpho.app.components.ScreenBody
+import com.morpho.app.model.BskyLabel
+import com.morpho.app.model.DetailedProfile
+import com.morpho.app.model.Moment
+import com.morpho.app.screens.profile.ProfileTabs
+import com.morpho.app.ui.common.TopAppBarPreview
+import com.morpho.app.ui.elements.AvatarShape
+import com.morpho.app.ui.elements.OutlinedAvatar
+import com.morpho.app.ui.elements.RichTextElement
+import com.morpho.app.ui.theme.MorphoTheme
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable

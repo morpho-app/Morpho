@@ -1,4 +1,4 @@
-package morpho.app.util
+package com.morpho.app.util
 
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.encodeToString
@@ -27,3 +27,4 @@ fun <T : Any> KSerializer<T>.deserialize(string: String): T {
 fun <T : Any> KSerializer<T>.serialize(value: T): JsonElement {
     return json.parseToJsonElement(json.encodeToString(this, value))
 }
+

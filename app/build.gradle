@@ -13,11 +13,11 @@ plugins {
 }
 
 android {
-    namespace "morpho.app"
+    namespace "com.morpho.app"
     compileSdk 34
 
     defaultConfig {
-        applicationId "morpho.app"
+        applicationId "com.morpho.app"
         minSdk 24
         //noinspection OldTargetApi
         targetSdk 33
@@ -73,6 +73,7 @@ kotlin {
 dependencies {
     implementation libs.profileinstaller
     implementation libs.androidx.material3.android
+    implementation project(':butterfly')
     baselineProfile project(":baselineprofile")
     def room_version = "2.5.2"
 
@@ -89,8 +90,8 @@ dependencies {
     implementation "androidx.compose.ui:ui-text-android"
     implementation "androidx.compose.ui:ui-graphics"
     implementation "androidx.compose.ui:ui-tooling-preview"
-    implementation "androidx.compose.material3:material3"
-    implementation "androidx.compose.material:material"
+    implementation("androidx.compose.material3:material3")
+    implementation("androidx.compose.material:material")
 
     implementation libs.androidx.window
     implementation "androidx.compose.material3:material3-window-size-class:1.1.2"
@@ -210,6 +211,7 @@ dependencies {
     ksp("androidx.room:room-compiler:$room_version")
 
     implementation(libs.androidx.room.paging)
+
 
 
 
