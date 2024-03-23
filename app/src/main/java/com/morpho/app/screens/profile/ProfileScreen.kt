@@ -85,7 +85,7 @@ fun ProfileScreen(
         } else {
             if (mainViewModel.currentUser!= null) {
                 viewModel.getProfile(
-                    AtIdentifier(mainViewModel.currentUser!!.did.did),
+                    mainViewModel.currentUser!!.did,
                     {
                         profileUIState = ProfileUIState.Done
                         showLoadingScreen = false

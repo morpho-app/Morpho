@@ -126,7 +126,7 @@ fun NotificationsElement(
             ) {
                 NotificationAvatarList(
                     item = item,
-                    onClicked = { onAvatarClicked(AtIdentifier(it.did)) }
+                    onClicked = { onAvatarClicked(it) }
                 )
                 NotificationText(reason = item.reason, number = number, name = firstName, delta = delta)
                 if (expand && post != null) {

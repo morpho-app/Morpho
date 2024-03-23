@@ -17,6 +17,7 @@ public data class ProfileView(
   public val description: String? = null,
   public val avatar: String? = null,
   public val indexedAt: Timestamp? = null,
+  public val associated: ProfileAssociated? = null,
   public val viewer: ViewerState? = null,
   public val labels: ReadOnlyList<Label> = persistentListOf(),
 ) {

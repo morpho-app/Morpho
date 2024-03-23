@@ -73,7 +73,7 @@ class ProfileViewModel @Inject constructor(
 
     fun useCachedProfile(profile: DetailedProfile?) : Boolean {
         return if (profile != null) {
-            state = ProfileState(AtIdentifier(profile.did.did), profile, false)
+            state = ProfileState(profile.did, profile, false)
             true
         } else {
             false

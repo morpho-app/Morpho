@@ -168,7 +168,7 @@ class Butterfly(
                     uri = record.subject.uri
                     val like = Like(record.subject, timestamp)
                     CreateRecordRequest(
-                        repo = AtIdentifier(did.did),
+                        repo = did,
                         collection = record.type.collection,
                         record = json.encodeToJsonElement(value = like)
                     )
@@ -176,7 +176,7 @@ class Butterfly(
                 is RecordUnion.MakePost -> {
                     uri = AtUri("$did/${record.type.collection}/$timestamp")
                     CreateRecordRequest(
-                        repo = AtIdentifier(did.did),
+                        repo = did,
                         collection = record.type.collection,
                         record = json.encodeToJsonElement(value = record.post)
                     )
@@ -185,7 +185,7 @@ class Butterfly(
                     uri = record.subject.uri
                     val repost = Repost(record.subject, timestamp)
                     CreateRecordRequest(
-                        repo = AtIdentifier(did.did),
+                        repo = did,
                         collection = record.type.collection,
                         record = json.encodeToJsonElement(value = repost)
                     )
@@ -237,7 +237,7 @@ class Butterfly(
     private fun deleteRecord(type: RecordType, rkey: String) = CoroutineScope(Dispatchers.IO).launch {
         val did = user.auth?.did
         if (did != null) {
-            api.deleteRecord(DeleteRecordRequest(AtIdentifier(did.did), type.collection, rkey))
+            api.deleteRecord(DeleteRecordRequest(did, type.collection, rkey))
         }
     }
 

@@ -9,9 +9,10 @@ import kotlinx.serialization.cbor.ByteString
 import com.morpho.butterfly.Did
 import com.morpho.butterfly.model.ReadOnlyList
 import com.morpho.butterfly.model.Timestamp
+import kotlinx.serialization.ExperimentalSerializationApi
 
 @Serializable
-public data class SubscribeReposCommit(
+public data class SubscribeReposCommit @OptIn(ExperimentalSerializationApi::class) constructor(
   public val seq: Long,
   public val rebase: Boolean,
   public val tooBig: Boolean,

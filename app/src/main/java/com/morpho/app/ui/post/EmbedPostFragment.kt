@@ -94,7 +94,7 @@ fun EmbedPostFragment(
                         size = 20.dp,
                         //outlineColor = MaterialTheme.colorScheme.background,
                         onClicked = {
-                            onProfileClicked(AtIdentifier(post.author.did.did))
+                            onProfileClicked(post.author.did)
                         }
                     )
                     Text(
@@ -127,7 +127,7 @@ fun EmbedPostFragment(
                             .padding(top = 4.dp, start = 4.dp)
                             .weight(10.0F)
                             .alignByBaseline()
-                            .clickable { onProfileClicked(AtIdentifier(post.author.did.did)) },
+                            .clickable { onProfileClicked(post.author.did) },
                     )
                     Spacer(
                         modifier = Modifier
@@ -169,10 +169,10 @@ fun EmbedPostFragment(
                             }
                             is FacetType.Tag -> {}
                             is FacetType.UserDidMention -> {
-                                onProfileClicked(AtIdentifier(it.did.did))
+                                onProfileClicked(post.author.did)
                             }
                             is FacetType.UserHandleMention -> {
-                                onProfileClicked(AtIdentifier(it.handle.handle))
+                                onProfileClicked(it.handle)
                             }
                             null -> {
                                 onItemClicked(post.uri)

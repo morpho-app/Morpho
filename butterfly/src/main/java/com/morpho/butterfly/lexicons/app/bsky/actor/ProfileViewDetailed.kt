@@ -9,6 +9,7 @@ import com.morpho.butterfly.Did
 import com.morpho.butterfly.Handle
 import com.morpho.butterfly.model.ReadOnlyList
 import com.morpho.butterfly.model.Timestamp
+import kotlinx.serialization.SerialName
 
 @Serializable
 public data class ProfileViewDetailed(
@@ -21,6 +22,7 @@ public data class ProfileViewDetailed(
   public val followersCount: Long? = null,
   public val followsCount: Long? = null,
   public val postsCount: Long? = null,
+  public val associated: ProfileAssociated? = null,
   public val indexedAt: Timestamp? = null,
   public val viewer: ViewerState? = null,
   public val labels: ReadOnlyList<Label> = persistentListOf(),
@@ -34,3 +36,12 @@ public data class ProfileViewDetailed(
     }
   }
 }
+
+
+@Serializable
+@SerialName("app.bsky.actor.defs#profileAssociated")
+public data class ProfileAssociated(
+  val lists: Long? = null,
+  val feedGens: Long? = null,
+  val labeler: Boolean? = null,
+)

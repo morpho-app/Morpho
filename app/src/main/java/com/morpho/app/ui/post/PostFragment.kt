@@ -177,7 +177,7 @@ fun PostFragment(
                         modifier = Modifier
                             .size(45.dp),
                         outlineColor = MaterialTheme.colorScheme.background,
-                        onClicked = { onProfileClicked(AtIdentifier(post.author.did.did)) },
+                        onClicked = {  onProfileClicked(post.author.did) },
                         shape = AvatarShape.Corner
                     )
                 }
@@ -222,7 +222,7 @@ fun PostFragment(
                                     .size(30.dp),
                                 shape = AvatarShape.Rounded,
                                 outlineColor = MaterialTheme.colorScheme.background,
-                                onClicked = { onProfileClicked(AtIdentifier(post.author.did.did)) }
+                                onClicked = { onProfileClicked(post.author.did) }
                             )
                         }
                         Text(
@@ -255,7 +255,7 @@ fun PostFragment(
                                 .wrapContentWidth(Alignment.Start)
                                 .weight(10.0F)
                                 .alignByBaseline()
-                                .clickable { onProfileClicked(AtIdentifier(post.author.did.did)) },
+                                .clickable { onProfileClicked(post.author.did) },
 
                         )
 
@@ -304,10 +304,10 @@ fun PostFragment(
                                 }
                                 is FacetType.Tag -> {}
                                 is FacetType.UserDidMention -> {
-                                    onProfileClicked(AtIdentifier(it.did.did))
+                                    onProfileClicked(post.author.did)
                                 }
                                 is FacetType.UserHandleMention -> {
-                                    onProfileClicked(AtIdentifier(it.handle.handle))
+                                    onProfileClicked(it.handle)
                                 }
                                 null -> {
                                     onItemClicked(post.uri)
