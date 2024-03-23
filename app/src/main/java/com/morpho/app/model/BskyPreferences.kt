@@ -10,6 +10,9 @@ import androidx.room.PrimaryKey
 import androidx.room.Relation
 import app.bsky.actor.AdultContentPref
 import app.bsky.actor.GetPreferencesResponse
+import app.bsky.actor.HiddenPostsPref
+import app.bsky.actor.MutedWord
+import app.bsky.actor.MutedWordsPref
 import app.bsky.actor.PersonalDetailsPref
 import app.bsky.actor.PreferencesUnion
 import app.bsky.actor.SavedFeedsPref
@@ -25,6 +28,7 @@ import kotlinx.serialization.Serializable
 import com.morpho.butterfly.AtUri
 import com.morpho.butterfly.Butterfly
 import com.morpho.butterfly.Cid
+import com.morpho.butterfly.Did
 import com.morpho.butterfly.Language
 
 @Serializable
@@ -41,6 +45,9 @@ public data class BskyPreferences(
     public var mergeFeeds: Boolean = false,
     public val mutes: MutableList<BasicProfile> = mutableListOf(),
     public val listsMuted: MutableMap<AtUri, BskyList> = mutableMapOf(),
+    public var mutedWords: MutableList<MutedWord> = mutableListOf(),
+    public var hiddenPosts: MutableList<AtUri> = mutableListOf(),
+    public var labelers: MutableList<Did> = mutableListOf(),
 ) {
     suspend fun pullPrefs(api: Butterfly) = runCatching {
         val response = api.api.getPreferences().onFailure {
@@ -236,6 +243,11 @@ fun GetPreferencesResponse.toPreferences(prefs: BskyPreferences) : BskyPreferenc
       is PreferencesUnion.SavedFeedsPref -> prefs.savedFeeds = pref.value
       is PreferencesUnion.SkyFeedBuilderFeedsPref -> prefs.skyFeedBuilderFeeds = pref.value
       is PreferencesUnion.ThreadViewPref -> prefs.threadViewPrefs = pref.value
+      is PreferencesUnion.HiddenPostsPref -> prefs.hiddenPosts = pref.value.items.toMutableList()
+      is PreferencesUnion.LabelersPref -> prefs.labelers = pref.value.labelers.map { it.did }.toMutableList()
+      is PreferencesUnion.InterestsPref -> {}
+      is PreferencesUnion.MutedWordsPref -> prefs.mutedWords = pref.value.items.toMutableList()
+      else -> {}
     }
   }
   return prefs

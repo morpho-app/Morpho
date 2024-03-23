@@ -37,8 +37,7 @@ public sealed interface PreferencesUnion {
     public val `value`: app.bsky.actor.SavedFeedsPref,
   ) : PreferencesUnion
 
-  public class PersonalDetailsPrefSerializer : KSerializer<PersonalDetailsPref> by
-      valueClassSerializer()
+  public class PersonalDetailsPrefSerializer : KSerializer<PersonalDetailsPref> by valueClassSerializer()
 
   @Serializable(with = PersonalDetailsPrefSerializer::class)
   @JvmInline
@@ -48,8 +47,7 @@ public sealed interface PreferencesUnion {
   ) : PreferencesUnion
 
 
-  public class SkyFeedBuilderFeedsPrefSerializer : KSerializer<SkyFeedBuilderFeedsPref> by
-  valueClassSerializer()
+  public class SkyFeedBuilderFeedsPrefSerializer : KSerializer<SkyFeedBuilderFeedsPref> by valueClassSerializer()
 
   @Serializable(with = SkyFeedBuilderFeedsPrefSerializer::class)
   @JvmInline
@@ -67,13 +65,45 @@ public sealed interface PreferencesUnion {
     public val `value`: app.bsky.actor.FeedViewPref,
   ) : PreferencesUnion
 
-  public class ThreadViewPrefSerializer : KSerializer<ThreadViewPref> by valueClassSerializer()
+  public class MutedWordsPrefSerializer : KSerializer<MutedWordsPref> by valueClassSerializer()
 
+  @Serializable(with = MutedWordsPrefSerializer::class)
+  @JvmInline
+  @SerialName("app.bsky.actor.defs#mutedWordsPref")
+  public value class MutedWordsPref(
+    public val `value`: app.bsky.actor.MutedWordsPref,
+  ) : PreferencesUnion
+
+  public class ThreadViewPrefSerializer : KSerializer<ThreadViewPref> by valueClassSerializer()
   @Serializable(with = ThreadViewPrefSerializer::class)
   @JvmInline
   @SerialName("app.bsky.actor.defs#threadViewPref")
   public value class ThreadViewPref(
     public val `value`: app.bsky.actor.ThreadViewPref,
+  ) : PreferencesUnion
+
+  public class HiddenPostsPrefSerializer : KSerializer<HiddenPostsPref> by valueClassSerializer()
+  @Serializable(with = HiddenPostsPrefSerializer::class)
+  @JvmInline
+  @SerialName("app.bsky.actor.defs#hiddenPostsPref")
+  public value class HiddenPostsPref(
+    public val `value`: app.bsky.actor.HiddenPostsPref,
+  ) : PreferencesUnion
+
+  public class LabelersPrefSerializer : KSerializer<LabelersPref> by valueClassSerializer()
+  @Serializable(with = LabelersPrefSerializer::class)
+  @JvmInline
+  @SerialName("app.bsky.actor.defs#labelersPref")
+  public value class LabelersPref(
+    public val `value`: app.bsky.actor.LabelersPref,
+  ) : PreferencesUnion
+
+  public class InterestsPrefSerializer : KSerializer<InterestsPref> by valueClassSerializer()
+  @Serializable(with = InterestsPrefSerializer::class)
+  @JvmInline
+  @SerialName("app.bsky.actor.defs#interestsPref")
+  public value class InterestsPref(
+    public val `value`: app.bsky.actor.InterestsPref,
   ) : PreferencesUnion
 }
 

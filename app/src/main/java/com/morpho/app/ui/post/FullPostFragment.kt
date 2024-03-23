@@ -124,13 +124,13 @@ fun FullPostFragment(
                         .size(55.dp)
                         .align(Alignment.CenterVertically),
                     outlineColor = MaterialTheme.colorScheme.background,
-                    onClicked = { onProfileClicked(AtIdentifier(post.author.did.did)) }
+                    onClicked = { onProfileClicked(post.author.did) }
                 )
                 SelectionContainer(
                     modifier = Modifier
                         .align(Alignment.CenterVertically)
                         .padding(start = 16.dp)
-                        .clickable { onProfileClicked(AtIdentifier(post.author.did.did)) },
+                        .clickable { onProfileClicked(post.author.did) },
                 ) {
                     Text(
                         text = buildAnnotatedString {
@@ -204,11 +204,11 @@ fun FullPostFragment(
                             onItemClicked(post.uri)
                         }
                         is FacetType.UserDidMention -> {
-                            onProfileClicked(AtIdentifier(it.did.did))
+                            onProfileClicked(post.author.did)
                         }
 
                         is FacetType.UserHandleMention -> {
-                            onProfileClicked(AtIdentifier(it.handle.handle))
+                            onProfileClicked(it.handle)
                         }
 
                         null -> {

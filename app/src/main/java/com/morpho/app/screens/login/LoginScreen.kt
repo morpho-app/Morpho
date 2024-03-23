@@ -103,7 +103,7 @@ fun LoginScreen(
                                     {
                                         runBlocking {
                                             mainViewModel.currentUser = mainViewModel.butterfly.api.getProfile(
-                                                GetProfileQuery(AtIdentifier(it.did.did))
+                                                GetProfileQuery(it.did)
                                             ).getOrNull()?.toProfile()
                                             mainViewModel.userPreferences = mainViewModel.butterfly.getUserPreferences()
                                                 .getOrNull()?.toPreferences()

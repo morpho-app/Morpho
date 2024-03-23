@@ -114,7 +114,7 @@ class MainActivity : ComponentActivity() {
                                             "Using cached credentials for ${credentials.username}, going to home screen"
                                         )
                                         val profile = viewModel.butterfly.api.getProfile(
-                                            GetProfileQuery(AtIdentifier(credentials.username.handle))
+                                            GetProfileQuery(credentials.username)
                                         )
                                         loggedIn = true
                                         viewModel.currentUser = profile.getOrThrow().toProfile()
@@ -126,7 +126,7 @@ class MainActivity : ComponentActivity() {
                             Log.d(TAG, "Preferences load successful: $it, going to home screen")
                             val profile = viewModel.butterfly.api.getProfile(
                                 GetProfileQuery(
-                                    AtIdentifier(authInfo.did.did)
+                                    authInfo.did
                                 )
                             )
                             loggedIn = true
@@ -151,7 +151,7 @@ class MainActivity : ComponentActivity() {
                                 )
                                 val profile = viewModel.butterfly.api.getProfile(
                                     GetProfileQuery(
-                                        AtIdentifier(credentials.username.handle)
+                                        credentials.username
                                     )
                                 )
                                 loggedIn = true

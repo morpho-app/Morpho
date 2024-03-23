@@ -9,6 +9,8 @@ public enum class Visibility {
   WARN,
   @SerialName("hide")
   HIDE,
+  @SerialName("ignore")
+  IGNORE,
 }
 
 public enum class Sort {

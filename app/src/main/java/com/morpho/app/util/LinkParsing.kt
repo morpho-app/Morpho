@@ -9,10 +9,11 @@ import com.morpho.butterfly.AtIdentifier
 import com.morpho.butterfly.AtUri
 import com.morpho.butterfly.Did
 import com.morpho.app.screens.destinations.ProfileScreenDestination
+import com.morpho.butterfly.Handle
 
 fun linkVisit(string: String, ctx: Context, navigator: DestinationsNavigator) {
     if(string.startsWith("@")) {
-        navigator.navigate(ProfileScreenDestination(AtIdentifier(string.removePrefix("@"))))
+        navigator.navigate(ProfileScreenDestination(Handle(string.removePrefix("@"))))
     } else if(string.startsWith("https://bsky.app/")
         || string.startsWith("https://staging.bsky.app/")
     ) {

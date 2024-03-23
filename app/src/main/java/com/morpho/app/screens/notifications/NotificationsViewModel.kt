@@ -5,6 +5,7 @@ import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.util.fastMap
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.viewModelScope
 import app.bsky.feed.GetPostsQuery
@@ -26,6 +27,7 @@ import com.morpho.butterfly.AtUri
 import com.morpho.app.butterfly
 import com.morpho.app.base.BaseViewModel
 import com.morpho.app.model.NotificationsList
+import com.morpho.app.model.toBskyNotification
 import com.morpho.app.model.toPost
 import javax.inject.Inject
 
@@ -86,9 +88,10 @@ class NotificationsViewModel @Inject constructor(
                     cursor = cursor,
                 )
             ).onSuccess { response ->
+                Log.v("Notifications", response.toString())
                 if (cursor == null) {
                     _notifications.update {
-                        NotificationsList(it.notifications)
+                        NotificationsList(response.notifications.fastMap { it.toBskyNotification() })
                     }
                 } else {
                     _notifications.update { old ->
@@ -97,7 +100,7 @@ class NotificationsViewModel @Inject constructor(
                 }
                 state = state.copy(isLoading = false,
                     cursor = response.cursor)
-            }
+            }.onFailure {  }
         }
         _isRefreshing.emit(false)
     }

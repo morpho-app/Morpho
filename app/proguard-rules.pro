@@ -24,21 +24,28 @@
 # If you have any, replace classes with those containing named companion objects.
 
 -keepattributes *Annotation*, InnerClasses
--keep,includedescriptorclasses class morpho.app.**$$serializer { *; } # <-- change package name to your app's
+-keep,includedescriptorclasses class com.morpho.app.**$$serializer { *; } # <-- change package name to your app's
 -keepclassmembers class morpho.app.** { # <-- change package name to your app's
     *** Companion;
 }
--keepclasseswithmembers class morpho.app.** { # <-- change package name to your app's
+-keepclasseswithmembers class com.morpho.app.** { # <-- change package name to your app's
     kotlinx.serialization.KSerializer serializer(...);
 }
+
+-keep,includedescriptorclasses class com.morpho.butterfly.**$$serializer { *; } # <-- change package name to your app's
+-keepclassmembers class morpho.butterfly.** { # <-- change package name to your app's
+    *** Companion;
+}
+-keepclasseswithmembers class com.morpho.butterfly.** { # <-- change package name to your app's
+    kotlinx.serialization.KSerializer serializer(...);
+}
+
 
 -keep,includedescriptorclasses class app.bsky.**$$serializer { *; } # <-- change package name to your app's
 -keepclassmembers class app.bsky.** { # <-- change package name to your app's
     *** Companion;
 }
--keepclasseswithmembers class app.bsky.nimbus.** { # <-- change package name to your app's
-    kotlinx.serialization.KSerializer serializer(...);
-}
+
 -keep,includedescriptorclasses class com.atproto.**$$serializer { *; } # <-- change package name to your app's
 -keepclassmembers class com.atproto.** { # <-- change package name to your app's
     *** Companion;
