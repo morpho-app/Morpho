@@ -229,9 +229,6 @@ fun NotificationsView(
                 }
                 items(
                     count = notifications.notificationsList.size,
-                    key = {
-                        notifications.notificationsList[it].hashCode()
-                    },
                     contentType = {
                         notifications.notificationsList[it]
                     }

@@ -13,7 +13,12 @@ import com.morpho.butterfly.Handle
 
 fun linkVisit(string: String, ctx: Context, navigator: DestinationsNavigator) {
     if(string.startsWith("@")) {
-        navigator.navigate(ProfileScreenDestination(Handle(string.removePrefix("@"))))
+        if(string.startsWith("@did")) {
+            navigator.navigate(ProfileScreenDestination(Did(string.removePrefix("@"))))
+        } else {
+            navigator.navigate(ProfileScreenDestination(Handle(string.removePrefix("@"))))
+        }
+
     } else if(string.startsWith("https://bsky.app/")
         || string.startsWith("https://staging.bsky.app/")
     ) {
