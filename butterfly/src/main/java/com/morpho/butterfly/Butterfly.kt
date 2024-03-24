@@ -45,8 +45,13 @@ import kotlinx.datetime.Clock
 import kotlinx.serialization.json.encodeToJsonElement
 import okio.FileSystem
 import okio.Path.Companion.toPath
+import io.github.oshai.kotlinlogging.KotlinLogging
 
 private const val TAG = "butterfly"
+
+private val logger = KotlinLogging.logger {}
+
+
 
 class Butterfly(
     private val relay: RelayRepository,
@@ -61,7 +66,7 @@ class Butterfly(
 
         install(Logging) {
             logger = Logger.DEFAULT
-            level = LogLevel.HEADERS
+            level = LogLevel.ALL
         }
 
         install(HttpCache) {
@@ -81,8 +86,12 @@ class Butterfly(
         install(Auth) {
             bearer {
                 loadTokens {
-                    if (user.auth != null) authCache.add(user.auth!!.toTokens())
-                    authCache.last()
+                    if (user.auth != null) {
+                        authCache.add(user.auth!!.toTokens())
+                        authCache.last()
+                    } else {
+                        BearerTokens("","")
+                    }
                 }
 
                 refreshTokens {
@@ -137,10 +146,9 @@ class Butterfly(
     }
 
 
-    suspend fun makeLoginRequest(credentials: Credentials): Result<AuthInfo> = runCatching {
+    suspend fun makeLoginRequest(credentials: Credentials): Result<AuthInfo> {
         return withContext(Dispatchers.IO) {
-            val request = CreateSessionRequest(credentials.username.handle, credentials.password)
-            val response = api.createSession(request).map { response ->
+            api.createSession(CreateSessionRequest(credentials.username.handle, credentials.password)).map { response ->
                 AuthInfo(
                     accessJwt = response.accessJwt,
                     refreshJwt = response.refreshJwt,
@@ -148,10 +156,13 @@ class Butterfly(
                     did = response.did,
                 )
             }
-            response.onSuccess {
-                user.auth = response.getOrThrow()
+            .onSuccess {
+                logger.debug { it.toString() }
+                user.auth = it
                 user.credentials = credentials
 
+            }.onFailure {
+                logger.debug { it.toString() }
             }
         }
     }

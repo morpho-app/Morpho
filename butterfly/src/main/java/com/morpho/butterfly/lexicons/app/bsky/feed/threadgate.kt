@@ -47,8 +47,8 @@ public data class Threadgate(
   public val createdAt: Timestamp,
 ) {
   init {
-    require(allow == null || allow.count() <= 5) {
-      "allow.count() must be <= 5, but was ${allow?.count()}"
+    require(allow.count() <= 5) {
+      "allow.count() must be <= 5, but was ${allow.count()}"
     }
   }
 }

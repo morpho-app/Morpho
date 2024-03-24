@@ -6,6 +6,8 @@ import androidx.room.Fts4
 import app.bsky.feed.FeedViewPost
 import app.bsky.feed.Post
 import app.bsky.feed.PostView
+import app.bsky.feed.ThreadViewPost
+import app.bsky.feed.ThreadViewPostParentUnion
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.serialization.Serializable
@@ -14,6 +16,7 @@ import com.morpho.butterfly.Cid
 import com.morpho.butterfly.Language
 import com.morpho.app.util.deserialize
 import com.morpho.app.util.mapImmutable
+import okhttp3.internal.toImmutableList
 
 
 enum class PostType {
@@ -107,6 +110,34 @@ fun PostView.toPost(): BskyPost {
         reply = null,
         reason = null
     )
+}
+
+fun ThreadViewPost.toPost() : BskyPost {
+    val replyRef = when(parent) {
+        is ThreadViewPostParentUnion.BlockedPost -> null
+        is ThreadViewPostParentUnion.NotFoundPost -> null
+        is ThreadViewPostParentUnion.ThreadViewPost -> {
+            val root = generateSequence(parent) { parentPost ->
+                when (parentPost) {
+                    is ThreadViewPostParentUnion.BlockedPost -> null
+                    is ThreadViewPostParentUnion.NotFoundPost -> null
+                    is ThreadViewPostParentUnion.ThreadViewPost -> parentPost.value.parent
+                }
+            }.last { it is ThreadViewPostParentUnion.ThreadViewPost }
+            if (root is ThreadViewPostParentUnion.ThreadViewPost) {
+                BskyPostReply(root.value.toPost(), (parent as ThreadViewPostParentUnion.ThreadViewPost).value.toPost())
+            } else {
+                BskyPostReply(
+                    (parent as ThreadViewPostParentUnion.ThreadViewPost).value.toPost(),
+                    (parent as ThreadViewPostParentUnion.ThreadViewPost).value.toPost(),
+                )
+            }
+
+
+        }
+        null -> null
+    }
+    return post.toPost(replyRef, null)
 }
 
 fun PostView.toPost(

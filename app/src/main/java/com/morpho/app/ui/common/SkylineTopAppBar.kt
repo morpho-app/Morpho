@@ -2,8 +2,10 @@ package com.morpho.app.ui.common
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CornerSize
@@ -29,6 +31,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.zIndex
 import com.morpho.app.screens.skyline.FeedTab
 import kotlin.math.min
 
@@ -39,22 +42,22 @@ fun SkylineTopBar(
     modifier: Modifier = Modifier,
     tabIndex: Int = 0,
     onChanged: (Int) -> Unit = {},
-    mainButton: @Composable() ((()->Unit) -> Unit)? = null,
+    mainButton: @Composable ((()->Unit) -> Unit)? = null,
     onButtonClicked: () -> Unit = {}
 ) {
     var selectedTab by rememberSaveable { mutableIntStateOf(tabIndex) }
     TopAppBar(
         title = {},
+        modifier = Modifier.fillMaxWidth(),
         colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
-        actions = {
-
+        navigationIcon = {
             Surface(
-                tonalElevation = 3.dp,
+                tonalElevation = 0.dp,
                 shadowElevation = 2.dp,
-                modifier = Modifier.offset(y = (-5).dp),
+                modifier = Modifier.offset(y = (-5).dp, x= (-5).dp),
                 shape = MaterialTheme.shapes.small.copy(
                     bottomStart = CornerSize(0.dp),
-                    //topStart = CornerSize(0.dp),
+                    topStart = CornerSize(0.dp),
                     topEnd = CornerSize(0.dp),
                 )
             ) {
@@ -70,18 +73,23 @@ fun SkylineTopBar(
                             imageVector = Icons.Default.Menu,
                             contentDescription = "Menu",
                             modifier = Modifier
-                                .padding(horizontal = 10.dp)
-                                .size(30.dp)
+                                .padding(start = 10.dp)
+                                .size(55.dp)
                         )
                     }
                 }
             }
+        },
+        actions = {
+            val padding = if (mainButton != null) {
+                Modifier.padding(start = 50.dp, top = 0.dp, bottom = 0.dp, end = 0.dp)
+            } else {
+                Modifier.padding(start = 20.dp, top = 0.dp, bottom = 0.dp, end = 0.dp)
+            }
 
             SecondaryScrollableTabRow(
                 selectedTabIndex = min(selectedTab, tabList.lastIndex),
-                modifier = Modifier
-                    .padding(0.dp)
-                    .offset(y = (-8).dp),
+                modifier = modifier.offset(y = (-8).dp, x = 4.dp ),
                 edgePadding = 10.dp,
                 //divider = {}
             ) {

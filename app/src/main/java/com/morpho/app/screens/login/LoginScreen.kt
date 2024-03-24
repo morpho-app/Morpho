@@ -1,5 +1,6 @@
 package com.morpho.app.screens.login
 
+import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -29,8 +30,10 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.util.fastForEachIndexed
 import androidx.hilt.navigation.compose.hiltViewModel
 import app.bsky.actor.GetProfileQuery
+import app.bsky.feed.GetFeedGeneratorQuery
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 
@@ -47,9 +50,12 @@ import com.morpho.app.model.toProfile
 import com.morpho.app.screens.NavGraphs
 import com.morpho.app.screens.destinations.LoginScreenDestination
 import com.morpho.app.screens.destinations.SkylineScreenDestination
+import com.morpho.app.screens.skyline.FeedTab
+import com.morpho.butterfly.AtUri
 import com.ramcosta.composedestinations.navigation.popUpTo
 import com.ramcosta.composedestinations.spec.DirectionDestinationSpec
 import com.ramcosta.composedestinations.utils.startDestination
+import kotlinx.coroutines.joinAll
 
 @Destination
 @Composable
@@ -93,22 +99,44 @@ fun LoginScreen(
                             password,
                             onLoginClick = {
                                 viewModel.login(
-                                    mainViewModel.butterfly,
-                                    Credentials(
+                                    credentials = Credentials(
                                         email,
                                         Handle(handle),
                                         password,
                                         null
                                     ),
-                                    {
+                                    onSuccess = {
                                         runBlocking {
-                                            mainViewModel.currentUser = mainViewModel.butterfly.api.getProfile(
-                                                GetProfileQuery(it.did)
-                                            ).getOrNull()?.toProfile()
-                                            mainViewModel.userPreferences = mainViewModel.butterfly.getUserPreferences()
-                                                .getOrNull()?.toPreferences()
-                                        }
+                                            mainViewModel.pinnedFeeds.clear()
+                                            mainViewModel.pinnedFeeds.add(FeedTab("Home", AtUri("__home__")))
+                                            val tabs: MutableMap<Int, FeedTab> = mutableMapOf()
+                                            launch {
+                                                mainViewModel.currentUser = mainViewModel.butterfly.api.getProfile(
+                                                    GetProfileQuery(it.did)
+                                                ).getOrNull()?.toProfile()
+                                            }
+                                            launch {
+                                                mainViewModel.userPreferences = mainViewModel.butterfly.getUserPreferences()
+                                                    .getOrNull()?.toPreferences()
+                                            }.invokeOnCompletion {
+                                                launch {
+                                                    mainViewModel.userPreferences?.savedFeeds?.pinned?.fastForEachIndexed { index, feedUri ->
+                                                        launch {
+                                                            mainViewModel.butterfly.api.getFeedGenerator(
+                                                                GetFeedGeneratorQuery(feedUri)
+                                                            ).onFailure {
+                                                                Log.e("Skyline", "Error getting feed info: $it")
+                                                            }.onSuccess {
+                                                                tabs[index+1] = FeedTab(it.view.displayName, it.view.uri)
+                                                            }
+                                                        }
+                                                    }
+                                                }.invokeOnCompletion {
+                                                    tabs.toSortedMap().forEach { entry-> mainViewModel.pinnedFeeds.add(entry.value) }
+                                                }
+                                            }
 
+                                        }
 
                                         navigator.navigate(
                                             SkylineScreenDestination()
@@ -120,7 +148,7 @@ fun LoginScreen(
                                             restoreState = true
                                         }
                                     },
-                                    {}
+                                    onFailure = {}
                                 )
                             },
                             onServiceChange = { service = it },
@@ -141,7 +169,6 @@ fun LoginScreen(
             }
             is LoginState.SigningIn -> {
                 viewModel.login(
-                    mainViewModel.butterfly,
                     (loginState as LoginState.SigningIn).credentials,
                     {
                         navigator.navigate(

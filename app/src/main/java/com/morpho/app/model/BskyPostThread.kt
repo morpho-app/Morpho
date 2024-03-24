@@ -178,7 +178,7 @@ sealed interface ThreadPost {
 
 fun ThreadViewPost.toThread(): BskyPostThread {
     return BskyPostThread(
-        post = post.toPost(),
+        post = toPost(),
         _parents = generateSequence(parent) { parentPost ->
             when (parentPost) {
                 is ThreadViewPostParentUnion.BlockedPost -> null
@@ -195,7 +195,7 @@ fun ThreadViewPost.toThread(): BskyPostThread {
 
 fun ThreadViewPostParentUnion.toThreadPost(): ThreadPost = when (this) {
     is ThreadViewPostParentUnion.ThreadViewPost -> ViewablePost(
-        post = value.post.toPost(),
+        post = value.toPost(),
         replies = value.replies.mapImmutable { it.toThreadPost() }
     )
     is ThreadViewPostParentUnion.NotFoundPost -> NotFoundPost(value.uri)
@@ -204,7 +204,7 @@ fun ThreadViewPostParentUnion.toThreadPost(): ThreadPost = when (this) {
 
 fun ThreadViewPostReplieUnion.toThreadPost(): ThreadPost = when (this) {
     is ThreadViewPostReplieUnion.ThreadViewPost -> ViewablePost(
-        post = value.post.toPost(),
+        post = value.toPost(),
         replies = value.replies.mapImmutable { it.toThreadPost() },
     )
     is ThreadViewPostReplieUnion.NotFoundPost -> NotFoundPost(value.uri)

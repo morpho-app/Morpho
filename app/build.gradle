@@ -13,16 +13,17 @@ plugins {
 }
 
 android {
+
     namespace "com.morpho.app"
     compileSdk 34
 
     defaultConfig {
         applicationId "com.morpho.app"
         minSdk 24
+        targetSdk 34
         //noinspection OldTargetApi
-        targetSdk 33
         versionCode 1
-        versionName "1.0"
+        versionName '0.1.0'
 
         multiDexEnabled true
 
@@ -30,12 +31,15 @@ android {
         vectorDrawables {
             useSupportLibrary true
         }
+        versionNameSuffix '-alpha'
+        proguardFiles 'proguard-rules.pro'
     }
 
     buildTypes {
         debug {
             minifyEnabled false
             proguardFiles getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"
+            multiDexEnabled true
         }
         release {
             minifyEnabled true
@@ -47,6 +51,10 @@ android {
             signingConfig signingConfigs.debug
             matchingFallbacks = ["release"]
             debuggable false
+        }
+        nonMinifiedRelease {
+            multiDexEnabled true
+            signingConfig signingConfigs.debug
         }
     }
     compileOptions {
@@ -85,7 +93,7 @@ dependencies {
     implementation libs.androidx.core
     implementation libs.androidx.lifecycle.lifecycle.runtime.ktx
     implementation libs.androidx.activity.compose
-    implementation platform('androidx.compose:compose-bom:2023.10.01')
+    implementation platform('androidx.compose:compose-bom:2024.02.02')
     implementation "androidx.compose.ui:ui"
     implementation "androidx.compose.ui:ui-text-android"
     implementation "androidx.compose.ui:ui-graphics"
@@ -93,11 +101,11 @@ dependencies {
     implementation("androidx.compose.material3:material3")
     implementation("androidx.compose.material:material")
 
-    implementation libs.androidx.window
-    implementation "androidx.compose.material3:material3-window-size-class:1.1.2"
+    implementation(libs.androidx.window)
+    implementation(libs.androidx.material3.window.sizeclass)
 
     implementation(libs.androidx.palette.ktx)
-    implementation libs.androidx.datastore.core
+    implementation(libs.androidx.datastore.core)
     implementation libs.androidx.datastore.preferences.core
     implementation libs.androidx.material.icons.extended.v160alpha06
     implementation libs.androidx.paging.compose
@@ -111,7 +119,7 @@ dependencies {
     testImplementation libs.junit
     androidTestImplementation libs.androidx.junit
     androidTestImplementation libs.androidx.espresso.core
-    androidTestImplementation platform("androidx.compose:compose-bom:2023.09.01")
+    androidTestImplementation(platform(libs.compose.bom))
     androidTestImplementation "androidx.compose.ui:ui-test-junit4"
     debugImplementation "androidx.compose.ui:ui-tooling"
     debugImplementation "androidx.compose.ui:ui-test-manifest"

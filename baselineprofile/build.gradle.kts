@@ -8,6 +8,12 @@ plugins {
 }
 
 android {
+    buildTypes {
+        create("benchmarkBenchmark") {
+        }
+        create("nonMinifiedBenchmark") {
+        }
+    }
     namespace = "morpho.app.baselineprofile"
     compileSdk = 34
 

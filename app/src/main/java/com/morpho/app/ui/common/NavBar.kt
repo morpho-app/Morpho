@@ -287,28 +287,12 @@ fun MorphoBottomNavBar(
                     }
                 },
                 icon = {
-                    if (profilePic != null) {
-                        profilePic.invoke(selectedTab == 4) {
-                            if (navController.isRouteOnBackStack(MyProfileScreenDestination)) {
-                                // When we click again on a bottom bar item and it was already selected
-                                // we want to pop the back stack until the initial destination of this bottom bar item
-                                navController.popBackStack(MyProfileScreenDestination, false)
-                            } else {
-                                navController.navigate(MyProfileScreenDestination) {
-                                    popUpTo(NavGraphs.root) {
-                                        saveState = true
-                                    }
-                                    launchSingleTop = true
-                                    restoreState = true
-                                }
-                            }
-                        }
-                    } else {
-                        Icon(
-                            imageVector = Icons.Outlined.AccountCircle,
-                            contentDescription = "Profile Button"
-                        )
-                    }
+
+                    Icon(
+                        imageVector = Icons.Outlined.AccountCircle,
+                        contentDescription = "Profile Button"
+                    )
+
                 },
                 unselectedContentColor = unselectedColor,
             )

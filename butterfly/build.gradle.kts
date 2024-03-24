@@ -1,6 +1,7 @@
 plugins {
     id("java-library")
     alias(libs.plugins.jetbrainsKotlinJvm)
+    id("kotlinx-serialization")
     id("org.jetbrains.kotlin.plugin.serialization")
 }
 
@@ -11,7 +12,8 @@ java {
 
 dependencies {
     implementation(libs.ktor.logging)
-
+    implementation(libs.slf4j.api)
+    implementation(libs.oshai.kotlin.logging.jvm)
     implementation(libs.kotlin.reflect)
     implementation(libs.okio)
     implementation(libs.ktor.cio)

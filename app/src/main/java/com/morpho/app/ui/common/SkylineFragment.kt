@@ -1,7 +1,6 @@
 package com.morpho.app.ui.common
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -34,7 +33,6 @@ import androidx.compose.material.pullrefresh.pullRefresh
 import androidx.compose.material.pullrefresh.rememberPullRefreshState
 import androidx.compose.material3.Badge
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -77,9 +75,7 @@ import com.morpho.app.ui.theme.MorphoTheme
 typealias OnPostClicked = (AtUri) -> Unit
 
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class,
-    ExperimentalMaterialApi::class
-)
+@OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun SkylineFragment (
     postFlow: StateFlow<Skyline>,
@@ -208,7 +204,6 @@ fun SkylineFragment (
                     when(it) {
                         is SkylineItem.PostItem -> SkylineItem.PostItem::class
                         is SkylineItem.ThreadItem -> SkylineItem.ThreadItem::class
-                        else -> {}
                     }
                 }
             ) {item ->
@@ -244,8 +239,6 @@ fun SkylineFragment (
                             onLikeClicked = onLikeClicked,
                         )
                     }
-
-                    else -> {}
                 }
             }
         }

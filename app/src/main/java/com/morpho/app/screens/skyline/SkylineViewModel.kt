@@ -78,7 +78,7 @@ class SkylineViewModel @Inject constructor(
                             }
                         }
                 }
-            } else if (tab.uri.atUri != "__end__") {
+            } else {
                 launch(Dispatchers.IO) {
                     apiProvider.api.getFeed(GetFeedQuery(limit = 1, cursor = null, feed = tab.uri))
                         .onSuccess { response ->
@@ -112,21 +112,21 @@ class SkylineViewModel @Inject constructor(
             .onFailure {
                 Log.e(TAG, "Load Err $it")
             }
-            .onSuccess {
+            .onSuccess { response ->
                 val tuners = mutableListOf<TunerFunction>()
                 tuners.add { posts -> filterByPrefs(posts, prefs, follows.fastMap { it.did }) }
 
-                val newPosts = it.feed.toBskyPostList().tune(tuners)
+                val newPosts = response.feed.toBskyPostList().tune(tuners)
 
 
                 if (cursor != null) {
-                    Log.v(TAG, "UpdatePosts:, ${it.feed}")
-                    _skylinePosts.update { skyline -> Skyline.concat(skyline, Skyline.collectThreads(apiProvider,it.cursor,newPosts).await()) }//Skyline.collectThreads(apiProvider, result.response.cursor, newPosts).await()) }
+                    Log.v(TAG, "UpdatePosts:, ${response.feed}")
+                    _skylinePosts.update { skyline -> Skyline.concat(skyline, Skyline.collectThreads(apiProvider,response.cursor,newPosts).await()) }//Skyline.collectThreads(apiProvider, result.response.cursor, newPosts).await()) }
                     //_skylinePosts.update { Skyline.collectThreads(apiProvider,result.response.cursor,newPosts).await() }
                 } else {
-                    Log.v(TAG,"Posts: ${it.feed}")
+                    Log.v(TAG,"Posts: ${response.feed}")
                     //_skylinePosts.update { Skyline.from(newPosts, result.response.cursor) }
-                    _skylinePosts.emit(Skyline.collectThreads(apiProvider,it.cursor,newPosts).await())
+                    _skylinePosts.emit(Skyline.collectThreads(apiProvider,response.cursor,newPosts).await())
                 }
             }
     }
@@ -141,14 +141,14 @@ class SkylineViewModel @Inject constructor(
             }
         }.onFailure {
             Log.e(TAG, "Feed Load Err $it")
-        }.onSuccess {
-            val newPosts = Skyline.from(it.feed.toBskyPostList(), it.cursor)
-            if (it.feed.isNotEmpty() ){
+        }.onSuccess { response ->
+            val newPosts = Skyline.from(response.feed.toBskyPostList(), response.cursor)
+            if (response.feed.isNotEmpty() ){
                 if (cursor != null || feedQuery.cursor != null) {
-                    Log.v(TAG, "Update Feed Posts:, ${it.feed}")
+                    Log.v(TAG, "Update Feed Posts:, ${response.feed}")
                     feedPosts[feedQuery.feed]?.update { Skyline.concat(it, newPosts) }
                 } else {
-                    Log.v(TAG,"Feed Posts: ${it.feed}")
+                    Log.v(TAG,"Feed Posts: ${response.feed}")
                     if (feedPosts.containsKey(feedQuery.feed)) {
                         feedPosts[feedQuery.feed]?.emit(newPosts)
                     }

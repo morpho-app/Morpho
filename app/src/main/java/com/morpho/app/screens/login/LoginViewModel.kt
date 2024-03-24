@@ -7,6 +7,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.viewModelScope
+import com.morpho.app.MorphoApplication
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import com.morpho.butterfly.Butterfly
@@ -14,6 +15,7 @@ import com.morpho.butterfly.auth.AuthInfo
 import com.morpho.butterfly.auth.Credentials
 import com.morpho.butterfly.auth.ServerInfo
 import com.morpho.app.base.BaseViewModel
+import com.morpho.app.butterfly
 import javax.inject.Inject
 
 enum class LoginScreenMode {
@@ -63,19 +65,20 @@ class LoginViewModel @Inject constructor(
     app: Application,
 ) : BaseViewModel(app), DefaultLifecycleObserver {
 
+
     var state by mutableStateOf(LoginUIState())
         private set
 
 
 
     fun login(
-        apiProvider: Butterfly,
         credentials: Credentials,
         onSuccess: (AuthInfo) -> Unit,
         onFailure: (Throwable) -> Unit
     ) = viewModelScope.launch {
-        apiProvider.makeLoginRequest(credentials).onFailure {
-                Log.e("Login error", it.toString())
+        Log.d("Login", credentials.toString())
+        getApplication<MorphoApplication>().butterfly.makeLoginRequest(credentials).onFailure {
+                Log.e("Login error", "${it.message}\n ${it.stackTrace}")
                 state.state = LoginState.ShowingError(
                     mode = state.state.mode,
                     serverInfo = state.state.serverInfo,

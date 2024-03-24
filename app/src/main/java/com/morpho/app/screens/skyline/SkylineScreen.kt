@@ -1,7 +1,9 @@
 package com.morpho.app.screens.skyline
 
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -196,7 +198,9 @@ fun SkylineView(
     ScreenBody(
         modifier = Modifier,
         topContent = {
-            SkylineTopBar(pinnedFeeds, tabIndex =  selectedTab,
+            SkylineTopBar(pinnedFeeds,
+                modifier = Modifier.padding(start = 50.dp, top = 0.dp, bottom = 0.dp, end = 0.dp),
+                tabIndex =  selectedTab,
                 onChanged = { onTabChanged(it) },
                 mainButton = mainButton,
                 onButtonClicked = {

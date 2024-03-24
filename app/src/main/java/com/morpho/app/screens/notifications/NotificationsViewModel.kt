@@ -8,6 +8,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.util.fastMap
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.viewModelScope
+import app.bsky.feed.GetPostThreadQuery
+import app.bsky.feed.GetPostThreadResponseThreadUnion
 import app.bsky.feed.GetPostsQuery
 import app.bsky.notification.GetUnreadCountQuery
 import app.bsky.notification.ListNotificationsQuery
@@ -114,7 +116,17 @@ class NotificationsViewModel @Inject constructor(
     }
 
     suspend fun getPost(uri: AtUri) = viewModelScope.async(Dispatchers.IO) {
-        return@async getApplication<MorphoApplication>().butterfly.api.getPosts(GetPostsQuery(persistentListOf(uri))).getOrNull()?.posts?.first()?.toPost()
+        //return@async getApplication<MorphoApplication>().butterfly.api.getPosts(GetPostsQuery(persistentListOf(uri))).getOrNull()?.posts?.first()?.toPost()
+
+        return@async when (
+            val response = getApplication<MorphoApplication>().butterfly.api.getPostThread(
+                GetPostThreadQuery(uri, 1)
+            ).getOrNull()?.thread
+        ) {
+            is GetPostThreadResponseThreadUnion.ThreadViewPost -> response.value.toPost()
+            else -> null
+        }
+
     }
 }
 

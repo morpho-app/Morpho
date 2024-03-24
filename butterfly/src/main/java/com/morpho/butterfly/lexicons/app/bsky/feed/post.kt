@@ -101,14 +101,14 @@ public data class Post(
     require(text.count() <= 3_000) {
       "text.count() must be <= 3_000, but was ${text.count()}"
     }
-    require(langs == null || langs.count() <= 3) {
-      "langs.count() must be <= 3, but was ${langs?.count()}"
+    require(langs.count() <= 3) {
+      "langs.count() must be <= 3, but was ${langs.count()}"
     }
-    require(tags == null || tags.count() <= 8) {
-      "tags.count() must be <= 8, but was ${tags?.count()}"
+    require(tags.count() <= 8) {
+      "tags.count() must be <= 8, but was ${tags.count()}"
     }
-    require(tags == null || tags.count() <= 640) {
-      "tags.count() must be <= 640, but was ${tags?.count()}"
+    require(tags.count() <= 640) {
+      "tags.count() must be <= 640, but was ${tags.count()}"
     }
   }
 }

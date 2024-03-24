@@ -69,6 +69,7 @@ fun PostThreadScreen(
             topContent = {
                 SkylineTopBar(
                     tabList = mainViewModel.pinnedFeeds,
+                    modifier = Modifier.padding(start = 43.dp, top = 0.dp, bottom = 0.dp, end = 0.dp),
                     mainButton = {
                         IconButton(onClick = { it() },
                             modifier = Modifier
@@ -78,7 +79,7 @@ fun PostThreadScreen(
                                 contentDescription = "Back",
                                 modifier = Modifier
                                     .padding(horizontal = 10.dp)
-                                    .size(30.dp)
+                                    .size(55.dp)
                             )
                         }
                     },
@@ -134,11 +135,10 @@ fun PostThreadView(
     //      but this means if you don't explicitly cancel you don't lose the post
     var draft by remember{ mutableStateOf(DraftPost()) }
     ScreenBody(
-        modifier = Modifier
-            .fillMaxSize()
-            .systemBarsPadding(),
+        modifier = Modifier,
         topContent = {
             SkylineTopBar(tabList,
+                modifier = Modifier.padding(start = 43.dp, top = 0.dp, bottom = 0.dp, end = 0.dp),
                 mainButton = {
                     IconButton(onClick = { it() },
                         modifier = Modifier
@@ -148,7 +148,7 @@ fun PostThreadView(
                             contentDescription = "Back",
                             modifier = Modifier
                                 .padding(horizontal = 10.dp)
-                                .size(30.dp)
+                                .size(55.dp)
                         )
                     }
                 },
@@ -164,6 +164,7 @@ fun PostThreadView(
         contentWindowInsets = WindowInsets.navigationBars,
     ) {insets ->
         ThreadFragment(thread = thread,
+            modifier = Modifier.systemBarsPadding(),
             contentPadding = insets,
             onItemClicked = {
                 navigator.navigate(PostThreadScreenDestination(it))

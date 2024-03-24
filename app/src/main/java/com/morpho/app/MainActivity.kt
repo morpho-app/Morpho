@@ -167,27 +167,33 @@ class MainActivity : ComponentActivity() {
 
             }
         }
-        runBlocking {
-            viewModel.pinnedFeeds.add(FeedTab("Home", AtUri("__home__")))
-            val tabs: MutableMap<Int, FeedTab> = mutableMapOf()
-            launch {
-                viewModel.userPreferences?.savedFeeds?.pinned?.fastForEachIndexed { index, feedUri ->
-                    launch {
-                        viewModel.butterfly.api.getFeedGenerator(GetFeedGeneratorQuery(feedUri)).onFailure {
-                            Log.e("Skyline", "Error getting feed info: $it")
-                        }.onSuccess {
-                            tabs[index+1] = FeedTab(it.view.displayName, it.view.uri)
+
+        if( applicationContext.user.auth != null ) {
+            runBlocking {
+                viewModel.pinnedFeeds.add(FeedTab("Home", AtUri("__home__")))
+                val tabs: MutableMap<Int, FeedTab> = mutableMapOf()
+                launch {
+                    viewModel.userPreferences?.savedFeeds?.pinned?.fastForEachIndexed { index, feedUri ->
+                        launch {
+                            viewModel.butterfly.api.getFeedGenerator(GetFeedGeneratorQuery(feedUri)).onFailure {
+                                Log.e("Skyline", "Error getting feed info: $it")
+                            }.onSuccess {
+                                tabs[index+1] = FeedTab(it.view.displayName, it.view.uri)
+                            }
+                        }.invokeOnCompletion {
+                            waiting = index == viewModel.pinnedFeeds.lastIndex
+                            Log.v("Skyline", "waiting = $waiting")
                         }
-                    }.invokeOnCompletion {
-                        waiting = index == viewModel.pinnedFeeds.lastIndex
-                        Log.v("Skyline", "waiting = $waiting")
+
                     }
-
+                }.invokeOnCompletion {
+                    tabs.toSortedMap().forEach { entry-> viewModel.pinnedFeeds.add(entry.value) }
+                    waiting = false
                 }
-            }.invokeOnCompletion {
-                tabs.toSortedMap().forEach { entry-> viewModel.pinnedFeeds.add(entry.value) }
-            }
 
+            }
+        } else {
+            waiting = false
         }
         Log.i("Main", "loggedIn = $loggedIn")
         Log.i("Main", "waiting = $waiting")
