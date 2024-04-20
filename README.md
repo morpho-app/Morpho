@@ -1,6 +1,7 @@
 ![Icon of the Morpho Bluesky app](./morpho_icon.png)
 # Morpho
-Fast, flexible native Kotlin Multiplatform client for Bluesky (and possibly other ATProto applications)
+Fast, flexible native Kotlin Multiplatform client for Bluesky (and possibly other ATProto applications).
+
 Currently supporting Android and non-Apple desktop platforms. ~~Will support Apple once I can get my partner to update his MacBook Pro.~~
 
 ### Goals:  
