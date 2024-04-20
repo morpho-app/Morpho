@@ -1,0 +1,167 @@
+{
+  "main": {
+    "id": "92eff462319a4fe6",
+    "type": "split",
+    "children": [
+      {
+        "id": "7cf3b99398149bb3",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "058add141a64a174",
+            "type": "leaf",
+            "state": {
+              "type": "excalidraw",
+              "state": {
+                "file": "UI_Mockups/Multicolumn.md"
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "a3adafe4f031861d",
+    "type": "split",
+    "children": [
+      {
+        "id": "0fba510d0703ea45",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "8ec079e25ffc895a",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical"
+              }
+            }
+          },
+          {
+            "id": "f5f9a092f33a9f4e",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              }
+            }
+          },
+          {
+            "id": "f2ed9e0b6244b5c6",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {}
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "right": {
+    "id": "fe598d8f0b0843a3",
+    "type": "split",
+    "children": [
+      {
+        "id": "3561bb00c27094a3",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "c73c7c0af3d56880",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "file": "UI_Mockups/Multicolumn.md",
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              }
+            }
+          },
+          {
+            "id": "893c6a57b36af897",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "file": "UI_Mockups/Multicolumn.md",
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              }
+            }
+          },
+          {
+            "id": "6919fbd065bde97b",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true
+              }
+            }
+          },
+          {
+            "id": "d787a77b58b63c3e",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "file": "UI_Mockups/Multicolumn.md"
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:Open quick switcher": false,
+      "graph:Open graph view": false,
+      "canvas:Create new canvas": false,
+      "daily-notes:Open today's daily note": false,
+      "templates:Insert template": false,
+      "command-palette:Open command palette": false,
+      "obsidian-excalidraw-plugin:Create new drawing": false
+    }
+  },
+  "active": "058add141a64a174",
+  "lastOpenFiles": [
+    "Morpho/composeApp/build/snapshot/kotlin/compileKotlinDesktop/2.zip",
+    "Morpho/composeApp/build/snapshot/kotlin/compileKotlinDesktop/1.zip",
+    "Morpho/composeApp/build/snapshot/kotlin/compileKotlinDesktop/0.zip",
+    "Morpho/composeApp/build/snapshot/kotlin/compileKotlinDesktop",
+    "Butterfly/shared/build/snapshot/kotlin/compileKotlinDesktop/2.zip",
+    "Butterfly/shared/build/snapshot/kotlin/compileKotlinDesktop/1.zip",
+    "Butterfly/shared/build/snapshot/kotlin/compileKotlinDesktop/0.zip",
+    "Butterfly/shared/build/snapshot/kotlin/compileKotlinDesktop",
+    "Morpho/composeApp/src/desktopMain/kotlin/main.kt~",
+    "Butterfly/shared/src/commonMain/kotlin/com/morpho/butterfly/Butterfly.kt~",
+    "Morpho/composeApp/build/kotlin/compileKotlinDesktop/classpath-snapshot/shrunk-classpath-snapshot.bin",
+    "Excalidraw/Scripts/Downloaded/Concatenate lines.svg",
+    "Excalidraw/Scripts/Downloaded/Concatenate lines.md",
+    "Excalidraw/Scripts/Downloaded/Boolean Operations.svg",
+    "Excalidraw/Scripts/Downloaded/Boolean Operations.md",
+    "UI_Mockups/Multicolumn.md"
+  ]
+}

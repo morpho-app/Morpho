@@ -1,0 +1,3 @@
+[submodule "Butterfly"]
+	path = Butterfly
+	url = https://github.com/morpho-app/butterfly.git
