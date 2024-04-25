@@ -3,7 +3,7 @@ agp = "8.2.0"
 android-compileSdk = "34"
 android-minSdk = "24"
 android-targetSdk = "34"
-androidx-extIcons = "1.6.4"
+androidx-extIcons = "1.6.5"
 androidx-activityCompose = "1.8.2"
 androidx-appcompat = "1.6.1"
 androidx-constraintlayout = "2.1.4"
@@ -11,11 +11,14 @@ androidx-core-ktx = "1.12.0"
 androidx-espresso-core = "3.5.1"
 androidx-material = "1.11.0"
 androidx-test-junit = "1.1.5"
-compose = "1.6.4"
+appdirs = "1.2.2"
+compose = "1.6.5"
 compose-plugin = "1.6.1"
 constraintlayoutComposeMultiplatform = "0.3.0-alpha01"
+datastorePreferencesCore = "1.0.0"
 imageLoader = "1.7.8"
 junit = "4.13.2"
+kmmViewmodelCore = "1.0.0-ALPHA-20"
 kotlin = "1.9.23"
 
 koin-bom = "3.5.3"
@@ -30,26 +33,25 @@ kotlinx-immutable = "0.3.7"
 kstore = "0.7.1"
 ktor = "2.3.9"
 ktorClientAndroid = "[ktor-version]"
+logbackClassic = "1.2.9"
+logbackCore = "1.2.9"
+logging = "1.4.2"
+nativeparameterstoreaccess = "0.1.0"
 okio = "3.9.0"
-slf4j-api = "2.0.12"
+slf4j-api = "1.7.36"
 github-kotlin-logging-jvm = "5.1.0"
 kotlinx-abi-plugin = "0.13.2"
-
+window = "1.2.0"
+material3-android = "1.2.1"
 
 coil = "3.0.0-alpha06"
 voyager = "1.0.0"
-paletteKtx = "1.0.0"
+kmpalette = "3.1.0"
 
 
 [libraries]
-constraintlayout-compose-multiplatform = { module = "tech.annexflow.compose:constraintlayout-compose-multiplatform", version.ref = "constraintlayoutComposeMultiplatform" }
-image-loader = { module = "io.github.qdsfdhvh:image-loader", version.ref = "imageLoader" }
-image-loader-extension-imageio = { module = "io.github.qdsfdhvh:image-loader-extension-imageio", version.ref = "imageLoader" }
-image-loader-extension-moko-resources = { module = "io.github.qdsfdhvh:image-loader-extension-moko-resources", version.ref = "imageLoader" }
-kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
-kotlin-test-junit = { module = "org.jetbrains.kotlin:kotlin-test-junit", version.ref = "kotlin" }
-junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "androidx-core-ktx" }
+androidx-datastore-preferences-core = { module = "androidx.datastore:datastore-preferences-core", version.ref = "datastorePreferencesCore" }
 androidx-test-junit = { group = "androidx.test.ext", name = "junit", version.ref = "androidx-test-junit" }
 androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "androidx-espresso-core" }
 androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "androidx-appcompat" }
@@ -57,11 +59,28 @@ androidx-material = { group = "com.google.android.material", name = "material", 
 androidx-material3 = { group = "com.google.android.material3", name = "material" }
 androidx-constraintlayout = { group = "androidx.constraintlayout", name = "constraintlayout", version.ref = "androidx-constraintlayout" }
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "androidx-activityCompose" }
+appdirs = { module = "net.harawata:appdirs", version.ref = "appdirs" }
 compose-ui-tooling = { module = "androidx.compose.ui:ui-tooling", version.ref = "compose" }
 compose-ui-tooling-preview = { module = "androidx.compose.ui:ui-tooling-preview", version.ref = "compose" }
 androidx-icons-extended = { module = "androidx.compose.material:material-icons-extended", version.ref = "androidx-extIcons" }
+androidx-window = { module = "androidx.window:window", version.ref = "window" }
+androidx-material3-window-sizeclass = { module = "androidx.compose.material3:material3-window-size-class", version.ref = "material3-android" }
 
-
+constraintlayout-compose-multiplatform = { module = "tech.annexflow.compose:constraintlayout-compose-multiplatform", version.ref = "constraintlayoutComposeMultiplatform" }
+image-loader = { module = "io.github.qdsfdhvh:image-loader", version.ref = "imageLoader" }
+image-loader-extension-imageio = { module = "io.github.qdsfdhvh:image-loader-extension-imageio", version.ref = "imageLoader" }
+image-loader-extension-moko-resources = { module = "io.github.qdsfdhvh:image-loader-extension-moko-resources", version.ref = "imageLoader" }
+kmm-viewmodel-core = { module = "com.rickclephas.kmm:kmm-viewmodel-core", version.ref = "kmmViewmodelCore" }
+kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
+kotlin-test-junit = { module = "org.jetbrains.kotlin:kotlin-test-junit", version.ref = "kotlin" }
+junit = { group = "junit", name = "junit", version.ref = "junit" }
+kmpalette-core = { module = "com.kmpalette:kmpalette-core", version.ref = "kmpalette" }
+# Optional source libraries
+kmpalette-extensions-base64 = { module = "com.kmpalette:extensions-base64", version.ref = "kmpalette" }
+kmpalette-extensions-bytearray = { module = "com.kmpalette:extensions-bytearray", version.ref = "kmpalette" }
+kmpalette-extensions-libres = { module = "com.kmpalette:extensions-libres", version.ref = "kmpalette" }
+kmpalette-extensions-network = { module = "com.kmpalette:extensions-network", version.ref = "kmpalette" }
+kmpalette-extensions-file = { module = "com.kmpalette:extensions-file", version.ref = "kmpalette" }
 
 
 coil = { module = "io.coil-kt.coil3:coil", version.ref = "coil" }
@@ -91,9 +110,13 @@ koin-androidx-compose = { module = "io.insert-koin:koin-androidx-compose", versi
 koin-compose = { module = "io.insert-koin:koin-compose", version.ref = "koin-compose" }
 
 
+logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "logbackClassic" }
+logback-core = { module = "ch.qos.logback:logback-core", version.ref = "logbackCore" }
+logging = { module = "org.lighthousegames:logging", version.ref = "logging" }
+nativeparameterstoreaccess = { module = "com.github.tkuenneth:nativeparameterstoreaccess", version.ref = "nativeparameterstoreaccess" }
 slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j-api" }
 oshai-kotlin-logging-jvm = { module = "io.github.oshai:kotlin-logging-jvm", version.ref = "github-kotlin-logging-jvm" }
-
+slf4j-simple = { module = "org.slf4j:slf4j-simple", version = "2.0.9" }
 
 kotlin-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin-gradle-plugin" }
 kotlin-reflect = { module = "org.jetbrains.kotlin:kotlin-reflect", version.ref = "kotlin-reflect" }
@@ -117,7 +140,6 @@ voyager-navigator = { module = "cafe.adriel.voyager:voyager-navigator", version.
 voyager-screenmodel = { module = "cafe.adriel.voyager:voyager-screenmodel", version.ref = "voyager" }
 voyager-tab-navigator = { module = "cafe.adriel.voyager:voyager-tab-navigator", version.ref = "voyager" }
 voyager-transitions = { module = "cafe.adriel.voyager:voyager-transitions", version.ref = "voyager" }
-androidx-palette-ktx = { group = "androidx.palette", name = "palette-ktx", version.ref = "paletteKtx" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }

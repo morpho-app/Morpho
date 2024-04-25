@@ -12,6 +12,8 @@ import com.morpho.butterfly.Butterfly
 import com.morpho.butterfly.auth.SessionRepository
 import com.morpho.butterfly.auth.UserRepository
 import com.morpho.butterfly.auth.UserRepositoryImpl
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.delay
 import org.koin.core.module.dsl.singleOf
 import org.koin.dsl.bind
 import org.koin.dsl.module
@@ -22,6 +24,7 @@ val appModule = module {
     factory { TabbedMainScreenModel() }
     factory { TabbedProfileViewModel() }
     factory { LoginScreenModel() }
+    factory { p-> UpdateTick(p.get()) }
 }
 
 val storageModule = module {
@@ -36,3 +39,14 @@ val dataModule = module {
     singleOf(::NotificationsBackendState)
 }
 
+@Suppress("MemberVisibilityCanBePrivate")
+public class UpdateTick(val millis: Long) {
+    val t = Channel<Unit>()
+
+    public suspend fun tick() {
+        while (true) {
+            delay(millis)
+            t.send(Unit)
+        }
+    }
+}

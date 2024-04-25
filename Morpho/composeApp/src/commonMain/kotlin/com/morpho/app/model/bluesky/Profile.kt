@@ -1,15 +1,17 @@
 package com.morpho.app.model.bluesky
 
 
+import androidx.compose.runtime.Immutable
 import app.bsky.actor.ProfileView
 import app.bsky.actor.ProfileViewBasic
 import app.bsky.actor.ProfileViewDetailed
 import com.morpho.app.model.uidata.Moment
-import kotlinx.collections.immutable.ImmutableList
-import kotlinx.serialization.Serializable
+import com.morpho.app.util.mapImmutable
 import com.morpho.butterfly.Did
 import com.morpho.butterfly.Handle
-import com.morpho.app.util.mapImmutable
+import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.toImmutableList
+import kotlinx.serialization.Serializable
 
 
 enum class ProfileType {
@@ -18,6 +20,7 @@ enum class ProfileType {
     Detailed
 }
 
+@Immutable
 @Serializable
 sealed interface Profile {
     val did: Did
@@ -27,10 +30,12 @@ sealed interface Profile {
     val mutedByMe: Boolean
     val followingMe: Boolean
     val followedByMe: Boolean
+    @Serializable
     val labels: ImmutableList<BskyLabel>
 }
 
 
+@Immutable
 @Serializable
 data class BasicProfile(
     override val did: Did,// = Did(""),
@@ -44,6 +49,7 @@ data class BasicProfile(
     override val labels: ImmutableList<BskyLabel>,
 ) : Profile
 
+@Immutable
 @Serializable
 data class DetailedProfile(
     override val did: Did,// = Did(""),
@@ -61,7 +67,67 @@ data class DetailedProfile(
     override val followedByMe: Boolean,
     @Serializable
     override val labels: ImmutableList<BskyLabel>,
-) : Profile
+) : Profile {
+    fun toSerializableProfile(): SerializableProfile {
+        return SerializableProfile(
+            did = did,
+            handle = handle,
+            displayName = displayName,
+            description = description,
+            avatar = avatar,
+            banner = banner ?: "",
+            followersCount = followersCount,
+            followsCount = followsCount,
+            postsCount = postsCount,
+            indexedAt = indexedAt,
+            mutedByMe = mutedByMe,
+            followingMe = followingMe,
+            followedByMe = followedByMe,
+            labels = labels,
+        )
+    }
+
+}
+
+@Immutable
+@Serializable
+data class SerializableProfile(
+    val did: Did,// = Did(""),
+    val handle: Handle,// = Handle(""),
+    val displayName: String?,
+    var description: String?,
+    val avatar: String?,
+    val banner: String?,
+    val followersCount: Long,
+    val followsCount: Long,
+    val postsCount: Long,
+    val indexedAt: Moment?,
+    val mutedByMe: Boolean,
+    val followingMe: Boolean,
+    val followedByMe: Boolean,
+    @Serializable
+    val labels: List<BskyLabel>,
+) {
+    fun toProfile(): DetailedProfile {
+        return DetailedProfile(
+            did = did,
+            handle = handle,
+            displayName = displayName,
+            description = description,
+            avatar = avatar,
+            banner = banner,
+            followersCount = followersCount,
+            followsCount = followsCount,
+            postsCount = postsCount,
+            indexedAt = indexedAt,
+            mutedByMe = mutedByMe,
+            followingMe = followingMe,
+            followedByMe = followedByMe,
+            labels = labels.toImmutableList(),
+        )
+    }
+
+}
 
 fun ProfileViewDetailed.toProfile(): DetailedProfile {
     return DetailedProfile(

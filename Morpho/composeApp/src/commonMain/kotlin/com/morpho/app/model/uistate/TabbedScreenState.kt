@@ -2,53 +2,52 @@
 
 package com.morpho.app.model.uistate
 
+//import com.rickclephas.kmp.nativecoroutines.NativeCoroutines
 import com.morpho.app.model.bluesky.MorphoDataItem
 import com.morpho.app.model.uidata.ContentCardMapEntry
 import com.morpho.butterfly.AtUri
 import kotlinx.collections.immutable.*
-//import com.rickclephas.kmp.nativecoroutines.NativeCoroutines
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.serialization.Serializable
 
 
 @Serializable
 data class TabbedScreenState(
     override val loadingState: UiLoadingState = UiLoadingState.Idle,
-    val selectedTabIndex: Int = 0,
-    val tabs: ImmutableList<ContentCardMapEntry> = persistentListOf(),
-    private val tabStates: ImmutableList<ContentCardState<MorphoDataItem.FeedItem>> = persistentListOf(),
+    val tabs:  StateFlow<ImmutableList<ContentCardMapEntry>> =
+        MutableStateFlow<ImmutableList<ContentCardMapEntry>>(persistentListOf()).asStateFlow(),
+    val tabStates:  ImmutableList<StateFlow<ContentCardState<MorphoDataItem>>> = persistentListOf(),
 ): UiState {
-    val tabMap: ImmutableMap<AtUri, ContentCardState<MorphoDataItem.FeedItem>>
-        get() = tabStates.associateBy { it.uri }
-            .filter { entry -> entry.value.uri in tabs.map { it.uri } }.toPersistentMap()
+
+    val tabMap: ImmutableMap<AtUri, ContentCardState<MorphoDataItem>>
+        get() = tabStates.associateBy { it.value.uri }
+            .filter { entry -> entry.value.value.uri in tabs.value.map { it.uri } }
+            .mapValues { it.value.value }
+            .toImmutableMap()
     val tabsWithNewPosts: ImmutableList<AtUri>
         get() = tabMap.filterValues { it.hasNewPosts }.keys.toImmutableList()
 
-    val selectedTabState: ContentCardState<MorphoDataItem.FeedItem>?
-        // If we could guarantee the same sorting,
-        // this could be simplified to tabStates.getOrNull(selectedTabIndex)
-        get() = tabMap[tabs[selectedTabIndex].uri]
-
-    val selectedTab: ContentCardMapEntry?
-        get() = tabs.getOrNull(selectedTabIndex)
 }
+
+
 
 data class TabbedProfileScreenState(
     override val loadingState: UiLoadingState = UiLoadingState.Idle,
-    val selectedTabIndex: Int = 0,
-    val tabs: ImmutableList<ContentCardMapEntry> = persistentListOf(),
-    private val tabStates: ImmutableList<ContentCardState.ProfileTimeline<MorphoDataItem>> = persistentListOf(),
+    val tabs: StateFlow<ImmutableList<ContentCardMapEntry>> =
+        MutableStateFlow<ImmutableList<ContentCardMapEntry>>(persistentListOf()).asStateFlow(),
+    val tabStates:  ImmutableList<StateFlow<ContentCardState.ProfileTimeline<MorphoDataItem>>> = persistentListOf(),
 ): UiState {
+
     val tabMap: ImmutableMap<AtUri, ContentCardState.ProfileTimeline<MorphoDataItem>>
-        get() = tabStates.associateBy { it.uri }
-            .filter { entry -> entry.value.uri in tabs.map { it.uri } }.toPersistentMap()
+        get() = tabStates.associateBy { it.value.uri }
+            .filter { entry -> entry.value.value.uri in tabs.value.map { it.uri } }
+            .mapValues { it.value.value }
+            .toImmutableMap()
     val tabsWithNewPosts: ImmutableList<AtUri>
         get() = tabMap.filterValues { it.hasNewPosts }.keys.toImmutableList()
 
-    val selectedTabState: ContentCardState.ProfileTimeline<MorphoDataItem>?
-        // If we could guarantee the same sorting,
-        // this could be simplified to tabStates.getOrNull(selectedTabIndex)
-        get() = tabMap[tabs[selectedTabIndex].uri]
 
-    val selectedTab: ContentCardMapEntry?
-        get() = tabs.getOrNull(selectedTabIndex)
 }
+

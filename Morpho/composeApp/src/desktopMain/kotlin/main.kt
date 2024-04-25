@@ -18,12 +18,13 @@ import com.github.tkuenneth.nativeparameterstoreaccess.MacOSDefaults.getDefaults
 import com.github.tkuenneth.nativeparameterstoreaccess.NativeParameterStoreAccess.IS_MACOS
 import com.github.tkuenneth.nativeparameterstoreaccess.NativeParameterStoreAccess.IS_WINDOWS
 import com.github.tkuenneth.nativeparameterstoreaccess.WindowsRegistry.getWindowsRegistryEntry
+import com.morpho.app.App
+import com.morpho.app.data.PreferencesRepository
 import com.morpho.app.di.appModule
 import com.morpho.app.di.dataModule
 import com.morpho.app.di.storageModule
 import com.morpho.app.ui.theme.DarkColorScheme
 import com.morpho.app.ui.theme.LightColorScheme
-import com.morpho.butterfly.Butterfly
 import com.morpho.butterfly.auth.SessionRepository
 import com.morpho.butterfly.auth.UserRepository
 import morpho.composeapp.generated.resources.Res
@@ -62,7 +63,8 @@ fun main() = application {
     cachePath.toNioPath().createDirectories()
     koin.get<SessionRepository> { parametersOf(storageDir) }
     koin.get<UserRepository> { parametersOf(storageDir) }
-    koin.get<Butterfly>()
+    koin.get<PreferencesRepository> { parametersOf(storageDir) }
+    //koin.get<Butterfly>()
     val undecorated = true
     val colors = if(isSystemInDarkTheme()) DarkColorScheme else LightColorScheme
     Window(
@@ -80,48 +82,50 @@ fun main() = application {
                     color = MaterialTheme.colorScheme.background,
                     shape = RoundedCornerShape(20.dp) //window has round corners now
                 ) {
-                    WindowDraggableArea {
-                        Surface(
-                            modifier = Modifier.fillMaxWidth().height(42.dp),
-                            color = MaterialTheme.colorScheme.surfaceDim,
-                        ) {
-                            Row(
-                                modifier = Modifier.fillMaxSize(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
+                    Column {
+                        WindowDraggableArea {
+                            Surface(
+                                modifier = Modifier.fillMaxWidth().height(42.dp),
+                                color = MaterialTheme.colorScheme.surfaceDim,
                             ) {
-                                IconButton(
-                                    onClick = { },
-                                    modifier = Modifier.padding(8.dp)
+                                Row(
+                                    modifier = Modifier.fillMaxSize(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Image(
-                                        imageResource(Res.drawable.morpho_icon_transparent),
-                                        "Morpho"
+                                    IconButton(
+                                        onClick = { },
+                                        modifier = Modifier.padding(8.dp)
+                                    ) {
+                                        Image(
+                                            imageResource(Res.drawable.morpho_icon_transparent),
+                                            "Morpho"
+                                        )
+                                    }
+
+                                    Text(
+                                        "Morpho",
+                                        style = MaterialTheme.typography.titleMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.padding(5.dp)
                                     )
+
+                                    IconButton(
+                                        onClick = ::exitApplication,
+                                        modifier = Modifier.padding(5.dp)
+                                    ) {
+                                        Icon(
+                                            Icons.Default.Close,
+                                            "Close",
+                                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+
                                 }
-
-                                Text(
-                                    "Morpho",
-                                    style = MaterialTheme.typography.titleMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.padding(5.dp)
-                                )
-
-                                IconButton(
-                                    onClick = ::exitApplication,
-                                    modifier = Modifier.padding(5.dp)
-                                ) {
-                                    Icon(
-                                        Icons.Default.Close,
-                                        "Close",
-                                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
-
                             }
                         }
+                        App()
                     }
-                    App()
                 }
             }
         } else {

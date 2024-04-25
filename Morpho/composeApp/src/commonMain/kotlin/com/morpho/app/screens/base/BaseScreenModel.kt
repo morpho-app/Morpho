@@ -25,6 +25,7 @@ open class BaseScreenModel : ScreenModel, KoinComponent {
     companion object {
         val log = logging()
     }
+
     fun onProfileClicked(actor: AtIdentifier, tabbed: Boolean) {
         if (tabbed) {
             TODO("Navigate to the profile")

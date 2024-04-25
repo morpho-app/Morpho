@@ -12,6 +12,7 @@ import kotlinx.serialization.Serializable
 @Serializable
 sealed interface ContentCardState<T: MorphoDataItem> {
     val uri: AtUri
+    val feed: MorphoData<T>
     val hasNewPosts: Boolean
     val loadingState: ContentLoadingState
 
@@ -34,6 +35,11 @@ sealed interface ContentCardState<T: MorphoDataItem> {
         ): ContentCardState<MorphoDataItem.Thread>, PostThreadContentState {
 
         override val uri: AtUri = post.uri
+        override val feed: MorphoData<MorphoDataItem.Thread> = MorphoData(
+            uri = post.uri,
+            title = "${post.author.displayName}'s Thread",
+        )
+
         init {
             require(post.uri.atUri.contains("app.bsky.feed.post")) {
                 "Invalid post uri: $uri"
@@ -51,14 +57,14 @@ sealed interface ContentCardState<T: MorphoDataItem> {
         override val uri: AtUri = feed.uri
         init {
             require(
-                MorphoData.ProfilePostsUriRegex.matches(uri.atUri) ||
-                MorphoData.ProfileRepliesUriRegex.matches(uri.atUri) ||
-                MorphoData.ProfileMediaUriRegex.matches(uri.atUri) ||
-                MorphoData.ProfileLikesUriRegex.matches(uri.atUri) ||
-                MorphoData.ProfileFeedsListUriRegex.matches(uri.atUri) ||
-                MorphoData.ProfileUserListsUriRegex.matches(uri.atUri) ||
-                MorphoData.ProfileModServiceUriRegex.matches(uri.atUri) ||
-                uri == MorphoData.MY_PROFILE_URI
+                AtUri.ProfilePostsUriRegex.matches(uri.atUri) ||
+                    AtUri.ProfileRepliesUriRegex.matches(uri.atUri) ||
+                    AtUri.ProfileMediaUriRegex.matches(uri.atUri) ||
+                    AtUri.ProfileLikesUriRegex.matches(uri.atUri) ||
+                    AtUri.ProfileFeedsListUriRegex.matches(uri.atUri) ||
+                    AtUri.ProfileUserListsUriRegex.matches(uri.atUri) ||
+                    AtUri.ProfileModServiceUriRegex.matches(uri.atUri) ||
+                uri == AtUri.MY_PROFILE_URI
             ) { "Invalid profile feed uri: $uri" }
         }
     }
@@ -66,29 +72,33 @@ sealed interface ContentCardState<T: MorphoDataItem> {
     @Serializable
     data class FullProfile<T: Profile>(
         val profile: T,
-        val postsState: ProfileTimeline<MorphoDataItem.FeedItem>? = null,
-        val postRepliesState: ProfileTimeline<MorphoDataItem.FeedItem>? = null,
-        val mediaState: ProfileTimeline<MorphoDataItem.FeedItem>? = null,
-        val likesState: ProfileTimeline<MorphoDataItem.FeedItem>? = null,
-        val listsState: ProfileTimeline<MorphoDataItem.ListInfo>? = null,
-        val feedsState: ProfileTimeline<MorphoDataItem.FeedInfo>? = null,
-        val modServiceState: ProfileTimeline<MorphoDataItem.ModLabel>? = null,
+        val postsState: StateFlow<ProfileTimeline<MorphoDataItem.FeedItem>?> = MutableStateFlow(null).asStateFlow(),
+        val postRepliesState: StateFlow<ProfileTimeline<MorphoDataItem.FeedItem>?> = MutableStateFlow(null).asStateFlow(),
+        val mediaState: StateFlow<ProfileTimeline<MorphoDataItem.FeedItem>?> = MutableStateFlow(null).asStateFlow(),
+        val likesState: StateFlow<ProfileTimeline<MorphoDataItem.FeedItem>?> = MutableStateFlow(null).asStateFlow(),
+        val listsState: StateFlow<ProfileTimeline<MorphoDataItem.ListInfo>?> = MutableStateFlow(null).asStateFlow(),
+        val feedsState: StateFlow<ProfileTimeline<MorphoDataItem.FeedInfo>?> = MutableStateFlow(null).asStateFlow(),
+        val modServiceState: StateFlow<ProfileTimeline<MorphoDataItem.LabelService>?> = MutableStateFlow(null).asStateFlow(),
         override val loadingState: ContentLoadingState = ContentLoadingState.Loading,
         override val hasNewPosts: Boolean = false,
     ) : ContentCardState<MorphoDataItem> {
         override val uri: AtUri =
             when(profile) {
-                is DetailedProfile -> MorphoData.profileUri(profile.did)
+                is DetailedProfile -> AtUri.profileUri(profile.did)
                 is BskyLabelService -> profile.uri
                 else -> throw IllegalArgumentException("Invalid profile type: $profile")
             }
+        override val feed: MorphoData<MorphoDataItem> = MorphoData(
+            uri = uri,
+            title = profile.displayName.orEmpty(),
+        )
 
 
         val feedsLoaded: Boolean
-            get() = postsState?.loadingState  == ContentLoadingState.Idle &&
-                    postRepliesState?.loadingState == ContentLoadingState.Idle &&
-                    mediaState?.loadingState == ContentLoadingState.Idle &&
-                    ((likesState == null) || (likesState.loadingState == ContentLoadingState.Idle))
+            get() = postsState.value?.loadingState  == ContentLoadingState.Idle &&
+                    postRepliesState.value?.loadingState == ContentLoadingState.Idle &&
+                    mediaState.value?.loadingState == ContentLoadingState.Idle &&
+                    ((likesState.value == null) || (likesState.value?.loadingState == ContentLoadingState.Idle))
     }
 
     @Serializable
@@ -98,5 +108,9 @@ sealed interface ContentCardState<T: MorphoDataItem> {
         override val hasNewPosts: Boolean = false,
     ) : ContentCardState<MorphoDataItem.ListInfo> {
         override val uri: AtUri = list.uri
+        override val feed: MorphoData<MorphoDataItem.ListInfo> = MorphoData(
+            uri = list.uri,
+            title = list.name,
+        )
     }
 }

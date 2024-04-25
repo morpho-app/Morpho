@@ -13,7 +13,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.morpho.app.model.uidata.MorphoData
 import com.morpho.butterfly.AtIdentifier
 import com.morpho.butterfly.AtUri
 import com.morpho.butterfly.Handle
@@ -29,6 +28,8 @@ enum class ProfileTabs {
     Likes,
     Labeler,
 }
+
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -59,7 +60,7 @@ fun ProfileTabRow(
                 selected = true,
                 onClick = {
                     selectedTab = ProfileTabs.Labeler
-                    onTabChanged(MorphoData.profileModServiceUri(id))
+                    onTabChanged(AtUri.profileModServiceUri(id))
                 },
 
                 ) {
@@ -72,7 +73,7 @@ fun ProfileTabRow(
                 selected = false,
                 onClick = {
                     selectedTab = ProfileTabs.Lists
-                    onTabChanged(MorphoData.profileUserListsUri(id))
+                    onTabChanged(AtUri.profileUserListsUri(id))
                 },
             ) {
                 Text(
@@ -84,7 +85,7 @@ fun ProfileTabRow(
                 selected = false,
                 onClick = {
                     selectedTab = ProfileTabs.Posts
-                    onTabChanged(MorphoData.profilePostsUri(id))
+                    onTabChanged(AtUri.profilePostsUri(id))
                 },
 
                 ) {
@@ -97,7 +98,7 @@ fun ProfileTabRow(
                 selected = false,
                 onClick = {
                     selectedTab = ProfileTabs.PostsReplies
-                    onTabChanged(MorphoData.profileRepliesUri(id))
+                    onTabChanged(AtUri.profileRepliesUri(id))
                 },
 
                 ) {
@@ -110,7 +111,7 @@ fun ProfileTabRow(
                 selected = false,
                 onClick = {
                     selectedTab = ProfileTabs.Feeds
-                    onTabChanged(MorphoData.profileFeedsListUri(id))
+                    onTabChanged(AtUri.profileFeedsListUri(id))
                 },
             ) {
                 Text(
@@ -123,7 +124,7 @@ fun ProfileTabRow(
                 selected = true,
                 onClick = {
                     selectedTab = ProfileTabs.Posts
-                    onTabChanged(MorphoData.profilePostsUri(id))
+                    onTabChanged(AtUri.profilePostsUri(id))
                 },
 
                 ) {
@@ -136,7 +137,7 @@ fun ProfileTabRow(
                 selected = false,
                 onClick = {
                     selectedTab = ProfileTabs.PostsReplies
-                    onTabChanged(MorphoData.profileRepliesUri(id))
+                    onTabChanged(AtUri.profileRepliesUri(id))
                 },
 
                 ) {
@@ -150,7 +151,7 @@ fun ProfileTabRow(
                 selected = false,
                 onClick = {
                     selectedTab = ProfileTabs.Media
-                    onTabChanged(MorphoData.profileMediaUri(id))
+                    onTabChanged(AtUri.profileMediaUri(id))
                 },
             ) {
                 Text(
@@ -163,7 +164,7 @@ fun ProfileTabRow(
                     selected = false,
                     onClick = {
                         selectedTab = ProfileTabs.Likes
-                        onTabChanged(MorphoData.profileLikesUri(id))
+                        onTabChanged(AtUri.profileLikesUri(id))
                     },
                 ) {
                     Text(
@@ -177,7 +178,7 @@ fun ProfileTabRow(
                 selected = false,
                 onClick = {
                     selectedTab = ProfileTabs.Feeds
-                    onTabChanged(MorphoData.profileFeedsListUri(id))
+                    onTabChanged(AtUri.profileFeedsListUri(id))
                 },
             ) {
                 Text(
@@ -190,7 +191,7 @@ fun ProfileTabRow(
                 selected = false,
                 onClick = {
                     selectedTab = ProfileTabs.Lists
-                    onTabChanged(MorphoData.profileUserListsUri(id))
+                    onTabChanged(AtUri.profileUserListsUri(id))
                 },
             ) {
                 Text(

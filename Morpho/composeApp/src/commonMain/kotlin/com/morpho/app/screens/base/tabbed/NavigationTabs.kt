@@ -1,7 +1,5 @@
 package com.morpho.app.screens.base.tabbed
 
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.spring
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Home
@@ -9,22 +7,21 @@ import androidx.compose.material.icons.filled.NotificationsNone
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.input.nestedscroll.nestedScroll
-import cafe.adriel.voyager.core.model.screenModelScope
+import androidx.compose.runtime.saveable.rememberSaveable
+import cafe.adriel.voyager.core.lifecycle.LifecycleEffect
 import cafe.adriel.voyager.core.screen.Screen
+import cafe.adriel.voyager.core.screen.ScreenKey
 import cafe.adriel.voyager.koin.getNavigatorScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
+import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.currentOrThrow
+import com.morpho.app.screens.main.tabbed.TabbedHomeView
 import com.morpho.app.screens.profile.TabbedProfileContent
-import com.morpho.app.screens.profile.TabbedProfileTopBar
 import com.morpho.app.screens.profile.TabbedProfileViewModel
-import com.morpho.app.ui.common.TabbedScreenScaffold
+import com.morpho.app.ui.common.LoadingCircle
 import com.morpho.butterfly.AtIdentifier
-import kotlinx.coroutines.launch
+import com.morpho.butterfly.AtUri
 
 
 data class TabScreenOptions(
@@ -35,7 +32,7 @@ data class TabScreenOptions(
 
 interface TabScreen: Screen {
 
-    val navBar: @Composable (Int) -> Unit
+    val navBar: @Composable (Navigator) -> Unit
 
     @Composable
     override fun Content()
@@ -46,12 +43,17 @@ interface TabScreen: Screen {
 }
 
 data class HomeTab(
-    override val navBar: @Composable (Int) -> Unit = {},
+    val k: ScreenKey = "HomeTab"
 ): TabScreen {
+    override val navBar: @Composable (Navigator) -> Unit = { n ->
+        TabbedNavBar(options.index, n)
+    }
+
+    override val key: ScreenKey  = (hashCode().toString() + k)
 
     @Composable
     override fun Content() {
-
+        TabbedHomeView()
     }
 
     override val options: TabScreenOptions
@@ -66,13 +68,17 @@ data class HomeTab(
 
 }
 
-data class SearchTab(
-    override val navBar: @Composable (Int) -> Unit = {},
-): TabScreen {
+data object SearchTab: TabScreen {
 
+    override val key: ScreenKey
+        get() = "searchTab"
+
+    override val navBar: @Composable (Navigator) -> Unit = { n ->
+        TabbedNavBar(options.index, n)
+    }
     @Composable
     override fun Content() {
-        TODO("Not yet implemented")
+        LoadingCircle()
     }
 
     override val options: TabScreenOptions
@@ -87,13 +93,17 @@ data class SearchTab(
 
 }
 
-data class FeedsTab(
-    override val navBar: @Composable (Int) -> Unit = {},
-): TabScreen {
+data object FeedsTab: TabScreen {
 
+    override val key: ScreenKey
+        get() = "feedsTab"
+
+    override val navBar: @Composable (Navigator) -> Unit = { n ->
+        TabbedNavBar(options.index, n)
+    }
     @Composable
     override fun Content() {
-        TODO("Not yet implemented")
+        LoadingCircle()
     }
 
     override val options: TabScreenOptions
@@ -107,13 +117,17 @@ data class FeedsTab(
 
 }
 
-data class NotificationsTab(
-    override val navBar: @Composable (Int) -> Unit = {},
-): TabScreen {
+data object NotificationsTab: TabScreen {
 
+    override val key: ScreenKey
+        get() = "notificationsTab"
+
+    override val navBar: @Composable (Navigator) -> Unit = { n ->
+        TabbedNavBar(options.index, n)
+    }
     @Composable
     override fun Content() {
-        TODO("Not yet implemented")
+        LoadingCircle()
     }
 
     override val options: TabScreenOptions
@@ -130,36 +144,27 @@ data class NotificationsTab(
 
 data class ProfileTab(
     val id: AtIdentifier,
-    override val navBar: @Composable (Int) -> Unit = {},
-): TabScreen {
+    ): TabScreen {
 
+    override val key: ScreenKey
+        get() = "profileTab$id"
 
+    override val navBar: @Composable (Navigator) -> Unit = { n ->
+        TabbedNavBar(options.index, n)
+    }
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     override fun Content() {
         val navigator = LocalNavigator.currentOrThrow
         val screenModel = navigator.getNavigatorScreenModel<TabbedProfileViewModel>()
-        val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(
-            state = rememberTopAppBarState(),
-            snapAnimationSpec = spring(
-                stiffness = Spring.StiffnessMediumLow,
-                dampingRatio = Spring.DampingRatioNoBouncy
-            ),
-            //flingAnimationSpec = exponentialDecay()
+        LifecycleEffect(
+            onStarted = {
+                screenModel.initProfile()
+            },
+            onDisposed = {},
         )
-        val ownProfile = screenModel.api.id == id
-        if (screenModel.profileState?.profile != null) {
-            TabbedScreenScaffold(
-                navBar = { navBar(options.index) },
-                modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
-                topContent = {
-                    TabbedProfileTopBar(screenModel.profileState?.profile, ownProfile, scrollBehavior,
-                                        switchTab = { screenModel.screenModelScope.launch { screenModel.switchTab(it) } }
-                    )
-                },
-                content = { insets -> TabbedProfileContent(screenModel, ownProfile, insets) }
-            )
-        }
+        val ownProfile = rememberSaveable { screenModel.api.id == id }
+        TabbedProfileContent(screenModel, ownProfile)
 
     }
 
@@ -176,39 +181,52 @@ data class ProfileTab(
 
 }
 
-
-data class MyProfileTab(
-    override val navBar: @Composable (Int) -> Unit = {},
+data class ThreadTab(
+    val uri: AtUri,
 ): TabScreen {
 
+        override val key: ScreenKey
+            get() = "threadTab"
 
+        override val navBar: @Composable (Navigator) -> Unit = { n ->
+            TabbedNavBar(options.index, n)
+        }
+        @Composable
+        override fun Content() {
+            LoadingCircle()
+        }
+
+        override val options: TabScreenOptions
+            @Composable get() {
+                return TabScreenOptions(
+                    index = 6,
+                    icon = { Icon(Icons.Default.NotificationsNone, contentDescription = "Thread") },
+                    title = "Thread"
+                )
+            }
+}
+
+
+data object MyProfileTab: TabScreen {
+
+    override val key: ScreenKey
+        get() = "myProfileTab"
+
+    override val navBar: @Composable (Navigator) -> Unit = { n ->
+        TabbedNavBar(options.index, n)
+    }
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     override fun Content() {
         val navigator = LocalNavigator.currentOrThrow
         val screenModel = navigator.getNavigatorScreenModel<TabbedProfileViewModel>()
-        val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(
-            state = rememberTopAppBarState(),
-            snapAnimationSpec = spring(
-                stiffness = Spring.StiffnessMediumLow,
-                dampingRatio = Spring.DampingRatioNoBouncy
-            ),
-            //flingAnimationSpec = exponentialDecay()
+        LifecycleEffect(
+            onStarted = {
+                screenModel.initProfile()
+            },
+            onDisposed = {},
         )
-        if (screenModel.profileState?.profile != null) {
-            TabbedScreenScaffold(
-                navBar = { navBar(options.index) },
-                modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
-                topContent = {
-                    TabbedProfileTopBar(screenModel.profileState?.profile, true, scrollBehavior,
-                                        switchTab = {
-                                            screenModel.screenModelScope.launch { screenModel.switchTab(it) }
-                                        }
-                    )
-                },
-                content = { insets -> TabbedProfileContent(screenModel, true, insets) }
-            )
-        }
+        TabbedProfileContent(screenModel, true)
     }
 
 

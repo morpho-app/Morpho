@@ -9,7 +9,10 @@ import com.morpho.butterfly.AtUri
 import com.morpho.butterfly.Butterfly
 import com.morpho.butterfly.Did
 import com.morpho.butterfly.Language
-import kotlinx.collections.immutable.*
+import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.persistentListOf
+import kotlinx.collections.immutable.toImmutableList
+import kotlinx.collections.immutable.toPersistentList
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -19,16 +22,16 @@ public data class BskyPreferences(
     public val feedViewPrefs: MutableMap<String, BskyFeedPref> = mutableMapOf(),
     public var skyFeedBuilderFeeds: SkyFeedBuilderFeedsPref? = null,
     public var savedFeeds: SavedFeedsPref? = null,
-    public val contentLabelPrefs: PersistentList<ContentLabelPref> = persistentListOf(),
+    public val contentLabelPrefs: MutableList<ContentLabelPref> = mutableListOf(),
     public var threadViewPrefs: ThreadViewPref? = null,
     // Get system languages and allow customization of this
     public var languages: List<Language> = persistentListOf(),
     public var mergeFeeds: Boolean = false,
-    public val mutes: PersistentList<BasicProfile> = persistentListOf(),
+    public val mutes: MutableList<BasicProfile> = mutableListOf(),
     public val listsMuted: MutableMap<AtUri, BskyList> = mutableMapOf(),
-    public var mutedWords: PersistentList<MutedWord> = persistentListOf(),
-    public var hiddenPosts: PersistentList<AtUri> = persistentListOf(),
-    public var labelers: PersistentList<Did> = persistentListOf(),
+    public var mutedWords: List<MutedWord> = persistentListOf(),
+    public var hiddenPosts: List<AtUri> = persistentListOf(),
+    public var labelers: List<Did> = persistentListOf(),
 ) {
     //@NativeCoroutines
     suspend fun pullPrefs(api: Butterfly) = runCatching {
@@ -85,16 +88,24 @@ data class BskyUser(
     val handle: String,
     val displayName: String?,
     val avatar: String?,
-    val description: String?,
-    val banner: String?,
-    val followersCount: Long = 0,
-    val followsCount: Long = 0,
-    val postsCount: Long = 0,
+    val profile: SerializableProfile,
+) {
+    companion object{
+        fun makeUser(profile: DetailedProfile): BskyUser {
+            return BskyUser(
+                profile.did.did,
+                profile.handle.handle,
+                profile.displayName,
+                profile.avatar,
+                profile.toSerializableProfile(),
+            )
+        }
+    }
 
-    val birthdate: String?,
-    val mergeFeeds: Boolean = false,
-    val adultContentEnabled: Boolean,
-)
+    fun getProfile(): DetailedProfile {
+        return profile.toProfile()
+    }
+}
 
 
 

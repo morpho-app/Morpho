@@ -2,7 +2,6 @@ package com.morpho.app.ui.common
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -15,7 +14,6 @@ import androidx.compose.material.pullrefresh.rememberPullRefreshState
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -28,12 +26,15 @@ import androidx.constraintlayout.compose.ConstraintLayout
 import com.atproto.repo.StrongRef
 import com.morpho.app.model.bluesky.BskyPost
 import com.morpho.app.model.bluesky.MorphoDataItem
-import com.morpho.app.model.uistate.SkylineContentState
+import com.morpho.app.model.uidata.AtCursor
+import com.morpho.app.model.uistate.ContentCardState
 import com.morpho.app.ui.elements.MenuOptions
+import com.morpho.app.ui.elements.WrappedLazyColumn
 import com.morpho.app.ui.post.PostFragment
 import com.morpho.butterfly.AtIdentifier
 import com.morpho.butterfly.AtUri
 import com.morpho.butterfly.model.RecordType
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
 typealias OnPostClicked = (AtUri) -> Unit
@@ -41,13 +42,13 @@ typealias OnPostClicked = (AtUri) -> Unit
 
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
-fun <T: MorphoDataItem>SkylineFragment (
-    content: SkylineContentState<T>,
+fun <T: MorphoDataItem> SkylineFragment (
+    content: StateFlow<ContentCardState<T>>,
     modifier: Modifier = Modifier,
     onItemClicked: OnPostClicked,
     onProfileClicked: (AtIdentifier) -> Unit = {},
     onPostButtonClicked: () -> Unit = {},
-    refresh: (String?) -> Unit = {},
+    refresh: (AtCursor) -> Unit = {},
     onReplyClicked: (BskyPost) -> Unit = { },
     onRepostClicked: (BskyPost) -> Unit = { },
     onLikeClicked: (StrongRef) -> Unit = { },
@@ -56,8 +57,8 @@ fun <T: MorphoDataItem>SkylineFragment (
     contentPadding: PaddingValues = PaddingValues(0.dp),
     isProfileFeed: Boolean = false,
 ) {
-    val postList by content.feed.list.collectAsState()
-    val cursor by content.feed.cursor.collectAsState()
+    val postList = content.value.feed.items
+    val cursor = content.value.feed.cursor
     val coroutineScope = rememberCoroutineScope()
     var refreshing by remember { mutableStateOf(false) }
     val listState: LazyListState = rememberLazyListState()
@@ -86,7 +87,7 @@ fun <T: MorphoDataItem>SkylineFragment (
                 .fillMaxWidth()
                 .systemBarsPadding()
 
-        }   else {
+        } else {
             Modifier
                 .fillMaxSize()
                 .systemBarsPadding()
@@ -98,7 +99,7 @@ fun <T: MorphoDataItem>SkylineFragment (
         val buttonGuideline = createGuidelineFromBottom(100.dp)
 
 
-        LazyColumn(
+        WrappedLazyColumn(
             modifier = modifier
                 .pullRefresh(refreshState)
                 .constrainAs(skyline) {
@@ -108,7 +109,7 @@ fun <T: MorphoDataItem>SkylineFragment (
             //flingBehavior = rememberSnapFlingBehavior(lazyListState = listState),
             contentPadding = if(isProfileFeed) {
                 contentPadding
-            }   else {
+            } else {
                 PaddingValues(
                     bottom = contentPadding.calculateBottomPadding(),
                     top = WindowInsets.safeContent.only(WindowInsetsSides.Top).asPaddingValues()

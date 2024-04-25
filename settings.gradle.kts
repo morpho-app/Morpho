@@ -1,4 +1,4 @@
-rootProject.name = "MorphoComposite"
+rootProject.name = "MorphoMultiplatform"
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 
 pluginManagement {

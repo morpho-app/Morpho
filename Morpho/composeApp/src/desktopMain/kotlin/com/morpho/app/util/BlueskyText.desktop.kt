@@ -5,7 +5,7 @@ import com.morpho.app.model.bluesky.BskyFacet
 import com.morpho.app.model.bluesky.FacetType
 import com.morpho.butterfly.Handle
 import com.morpho.butterfly.Uri
-import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.toImmutableList
 import okio.ByteString.Companion.encodeUtf8
 
 actual fun makeBlueskyText(text: String): BlueskyText {
@@ -42,7 +42,9 @@ actual fun makeBlueskyText(text: String): BlueskyText {
         )
     }
     val outString = StringBuilder(text.length)
-    if (segments.first().second?.start == 0) {
+    if (segments.isEmpty()) {
+        outString.append(text)
+    } else if (segments.first().second?.start == 0) {
         unmatchedText.forEachIndexed { index, s ->
             outString.append(s)
             outString.append(segments[index].first)
@@ -69,5 +71,5 @@ actual fun makeBlueskyText(text: String): BlueskyText {
 
     }.filterNotNull()
 
-    return BlueskyText( outString.toString(), facets as ImmutableList<BskyFacet>)
+    return BlueskyText( outString.toString(), facets.toImmutableList())
 }

@@ -1,31 +1,29 @@
 package com.morpho.app.data
 
+import app.bsky.actor.GetProfileQuery
 import app.bsky.actor.PutPreferencesRequest
-import com.atproto.identity.ResolveHandleQuery
 import com.morpho.app.model.bluesky.BskyPreferences
 import com.morpho.app.model.bluesky.BskyUser
 import com.morpho.app.model.bluesky.toPreferences
+import com.morpho.app.model.bluesky.toProfile
 import com.morpho.butterfly.AtIdentifier
 import com.morpho.butterfly.Butterfly
-import com.morpho.butterfly.Handle
 import io.github.xxfast.kstore.KStore
 import io.github.xxfast.kstore.extensions.minus
 import io.github.xxfast.kstore.extensions.plus
 import io.github.xxfast.kstore.file.extensions.listStoreOf
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.*
 import kotlinx.serialization.Serializable
 import okio.Path.Companion.toPath
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
+import org.lighthousegames.logging.logging
 
 @Serializable
 data class BskyUserPreferences(
     val user: BskyUser,
-    val preferences: BskyPreferences
+    val preferences: BskyPreferences,
 )
 
 class PreferencesRepository(storageDir: String): KoinComponent {
@@ -36,45 +34,66 @@ class PreferencesRepository(storageDir: String): KoinComponent {
         enableCache = true
     )
 
-    private val prefs: Flow<List<BskyUserPreferences>?>
+    companion object {
+        val log = logging()
+    }
+
+    val prefs: Flow<List<BskyUserPreferences>?>
         get() = _prefsStore.updates.distinctUntilChanged()
+
+    fun userPrefs(id: AtIdentifier): Flow<BskyUserPreferences?> = flow {
+        prefs.onEach { preferencesList ->
+            emit(preferencesList?.firstOrNull { p ->
+                (p.user.userDid == id.toString()) || (p.user.handle == id.toString())
+            })
+        }
+    }.distinctUntilChanged()
+
 
 
     //@NativeCoroutines
     suspend fun getPreferences(id: AtIdentifier, pullRemote: Boolean = false): Result<BskyPreferences> {
-        return getPrefsLocal(id).map { prefs ->
-            if (pullRemote) {
-                if(id == api.id) {
-                    return@map api.api.getPreferences().map { it.toPreferences(prefs) }.getOrDefault(prefs)
-                } else if(!id.toString().contains("did:") && !(api.id.toString().contains("did:"))) {
-                    val did = api.api.resolveHandle(ResolveHandleQuery(Handle(id.toString()))).getOrNull()
-                    val apiDid = api.api.resolveHandle(ResolveHandleQuery(Handle(api.id.toString()))).getOrNull()
-                    if(did != null && apiDid != null && did == apiDid) {
-                        return@map api.api.getPreferences().map { it.toPreferences(prefs) }.getOrDefault(prefs)
-                    } else {
-                        return@map prefs
-                    }
-                } else if(!id.toString().contains("did:")){
-                    val did = api.api.resolveHandle(ResolveHandleQuery(Handle(id.toString()))).getOrNull()?.did
-                    if(did != null && api.id != null && did == api.id) {
-                        return@map api.api.getPreferences().map { it.toPreferences(prefs) }.getOrDefault(prefs)
-                    } else {
-                        return@map prefs
-                    }
-                } else if(!(api.id.toString().contains("did:"))) {
-                    val apiDid = api.api.resolveHandle(ResolveHandleQuery(Handle(api.id.toString()))).getOrNull()?.did
-                    if(id == apiDid) {
-                        return@map api.api.getPreferences().map { it.toPreferences(prefs) }.getOrDefault(prefs)
-                    } else {
-                        return@map prefs
-                    }
-                } else {
-                    return@map prefs
+        val result: Result<BskyPreferences> = getPrefsLocal(id)
+        val newPrefs = if (result.isSuccess && pullRemote) {
+            val prefs = result.getOrNull()
+            if (prefs != null) {
+                pullPreferences(prefs)
+            } else {
+                pullPreferences(null)
+            }
+        } else if(pullRemote) {
+            pullPreferences(null)
+        } else {
+            result
+        }.onSuccess {
+            val user = getUser(id).getOrNull()
+            if(result.isFailure) {
+                val profile = api.api.getProfile(GetProfileQuery(id))
+                    .getOrNull()?.toProfile()
+                if(profile != null) {
+                    setPreferences(BskyUser.makeUser(profile), it)
                 }
             } else {
-                return@map prefs
+                setPreferences(user!!, it)
             }
         }
+        return newPrefs
+    }
+
+    suspend fun getFullPrefsLocal(id: AtIdentifier): Result<BskyUserPreferences> {
+        val prefs = prefs.firstOrNull()?.firstOrNull {
+            (it.user.userDid == id.toString()) || (it.user.handle == id.toString())
+        }
+        return if (prefs != null) {
+            Result.success(prefs)
+        } else {
+            Result.failure(Exception("No preferences found for user $id"))
+        }
+    }
+
+    suspend fun pullPreferences(p: BskyPreferences?): Result<BskyPreferences> {
+        return if(p != null) api.api.getPreferences().map { it.toPreferences(p) }
+        else api.api.getPreferences().map { it.toPreferences() }
     }
 
 

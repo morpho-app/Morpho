@@ -14,21 +14,26 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.core.model.screenModelScope
-import cafe.adriel.voyager.core.screen.Screen
+import cafe.adriel.voyager.core.screen.ScreenKey
+import cafe.adriel.voyager.navigator.tab.LocalTabNavigator
+import cafe.adriel.voyager.navigator.tab.Tab
+import cafe.adriel.voyager.navigator.tab.TabOptions
 import com.morpho.app.model.uistate.AuthState
 import com.morpho.app.screens.base.tabbed.TabbedBaseScreen
+import com.morpho.app.ui.common.LoadingCircle
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 
-class LoginScreen: Screen {
+data object LoginScreen: Tab {
 
+    override val key: ScreenKey = hashCode().toString() + "TabbedLoginScreen"
     @Composable
     override fun Content() {
 
         val screenModel = koinInject<LoginScreenModel>()
         val focusManager = LocalFocusManager.current
         val snackbarHostState = remember { SnackbarHostState() }
-
+        val tabNavigator = LocalTabNavigator.current
 
         Scaffold (
             snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -55,10 +60,10 @@ class LoginScreen: Screen {
                         )
                     }
                     screenModel.loginState.authState is AuthState.Success -> {
-                        TabbedBaseScreen().Content()
+                        tabNavigator.current = TabbedBaseScreen("loginSuccess")
                     }
                     screenModel.loginState.isLoading -> {
-                        CircularProgressIndicator()
+                        LoadingCircle()
                     }
                     else -> {
                         Text(
@@ -73,6 +78,12 @@ class LoginScreen: Screen {
         }
 
     }
+
+    override val options: TabOptions
+        @Composable get() = TabOptions(
+                index = 1u,
+                title = "Login",
+            )
 
 }
 

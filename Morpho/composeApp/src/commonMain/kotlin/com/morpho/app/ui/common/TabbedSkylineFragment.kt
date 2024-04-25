@@ -5,25 +5,33 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.*
 import androidx.compose.ui.unit.dp
-import cafe.adriel.voyager.core.model.screenModelScope
+import cafe.adriel.voyager.navigator.LocalNavigator
+import cafe.adriel.voyager.navigator.currentOrThrow
+import cafe.adriel.voyager.navigator.tab.TabNavigator
 import com.atproto.repo.StrongRef
 import com.morpho.app.model.bluesky.BskyPost
 import com.morpho.app.model.bluesky.DraftPost
 import com.morpho.app.model.bluesky.MorphoDataItem
+import com.morpho.app.model.uidata.AtCursor
 import com.morpho.app.model.uistate.ContentCardState
+import com.morpho.app.screens.base.tabbed.ProfileTab
+import com.morpho.app.screens.base.tabbed.ThreadTab
 import com.morpho.app.screens.main.MainScreenModel
-import com.morpho.app.screens.main.tabbed.TabbedMainScreenModel
-import com.morpho.app.screens.profile.TabbedProfileViewModel
 import com.morpho.butterfly.model.RecordUnion
-import kotlinx.coroutines.launch
+import io.ktor.util.reflect.instanceOf
+import kotlinx.coroutines.flow.StateFlow
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun <T: MainScreenModel> TabbedSkylineFragment(
-    screenModel: T,
-    state: ContentCardState.ProfileTimeline<MorphoDataItem>?,
+fun <T: MainScreenModel, I: MorphoDataItem, S: ContentCardState<I>> TabbedSkylineFragment(
+    sm: T,
+    state: StateFlow<S>?,
     paddingValues: PaddingValues = PaddingValues(0.dp),
+    refresh: (AtCursor) -> Unit = {  },
 ) {
+    val navigator = if (LocalNavigator.current?.instanceOf(TabNavigator::class) == true) {
+        LocalNavigator.currentOrThrow.parent!!
+    } else LocalNavigator.currentOrThrow
     var repostClicked by remember { mutableStateOf(false) }
     var initialContent: BskyPost? by remember { mutableStateOf(null) }
     var showComposer by remember { mutableStateOf(false) }
@@ -54,37 +62,16 @@ fun <T: MainScreenModel> TabbedSkylineFragment(
         }
     }
     if(state != null) {
-        var timeline by remember { mutableStateOf(state) }
         SkylineFragment(
-            content = timeline,
+            content = state,
             isProfileFeed = true,
-            onProfileClicked = { actor -> screenModel.onProfileClicked(actor, true) },
-            onItemClicked = { uri -> screenModel.onItemClicked(uri, true) },
-            refresh = { _ ->
-                // Also want to test without explicitly remembering and setting timeline locally
-                screenModel.screenModelScope.launch {
-                    when (screenModel) {
-                        is TabbedProfileViewModel -> {
-                            screenModel.loadContent(state).await().map {
-                                timeline = it as ContentCardState.ProfileTimeline<MorphoDataItem>
-                            }
-                        }
-
-                        is TabbedMainScreenModel -> {
-                            screenModel.loadContent(state).await().map {
-                                timeline = it as ContentCardState.ProfileTimeline<MorphoDataItem>
-                            }
-                        }
-
-                        else -> { /* Shouldn't happen */
-                        }
-                    }
-                }
-            },
-            onUnClicked = { type, rkey -> screenModel.deleteRecord(type, rkey) },
+            onProfileClicked = { actor -> navigator.push(ProfileTab(actor)) },
+            onItemClicked = { uri -> navigator.push(ThreadTab(uri)) },
+            refresh = { cursor -> refresh(cursor)},
+            onUnClicked = { type, rkey -> sm.deleteRecord(type, rkey) },
             onRepostClicked = { onRepostClicked(it) },
             onReplyClicked = { onReplyClicked(it) },
-            onLikeClicked = { uri -> screenModel.createRecord(RecordUnion.Like(uri)) },
+            onLikeClicked = { uri -> sm.createRecord(RecordUnion.Like(uri)) },
             onPostButtonClicked = { onPostButtonClicked() },
             contentPadding = paddingValues,
         )
@@ -100,7 +87,7 @@ fun <T: MainScreenModel> TabbedSkylineFragment(
                         RecordUnion.Repost(
                             StrongRef(post.uri, post.cid)
                         )
-                    }?.let { screenModel.api.createRecord(it) }
+                    }?.let { sm.api.createRecord(it) }
                 },
                 onQuotePost = {
                     showComposer = true
@@ -121,12 +108,15 @@ fun <T: MainScreenModel> TabbedSkylineFragment(
                     draft = DraftPost()
                 },
                 onSend = {
-                    screenModel.api.createRecord(RecordUnion.MakePost(it))
+                    sm.api.createRecord(RecordUnion.MakePost(it))
                     showComposer = false
                 },
                 onUpdate = { draft = it }
             )
 
         }
+    } else {
+        LoadingCircle()
     }
 }
+
