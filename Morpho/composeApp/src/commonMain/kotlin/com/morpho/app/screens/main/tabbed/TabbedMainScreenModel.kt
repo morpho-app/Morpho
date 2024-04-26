@@ -24,6 +24,8 @@ import kotlinx.coroutines.launch
 import org.lighthousegames.logging.logging
 
 class TabbedMainScreenModel : MainScreenModel() {
+
+
     var uiState: TabbedScreenState by mutableStateOf(TabbedScreenState(loadingState = UiLoadingState.Loading))
         private set
 
@@ -101,9 +103,9 @@ class TabbedMainScreenModel : MainScreenModel() {
         return@launch
     }
 
-    fun refreshTab(index: Int, cursor: AtCursor = null): Boolean {
-        if(index < 0 || index > tabs.lastIndex) return false
-        return tabs[index].cursorFlow.tryEmit(cursor)
+    fun refreshTab(index: Int, cursor: AtCursor = null) :Boolean {
+        return if(index < 0 || index > tabs.lastIndex) false
+        else updateFeed(tabs[index], cursor)
     }
 
 
@@ -127,7 +129,7 @@ class TabbedMainScreenModel : MainScreenModel() {
         feed:FeedGenerator
     ): Result<Pair<ContentCardMapEntry.Feed, ContentCardState.Skyline<MorphoDataItem.FeedItem>>> {
         val title = feed.displayName
-        val tab = ContentCardMapEntry.Feed(feed.uri, title)
+        val tab = ContentCardMapEntry.Feed(feed.uri, title, avatar = feed.avatar)
         _cursors[tab.uri] = tab.cursorFlow
         val f = initFeed(feed, tab.cursorFlow, force = true, start = false, limit = 50).firstOrNull()
         return if(f != null) {

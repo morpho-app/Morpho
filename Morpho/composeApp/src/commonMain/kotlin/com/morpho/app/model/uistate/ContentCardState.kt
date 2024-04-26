@@ -55,7 +55,7 @@ sealed interface ContentCardState<T: MorphoDataItem> {
         override val hasNewPosts: Boolean = false,
     ) : ContentCardState<T>, SkylineContentState<T> {
         override val uri: AtUri = feed.uri
-        init {
+        /*init {
             require(
                 AtUri.ProfilePostsUriRegex.matches(uri.atUri) ||
                     AtUri.ProfileRepliesUriRegex.matches(uri.atUri) ||
@@ -66,7 +66,7 @@ sealed interface ContentCardState<T: MorphoDataItem> {
                     AtUri.ProfileModServiceUriRegex.matches(uri.atUri) ||
                 uri == AtUri.MY_PROFILE_URI
             ) { "Invalid profile feed uri: $uri" }
-        }
+        }*/
     }
 
     @Serializable

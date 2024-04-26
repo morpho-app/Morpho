@@ -1,22 +1,24 @@
 package com.morpho.app.screens.base.tabbed
 
-import androidx.compose.foundation.shape.CornerSize
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.core.screen.ScreenKey
-import cafe.adriel.voyager.navigator.CurrentScreen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import cafe.adriel.voyager.navigator.tab.Tab
 import cafe.adriel.voyager.navigator.tab.TabNavigator
 import cafe.adriel.voyager.navigator.tab.TabOptions
+import com.morpho.app.screens.main.tabbed.SlideTabTransition
+import com.morpho.app.ui.theme.roundedTopR
 import io.ktor.util.reflect.instanceOf
 import kotlin.math.min
 
@@ -33,8 +35,13 @@ data class TabbedBaseScreen(
         Navigator(
             HomeTab("startHome"),
         ) { navigator ->
-            LaunchedEffect(Unit) { navigator.replaceAll(HomeTab("startHome2")) }
-            CurrentScreen()
+
+            /*LaunchedEffect(Unit) { navigator.replaceAll(HomeTab("startHome2")) }*/
+            SlideTabTransition(navigator)
+            Text(
+                text = "Level #${navigator.level}",
+                modifier = Modifier.padding(8.dp).background(Color.Gray)
+            )
         }
 
     }
@@ -77,14 +84,11 @@ fun TabbedNavBar(
     selectedTab: Int = 0,
     navigator: Navigator = LocalNavigator.currentOrThrow,
 ) {
+
     PrimaryTabRow(
         selectedTabIndex = min(selectedTab, 4),
         modifier = Modifier.clip(
-            MaterialTheme.shapes.medium.copy(
-                bottomEnd = CornerSize(0.dp),
-                bottomStart = CornerSize(0.dp),
-                topStart = CornerSize(0.dp),
-            )
+            roundedTopR.medium
         ),
         indicator = {
             if (selectedTab <= 4) {
@@ -98,10 +102,10 @@ fun TabbedNavBar(
             }
         }
     ) {
-        TabNavigationItem(HomeTab("bottomNavHome"))
-        TabNavigationItem(SearchTab)
-        TabNavigationItem(FeedsTab)
-        TabNavigationItem(NotificationsTab)
-        TabNavigationItem(MyProfileTab)
+        TabNavigationItem(HomeTab("bottomNavHome"), navigator)
+        TabNavigationItem(SearchTab, navigator)
+        TabNavigationItem(FeedsTab, navigator)
+        TabNavigationItem(NotificationsTab, navigator)
+        TabNavigationItem(MyProfileTab, navigator)
     }
 }

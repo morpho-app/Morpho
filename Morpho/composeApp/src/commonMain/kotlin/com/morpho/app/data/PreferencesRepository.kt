@@ -24,6 +24,13 @@ import org.lighthousegames.logging.logging
 data class BskyUserPreferences(
     val user: BskyUser,
     val preferences: BskyPreferences,
+    val morphoPrefs: MorphoPreferences,
+)
+
+@Serializable
+data class MorphoPreferences(
+    val tabbed: Boolean = true,
+    val undecorated: Boolean = true,
 )
 
 class PreferencesRepository(storageDir: String): KoinComponent {
@@ -53,18 +60,18 @@ class PreferencesRepository(storageDir: String): KoinComponent {
 
     //@NativeCoroutines
     suspend fun getPreferences(id: AtIdentifier, pullRemote: Boolean = false): Result<BskyPreferences> {
-        val result: Result<BskyPreferences> = getPrefsLocal(id)
+        val result: Result<BskyUserPreferences> = getFullPrefsLocal(id)
         val newPrefs = if (result.isSuccess && pullRemote) {
             val prefs = result.getOrNull()
             if (prefs != null) {
-                pullPreferences(prefs)
+                pullPreferences(prefs.preferences)
             } else {
                 pullPreferences(null)
             }
         } else if(pullRemote) {
             pullPreferences(null)
         } else {
-            result
+            result.map { it.preferences }
         }.onSuccess {
             val user = getUser(id).getOrNull()
             if(result.isFailure) {
@@ -74,10 +81,17 @@ class PreferencesRepository(storageDir: String): KoinComponent {
                     setPreferences(BskyUser.makeUser(profile), it)
                 }
             } else {
-                setPreferences(user!!, it)
+                setPreferences(user!!, it, result.getOrNull()!!.morphoPrefs)
             }
         }
         return newPrefs
+    }
+
+    suspend fun getFullPrefs(
+        id: AtIdentifier, remote: Boolean = true
+    ): Result<BskyUserPreferences> {
+        return if (remote)  getFullPrefsRemote(id)
+        else getFullPrefsLocal(id)
     }
 
     suspend fun getFullPrefsLocal(id: AtIdentifier): Result<BskyUserPreferences> {
@@ -86,6 +100,19 @@ class PreferencesRepository(storageDir: String): KoinComponent {
         }
         return if (prefs != null) {
             Result.success(prefs)
+        } else {
+            Result.failure(Exception("No preferences found for user $id"))
+        }
+    }
+
+    suspend fun getFullPrefsRemote(id: AtIdentifier): Result<BskyUserPreferences> {
+        val prefs = prefs.firstOrNull()?.firstOrNull {
+            (it.user.userDid == id.toString()) || (it.user.handle == id.toString())
+        }
+        return if (prefs != null) {
+            pullPreferences(prefs.preferences).map {
+                BskyUserPreferences(prefs.user, it, prefs.morphoPrefs)
+            }
         } else {
             Result.failure(Exception("No preferences found for user $id"))
         }
@@ -122,18 +149,18 @@ class PreferencesRepository(storageDir: String): KoinComponent {
     }
 
     //@NativeCoroutines
-    suspend fun setPreferences(user: BskyUser, pref: BskyPreferences) = coroutineScope {
+    suspend fun setPreferences(user: BskyUser, pref: BskyPreferences, morphoPrefs: MorphoPreferences = MorphoPreferences()) = coroutineScope {
         val p =  this@PreferencesRepository.prefs.first()
         val prefsIndex = p?.indexOfFirst { it.user.userDid == user.userDid }
         if (prefsIndex != -1 && prefsIndex != null) {
             _prefsStore.minus(p[prefsIndex])
         }
-        _prefsStore.plus(BskyUserPreferences(user, pref))
+        _prefsStore.plus(BskyUserPreferences(user, pref, morphoPrefs))
     }
 
     //@NativeCoroutines
-    suspend fun setPreferencesRemote(user: BskyUser, pref: BskyPreferences) = coroutineScope {
-        setPreferences(user, pref)
+    suspend fun setPreferencesRemote(user: BskyUser, pref: BskyPreferences, morphoPrefs: MorphoPreferences = MorphoPreferences()) = coroutineScope {
+        setPreferences(user, pref, morphoPrefs)
         api.api.putPreferences(PutPreferencesRequest(pref.toRemotePrefs()))
     }
 }

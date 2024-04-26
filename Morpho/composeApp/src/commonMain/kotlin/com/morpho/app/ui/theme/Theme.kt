@@ -2,17 +2,12 @@ package com.morpho.app.ui.theme
 
 
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.SideEffect
 
 
 val LightColorScheme = lightColorScheme(
-    //primary = Purple80,
-    //secondary = PurpleGrey80,
-    //tertiary = Pink80
 
     primary = morphoLightPrimary,
     onPrimary = morphoLightOnPrimary,
@@ -46,14 +41,11 @@ val LightColorScheme = lightColorScheme(
 )
 
 val DarkColorScheme = darkColorScheme(
-    //primary = Purple40,
-    //secondary = PurpleGrey40,
-    //tertiary = Pink40
 
     primary = morphoDarkPrimary,
     onPrimary = morphoDarkOnPrimary,
     primaryContainer = morphoDarkPrimaryContainer,
-    onPrimaryContainer = morphoLightOnPrimaryContainer,
+    onPrimaryContainer = morphoDarkOnPrimaryContainer,
     inversePrimary = morphoDarkPrimaryInverse,
     secondary = morphoDarkSecondary,
     onSecondary = morphoDarkOnSecondary,

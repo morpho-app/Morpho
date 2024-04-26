@@ -12,14 +12,7 @@ import androidx.compose.material.pullrefresh.PullRefreshIndicator
 import androidx.compose.material.pullrefresh.pullRefresh
 import androidx.compose.material.pullrefresh.rememberPullRefreshState
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.derivedStateOf
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
@@ -28,6 +21,7 @@ import com.morpho.app.model.bluesky.BskyPost
 import com.morpho.app.model.bluesky.MorphoDataItem
 import com.morpho.app.model.uidata.AtCursor
 import com.morpho.app.model.uistate.ContentCardState
+import com.morpho.app.model.uistate.ContentLoadingState
 import com.morpho.app.ui.elements.MenuOptions
 import com.morpho.app.ui.elements.WrappedLazyColumn
 import com.morpho.app.ui.post.PostFragment
@@ -57,29 +51,54 @@ fun <T: MorphoDataItem> SkylineFragment (
     contentPadding: PaddingValues = PaddingValues(0.dp),
     isProfileFeed: Boolean = false,
 ) {
-    val postList = content.value.feed.items
-    val cursor = content.value.feed.cursor
+    val currentRefresh by rememberUpdatedState(refresh)
+
+
+    val state = content.collectAsState()
+    val loading = state.value.loadingState
+    val cursor by rememberUpdatedState(state.value.feed.cursor)
+
     val coroutineScope = rememberCoroutineScope()
     var refreshing by remember { mutableStateOf(false) }
+
     val listState: LazyListState = rememberLazyListState()
 
-
-
-
-    LaunchedEffect(Unit) {
-        if(listState.firstVisibleItemIndex == 0 && !isProfileFeed) listState.animateScrollToItem(0, 50)
+    val data = remember(loading, state, cursor, refreshing) {
+        state.value.feed
     }
-    LaunchedEffect(!listState.canScrollForward) {
-        refresh(cursor)
+    val scrolledDownSome by remember {
+        derivedStateOf {
+            listState.firstVisibleItemIndex > 5
+        }
     }
+
+    val scrolledDownLots by remember {
+        derivedStateOf {
+            listState.firstVisibleItemIndex > 20
+        }
+    }
+
     fun refreshPull() = coroutineScope.launch {
         refreshing = true
-        launch { refresh(null) }.invokeOnCompletion { refreshing = false }
+        launch { currentRefresh(null) }
+            .invokeOnCompletion { refreshing = false }
+
     }
+
+    LaunchedEffect(
+        data.items.isNotEmpty() &&
+            loading == ContentLoadingState.Idle &&
+            !listState.canScrollForward &&
+            !refreshing &&
+            scrolledDownSome
+    ) {
+        currentRefresh(cursor)
+    }
+
 
     val refreshState = rememberPullRefreshState(refreshing, ::refreshPull)
 
-    val scrolledDownBy by remember { derivedStateOf { listState.firstVisibleItemIndex } }
+
 
     ConstraintLayout(
         modifier = if(isProfileFeed) {
@@ -166,7 +185,7 @@ fun <T: MorphoDataItem> SkylineFragment (
                 }
             }
             items(
-                postList, key = {it.hashCode()},
+                data.items, key = {it.hashCode()},
                 contentType = {
                     when(it) {
                         is MorphoDataItem.Post -> MorphoDataItem.Post::class
@@ -212,13 +231,13 @@ fun <T: MorphoDataItem> SkylineFragment (
                 }
             }
         }
-        if (scrolledDownBy > 5) {
+        if (scrolledDownSome) {
 
             OutlinedIconButton(
                 onClick = {
                     coroutineScope.launch {
-                        launch { refresh(null) }
-                        if (scrolledDownBy > 20) {
+                        refreshPull()
+                        if (scrolledDownLots) {
                             listState.scrollToItem(0)
                         } else {
                             listState.animateScrollToItem(0)
@@ -238,7 +257,7 @@ fun <T: MorphoDataItem> SkylineFragment (
                     }
                     .size(50.dp)
             ) {
-                    if (scrolledDownBy > 20) {
+                    if (scrolledDownLots) {
                         Icon(
                             Icons.Default.KeyboardDoubleArrowUp,
                             "Scroll to top",

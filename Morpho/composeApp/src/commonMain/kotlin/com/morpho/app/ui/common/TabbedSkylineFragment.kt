@@ -61,7 +61,8 @@ fun <T: MainScreenModel, I: MorphoDataItem, S: ContentCardState<I>> TabbedSkylin
             showComposer = true
         }
     }
-    if(state != null) {
+    val content = state?.collectAsState()
+    if(content?.value != null) {
         SkylineFragment(
             content = state,
             isProfileFeed = true,

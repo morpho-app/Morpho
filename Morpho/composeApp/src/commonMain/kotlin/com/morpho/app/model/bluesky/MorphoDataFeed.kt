@@ -7,7 +7,6 @@ import app.bsky.feed.GetPostThreadQuery
 import app.bsky.feed.GetPostThreadResponseThreadUnion
 import com.morpho.app.model.uidata.AtCursor
 import com.morpho.app.model.uidata.Delta
-import com.morpho.app.model.uidata.Moment
 import com.morpho.app.model.uidata.MorphoData
 import com.morpho.app.util.mapImmutable
 import com.morpho.butterfly.*
@@ -15,7 +14,6 @@ import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.*
-import kotlinx.datetime.Instant
 import kotlinx.serialization.Serializable
 import kotlin.time.Duration
 
@@ -113,18 +111,8 @@ data class MorphoDataFeed<T: MorphoDataItem> (
             cursor: AtCursor = feed.cursor,
         ): MorphoDataFeed<MorphoDataItem> {
             return MorphoDataFeed(
-                _items = (posts.mapImmutable { MorphoDataItem.Post(it.toPost()) } union feed._items).toList()
-                    .sortedByDescending {
-                        when(it) {
-                            is MorphoDataItem.Post -> it.post.createdAt
-                            is MorphoDataItem.Thread -> it.thread.post.createdAt
-                            is MorphoDataItem.FeedInfo -> it.feed.indexedAt
-                            is MorphoDataItem.ListInfo -> it.list.indexedAt
-                            is MorphoDataItem.ModLabel -> Moment(Instant.DISTANT_PAST)
-                            is MorphoDataItem.ProfileItem -> Moment(Instant.DISTANT_PAST)
-                            is MorphoDataItem.LabelService -> it.service.indexedAt
-                        }
-                    }.toMutableList(),
+                _items = (posts.mapImmutable { MorphoDataItem.Post(it.toPost()) } + feed._items).toList()
+                    .toMutableList(),
 
                 cursor = cursor, hasNewPosts = cursor == null
             )
@@ -135,18 +123,8 @@ data class MorphoDataFeed<T: MorphoDataItem> (
             cursor: AtCursor = feed.cursor,
         ): MorphoDataFeed<MorphoDataItem> {
             return MorphoDataFeed(
-                _items = (feed._items union posts.mapImmutable { MorphoDataItem.Post(it.toPost()) }).toList()
-                    .sortedByDescending {
-                        when(it) {
-                            is MorphoDataItem.Post -> it.post.createdAt
-                            is MorphoDataItem.Thread -> it.thread.post.createdAt
-                            is MorphoDataItem.FeedInfo -> it.feed.indexedAt
-                            is MorphoDataItem.ListInfo -> it.list.indexedAt
-                            is MorphoDataItem.ModLabel -> Moment(Instant.DISTANT_PAST)
-                            is MorphoDataItem.ProfileItem -> Moment(Instant.DISTANT_PAST)
-                            is MorphoDataItem.LabelService -> it.service.indexedAt
-                        }
-                    }.toMutableList(),
+                _items = (feed._items + posts.mapImmutable { MorphoDataItem.Post(it.toPost()) })
+                    .toMutableList(),
                 cursor = cursor, hasNewPosts = cursor == null
             )
         }
@@ -157,18 +135,7 @@ data class MorphoDataFeed<T: MorphoDataItem> (
             cursor: AtCursor = last.cursor
         ): MorphoDataFeed<MorphoDataItem> {
             return MorphoDataFeed(
-                _items = (first._items union last._items).toList()
-                    .sortedByDescending {
-                       when(it) {
-                           is MorphoDataItem.Post -> it.post.createdAt
-                           is MorphoDataItem.Thread -> it.thread.post.createdAt
-                           is MorphoDataItem.FeedInfo -> it.feed.indexedAt
-                           is MorphoDataItem.ListInfo -> it.list.indexedAt
-                           is MorphoDataItem.ModLabel -> Moment(Instant.DISTANT_PAST)
-                           is MorphoDataItem.ProfileItem -> Moment(Instant.DISTANT_PAST)
-                           is MorphoDataItem.LabelService -> it.service.indexedAt
-                       }
-                }.toMutableList(),
+                _items = (first._items + last._items).toMutableList(),
                 cursor = cursor, hasNewPosts = cursor == null
             )
         }
@@ -179,19 +146,7 @@ data class MorphoDataFeed<T: MorphoDataItem> (
             cursor: AtCursor = last.cursor
         ): MorphoDataFeed<T> {
             return MorphoDataFeed(
-                _items = (first.items union last.items).toList()
-                    .sortedByDescending {
-                        when(it) {
-                            is MorphoDataItem.Post -> it.post.createdAt
-                            is MorphoDataItem.Thread -> it.thread.post.createdAt
-                            is MorphoDataItem.FeedInfo -> it.feed.indexedAt
-                            is MorphoDataItem.ListInfo -> it.list.indexedAt
-                            is MorphoDataItem.ModLabel -> Moment(Instant.DISTANT_PAST)
-                            is MorphoDataItem.ProfileItem -> Moment(Instant.DISTANT_PAST)
-                            is MorphoDataItem.LabelService -> it.service.indexedAt
-                            else -> {Moment(Instant.DISTANT_PAST)}
-                        }
-                    }.toMutableList(),
+                _items = (first.items + last.items).toMutableList(),
                 cursor = cursor, hasNewPosts = cursor == null
             )
         }
@@ -202,19 +157,7 @@ data class MorphoDataFeed<T: MorphoDataItem> (
             cursor: AtCursor = last.cursor
         ): MorphoDataFeed<T> {
             return MorphoDataFeed(
-                _items = (first.items union last.items).toList()
-                    .sortedByDescending {
-                        when(it) {
-                            is MorphoDataItem.Post -> it.post.createdAt
-                            is MorphoDataItem.Thread -> it.thread.post.createdAt
-                            is MorphoDataItem.FeedInfo -> it.feed.indexedAt
-                            is MorphoDataItem.ListInfo -> it.list.indexedAt
-                            is MorphoDataItem.ModLabel -> Moment(Instant.DISTANT_PAST)
-                            is MorphoDataItem.ProfileItem -> Moment(Instant.DISTANT_PAST)
-                            is MorphoDataItem.LabelService -> it.service.indexedAt
-                            else -> {Moment(Instant.DISTANT_PAST)}
-                        }
-                    }.toMutableList(),
+                _items = (first.items + last.items).toMutableList(),
                 cursor = cursor, hasNewPosts = cursor == null
             )
         }

@@ -9,7 +9,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.saveable.rememberSaveable
-import cafe.adriel.voyager.core.lifecycle.LifecycleEffect
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.core.screen.ScreenKey
 import cafe.adriel.voyager.koin.getNavigatorScreenModel
@@ -157,14 +156,8 @@ data class ProfileTab(
     override fun Content() {
         val navigator = LocalNavigator.currentOrThrow
         val screenModel = navigator.getNavigatorScreenModel<TabbedProfileViewModel>()
-        LifecycleEffect(
-            onStarted = {
-                screenModel.initProfile()
-            },
-            onDisposed = {},
-        )
         val ownProfile = rememberSaveable { screenModel.api.id == id }
-        TabbedProfileContent(screenModel, ownProfile)
+        TabbedProfileContent(ownProfile)
 
     }
 
@@ -218,15 +211,7 @@ data object MyProfileTab: TabScreen {
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     override fun Content() {
-        val navigator = LocalNavigator.currentOrThrow
-        val screenModel = navigator.getNavigatorScreenModel<TabbedProfileViewModel>()
-        LifecycleEffect(
-            onStarted = {
-                screenModel.initProfile()
-            },
-            onDisposed = {},
-        )
-        TabbedProfileContent(screenModel, true)
+        TabbedProfileContent(true)
     }
 
 

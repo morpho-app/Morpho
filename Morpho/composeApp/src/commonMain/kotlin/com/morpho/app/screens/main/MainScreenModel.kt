@@ -93,7 +93,6 @@ open class MainScreenModel: BaseScreenModel() {
             preferences.userPrefs(userId!!).onEach { userPrefs.value = it }.launchIn(screenModelScope)
         }
         if(populateFeeds) initFeeds()
-
     }
 
     fun getFeedInfo(uri: AtUri) : FeedInfo? {
@@ -399,52 +398,45 @@ open class MainScreenModel: BaseScreenModel() {
             _cursors[AtUri.profilePostsUri(p.did)] = postsCursor
             val posts = dataService
                 .authorFeed(p.did, FeedType.PROFILE_POSTS, postsCursor.asSharedFlow(), 50)
-                .map { it.getOrNull() }
-                .map { if(it != null) ContentCardState.ProfileTimeline(p, it, ContentLoadingState.Idle) else null }
+                .handleToState(p, MorphoData("Posts", AtUri.profilePostsUri(p.did), postsCursor.replayCache.lastOrNull()))
 
             val repliesCursor: MutableSharedFlow<AtCursor> = initAtCursor()
             _cursors[AtUri.profileRepliesUri(p.did)] = repliesCursor
             val replies = dataService
                 .authorFeed(p.did, FeedType.PROFILE_REPLIES, repliesCursor.asSharedFlow(), 50)
-                .map { it.getOrNull() }
-                .map { if(it != null) ContentCardState.ProfileTimeline(p, it, ContentLoadingState.Idle) else null }
+                .handleToState(p, MorphoData("Replies", AtUri.profileRepliesUri(p.did), repliesCursor.replayCache.lastOrNull()))
 
             val mediaCursor: MutableSharedFlow<AtCursor> = initAtCursor()
             _cursors[AtUri.profileMediaUri(p.did)] = mediaCursor
             val media = dataService
                 .authorFeed(p.did, FeedType.PROFILE_MEDIA, mediaCursor.asSharedFlow(), 50)
-                .map { it.getOrNull() }
-                .map { if(it != null) ContentCardState.ProfileTimeline(p, it, ContentLoadingState.Idle) else null }
+                .handleToState(p, MorphoData("Media", AtUri.profileMediaUri(p.did), mediaCursor.replayCache.lastOrNull()))
 
             val likesCursor: MutableSharedFlow<AtCursor> = initAtCursor()
             _cursors[AtUri.profileLikesUri(p.did)] = likesCursor
             val likes = dataService
-                .authorFeed(p.did, FeedType.PROFILE_LIKES, likesCursor.asSharedFlow(), 50)
-                .map { it.getOrNull() }
-                .map { if(it != null) ContentCardState.ProfileTimeline(p, it, ContentLoadingState.Idle) else null }
+                .profileLikes(p.did, likesCursor.asSharedFlow(), 50)
+                .handleToState(p, MorphoData("Likes", AtUri.profileLikesUri(p.did), likesCursor.replayCache.lastOrNull()))
 
             val listsCursor: MutableSharedFlow<AtCursor> = initAtCursor()
             _cursors[AtUri.profileUserListsUri(p.did)] = listsCursor
             val lists = dataService
                 .profileLists(p.did, listsCursor.asSharedFlow(), 50)
-                .map { it.getOrNull() }
-                .map { if(it != null) ContentCardState.ProfileTimeline(p, it, ContentLoadingState.Idle) else null }
+                .handleToState(p, MorphoData("Lists", AtUri.profileUserListsUri(p.did), listsCursor.replayCache.lastOrNull()))
 
             val feedsCursor: MutableSharedFlow<AtCursor> = initAtCursor()
             _cursors[AtUri.profileFeedsListUri(p.did)] = feedsCursor
             val feeds = dataService
                 .profileFeedsList(p.did, feedsCursor.asSharedFlow(), 50)
-                .map { it.getOrNull() }
-                .map { if(it != null) ContentCardState.ProfileTimeline(p, it, ContentLoadingState.Idle) else null }
+                .handleToState(p, MorphoData("Feeds", AtUri.profileFeedsListUri(p.did), feedsCursor.replayCache.lastOrNull()))
 
             if (p is BskyLabelService) {
                 val servicesCursor: MutableSharedFlow<AtCursor> = initAtCursor()
                 _cursors[AtUri.profileModServiceUri(p.did)] = servicesCursor
                 val services = dataService
                     .profileServiceView(p.did, servicesCursor.map { Unit }
-                        .shareIn(screenModelScope, SharingStarted.Lazily))
-                    .map { it.getOrNull() }
-                    .map { if(it != null) ContentCardState.ProfileTimeline(p, it, ContentLoadingState.Idle) else null }
+                        .shareIn(screenModelScope, SharingStarted.Lazily)
+                    ).handleToState(p, MorphoData("Labels", AtUri.profileModServiceUri(p.did), servicesCursor.replayCache.lastOrNull()))
                 servicesCursor.emit(null)
                 ContentCardState.FullProfile(
                     p,

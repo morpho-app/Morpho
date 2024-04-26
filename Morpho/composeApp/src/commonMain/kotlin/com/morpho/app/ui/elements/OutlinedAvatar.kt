@@ -26,7 +26,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -40,6 +39,7 @@ import coil3.compose.LocalPlatformContext
 import coil3.request.ImageRequest
 import coil3.request.crossfade
 import com.morpho.app.ui.theme.MorphoTheme
+import com.morpho.app.ui.theme.roundedTopLBotR
 import morpho.composeapp.generated.resources.Res
 import morpho.composeapp.generated.resources.placeholder_pfp
 import org.jetbrains.compose.resources.ExperimentalResourceApi
@@ -68,7 +68,7 @@ fun OutlinedAvatar(
     val s = when(shape) {
         AvatarShape.Circle -> CircleShape
         AvatarShape.Rounded -> MaterialTheme.shapes.small
-        AvatarShape.Corner -> MaterialTheme.shapes.small.copy(topEnd = CornerSize(0.dp), bottomStart =CornerSize(0.dp))
+        AvatarShape.Corner -> roundedTopLBotR.small
     }
     AsyncImage(
         model = ImageRequest.Builder(LocalPlatformContext.current)

@@ -13,6 +13,7 @@ sealed interface ContentCardMapEntry {
     val uri: AtUri
     val title: String
     val cursorFlow: MutableSharedFlow<AtCursor>
+    val avatar: String?
 
     @Immutable
     @Serializable
@@ -20,6 +21,7 @@ sealed interface ContentCardMapEntry {
         override val uri: AtUri = AtUri.HOME_URI
         override val title: String = "Home"
         override val cursorFlow: MutableSharedFlow<AtCursor> = initAtCursor()
+        override val avatar: String? = null
     }
 
     @Immutable
@@ -31,7 +33,8 @@ sealed interface ContentCardMapEntry {
     data class Feed(
         override val uri: AtUri,
         override val title: String = uri.atUri,
-        override val cursorFlow: MutableSharedFlow<AtCursor> = initAtCursor()
+        override val cursorFlow: MutableSharedFlow<AtCursor> = initAtCursor(),
+        override val avatar: String? = null,
     ) : ContentCardMapEntry, Skyline
 
     @Immutable
@@ -39,7 +42,8 @@ sealed interface ContentCardMapEntry {
     data class PostThread(
         override val uri: AtUri,
         override val title: String = uri.atUri,
-        override val cursorFlow: MutableSharedFlow<AtCursor> = initAtCursor()
+        override val cursorFlow: MutableSharedFlow<AtCursor> = initAtCursor(),
+        override val avatar: String? = null,
     ) : ContentCardMapEntry
 
     @Immutable
@@ -47,7 +51,8 @@ sealed interface ContentCardMapEntry {
     data class UserList(
         override val uri: AtUri,
         override val title: String = uri.atUri,
-        override val cursorFlow: MutableSharedFlow<AtCursor> = initAtCursor()
+        override val cursorFlow: MutableSharedFlow<AtCursor> = initAtCursor(),
+        override val avatar: String? = null,
     ) : ContentCardMapEntry
 
     @Immutable
@@ -55,7 +60,8 @@ sealed interface ContentCardMapEntry {
     data class FeedList(
         override val uri: AtUri,
         override val title: String = uri.atUri,
-        override val cursorFlow: MutableSharedFlow<AtCursor> = initAtCursor()
+        override val cursorFlow: MutableSharedFlow<AtCursor> = initAtCursor(),
+        override val avatar: String? = null,
     ) : ContentCardMapEntry
 
     @Immutable
@@ -63,7 +69,8 @@ sealed interface ContentCardMapEntry {
     data class ServiceList(
         override val uri: AtUri,
         override val title: String = uri.atUri,
-        override val cursorFlow: MutableSharedFlow<AtCursor> = initAtCursor()
+        override val cursorFlow: MutableSharedFlow<AtCursor> = initAtCursor(),
+        override val avatar: String? = null,
     ) : ContentCardMapEntry
 
     @Immutable
@@ -72,7 +79,8 @@ sealed interface ContentCardMapEntry {
         val id: AtIdentifier,
         override val uri: AtUri = AtUri.profileUri(id),
         override val title: String = uri.atUri,
-        override val cursorFlow: MutableSharedFlow<AtCursor> = initAtCursor()
+        override val cursorFlow: MutableSharedFlow<AtCursor> = initAtCursor(),
+        override val avatar: String? = null,
     ) : ContentCardMapEntry
 
     val isHome: Boolean

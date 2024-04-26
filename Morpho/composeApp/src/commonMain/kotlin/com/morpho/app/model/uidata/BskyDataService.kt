@@ -19,10 +19,7 @@ import com.morpho.butterfly.AtIdentifier
 import com.morpho.butterfly.AtUri
 import com.morpho.butterfly.Butterfly
 import com.morpho.butterfly.Did
-import kotlinx.collections.immutable.ImmutableList
-import kotlinx.collections.immutable.persistentListOf
-import kotlinx.collections.immutable.toImmutableList
-import kotlinx.collections.immutable.toImmutableMap
+import kotlinx.collections.immutable.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.*
@@ -84,7 +81,8 @@ class BskyDataService(
 
 
     // Secondary way to make sure you have the most recent stuff, in case you lose the original reference
-    val dataFlows = _dataFlows.mapValues { it.value.asStateFlow() }.toImmutableMap()
+    val dataFlows: ImmutableMap<AtUri, StateFlow<MorphoData<MorphoDataItem>>>
+            get() = _dataFlows.mapValues { it.value.asStateFlow() }.toImmutableMap()
 
     companion object {
         val log = logging()
@@ -344,6 +342,7 @@ class BskyDataService(
         }
         return Result.failure(Exception("Invalid feed type."))
     }
+    @OptIn(FlowPreview::class)
     suspend fun timeline(
         cursor: SharedFlow<AtCursor>,
         limit: Long = 50,
@@ -351,9 +350,9 @@ class BskyDataService(
         dispatcher: CoroutineDispatcher = Dispatchers.IO,
         scope: CoroutineScope = serviceScope,
     ): Flow<Result<MorphoData<MorphoDataItem.FeedItem>>> = flow {
-        cursor.combine(feedPref) { c, f -> c to f }
+        cursor.debounce(300).combine(feedPref) { c, f -> c to f }
             .collect { flows ->
-                log.d { "Timeline flow tick." }
+                //log.d { "Timeline flow tick." }
                 val (cur, pref) = flows
                 val prev = dataFlows[AtUri.HOME_URI]?.value
                 val query = GetTimelineQuery(limit = limit, cursor = cur)
@@ -375,11 +374,17 @@ class BskyDataService(
 
                     emit(Result.success(data as MorphoData<MorphoDataItem.FeedItem>))
                     log.d{
-                        "Timeline" +
-                        "Cursor: $cur\n"
+                        "Timeline " +
+                        "Old cursor: $cur " +
+                        "New cursor: ${response.cursor}"
                     }
                     log.v {
-                        "${data.items}"
+                        "${data.items.map {
+                            when(it) {
+                                is MorphoDataItem.Post -> "${it.post.uri}\n"
+                                is MorphoDataItem.Thread -> "${it.thread.post.uri}\n"
+                            }
+                        }}"
                     }
                     mutex.withLock {
                         if(prev == null) _dataFlows[AtUri.HOME_URI] = MutableStateFlow(data)
@@ -396,6 +401,7 @@ class BskyDataService(
         //    MorphoData("Home", AtUri.HOME_URI, null)
         //))
 
+    @OptIn(FlowPreview::class)
     suspend fun feed(
         feedInfo: FeedInfo,
         cursor: SharedFlow<AtCursor>,
@@ -404,9 +410,9 @@ class BskyDataService(
         dispatcher: CoroutineDispatcher = Dispatchers.IO,
         scope: CoroutineScope = serviceScope,
     ): Flow<Result<MorphoData<MorphoDataItem.FeedItem>>> = flow {
-        cursor.combine(feedPref) { c, f -> c to f }
+        cursor.debounce(300).combine(feedPref) { c, f -> c to f }
             .collect { flows ->
-                log.d { "Feed flow tick."}
+                //log.d { "Feed flow tick."}
                 val cur = flows.first
                 val pref = flows.second
                 val prev = dataFlows[feedInfo.uri]?.value
@@ -434,11 +440,17 @@ class BskyDataService(
 
                     emit(Result.success(data as MorphoData<MorphoDataItem.FeedItem>))
                     log.d{
-                        "Feed: ${feedInfo.name}\n" +
-                        "Cursor: $cur\n"
+                        "Feed: ${feedInfo.name} " +
+                        "Old cursor: $cur " +
+                        "New cursor: ${response.cursor}"
                     }
                     log.v {
-                        "${data.items}"
+                        "${data.items.map {
+                            when(it) {
+                                is MorphoDataItem.Post -> it.post.uri
+                                is MorphoDataItem.Thread -> it.thread.post.uri
+                            }
+                        }}"
                     }
                     mutex.withLock {
                         if(prev == null) _dataFlows[feedInfo.uri] = MutableStateFlow(data)
@@ -530,8 +542,8 @@ class BskyDataService(
                 val uri = AtUri.profilePostsUri(id)
                 cursor.collect { cur ->
                         val prev = dataFlows[uri]?.value
-                        val query = GetFeedQuery(uri, limit, cur)
-                        api.api.getFeed(query).onSuccess { response ->
+                        val query = GetAuthorFeedQuery(id, limit, cur, GetAuthorFeedFilter.POSTS_NO_REPLIES)
+                        api.api.getAuthorFeed(query).onSuccess { response ->
                             val newPosts = MorphoDataFeed
                                 .collectThreads(api, response.cursor, response.feed.toBskyPostList()).last()
                             val feed = if (cur != null && prev != null && prev.items.isNotEmpty()) {
@@ -559,8 +571,8 @@ class BskyDataService(
                 val uri = AtUri.profileRepliesUri(id)
                 cursor.collect { cur ->
                     val prev = dataFlows[uri]?.value
-                    val query = GetFeedQuery(uri, limit, cur)
-                    api.api.getFeed(query).onSuccess { response ->
+                    val query = GetAuthorFeedQuery(id, limit, cur, GetAuthorFeedFilter.POSTS_WITH_REPLIES)
+                    api.api.getAuthorFeed(query).onSuccess { response ->
                         val newPosts = MorphoDataFeed
                             .collectThreads(api, response.cursor, response.feed.toBskyPostList()).last()
                         val feed = if (cur != null && prev != null && prev.items.isNotEmpty()) {
@@ -588,8 +600,8 @@ class BskyDataService(
                 val uri = AtUri.profileMediaUri(id)
                 cursor.onEach { cur ->
                     val prev = dataFlows[uri]?.value
-                    val query = GetFeedQuery(uri, limit, cur)
-                    api.api.getFeed(query).onSuccess { response ->
+                    val query = GetAuthorFeedQuery(id, limit, cur, GetAuthorFeedFilter.POSTS_WITH_MEDIA)
+                    api.api.getAuthorFeed(query).onSuccess { response ->
                         val newPosts = MorphoDataFeed
                             .collectThreads(api, response.cursor, response.feed.toBskyPostList()).last()
                         val feed = if (cur != null && prev != null && prev.items.isNotEmpty()) {

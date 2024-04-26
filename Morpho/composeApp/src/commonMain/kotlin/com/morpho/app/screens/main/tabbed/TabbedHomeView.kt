@@ -1,6 +1,13 @@
 package com.morpho.app.screens.main.tabbed
 
 import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.animation.core.FiniteAnimationSpec
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.VisibilityThreshold
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
@@ -9,17 +16,27 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.core.lifecycle.LifecycleEffect
 import cafe.adriel.voyager.core.screen.ScreenKey
+import cafe.adriel.voyager.core.stack.StackEvent
 import cafe.adriel.voyager.koin.getNavigatorScreenModel
-import cafe.adriel.voyager.navigator.CurrentScreen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import cafe.adriel.voyager.navigator.tab.TabOptions
+import cafe.adriel.voyager.transitions.ScreenTransition
+import cafe.adriel.voyager.transitions.ScreenTransitionContent
 import coil3.annotation.ExperimentalCoilApi
+import coil3.compose.AsyncImage
+import coil3.compose.LocalPlatformContext
+import coil3.request.ImageRequest
+import coil3.request.crossfade
 import com.morpho.app.model.bluesky.MorphoDataItem
 import com.morpho.app.model.uistate.ContentCardState
 import com.morpho.app.model.uistate.UiLoadingState
@@ -41,16 +58,19 @@ fun TabScreen.TabbedHomeView() {
 
     val navigator = LocalNavigator.currentOrThrow
     val sm = navigator.getNavigatorScreenModel<TabbedMainScreenModel>()
+
+    var selectedTabIndex by rememberSaveable { mutableIntStateOf(0) }
+    var insets = WindowInsets.navigationBars.asPaddingValues()
+
     LifecycleEffect(
         onStarted = {
             sm.initTabs()
         },
         onDisposed = {},
     )
-    //val uiState = remember { derivedStateOf() { sm.uiState }}
-    var selectedTabIndex by rememberSaveable { mutableIntStateOf(0) }
-    var insets = WindowInsets.navigationBars.asPaddingValues()
-    val tabs = rememberSaveable(sm.tabFlow.value) {
+    val tabs = rememberSaveable(
+        sm.tabFlow.value, sm.uiState.loadingState, sm.uiState.tabs.value.size
+    ) {
         List(sm.uiState.tabs.value.size) { index ->
             HomeSkylineTab(
                 index = index.toUShort(),
@@ -58,10 +78,25 @@ fun TabScreen.TabbedHomeView() {
                 state = sm.uiState.tabStates[index]
                         as StateFlow<ContentCardState.Skyline<MorphoDataItem.FeedItem>>,
                 paddingValues = insets,
+                icon = {
+                    if(sm.uiState.tabs.value[index].avatar != null) {
+                        AsyncImage(
+                            model = ImageRequest.Builder(LocalPlatformContext.current)
+                                .data(sm.uiState.tabs.value[index].avatar)
+                                .crossfade(true)
+                                .build(),
+                            contentDescription = "",
+                            contentScale = ContentScale.Fit,
+                            modifier = Modifier.clip(
+                                MaterialTheme.shapes.small
+                            ).size(30.dp).padding(end = 8.dp)
+                        )
+                    }
+                }
             )
         }.toImmutableList()
     }
-    val tabsCreated = rememberSaveable(sm.tabFlow.value) {
+    val tabsCreated = rememberSaveable(tabs.size, sm.uiState.loadingState) {
         tabs.isNotEmpty() && sm.uiState.loadingState == UiLoadingState.Idle
     }
     if (tabsCreated) {
@@ -73,21 +108,54 @@ fun TabScreen.TabbedHomeView() {
                         tabs = tabs,
                         tabIndex = selectedTabIndex,
                         onChanged = { index ->
+                            if (index == selectedTabIndex) return@HomeTabRow
+                            if(index < selectedTabIndex) {
+                                if (nav.items.contains(tabs[index])) {
+                                    nav.popUntil {it == tabs[index] }
+                                } else nav.replace(tabs[index])
+                            } else if(index > selectedTabIndex) nav.push(tabs[index])
                             selectedTabIndex = index
-                            sm.refreshTab(index, null)
-                            nav.push(tabs[index])
                         }
 
                     )
                 },
                 content = {
                     insets = it
-                    CurrentScreen()
+                    SlideTabTransition(nav)
                 }
             )
         }
     } else LoadingCircle()
 
+}
+
+@Composable
+fun SlideTabTransition(
+    navigator: Navigator,
+    modifier: Modifier = Modifier,
+    animationSpec: FiniteAnimationSpec<IntOffset> = spring(
+        stiffness = Spring.StiffnessMediumLow,
+        visibilityThreshold = IntOffset.VisibilityThreshold
+    ),
+    content:  ScreenTransitionContent = { it.Content() }
+) {
+
+    ScreenTransition(
+        navigator = navigator,
+        modifier = modifier,
+        content = content,
+        transition = {
+            val (initialOffset, targetOffset) = when (navigator.lastEvent) {
+                StackEvent.Pop -> ({ size: Int -> -size }) to ({ size: Int -> size })
+                StackEvent.Replace -> ({ size: Int -> -size }) to ({ size: Int -> size })
+                else -> ({ size: Int -> size }) to ({ size: Int -> -size })
+            }
+
+            slideInHorizontally(animationSpec, initialOffset) togetherWith
+                    slideOutHorizontally(animationSpec, targetOffset)
+
+        }
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -119,11 +187,17 @@ fun HomeTabRow(
                     selectedTabIndex = max(0, min(index, tabs.lastIndex))
                     onChanged(max(0, min(index, tabs.lastIndex)))
                 },
-                //icon = { tab.options.icon },
-                text = { Text(
-                    text = tab.state.value.feed.title,
-                    //style = MaterialTheme.typography.titleSmall,
-                ) }
+                //icon = { tab.icon() },
+                text = {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                    ){
+                        tab.icon()
+                        Text(
+                            text = tab.state.value.feed.title,
+                            //style = MaterialTheme.typography.titleSmall,
+                        )
+                    } }
             )
         }
     }
@@ -136,6 +210,7 @@ data class HomeSkylineTab(
     val screenModel: TabbedMainScreenModel,
     val state: StateFlow<ContentCardState.Skyline<MorphoDataItem.FeedItem>>,
     val paddingValues: PaddingValues = PaddingValues(0.dp),
+    val icon: @Composable () -> Unit = {},
 ): NavTab {
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable

@@ -1,7 +1,6 @@
 package com.morpho.app.ui.common
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.*
@@ -15,6 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.morpho.app.model.uidata.ContentCardMapEntry
+import com.morpho.app.ui.theme.roundedBotR
 import kotlinx.collections.immutable.ImmutableList
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import kotlin.math.max
@@ -40,11 +40,7 @@ fun SkylineTopBar(
                 tonalElevation = 0.dp,
                 shadowElevation = 2.dp,
                 modifier = Modifier.offset(y = (-5).dp, x= (-5).dp),
-                shape = MaterialTheme.shapes.small.copy(
-                    bottomStart = CornerSize(0.dp),
-                    topStart = CornerSize(0.dp),
-                    topEnd = CornerSize(0.dp),
-                )
+                shape = roundedBotR.small
             ) {
                 if (mainButton != null) {
                     mainButton(onButtonClicked)
