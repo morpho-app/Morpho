@@ -13,7 +13,6 @@ import com.morpho.app.model.uistate.TabbedProfileScreenState
 import com.morpho.app.model.uistate.UiLoadingState
 import com.morpho.app.screens.main.MainScreenModel
 import com.morpho.butterfly.AtIdentifier
-import com.morpho.butterfly.auth.AtpUser
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -26,7 +25,7 @@ import org.lighthousegames.logging.logging
 @Suppress("UNCHECKED_CAST")
 // TODO: Revisit these casts if we can, but they should be safe
 class TabbedProfileViewModel(
-    val user: AtpUser? = null
+    val id: AtIdentifier? = null
 ): MainScreenModel() {
 
     companion object {
@@ -57,9 +56,9 @@ class TabbedProfileViewModel(
     fun initProfile() = screenModelScope.launch {
         if(initialized) return@launch
         init(false)
-        if(user != null) {
-            profileId = user.id
-            myProfile = api.id == user.id
+        if(id != null) {
+            profileId = id
+            myProfile = api.id == id
         } else {
             profileId = api.id
             myProfile = true

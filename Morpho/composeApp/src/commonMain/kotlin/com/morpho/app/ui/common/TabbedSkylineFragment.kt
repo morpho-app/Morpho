@@ -28,10 +28,11 @@ fun <T: MainScreenModel, I: MorphoDataItem, S: ContentCardState<I>> TabbedSkylin
     state: StateFlow<S>?,
     paddingValues: PaddingValues = PaddingValues(0.dp),
     refresh: (AtCursor) -> Unit = {  },
+    isProfileFeed: Boolean = false
 ) {
-    val navigator = if (LocalNavigator.current?.instanceOf(TabNavigator::class) == true) {
-        LocalNavigator.currentOrThrow.parent!!
-    } else LocalNavigator.currentOrThrow
+    val navigator = if (LocalNavigator.current?.parent?.instanceOf(TabNavigator::class) == true) {
+        LocalNavigator.currentOrThrow
+    } else LocalNavigator.currentOrThrow.parent!!
     var repostClicked by remember { mutableStateOf(false) }
     var initialContent: BskyPost? by remember { mutableStateOf(null) }
     var showComposer by remember { mutableStateOf(false) }
@@ -65,8 +66,10 @@ fun <T: MainScreenModel, I: MorphoDataItem, S: ContentCardState<I>> TabbedSkylin
     if(content?.value != null) {
         SkylineFragment(
             content = state,
-            isProfileFeed = true,
-            onProfileClicked = { actor -> navigator.push(ProfileTab(actor)) },
+            onProfileClicked = {
+                actor -> //if (isProfileFeed) navigator.popUntilRoot()
+                navigator.push(ProfileTab(actor))
+                               },
             onItemClicked = { uri -> navigator.push(ThreadTab(uri)) },
             refresh = { cursor -> refresh(cursor)},
             onUnClicked = { type, rkey -> sm.deleteRecord(type, rkey) },
@@ -75,6 +78,7 @@ fun <T: MainScreenModel, I: MorphoDataItem, S: ContentCardState<I>> TabbedSkylin
             onLikeClicked = { uri -> sm.createRecord(RecordUnion.Like(uri)) },
             onPostButtonClicked = { onPostButtonClicked() },
             contentPadding = paddingValues,
+            isProfileFeed = isProfileFeed,
         )
         if(repostClicked) {
             RepostQueryDialog(

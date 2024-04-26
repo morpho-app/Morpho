@@ -6,7 +6,6 @@ import androidx.compose.runtime.Immutable
 import app.bsky.actor.*
 import com.morpho.app.util.mapImmutable
 import com.morpho.butterfly.AtUri
-import com.morpho.butterfly.Butterfly
 import com.morpho.butterfly.Did
 import com.morpho.butterfly.Language
 import kotlinx.collections.immutable.ImmutableList
@@ -33,21 +32,6 @@ public data class BskyPreferences(
     public var hiddenPosts: List<AtUri> = persistentListOf(),
     public var labelers: List<Did> = persistentListOf(),
 ) {
-    //@NativeCoroutines
-    suspend fun pullPrefs(api: Butterfly) = runCatching {
-        val response = api.api.getPreferences().onFailure {
-            //Log.e("Prefs", it.toString())
-        }.getOrThrow()
-        this.threadViewPrefs =  response.toPreferences(this).threadViewPrefs
-        this.adultContent =  response.toPreferences(this).adultContent
-        this.savedFeeds =  response.toPreferences(this).savedFeeds
-        this.skyFeedBuilderFeeds =  response.toPreferences(this).skyFeedBuilderFeeds
-        this.personalDetails =  response.toPreferences(this).personalDetails
-        this.feedViewPrefs.putAll(response.toPreferences(this).feedViewPrefs)
-        this.contentLabelPrefs.addAll(response.toPreferences(this).contentLabelPrefs)
-        this.mergeFeeds = response.toPreferences(this).mergeFeeds
-    }
-
     fun toRemotePrefs(): ImmutableList<PreferencesUnion> {
         val prefs = persistentListOf<PreferencesUnion>()
         if (this.adultContent != null) prefs.add(PreferencesUnion.AdultContentPref(this.adultContent!!))
@@ -106,60 +90,6 @@ data class BskyUser(
         return profile.toProfile()
     }
 }
-
-
-
-@Serializable
-data class FeedViewPreference(
-    val feedViewPrefId: Int,
-    val userDid: String,
-    val feedName: String,
-    val hideReplies: Boolean = false,
-    val hideRepliesByUnfollowed: Boolean = false,
-    val hideRepliesByLikeCount: Long = 2,
-    val hideReposts: Boolean = false,
-    val hideQuotePosts: Boolean = false,
-    // Can be per feed, maybe add "warn" to this as well
-    var labelsToHide: List<String> = persistentListOf(),
-    var languages: List<String> = persistentListOf(),
-    var hidePostsByMuted: Boolean = false
-)
-
-@Immutable
-@Serializable
-data class ContentLabelPreference(
-   val contentPrefId: Int,
-    val userDid: String,
-    val type: String,
-    val visibility: Visibility,
-)
-
-@Immutable
-@Serializable
-data class ThreadViewPreference(
-    val threadViewPrefId: Int,
-    val userDid: String,
-    val sort: Sort,
-    val prioritizeFollowedUsers: Boolean = true,
-)
-
-@Immutable
-@Serializable
-data class PinnedFeedPreference(
-    val pinnedFeedPrefId: Int,
-    val userDid: String,
-    val title: String,
-    val uri: AtUri,
-)
-
-@Immutable
-@Serializable
-data class SavedFeedsPreference(
-    val savedFeedPrefId: Int,
-    val userDid: String,
-    val pinnedUris: List<String>,
-    val savedUris: List<String>,
-)
 
 
 @Serializable

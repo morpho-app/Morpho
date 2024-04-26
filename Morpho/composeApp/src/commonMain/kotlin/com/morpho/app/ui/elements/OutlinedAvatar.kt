@@ -16,23 +16,22 @@ package com.morpho.app.ui.elements
  * limitations under the License.
  */
 
-import androidx.compose.animation.animateContentSize
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.spring
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.FilterQuality
+import androidx.compose.ui.graphics.drawOutline
+import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import coil3.compose.LocalPlatformContext
@@ -61,30 +60,59 @@ fun OutlinedAvatar(
     outlineSize: Dp = 0.dp,
     outlineColor: Color = MaterialTheme.colorScheme.surface,
     contentDescription: String = "",
-    shape: AvatarShape = AvatarShape.Corner,
-    onClicked: () -> Unit = {},
+    avatarShape: AvatarShape = AvatarShape.Corner,
+    onClicked: (() -> Unit)? = null,
     size: Dp = 30.dp,
 ) {
-    val s = when(shape) {
+
+    val s = when(avatarShape) {
         AvatarShape.Circle -> CircleShape
         AvatarShape.Rounded -> MaterialTheme.shapes.small
         AvatarShape.Corner -> roundedTopLBotR.small
     }
+    val pxSize = LocalDensity.current.run { (size-outlineSize).toPx()*2 }.toInt()
+    val sB = when(avatarShape) {
+        AvatarShape.Circle -> CircleShape.createOutline(
+            androidx.compose.ui.geometry.Size((size).value,(size).value), LayoutDirection.Ltr,
+            LocalDensity.current)
+        AvatarShape.Rounded -> MaterialTheme.shapes.small.createOutline(
+            androidx.compose.ui.geometry.Size((size).value,(size).value), LayoutDirection.Ltr,
+            LocalDensity.current)
+        AvatarShape.Corner -> roundedTopLBotR.small.createOutline(
+            androidx.compose.ui.geometry.Size((size).value,(size).value), LayoutDirection.Ltr,
+            LocalDensity.current)
+    }
+    val modClicked = if(onClicked != null) {
+        modifier.clickable { onClicked() }
+    } else modifier
+    val mod = if(outlineSize > 0.dp) {
+        modClicked.size(size).clip(s)
+            .drawBehind {
+                drawOutline(
+                    sB,
+                    outlineColor,
+                    style = Fill//Stroke((outlineSize.toPx()))
+                )
+            }.padding(outlineSize).clip(s)
+            //.animateContentSize(spring(stiffness = Spring.StiffnessMediumLow, dampingRatio = Spring.DampingRatioNoBouncy))
+            //.padding(outlineSize).clipToBounds()
+            //.border(outlineSize, outlineColor,s)
+    } else {
+        modClicked.clip(s)
+            //.animateContentSize(spring(stiffness = Spring.StiffnessMediumLow, dampingRatio = Spring.DampingRatioNoBouncy))
+            .size(size)
+        }
     AsyncImage(
         model = ImageRequest.Builder(LocalPlatformContext.current)
-            .data(url)
+            .data(url).size(pxSize)
             .crossfade(true)
             .build(),
         contentDescription = contentDescription,
         contentScale = ContentScale.Crop,
         fallback = painterResource(Res.drawable.placeholder_pfp),
         placeholder = painterResource(Res.drawable.placeholder_pfp),
-        modifier = modifier
-            .clickable { onClicked() }
-            .clip(s)
-            .animateContentSize(spring(stiffness = Spring.StiffnessMediumLow, dampingRatio = Spring.DampingRatioNoBouncy))
-            .size(size+outlineSize)
-            .border(outlineSize, outlineColor,s)
+        filterQuality = FilterQuality.High,
+        modifier = mod
     )
 
 }
@@ -96,7 +124,7 @@ private fun OutlinedAvatarPreview() {
         Column {
             OutlinedAvatar(url = "")
             Spacer(modifier = Modifier.height(20.dp))
-            OutlinedAvatar(url = "", shape = AvatarShape.Circle)
+            OutlinedAvatar(url = "", avatarShape = AvatarShape.Rounded)
         }
     }
 }

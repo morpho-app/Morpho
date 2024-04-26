@@ -1,10 +1,12 @@
 package com.morpho.app.ui.post
 
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CornerSize
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Reply
 import androidx.compose.material.icons.filled.Repeat
@@ -39,8 +41,7 @@ import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
 
-
-@OptIn(ExperimentalLayoutApi::class)
+@OptIn(ExperimentalLayoutApi::class, ExperimentalFoundationApi::class)
 @Composable
 fun PostFragment(
     post: BskyPost,
@@ -119,138 +120,143 @@ fun PostFragment(
                 .fillMaxWidth(indentLevel(indent))
                 .align(Alignment.End)
                 .background(bgColor, shape)
-                .clickable { onItemClicked(post.uri) }
+
         ) {
-            Row(modifier = Modifier.padding(bottom = 2.dp).padding(start = 0.dp, end = 6.dp)
-                .fillMaxWidth(indentLevel(indent))
+            SelectionContainer(
+                Modifier.clickable { onItemClicked(post.uri) }
             ) {
-
-                if(indent < 2) {
-                    OutlinedAvatar(
-                        url = post.author.avatar.orEmpty(),
-                        contentDescription = "Avatar for ${post.author.handle}",
-                        modifier = Modifier.size(45.dp),
-                        outlineColor = MaterialTheme.colorScheme.background,
-                        onClicked = {  onProfileClicked(post.author.did) },
-                        shape = AvatarShape.Corner
-                    ) }
-
-                Column(
-                    Modifier
-                        .padding(vertical = 2.dp, horizontal = 6.dp)
-                        .fillMaxWidth(indentLevel(indent)),
+                Row(modifier = Modifier.padding(bottom = 2.dp).padding(start = 0.dp, end = 6.dp)
+                    .fillMaxWidth(indentLevel(indent))
                 ) {
-                    if(post.reason is BskyPostReason.BskyPostRepost) {
-                        Row(modifier = Modifier,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Repeat,
-                                contentDescription = "",
-                                tint = MaterialTheme.colorScheme.secondary,
-                                modifier = Modifier.height(15.dp)
-                            )
-                            Text(
-                                text = "Reposted by ${post.reason.repostAuthor.displayName}",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.secondary,
-                                modifier = Modifier.padding(start = 5.dp)
-                            )
-                        }
-                    }
 
-                    Row(
-                        modifier = Modifier.padding(top = 4.dp).padding(horizontal = 4.dp),
-                        horizontalArrangement = Arrangement.End
+                    if(indent < 2) {
+                        OutlinedAvatar(
+                            url = post.author.avatar.orEmpty(),
+                            contentDescription = "Avatar for ${post.author.handle}",
+                            size = 45.dp,
+                            outlineColor = MaterialTheme.colorScheme.background,
+                            onClicked = {  onProfileClicked(post.author.did) },
+                            avatarShape = AvatarShape.Corner
+                        ) }
+
+                    Column(
+                        Modifier
+                            .padding(vertical = 2.dp, horizontal = 6.dp)
+                            .fillMaxWidth(indentLevel(indent)),
                     ) {
-                        if(indent >= 2) {
-                            OutlinedAvatar(
-                                url = post.author.avatar.orEmpty(),
-                                contentDescription = "Avatar for ${post.author.handle}",
-                                modifier = Modifier.size(30.dp),
-                                shape = AvatarShape.Rounded,
-                                outlineColor = MaterialTheme.colorScheme.background,
-                                onClicked = { onProfileClicked(post.author.did) }
-                            )
-                        }
-                        Text(
-                            text = buildAnnotatedString {
-                                withStyle(
-                                    style = SpanStyle(
-                                        color = MaterialTheme.colorScheme.onSurface,
-                                        fontSize = MaterialTheme.typography.labelLarge.fontSize.times(1.2f),
-                                        fontWeight = FontWeight.Medium
-                                    )
-                                ) {
-                                    if(post.author.displayName != null) append( "${post.author.displayName} ")
-                                }
-                                withStyle(
-                                    style = SpanStyle(
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        fontSize = MaterialTheme.typography.labelLarge.fontSize.times(1.0f)
-                                    )
-                                ) {
-                                    append("@${post.author.handle}")
-                                }
-
-                            },
-                            maxLines = 1,
-                            style = MaterialTheme.typography.labelLarge,
-                            overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier
-                                .wrapContentWidth(Alignment.Start)
-                                .weight(10.0F)
-                                .alignByBaseline()
-                                .clickable { onProfileClicked(post.author.did) },
-                        )
-
-                        Spacer(modifier = Modifier.width(1.dp).weight(0.1F))
-                        Text(
-                            text = delta,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            style = MaterialTheme.typography.labelLarge,
-                            fontSize = MaterialTheme.typography.labelLarge.fontSize.div(1.2F),
-                            modifier = Modifier
-                                .wrapContentWidth(Alignment.End)
-                                //.weight(3.0F)
-                                .alignByBaseline(),
-                            maxLines = 1,
-                            overflow = TextOverflow.Visible,
-                            softWrap = false,
-                        )
-                    }
-
-                    if(post.reply?.parent != null) {
-                        ReplyIndicator(post.reply.parent)
-                    }
-
-                    RichTextElement(
-                        text = post.text,
-                        facets = post.facets,
-                        onClick = {
-                            when (it) {
-                                is FacetType.ExternalLink -> { openBrowser(it.uri.uri) }
-                                is FacetType.Format -> { onItemClicked(post.uri) }
-                                is FacetType.PollBlueOption -> {}
-                                is FacetType.Tag -> { onItemClicked(post.uri) }
-                                is FacetType.UserDidMention -> { onProfileClicked(post.author.did) }
-                                is FacetType.UserHandleMention -> { onProfileClicked(it.handle) }
-                                null -> { onItemClicked(post.uri) }
-                                else -> {}
+                        if(post.reason is BskyPostReason.BskyPostRepost) {
+                            Row(modifier = Modifier,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Repeat,
+                                    contentDescription = "",
+                                    tint = MaterialTheme.colorScheme.secondary,
+                                    modifier = Modifier.height(15.dp)
+                                )
+                                Text(
+                                    text = "Reposted by ${post.reason.repostAuthor.displayName}",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.secondary,
+                                    modifier = Modifier.padding(start = 5.dp)
+                                )
                             }
                         }
-                    )
-                    PostFeatureElement(post.feature, onItemClicked)
 
-                    PostActions(post = post,
-                        onLikeClicked = { onLikeClicked(StrongRef(post.uri, post.cid)) },
-                        onMenuClicked = onMenuClicked,
-                        onReplyClicked = { onReplyClicked(post) },
-                        onRepostClicked = { onRepostClicked(post) },
-                        onUnClicked = onUnClicked,
-                    )
+                        Row(
+                            modifier = Modifier.padding(top = 4.dp).padding(horizontal = 4.dp),
+                            horizontalArrangement = Arrangement.End
+                        ) {
+                            if(indent >= 2) {
+                                OutlinedAvatar(
+                                    url = post.author.avatar.orEmpty(),
+                                    contentDescription = "Avatar for ${post.author.handle}",
+                                    size = 30.dp,
+                                    avatarShape = AvatarShape.Rounded,
+                                    outlineColor = MaterialTheme.colorScheme.background,
+                                    onClicked = { onProfileClicked(post.author.did) }
+                                )
+                            }
+                            Text(
+                                text = buildAnnotatedString {
+                                    withStyle(
+                                        style = SpanStyle(
+                                            color = MaterialTheme.colorScheme.onSurface,
+                                            fontSize = MaterialTheme.typography.labelLarge.fontSize.times(1.2f),
+                                            fontWeight = FontWeight.Medium
+                                        )
+                                    ) {
+                                        if(post.author.displayName != null) append( "${post.author.displayName} ")
+                                    }
+                                    withStyle(
+                                        style = SpanStyle(
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            fontSize = MaterialTheme.typography.labelLarge.fontSize.times(1.0f)
+                                        )
+                                    ) {
+                                        append("@${post.author.handle}")
+                                    }
+
+                                },
+                                maxLines = 1,
+                                style = MaterialTheme.typography.labelLarge,
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier
+                                    .wrapContentWidth(Alignment.Start)
+                                    .weight(10.0F)
+                                    .alignByBaseline()
+                                    .clickable { onProfileClicked(post.author.did) },
+                            )
+
+                            Spacer(modifier = Modifier.width(1.dp).weight(0.1F))
+                            Text(
+                                text = delta,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                style = MaterialTheme.typography.labelLarge,
+                                fontSize = MaterialTheme.typography.labelLarge.fontSize.div(1.2F),
+                                modifier = Modifier
+                                    .wrapContentWidth(Alignment.End)
+                                    //.weight(3.0F)
+                                    .alignByBaseline(),
+                                maxLines = 1,
+                                overflow = TextOverflow.Visible,
+                                softWrap = false,
+                            )
+                        }
+
+                        if(post.reply?.parent != null) {
+                            ReplyIndicator(post.reply.parent)
+                        }
+
+                        RichTextElement(
+                            text = post.text,
+                            facets = post.facets,
+                            onClick = {
+                                when (it) {
+                                    is FacetType.ExternalLink -> { openBrowser(it.uri.uri) }
+                                    is FacetType.Format -> { onItemClicked(post.uri) }
+                                    is FacetType.PollBlueOption -> {}
+                                    is FacetType.Tag -> { onItemClicked(post.uri) }
+                                    is FacetType.UserDidMention -> { onProfileClicked(post.author.did) }
+                                    is FacetType.UserHandleMention -> { onProfileClicked(it.handle) }
+                                    null -> { onItemClicked(post.uri) }
+                                    else -> {}
+                                }
+                            }
+                        )
+                        PostFeatureElement(post.feature, onItemClicked)
+
+                        PostActions(post = post,
+                                    onLikeClicked = { onLikeClicked(StrongRef(post.uri, post.cid)) },
+                                    onMenuClicked = onMenuClicked,
+                                    onReplyClicked = { onReplyClicked(post) },
+                                    onRepostClicked = { onRepostClicked(post) },
+                                    onUnClicked = onUnClicked,
+                        )
+                    }
                 }
             }
+
 
 
         }

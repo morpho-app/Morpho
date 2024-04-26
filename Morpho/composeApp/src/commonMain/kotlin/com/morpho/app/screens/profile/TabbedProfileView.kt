@@ -9,6 +9,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.core.lifecycle.LifecycleEffect
+import cafe.adriel.voyager.core.screen.ScreenKey
 import cafe.adriel.voyager.koin.getNavigatorScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
@@ -108,10 +109,10 @@ fun ProfileTabItem(tab: ProfileSkylineTab) {
 @Composable
 fun TabScreen.TabbedProfileContent(
     ownProfile: Boolean,
+    sm: TabbedProfileViewModel = LocalNavigator.currentOrThrow.getNavigatorScreenModel<TabbedProfileViewModel>(),
 ) {
 
     val navigator = LocalNavigator.currentOrThrow
-    val sm = navigator.getNavigatorScreenModel<TabbedProfileViewModel>()
 
     LifecycleEffect(
         onStarted = {
@@ -207,8 +208,13 @@ data class ProfileSkylineTab(
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     override fun Content() {
-        TabbedSkylineFragment(screenModel, state, paddingValues)
+        TabbedSkylineFragment(screenModel, state, paddingValues, refresh = {
+            state?.value?.uri?.let { it1 -> screenModel.updateFeed(it1, it) }
+        }, isProfileFeed = true)
     }
+
+    override val key: ScreenKey
+        get() = "${state?.value?.uri?.atUri.orEmpty()}${hashCode()}"
 
 
     @OptIn(ExperimentalResourceApi::class, ExperimentalCoilApi::class)

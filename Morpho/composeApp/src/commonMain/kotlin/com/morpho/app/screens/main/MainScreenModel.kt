@@ -9,6 +9,7 @@ import app.bsky.actor.GetProfileQuery
 import app.bsky.feed.GetFeedGeneratorsQuery
 import app.bsky.feed.GetPostThreadQuery
 import app.bsky.feed.GetPostThreadResponseThreadUnion
+import app.bsky.feed.GetPostsQuery
 import cafe.adriel.voyager.core.model.screenModelScope
 import cafe.adriel.voyager.core.stack.mutableStateStackOf
 import com.morpho.app.data.BskyUserPreferences
@@ -20,10 +21,7 @@ import com.morpho.app.model.uistate.FeedType
 import com.morpho.app.screens.base.BaseScreenModel
 import com.morpho.butterfly.AtIdentifier
 import com.morpho.butterfly.AtUri
-import kotlinx.collections.immutable.ImmutableList
-import kotlinx.collections.immutable.ImmutableMap
-import kotlinx.collections.immutable.toImmutableList
-import kotlinx.collections.immutable.toImmutableMap
+import kotlinx.collections.immutable.*
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.runBlocking
@@ -168,6 +166,14 @@ open class MainScreenModel: BaseScreenModel() {
         else dataService.peekLatest(feed.value.feed, update).onEach { emit(it) }
     }.stateIn(screenModelScope)
 
+    suspend fun loadThread(uri: AtUri): StateFlow<ContentCardState.PostThread>? {
+        val state = _threadStates.firstOrNull { it.value.uri == uri }
+        if(state != null) return state
+        val post =
+            api.api.getPosts(GetPostsQuery(persistentListOf(uri))).map { it.posts.firstOrNull()?.toPost() }.getOrNull()
+                ?: return null
+        return loadThread(ContentCardState.PostThread(post, MutableStateFlow(null).asStateFlow(), ContentLoadingState.Loading))
+    }
     @OptIn(ExperimentalCoroutinesApi::class)
     suspend fun loadThread(state: ContentCardState.PostThread): StateFlow<ContentCardState.PostThread> = flow {
         val r = api.api.getPostThread(GetPostThreadQuery(state.uri)).map { response ->

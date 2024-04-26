@@ -100,7 +100,8 @@ fun TabbedNavBar(
                     width = Dp.Unspecified,
                 )
             }
-        }
+        },
+        divider = {}
     ) {
         TabNavigationItem(HomeTab("bottomNavHome"), navigator)
         TabNavigationItem(SearchTab, navigator)

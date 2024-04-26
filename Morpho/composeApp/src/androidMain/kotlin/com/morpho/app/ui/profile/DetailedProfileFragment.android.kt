@@ -9,7 +9,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowBackIosNew
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -132,7 +132,7 @@ public fun DetailedProfileFragment(
                                     centerAround(avatarGuide)
                                 },
                             size = avatarSize,
-                            shape = AvatarShape.Rounded
+                            avatarShape = AvatarShape.Rounded
                         )
                     } else {
                         Surface(
@@ -150,7 +150,7 @@ public fun DetailedProfileFragment(
                                     url = profile.avatar.orEmpty(),
                                     contentDescription = "Avatar for ${profile.displayName} ${profile.handle}",
                                     size = avatarSize,
-                                    shape = AvatarShape.Rounded
+                                    avatarShape = AvatarShape.Rounded
                                 )
                                 Column(
                                     verticalArrangement = Arrangement.Bottom,
@@ -189,7 +189,7 @@ public fun DetailedProfileFragment(
                         )
                     ) {
                         Icon(
-                            imageVector = Icons.AutoMirrored.Default.ArrowBack,
+                            imageVector = Icons.Default.ArrowBackIosNew,
                             contentDescription = "Back",
                         )
                     }

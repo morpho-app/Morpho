@@ -3,7 +3,6 @@ package com.morpho.app.screens.base
 import cafe.adriel.voyager.core.model.ScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
 import com.morpho.app.data.PreferencesRepository
-import com.morpho.butterfly.AtIdentifier
 import com.morpho.butterfly.AtUri
 import com.morpho.butterfly.Butterfly
 import com.morpho.butterfly.model.RecordType
@@ -24,22 +23,6 @@ open class BaseScreenModel : ScreenModel, KoinComponent {
 
     companion object {
         val log = logging()
-    }
-
-    fun onProfileClicked(actor: AtIdentifier, tabbed: Boolean) {
-        if (tabbed) {
-            TODO("Navigate to the profile")
-        } else {
-            TODO("Create new card for the profile")
-        }
-    }
-
-    fun onItemClicked(uri: AtUri, tabbed: Boolean) {
-        if (tabbed) {
-            TODO("Navigate to the thread/post/whatever")
-        } else {
-            TODO("Create new card for the thread")
-        }
     }
 
     fun createRecord(record: RecordUnion) = screenModelScope.launch(Dispatchers.IO) {

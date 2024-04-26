@@ -16,8 +16,8 @@ import kotlinx.serialization.Serializable
 
 enum class ProfileType {
     Basic,
-    Standard,
-    Detailed
+    Detailed,
+    Service
 }
 
 @Immutable
@@ -32,6 +32,12 @@ sealed interface Profile {
     val followedByMe: Boolean
     @Serializable
     val labels: ImmutableList<BskyLabel>
+    val type: ProfileType
+        get() = when (this) {
+            is BasicProfile -> ProfileType.Basic
+            is DetailedProfile -> ProfileType.Detailed
+            is BskyLabelService -> ProfileType.Service
+        }
 }
 
 
@@ -108,6 +114,8 @@ data class SerializableProfile(
     @Serializable
     val labels: List<BskyLabel>,
 ) {
+    val type: ProfileType
+        get() = ProfileType.Detailed
     fun toProfile(): DetailedProfile {
         return DetailedProfile(
             did = did,

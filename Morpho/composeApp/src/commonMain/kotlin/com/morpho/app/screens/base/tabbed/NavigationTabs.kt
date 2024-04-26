@@ -7,20 +7,30 @@ import androidx.compose.material.icons.filled.NotificationsNone
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
+import cafe.adriel.voyager.core.lifecycle.LifecycleEffect
+import cafe.adriel.voyager.core.model.rememberScreenModel
+import cafe.adriel.voyager.core.model.screenModelScope
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.core.screen.ScreenKey
 import cafe.adriel.voyager.koin.getNavigatorScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.currentOrThrow
+import com.morpho.app.model.uistate.ContentCardState
 import com.morpho.app.screens.main.tabbed.TabbedHomeView
+import com.morpho.app.screens.main.tabbed.TabbedMainScreenModel
 import com.morpho.app.screens.profile.TabbedProfileContent
 import com.morpho.app.screens.profile.TabbedProfileViewModel
+import com.morpho.app.screens.thread.ThreadTopBar
+import com.morpho.app.screens.thread.ThreadViewContent
 import com.morpho.app.ui.common.LoadingCircle
+import com.morpho.app.ui.common.TabbedScreenScaffold
 import com.morpho.butterfly.AtIdentifier
 import com.morpho.butterfly.AtUri
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
 
 
 data class TabScreenOptions(
@@ -154,10 +164,9 @@ data class ProfileTab(
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     override fun Content() {
-        val navigator = LocalNavigator.currentOrThrow
-        val screenModel = navigator.getNavigatorScreenModel<TabbedProfileViewModel>()
+        val screenModel = rememberScreenModel { TabbedProfileViewModel(id) }
         val ownProfile = rememberSaveable { screenModel.api.id == id }
-        TabbedProfileContent(ownProfile)
+        TabbedProfileContent(ownProfile, screenModel)
 
     }
 
@@ -186,7 +195,23 @@ data class ThreadTab(
         }
         @Composable
         override fun Content() {
-            LoadingCircle()
+            val navigator = LocalNavigator.currentOrThrow
+            val sm = navigator.getNavigatorScreenModel<TabbedMainScreenModel>()
+            var threadState: StateFlow<ContentCardState.PostThread>? by remember { mutableStateOf(null)}
+            LifecycleEffect(
+                onStarted = {
+                    sm.screenModelScope.launch { threadState = sm.loadThread(uri) }
+                }
+            )
+            if(threadState != null) {
+                ThreadViewContent(threadState!!, navigator, sm)
+            } else {
+                TabbedScreenScaffold(
+                navBar = { navBar(navigator) },
+                topContent = { ThreadTopBar(navigator = navigator) },
+                content = { _ -> LoadingCircle() }
+                )
+            }
         }
 
         override val options: TabScreenOptions

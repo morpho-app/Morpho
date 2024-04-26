@@ -54,10 +54,10 @@ fun EmbedPostFragment(
             modifier = Modifier
                 .fillMaxWidth()
                 .align(Alignment.End)
-                .clickable { onItemClicked(post.uri) }
+
         ) {
             Column(
-                Modifier
+                Modifier.clickable { onItemClicked(post.uri) }
                     .padding(bottom = 6.dp, end = 2.dp)
                     .fillMaxWidth(),
             ) {
@@ -163,6 +163,8 @@ fun EmbedPostFragment(
                 })
 
             }
+
+
         }
     }
 

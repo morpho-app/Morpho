@@ -18,8 +18,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.core.lifecycle.LifecycleEffect
@@ -33,10 +31,6 @@ import cafe.adriel.voyager.navigator.tab.TabOptions
 import cafe.adriel.voyager.transitions.ScreenTransition
 import cafe.adriel.voyager.transitions.ScreenTransitionContent
 import coil3.annotation.ExperimentalCoilApi
-import coil3.compose.AsyncImage
-import coil3.compose.LocalPlatformContext
-import coil3.request.ImageRequest
-import coil3.request.crossfade
 import com.morpho.app.model.bluesky.MorphoDataItem
 import com.morpho.app.model.uistate.ContentCardState
 import com.morpho.app.model.uistate.UiLoadingState
@@ -44,6 +38,8 @@ import com.morpho.app.screens.base.tabbed.TabScreen
 import com.morpho.app.ui.common.LoadingCircle
 import com.morpho.app.ui.common.TabbedScreenScaffold
 import com.morpho.app.ui.common.TabbedSkylineFragment
+import com.morpho.app.ui.elements.AvatarShape
+import com.morpho.app.ui.elements.OutlinedAvatar
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.flow.StateFlow
@@ -80,16 +76,11 @@ fun TabScreen.TabbedHomeView() {
                 paddingValues = insets,
                 icon = {
                     if(sm.uiState.tabs.value[index].avatar != null) {
-                        AsyncImage(
-                            model = ImageRequest.Builder(LocalPlatformContext.current)
-                                .data(sm.uiState.tabs.value[index].avatar)
-                                .crossfade(true)
-                                .build(),
-                            contentDescription = "",
-                            contentScale = ContentScale.Fit,
-                            modifier = Modifier.clip(
-                                MaterialTheme.shapes.small
-                            ).size(30.dp).padding(end = 8.dp)
+                        OutlinedAvatar(
+                            url = sm.uiState.tabs.value[index].avatar!!,
+                            size = 20.dp,
+                            avatarShape = AvatarShape.Rounded,
+                            modifier = Modifier.padding(end = 8.dp),
                         )
                     }
                 }
@@ -121,6 +112,7 @@ fun TabScreen.TabbedHomeView() {
                 },
                 content = {
                     insets = it
+
                     SlideTabTransition(nav)
                 }
             )
@@ -223,7 +215,7 @@ data class HomeSkylineTab(
         )
     }
 
-    override val key: ScreenKey = state.value.uri.atUri
+    override val key: ScreenKey = "${state.value.uri.atUri}${hashCode()}"
 
     @OptIn(ExperimentalResourceApi::class, ExperimentalCoilApi::class)
     override val options: TabOptions

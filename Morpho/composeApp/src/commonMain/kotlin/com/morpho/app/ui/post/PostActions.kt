@@ -1,11 +1,6 @@
 package com.morpho.app.ui.post
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.MoreHoriz
@@ -16,22 +11,17 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableLongStateOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
-import com.morpho.butterfly.AtUri
-import com.morpho.butterfly.model.RecordType
 import com.morpho.app.model.bluesky.BskyPost
 import com.morpho.app.ui.elements.MenuOptions
 import com.morpho.app.ui.elements.PostMenu
+import com.morpho.butterfly.AtUri
+import com.morpho.butterfly.model.RecordType
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -53,7 +43,10 @@ fun PostActions(
             parameter = post.replyCount,
             iconNormal = Icons.Outlined.ChatBubbleOutline,
             contentDescription = "Reply ",
-            onClicked = onReplyClicked,
+            onClicked = {
+                onReplyClicked()
+
+            },
             onUnClicked = {  },
         )
         PostAction(
@@ -69,6 +62,7 @@ fun PostActions(
             iconNormal = Icons.Outlined.FavoriteBorder,
             iconActive = Icons.Default.Favorite,
             contentDescription = "Like ",
+            activeColor = Color(0xFFEC7B9E),
             onClicked = onLikeClicked,
             onUnClicked = { onUnClicked(RecordType.Like, post.likeUri ?: post.uri) },
             active = post.liked
@@ -105,7 +99,6 @@ inline fun PostAction(
     crossinline onClicked: () -> Unit = { },
     crossinline onUnClicked: () -> Unit = {},
     active: Boolean = false,
-    uri: AtUri? =null,
 ) {
     var clicked by rememberSaveable { mutableStateOf(active) }
     val inactiveColor = MaterialTheme.colorScheme.onSurface

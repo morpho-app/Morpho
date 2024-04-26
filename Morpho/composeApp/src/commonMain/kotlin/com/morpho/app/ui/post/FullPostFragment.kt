@@ -138,7 +138,7 @@ fun FullPostFragment(
                         modifier = Modifier
                             .wrapContentWidth(Alignment.Start)
                             .alignByBaseline()
-                            .align(Alignment.CenterVertically)
+                            .align(Alignment.CenterVertically).clickable { onProfileClicked(post.author.did) }
                     )
                 }
                 Spacer(
@@ -146,7 +146,7 @@ fun FullPostFragment(
                         .width(1.dp)
                         .weight(0.1F),
                 )
-                IconButton(onClick = { /*TODO*/ }) {
+                IconButton(onClick = { menuExpanded= !menuExpanded }) {
                     Icon(
                         imageVector = Icons.Default.MoreHoriz,
                         contentDescription = "More",
