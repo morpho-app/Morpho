@@ -1,15 +1,7 @@
 package com.morpho.app.ui.utils
 
-import android.content.Context
 import android.graphics.Rect
 import androidx.window.layout.FoldingFeature
-import androidx.window.layout.WindowMetricsCalculator
-import com.morpho.app.AndroidMainViewModel
-import com.morpho.app.MainActivity
-import org.koin.androidx.viewmodel.ext.android.getLazyViewModelForClass
-
-import org.koin.compose.koinInject
-import org.koin.core.context.loadKoinModules
 import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.contract
 
@@ -17,7 +9,7 @@ import kotlin.contracts.contract
  * Information about the posture of the device
  */
 sealed interface DevicePosture {
-    object NormalPosture : DevicePosture
+    data object NormalPosture : DevicePosture
 
     data class BookPosture(
         val hingePosition: Rect

@@ -8,6 +8,7 @@ import app.bsky.graph.GetFollowsQuery
 import app.bsky.graph.GetListsQuery
 import app.bsky.labeler.GetServicesQuery
 import app.bsky.labeler.GetServicesResponseViewUnion
+import com.morpho.app.di.UpdateTick
 import com.morpho.app.model.bluesky.*
 import com.morpho.app.model.bluesky.MorphoDataFeed.Companion.filterByPrefs
 import com.morpho.app.model.uistate.ContentCardState
@@ -30,6 +31,7 @@ import kotlinx.serialization.json.decodeFromJsonElement
 import kotlinx.serialization.json.encodeToJsonElement
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
+import org.koin.mp.KoinPlatform.getKoin
 import org.lighthousegames.logging.logging
 
 fun initAtCursor(): MutableSharedFlow<AtCursor> {
@@ -67,12 +69,30 @@ suspend fun <T: MorphoDataItem> Flow<Result<MorphoData<T>>>.handleToState(
     ContentCardState.ProfileTimeline(profile, default)
 )
 
+suspend fun getPost(uri: AtUri, api: Butterfly = getKoin().get<Butterfly>()): Flow<BskyPost?> = flow {
+    val query = GetPostsQuery(persistentListOf(uri))
+    api.api.getPosts(query).onSuccess { response ->
+        emit(response.posts.first().toPost())
+    }.onFailure {
+        BskyDataService.log.e { "Failed to get post at $uri.\nError: $it" }
+        emit(null)
+    }
+}
+
+suspend fun getPosts(posts: ImmutableList<AtUri>, api: Butterfly = getKoin().get<Butterfly>()): Flow<ImmutableList<BskyPost>?> = flow {
+    val query = GetPostsQuery(posts)
+    api.api.getPosts(query).onSuccess { response ->
+        emit(response.posts.mapImmutable { it.toPost() })
+    }.onFailure {
+        BskyDataService.log.e { "Failed to get post.\nError: $it" }
+        emit(null)
+    }
+}
+
 @Suppress("unused",  "MemberVisibilityCanBePrivate")
 // TODO: Revisit these casts if we can, but they should be safe
-class BskyDataService(
-
-): KoinComponent {
-    private val api: Butterfly by inject()
+class BskyDataService: KoinComponent {
+    val api: Butterfly by inject()
 
     private val _dataFlows = mutableMapOf<AtUri, MutableStateFlow<MorphoData<MorphoDataItem>>>()
 
@@ -348,7 +368,6 @@ class BskyDataService(
         limit: Long = 50,
         feedPref: StateFlow<BskyFeedPref> = MutableStateFlow(BskyFeedPref()),
         dispatcher: CoroutineDispatcher = Dispatchers.IO,
-        scope: CoroutineScope = serviceScope,
     ): Flow<Result<MorphoData<MorphoDataItem.FeedItem>>> = flow {
         cursor.debounce(300).combine(feedPref) { c, f -> c to f }
             .collect { flows ->
@@ -408,7 +427,6 @@ class BskyDataService(
         limit: Long = 50,
         feedPref: StateFlow<BskyFeedPref?> = MutableStateFlow(null),
         dispatcher: CoroutineDispatcher = Dispatchers.IO,
-        scope: CoroutineScope = serviceScope,
     ): Flow<Result<MorphoData<MorphoDataItem.FeedItem>>> = flow {
         cursor.debounce(300).combine(feedPref) { c, f -> c to f }
             .collect { flows ->
@@ -469,7 +487,6 @@ class BskyDataService(
         cursor: SharedFlow<AtCursor>,
         limit: Long = 50,
         dispatcher: CoroutineDispatcher = Dispatchers.IO,
-        scope: CoroutineScope = serviceScope,
     ): Flow<Result<MorphoData<MorphoDataItem.ProfileItem>>> = flow {
         val uri = AtUri.followsUri(id)
         cursor.collect { cur ->
@@ -502,7 +519,6 @@ class BskyDataService(
         cursor: SharedFlow<AtCursor>,
         limit: Long = 50,
         dispatcher: CoroutineDispatcher = Dispatchers.IO,
-        scope: CoroutineScope = serviceScope,
     ): Flow<Result<MorphoData<MorphoDataItem.ProfileItem>>> = flow {
         val uri = AtUri.followersUri(id)
         cursor.collect { cur ->
@@ -535,7 +551,6 @@ class BskyDataService(
         cursor: SharedFlow<AtCursor>,
         limit: Long = 50,
         dispatcher: CoroutineDispatcher = Dispatchers.IO,
-        scope: CoroutineScope = serviceScope,
     ): Flow<Result<MorphoData<MorphoDataItem.FeedItem>>> = flow<Result<MorphoData<MorphoDataItem.FeedItem>>> {
         when(type){
             FeedType.PROFILE_POSTS -> {
@@ -553,7 +568,7 @@ class BskyDataService(
                             } else {
                                 newPosts
                             }
-                            val data = feed.toMorphoData("Posts")
+                            val data = feed.toMorphoData("Posts", uri)
                                 .copy(query = json.encodeToJsonElement(query))
                             emit(Result.success(data as MorphoData<MorphoDataItem.FeedItem>))
                             mutex.withLock {
@@ -582,7 +597,7 @@ class BskyDataService(
                         } else {
                             newPosts
                         }
-                        val data = feed.toMorphoData("Replies")
+                        val data = feed.toMorphoData("Replies", uri)
                             .copy(query = json.encodeToJsonElement(query))
                         emit(Result.success(data as MorphoData<MorphoDataItem.FeedItem>))
                         mutex.withLock {
@@ -598,7 +613,7 @@ class BskyDataService(
             }
             FeedType.PROFILE_MEDIA -> {
                 val uri = AtUri.profileMediaUri(id)
-                cursor.onEach { cur ->
+                cursor.collect { cur ->
                     val prev = dataFlows[uri]?.value
                     val query = GetAuthorFeedQuery(id, limit, cur, GetAuthorFeedFilter.POSTS_WITH_MEDIA)
                     api.api.getAuthorFeed(query).onSuccess { response ->
@@ -611,7 +626,7 @@ class BskyDataService(
                         } else {
                             newPosts
                         }
-                        val data = feed.toMorphoData("Media")
+                        val data = feed.toMorphoData("Media", uri)
                             .copy(query = json.encodeToJsonElement(query))
                         emit(Result.success(data as MorphoData<MorphoDataItem.FeedItem>))
                         mutex.withLock {
@@ -640,25 +655,25 @@ class BskyDataService(
     ): Flow<Result<MorphoData<MorphoDataItem>>> = flow {
         when(type) {
             FeedType.PROFILE_FEEDS_LIST -> {
-                profileFeedsList(id, cursor, limit, dispatcher, scope)
-                    .onEach { emit(it as Result<MorphoData<MorphoDataItem>>) }
+                profileFeedsList(id, cursor, limit, dispatcher)
+                    .collect { emit(it as Result<MorphoData<MorphoDataItem>>) }
             }
             FeedType.PROFILE_USER_LISTS -> {
-                profileLists(id, cursor, limit, dispatcher, scope)
-                    .onEach { emit(it as Result<MorphoData<MorphoDataItem>>) }
+                profileLists(id, cursor, limit, dispatcher)
+                    .collect { emit(it as Result<MorphoData<MorphoDataItem>>) }
             }
             FeedType.PROFILE_LIKES -> {
-                profileLikes(id, cursor, limit, dispatcher, scope)
-                    .onEach { emit(it as Result<MorphoData<MorphoDataItem>>) }
+                profileLikes(id, cursor, limit, dispatcher)
+                    .collect { emit(it as Result<MorphoData<MorphoDataItem>>) }
             }
             FeedType.PROFILE_MOD_SERVICE -> {
                 if (id.toString().startsWith("did:"))
-                    profileServiceView(Did(id.toString()), cursor.map { Unit }.shareIn(scope, SharingStarted.Lazily), dispatcher, scope)
-                    .onEach { emit(it as Result<MorphoData<MorphoDataItem>>) }
+                    profileServiceView(Did(id.toString()), cursor.map { Unit }.shareIn(scope, SharingStarted.Lazily), dispatcher)
+                    .collect { emit(it as Result<MorphoData<MorphoDataItem>>) }
             }
             else -> {
-                authorFeed(id, type, cursor, limit, dispatcher, scope)
-                    .onEach { emit(it as Result<MorphoData<MorphoDataItem>>) }
+                authorFeed(id, type, cursor, limit, dispatcher)
+                    .collect { emit(it as Result<MorphoData<MorphoDataItem>>) }
             }
         }
     }.distinctUntilChanged().flowOn(dispatcher + CoroutineName("${type.name} content for $id"))
@@ -667,7 +682,6 @@ class BskyDataService(
         cursor: SharedFlow<AtCursor>,
         limit: Long = 50,
         dispatcher: CoroutineDispatcher = Dispatchers.Default,
-        scope: CoroutineScope = serviceScope,
     ): Flow<Result<MorphoData<MorphoDataItem.ListInfo>>> = flow<Result<MorphoData<MorphoDataItem.ListInfo>>> {
         val uri = AtUri.profileUserListsUri(id)
         cursor.collect { cur ->
@@ -700,7 +714,6 @@ class BskyDataService(
         cursor: SharedFlow<AtCursor>,
         limit: Long = 50,
         dispatcher: CoroutineDispatcher = Dispatchers.IO,
-        scope: CoroutineScope = serviceScope,
     ): Flow<Result<MorphoData<MorphoDataItem.FeedInfo>>> = flow<Result<MorphoData<MorphoDataItem.FeedInfo>>> {
         val uri = AtUri.profileFeedsListUri(id)
         cursor.onEach { cur ->
@@ -732,7 +745,6 @@ class BskyDataService(
         did: Did,
         update: SharedFlow<Unit>,
         dispatcher: CoroutineDispatcher = Dispatchers.IO,
-        scope: CoroutineScope = serviceScope,
     ): Flow<Result<MorphoData<MorphoDataItem.LabelService>>> = flow<Result<MorphoData<MorphoDataItem.LabelService>>> {
         val uri = AtUri.profileModServiceUri(did)
         update.collect {
@@ -766,7 +778,6 @@ class BskyDataService(
         cursor: SharedFlow<AtCursor>,
         limit: Long = 50,
         dispatcher: CoroutineDispatcher = Dispatchers.IO,
-        scope: CoroutineScope = serviceScope,
     ): Flow<Result<MorphoData<MorphoDataItem.FeedItem>>> = flow<Result<MorphoData<MorphoDataItem.FeedItem>>> {
         val uri = AtUri.profileUserListsUri(id)
         cursor.collect { cur ->
@@ -804,7 +815,6 @@ class BskyDataService(
         profiles: ImmutableList<AtIdentifier>,
         update: SharedFlow<Unit>,
         dispatcher: CoroutineDispatcher = Dispatchers.IO,
-        scope: CoroutineScope = serviceScope,
     ): Flow<Result<MorphoData<MorphoDataItem.ProfileItem>>> = flow<Result<MorphoData<MorphoDataItem.ProfileItem>>> {
         val uri = AtUri.myUserListUri(profiles.hashCode().toString())
         update.collect {
@@ -829,9 +839,8 @@ class BskyDataService(
     }.distinctUntilChanged().flowOn(dispatcher)
     suspend fun <T:MorphoDataItem> peekLatest(
         feed: MorphoData<T>,
-        update: SharedFlow<Unit> = MutableSharedFlow<Unit>(),
+        update: SharedFlow<Unit> = MutableSharedFlow(),
         dispatcher: CoroutineDispatcher = Dispatchers.IO,
-        scope: CoroutineScope = serviceScope,
     ): Flow<MorphoDataItem?> = flow {
         update.collect {
             when(feed.feedType) {
@@ -979,6 +988,29 @@ class BskyDataService(
                         }.onFailure { emit(null) }
                 }
             }
+        }
+    }.distinctUntilChanged().flowOn(dispatcher)
+
+
+
+    fun checkIfNewTimeline(
+        interval: Long = 60000,
+        dispatcher: CoroutineDispatcher = Dispatchers.IO
+    ): Flow<Boolean> = flow {
+        val updateTick = UpdateTick(interval)
+        updateTick.tick(true)
+        updateTick.t.collect {
+            val query = GetTimelineQuery(limit = 1, cursor = null)
+            api.api.getTimeline(query).onSuccess { response ->
+                if (response.feed.isNotEmpty()) {
+                    val cid = response.feed.first().post.cid
+                    if (dataFlows[AtUri.HOME_URI]?.value?.contains(cid) == false) {
+                        emit(true)
+                    } else {
+                        emit(false)
+                    }
+                }
+            }.onFailure { emit(false) }
         }
     }.distinctUntilChanged().flowOn(dispatcher)
 

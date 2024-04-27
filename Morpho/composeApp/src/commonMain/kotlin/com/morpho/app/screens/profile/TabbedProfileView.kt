@@ -4,7 +4,10 @@ import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.unit.dp
@@ -41,8 +44,9 @@ fun TabbedProfileTopBar(
         rememberTopAppBarState()),
     tabs: ImmutableList<ProfileSkylineTab>,
     onBackClicked: () -> Unit,
+    tabIndex: Int = 0,
 ) {
-    val selectedTabIndex = tabs.indexOfFirst { it.options.index == 0.toUShort() }
+    var selectedTabIndex by rememberSaveable { mutableIntStateOf(tabIndex) }
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -65,10 +69,13 @@ fun TabbedProfileTopBar(
                 SecondaryScrollableTabRow(
                     selectedTabIndex = selectedTabIndex,
                     edgePadding = 4.dp,
-                    modifier = Modifier
-                        .fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    tabs.forEach { tab -> ProfileTabItem(tab) }
+                    tabs.forEachIndexed { index, tab ->
+                        ProfileTabItem(
+                            tab, index.toUShort()
+                        ) { selectedTabIndex = index }
+                    }
                 }
             }
             false -> {
@@ -80,7 +87,11 @@ fun TabbedProfileTopBar(
 }
 
 @Composable
-fun ProfileTabItem(tab: ProfileSkylineTab) {
+fun ProfileTabItem(
+    tab: ProfileSkylineTab,
+    currentIndex: UShort,
+    onClick: () -> Unit = {},
+) {
     val navigator = LocalTabNavigator.current
     val title = rememberSaveable {
         tab.state?.value?.feed?.title.orEmpty()
@@ -93,8 +104,9 @@ fun ProfileTabItem(tab: ProfileSkylineTab) {
             end = 6.dp
         )
     Tab(
-        selected = navigator.current == tab,
+        selected = currentIndex == tab.index,
         onClick = {
+            onClick()
             navigator.current = tab
         },
     ) {

@@ -39,16 +39,14 @@ import org.jetbrains.compose.resources.painterResource
     ExperimentalResourceApi::class
 )
 @Composable
-public fun DetailedProfileFragment(
+public actual fun DetailedProfileFragment(
     profile: DetailedProfile,
     //onValueChange: (DetailedProfile) -> Unit,
-    modifier: Modifier = Modifier,
-    myProfile: Boolean = false,
-    isTopLevel:Boolean = false,
-    scrollBehavior: TopAppBarScrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(
-        rememberTopAppBarState()
-    ),
-    onBackClicked: () -> Unit = {},
+    modifier: Modifier,
+    myProfile: Boolean,
+    isTopLevel:Boolean,
+    scrollBehavior: TopAppBarScrollBehavior,
+    onBackClicked: () -> Unit,
 ) {
     val scrollState = rememberScrollState()
     val name = profile.displayName ?: profile.handle.handle

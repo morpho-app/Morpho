@@ -60,7 +60,7 @@ fun TabScreen.ThreadViewContent(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ThreadTopBar(navigator: Navigator = LocalNavigator.currentOrThrow) {
-    TopAppBar(
+    CenterAlignedTopAppBar(
         title = { Text("Post") },
         navigationIcon = {
             IconButton(onClick = { navigator.pop() }) {
@@ -103,7 +103,7 @@ fun ThreadView(
                        composerRole = ComposerRole.Reply
                        showComposer = true
                    },
-                   onMenuClicked = { },
+                   onMenuClicked = { _, _ -> },
                    onLikeClicked = { createRecord(RecordUnion.Like(it)) },
     )
     if(repostClicked) {

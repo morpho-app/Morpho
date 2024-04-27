@@ -6,6 +6,7 @@ import com.morpho.app.model.bluesky.BskyPreferences
 import com.morpho.app.model.bluesky.BskyUser
 import com.morpho.app.model.bluesky.toPreferences
 import com.morpho.app.model.bluesky.toProfile
+import com.morpho.app.model.uistate.NotificationsFilterState
 import com.morpho.butterfly.AtIdentifier
 import com.morpho.butterfly.Butterfly
 import io.github.xxfast.kstore.KStore
@@ -31,6 +32,7 @@ data class BskyUserPreferences(
 data class MorphoPreferences(
     val tabbed: Boolean = true,
     val undecorated: Boolean = true,
+    val notificationsFilter: NotificationsFilterState = NotificationsFilterState(),
 )
 
 class PreferencesRepository(storageDir: String): KoinComponent {

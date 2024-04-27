@@ -1,12 +1,7 @@
 package com.morpho.app.ui.notifications
 
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
@@ -14,11 +9,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconToggleButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.SpanStyle
@@ -27,9 +18,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
-import com.morpho.butterfly.Did
 import com.morpho.app.model.bluesky.NotificationsListItem
 import com.morpho.app.ui.elements.OutlinedAvatar
+import com.morpho.butterfly.Did
 import kotlin.math.min
 
 @Composable
@@ -37,6 +28,7 @@ fun NotificationAvatarList(
     item: NotificationsListItem,
     modifier: Modifier = Modifier,
     onClicked: (Did) -> Unit = {},
+    unread: Boolean = false
 ) {
     var expand by remember { mutableStateOf(false) }
     Column(
@@ -103,7 +95,7 @@ fun NotificationAvatarList(
                                     color = MaterialTheme.colorScheme.onSurface,
                                     fontSize = MaterialTheme.typography.labelLarge.fontSize
                                         .times(1.2f),
-                                    fontWeight = FontWeight.Medium
+                                    fontWeight = if(unread) FontWeight.Bold else FontWeight.Medium
                                 )
                             ) {
                                 if (it.author.displayName != null) append("${it.author.displayName} ")
@@ -112,7 +104,8 @@ fun NotificationAvatarList(
                                 style = SpanStyle(
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     fontSize = MaterialTheme.typography.labelLarge.fontSize
-                                        .times(1.0f)
+                                        .times(1.0f),
+                                    fontWeight = if(unread) FontWeight.SemiBold else FontWeight.Normal
                                 )
                             ) {
                                 append("@${it.author.handle}")

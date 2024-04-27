@@ -151,10 +151,13 @@ data class MorphoData<T: MorphoDataItem>(
     }
 }
 
-fun MorphoDataFeed<MorphoDataItem>.toMorphoData(title: String = ""): MorphoData<MorphoDataItem> {
+fun MorphoDataFeed<MorphoDataItem>.toMorphoData(
+    title: String = "",
+    newUri: AtUri? = null
+): MorphoData<MorphoDataItem> {
     return MorphoData(
         title = title,
-        uri = uri,
+        uri = newUri ?: uri,
         cursor = cursor,
         items = items
     )

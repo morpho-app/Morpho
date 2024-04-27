@@ -16,15 +16,15 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
 import com.atproto.repo.StrongRef
-import com.morpho.butterfly.AtIdentifier
-import com.morpho.butterfly.AtUri
-import com.morpho.butterfly.model.RecordType
 import com.morpho.app.model.bluesky.BskyPost
 import com.morpho.app.model.bluesky.ThreadPost
 import com.morpho.app.ui.common.OnPostClicked
 import com.morpho.app.ui.elements.MenuOptions
 import com.morpho.app.ui.elements.WrappedColumn
 import com.morpho.app.ui.post.PostFragmentRole
+import com.morpho.butterfly.AtIdentifier
+import com.morpho.butterfly.AtUri
+import com.morpho.butterfly.model.RecordType
 import morpho.app.ui.utils.indentLevel
 
 @LazyScopeMarker
@@ -45,7 +45,7 @@ fun ThreadTree(
     onReplyClicked: (BskyPost) -> Unit = { },
     onRepostClicked: (BskyPost) -> Unit = { },
     onLikeClicked: (StrongRef) -> Unit = { },
-    onMenuClicked: (MenuOptions) -> Unit = { },
+    onMenuClicked: (MenuOptions, BskyPost) -> Unit = { _, _ -> },
     onUnClicked: (type: RecordType, uri: AtUri) -> Unit = { _, _ -> },
 ) {
 
@@ -109,7 +109,7 @@ fun ThreadTree(
                             onUnClicked =  { type,uri-> onUnClicked(type,uri) },
                             onRepostClicked = { onRepostClicked(it) },
                             onReplyClicked = { onReplyClicked(it) },
-                            onMenuClicked = { onMenuClicked(it) },   
+                            onMenuClicked = { menu, post -> onMenuClicked(menu, post) },
                             onLikeClicked = { onLikeClicked(it) },
                         )
 
@@ -121,7 +121,7 @@ fun ThreadTree(
                                 onUnClicked = { type, uri -> onUnClicked(type, uri) },
                                 onRepostClicked = { onRepostClicked(it) },
                                 onReplyClicked = { onReplyClicked(it) },
-                                onMenuClicked = { onMenuClicked(it) },
+                                onMenuClicked = { option, p -> onMenuClicked(option, p) },
                                 onLikeClicked = { onLikeClicked(it) },
                             )
                         }

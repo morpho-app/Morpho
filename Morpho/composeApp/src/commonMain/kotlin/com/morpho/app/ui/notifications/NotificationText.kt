@@ -19,6 +19,7 @@ fun NotificationText(
     name: String,
     delta: String,
     modifier: Modifier = Modifier,
+    unread: Boolean = false
 ) {
     val text = if (reason != ListNotificationsReason.REPLY && reason != ListNotificationsReason.QUOTE) {
         buildAnnotatedString {
@@ -26,7 +27,7 @@ fun NotificationText(
                 style = SpanStyle(
                     color = MaterialTheme.colorScheme.onSurface,
                     fontSize = MaterialTheme.typography.labelLarge.fontSize,
-                    fontWeight = FontWeight.Medium
+                    fontWeight = if (unread) FontWeight.Bold else FontWeight.Medium
                 )
             ) {
                 append(name)
@@ -35,7 +36,8 @@ fun NotificationText(
                 withStyle(
                     style = SpanStyle(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontSize = MaterialTheme.typography.labelLarge.fontSize
+                        fontSize = MaterialTheme.typography.labelLarge.fontSize,
+                        fontWeight = if (unread) FontWeight.SemiBold else FontWeight.Normal
                     )
                 ) {
                     append(" and ")
@@ -44,7 +46,7 @@ fun NotificationText(
                     style = SpanStyle(
                         color = MaterialTheme.colorScheme.onSurface,
                         fontSize = MaterialTheme.typography.labelLarge.fontSize,
-                        fontWeight = FontWeight.Medium
+                        fontWeight = if (unread) FontWeight.Bold else FontWeight.Medium
                     )
                 ) {
                     append("${number - 1} other${if (number > 2) "s" else ""}")
@@ -53,7 +55,8 @@ fun NotificationText(
             withStyle(
                 style = SpanStyle(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontSize = MaterialTheme.typography.labelLarge.fontSize
+                    fontSize = MaterialTheme.typography.labelLarge.fontSize,
+                    fontWeight = if (unread) FontWeight.SemiBold else FontWeight.Normal
                 )
             ) {
                 when (reason) {

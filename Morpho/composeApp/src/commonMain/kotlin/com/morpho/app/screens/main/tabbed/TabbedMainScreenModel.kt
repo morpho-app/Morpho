@@ -23,7 +23,8 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import org.lighthousegames.logging.logging
 
-class TabbedMainScreenModel : MainScreenModel() {
+class
+TabbedMainScreenModel : MainScreenModel() {
 
 
     var uiState: TabbedScreenState by mutableStateOf(TabbedScreenState(loadingState = UiLoadingState.Loading))

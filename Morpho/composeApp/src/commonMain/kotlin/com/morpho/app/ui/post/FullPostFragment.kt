@@ -49,7 +49,7 @@ fun FullPostFragment(
     onReplyClicked: (BskyPost) -> Unit = { },
     onRepostClicked: (BskyPost) -> Unit = { },
     onLikeClicked: (StrongRef) -> Unit = { },
-    onMenuClicked: (MenuOptions) -> Unit = { },
+    onMenuClicked: (MenuOptions, BskyPost) -> Unit = { _, _ -> },
     onUnClicked: (type: RecordType, uri: AtUri) -> Unit = { _, _ -> },
     ) {
     val postDate = remember { post.createdAt.instant.toLocalDateTime(TimeZone.currentSystemDefault()).date }
@@ -153,7 +153,9 @@ fun FullPostFragment(
                         tint = MaterialTheme.colorScheme.onSurface
                     )
                 }
-                PostMenu(menuExpanded, onMenuClicked, onDismissRequest = { menuExpanded = false })
+                PostMenu(menuExpanded, {
+                    onMenuClicked(it, post)
+                }, onDismissRequest = { menuExpanded = false })
             }
 
 

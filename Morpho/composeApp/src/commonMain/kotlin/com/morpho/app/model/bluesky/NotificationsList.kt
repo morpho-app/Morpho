@@ -1,7 +1,10 @@
 package com.morpho.app.model.bluesky
 
+import androidx.compose.ui.util.fastMap
 import app.bsky.notification.ListNotificationsNotification
 import app.bsky.notification.ListNotificationsReason
+import com.morpho.app.model.uidata.AtCursor
+import com.morpho.app.util.mapImmutable
 import com.morpho.butterfly.AtUri
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
@@ -16,13 +19,25 @@ import kotlinx.serialization.Serializable
  */
 @Serializable
 data class NotificationsList(
-    val notifications: ImmutableList<BskyNotification> = persistentListOf(),
+    private val notifications: ImmutableList<BskyNotification> = persistentListOf(),
+    val cursor: AtCursor = null,
 ) {
-    private lateinit var _notificationsList: MutableList<NotificationsListItem>
+    private var _notificationsList: MutableList<MutableNotificationsListItem> = mutableListOf()
     val notificationsList: ImmutableList<NotificationsListItem>
-        get() = _notificationsList.toImmutableList()
+        get() {
+            if (!initialized) {
+                initList()
+            }
+            return _notificationsList.fastMap { it.toImmutable() }.toImmutableList()
+        }
 
+    private var initialized = false
     init {
+        initList()
+    }
+
+    private fun initList() {
+        if (initialized) return
         val seen = mutableListOf<AtUri>()
         notifications.map { notif ->
             if(notif.reasonSubject != null && seen.contains(notif.reasonSubject)) {
@@ -34,7 +49,7 @@ data class NotificationsList(
                     _notificationsList[index].isRead = if (notif.isRead) true else _notificationsList[index].isRead
                 } else {
                     _notificationsList.add(
-                        NotificationsListItem(
+                        MutableNotificationsListItem(
                             notifications = mutableListOf(notif),
                             reason = notif.reason,
                             isRead = notif.isRead,
@@ -45,7 +60,7 @@ data class NotificationsList(
             } else if (notif.reasonSubject != null) {
                 seen.add(notif.reasonSubject!!)
                 _notificationsList.add(
-                    NotificationsListItem(
+                    MutableNotificationsListItem(
                         notifications = mutableListOf(notif),
                         reason = notif.reason,
                         isRead = notif.isRead,
@@ -61,7 +76,7 @@ data class NotificationsList(
                     _notificationsList[index].isRead = if (notif.isRead) true else _notificationsList[index].isRead
                 } else {
                     _notificationsList.add(
-                        NotificationsListItem(
+                        MutableNotificationsListItem(
                             notifications = mutableListOf(notif),
                             reason = notif.reason,
                             isRead = notif.isRead,
@@ -71,6 +86,7 @@ data class NotificationsList(
                 }
             }
         }
+        initialized = true
     }
     fun concat(new: ImmutableList<ListNotificationsNotification>): NotificationsList {
         return NotificationsList(
@@ -79,12 +95,108 @@ data class NotificationsList(
             })
         )
     }
+
+    fun concat(new: NotificationsList): NotificationsList {
+        return NotificationsList(
+            notifications.toPersistentList().addAll(new.notifications)
+        )
+    }
+    fun markAllRead(): NotificationsList {
+        _notificationsList.map {
+            it.isRead = true
+        }
+        val newNotifs = notifications.mapImmutable {
+            when(it) {
+                is BskyNotification.Follow -> it.copy(isRead = true)
+                is BskyNotification.Like -> it.copy(isRead = true)
+                is BskyNotification.Post -> it.copy(isRead = true)
+                is BskyNotification.Repost -> it.copy(isRead = true)
+                is BskyNotification.Unknown -> it.copy(isRead = true)
+            }
+        }
+        return this.copy(
+            notifications = newNotifs
+        )
+    }
+
+    fun markRead(uri: AtUri): NotificationsList {
+        _notificationsList.forEach { notificationsListItem ->
+            if(notificationsListItem.notifications.firstOrNull { it.uri == uri } != null) {
+                notificationsListItem.isRead = true
+                notificationsListItem.notifications.map {
+                    when(it) {
+                        is BskyNotification.Follow -> it.copy(isRead = true)
+                        is BskyNotification.Like -> it.copy(isRead = true)
+                        is BskyNotification.Post -> it.copy(isRead = true)
+                        is BskyNotification.Repost -> it.copy(isRead = true)
+                        is BskyNotification.Unknown -> it.copy(isRead = true)
+                    }
+                }
+            }
+        }
+        return this
+    }
 }
 
 @Serializable
-data class NotificationsListItem(
+data class MutableNotificationsListItem(
     val notifications: MutableList<BskyNotification> = mutableListOf(),
     val reason: ListNotificationsReason,
     var isRead: Boolean = false,
     val reasonSubject: AtUri? = null,
-)
+) {
+    companion object {
+        fun fromImmutable(item: NotificationsListItem): MutableNotificationsListItem {
+            return MutableNotificationsListItem(
+                notifications = item.notifications.toMutableList(),
+                reason = item.reason,
+                isRead = item.isRead,
+                reasonSubject = item.reasonSubject
+            )
+        }
+    }
+    fun toImmutable(): NotificationsListItem {
+        return NotificationsListItem(
+            notifications = notifications.toImmutableList(),
+            reason = reason,
+            isRead = isRead,
+            reasonSubject = reasonSubject
+        )
+    }
+}
+
+@Serializable
+data class NotificationsListItem(
+    val notifications: ImmutableList<BskyNotification>,
+    val reason: ListNotificationsReason,
+    val isRead: Boolean,
+    val reasonSubject: AtUri?,
+) {
+    companion object {
+        fun fromMutable(item: MutableNotificationsListItem) {
+            NotificationsListItem(
+                notifications = item.notifications.toImmutableList(),
+                reason = item.reason,
+                isRead = item.isRead,
+                reasonSubject = item.reasonSubject
+            )
+        }
+    }
+
+    override fun hashCode(): Int {
+        return notifications.hashCode() + reason.hashCode() + reasonSubject.hashCode()
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other == null || this::class != other::class) return false
+
+        other as NotificationsListItem
+
+        if (reason != other.reason) return false
+        if (reasonSubject != other.reasonSubject) return false
+        if (notifications != other.notifications) return false
+
+        return true
+    }
+}

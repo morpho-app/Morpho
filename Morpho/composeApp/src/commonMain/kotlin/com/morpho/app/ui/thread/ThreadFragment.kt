@@ -14,9 +14,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
 import com.atproto.repo.StrongRef
-import com.morpho.butterfly.AtIdentifier
-import com.morpho.butterfly.AtUri
-import com.morpho.butterfly.model.RecordType
 import com.morpho.app.model.bluesky.BskyPost
 import com.morpho.app.model.bluesky.BskyPostThread
 import com.morpho.app.model.bluesky.ThreadPost
@@ -26,6 +23,9 @@ import com.morpho.app.ui.post.BlockedPostFragment
 import com.morpho.app.ui.post.FullPostFragment
 import com.morpho.app.ui.post.NotFoundPostFragment
 import com.morpho.app.ui.post.PostFragmentRole
+import com.morpho.butterfly.AtIdentifier
+import com.morpho.butterfly.AtUri
+import com.morpho.butterfly.model.RecordType
 
 
 @Composable
@@ -44,7 +44,7 @@ fun ThreadFragment(
     onReplyClicked: (BskyPost) -> Unit = { },
     onRepostClicked: (BskyPost) -> Unit = { },
     onLikeClicked: (StrongRef) -> Unit = { },
-    onMenuClicked: (MenuOptions) -> Unit = { },
+    onMenuClicked: (MenuOptions, BskyPost) -> Unit = { _, _ -> },
     onUnClicked: (type: RecordType, uri: AtUri) -> Unit = { _, _ -> },
     listState: LazyListState = rememberLazyListState(),
     contentPadding: PaddingValues = PaddingValues(0.dp)
@@ -77,7 +77,7 @@ fun ThreadFragment(
                                 onUnClicked =  { type,uri-> onUnClicked(type,uri) },
                                 onRepostClicked = { onRepostClicked(it) },
                                 onReplyClicked = { onReplyClicked(it) },
-                                onMenuClicked = { onMenuClicked(it) },
+                                onMenuClicked = { option, post -> onMenuClicked(option, post) },
                                 onLikeClicked = { onLikeClicked(it) },
                             )
                         }
@@ -178,7 +178,7 @@ fun ThreadFragment(
                                 onUnClicked =  { type,uri-> onUnClicked(type,uri) },
                                 onRepostClicked = { onRepostClicked(it) },
                                 onReplyClicked = { onReplyClicked(it) },
-                                onMenuClicked = { onMenuClicked(it) },
+                                onMenuClicked = { option, post -> onMenuClicked(option, post) },
                                 onLikeClicked = { onLikeClicked(it) },
                             )
                         }

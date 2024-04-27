@@ -208,6 +208,7 @@ class TabbedProfileViewModel(
                             else -> {}
                         }
                         _tabFlow.value = tabs.toImmutableList()
+                        log.d { "Tabs: ${tabs.map { it.title }}"}
                         profileUiState = profileUiState.copy(
                             tabs = tabFlow,
                             tabStates = tabStates.toImmutableList(),

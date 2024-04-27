@@ -139,6 +139,21 @@ open class MainScreenModel: BaseScreenModel() {
             }
         } else {
             // Init some default feeds
+            api.api.getFeedGenerators(GetFeedGeneratorsQuery(
+                persistentListOf(
+                    AtUri("at://did:plc:z72i7hdynmk6r22z27h6tvur/app.bsky.feed.generator/whats-hot"),
+                    AtUri("at://did:plc:tenurhgjptubkk5zf5qhi3og/app.bsky.feed.generator/discover"),
+                    AtUri("at://did:plc:z72i7hdynmk6r22z27h6tvur/app.bsky.feed.generator/with-friends"),
+                    AtUri("at://did:plc:tenurhgjptubkk5zf5qhi3og/app.bsky.feed.generator/feed-of-feeds"),
+                )
+            )).onSuccess { resp ->
+                _pinnedFeeds.addAll(resp.feeds.map{ it.toFeedGenerator() })
+                _pinnedFeeds.forEach { feedGen ->
+                    val flow =
+                        initFeed(feedGen, initAtCursor(), force = true, start = true).first()
+                    if (flow == null) { log.e { "Failed to initialize feed: ${feedGen.displayName}" } }
+                }
+            }
         }
     }
 

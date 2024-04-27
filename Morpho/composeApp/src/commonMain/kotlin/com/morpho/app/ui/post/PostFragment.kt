@@ -54,7 +54,7 @@ fun PostFragment(
     onReplyClicked: (BskyPost) -> Unit = { },
     onRepostClicked: (BskyPost) -> Unit = { },
     onLikeClicked: (StrongRef) -> Unit = { },
-    onMenuClicked: (MenuOptions) -> Unit = { },
+    onMenuClicked: (MenuOptions, BskyPost) -> Unit = { _, _ -> },
     onUnClicked: (type: RecordType, uri: AtUri) -> Unit = { _, _ -> },
 ) {
     val padding = remember { when(role) {
@@ -246,12 +246,13 @@ fun PostFragment(
                         )
                         PostFeatureElement(post.feature, onItemClicked)
 
-                        PostActions(post = post,
-                                    onLikeClicked = { onLikeClicked(StrongRef(post.uri, post.cid)) },
-                                    onMenuClicked = onMenuClicked,
-                                    onReplyClicked = { onReplyClicked(post) },
-                                    onRepostClicked = { onRepostClicked(post) },
-                                    onUnClicked = onUnClicked,
+                        PostActions(
+                            post = post,
+                            onLikeClicked = { onLikeClicked(StrongRef(post.uri, post.cid)) },
+                            onMenuClicked = { onMenuClicked(it, post) },
+                            onReplyClicked = { onReplyClicked(post) },
+                            onRepostClicked = { onRepostClicked(post) },
+                            onUnClicked = onUnClicked,
                         )
                     }
                 }

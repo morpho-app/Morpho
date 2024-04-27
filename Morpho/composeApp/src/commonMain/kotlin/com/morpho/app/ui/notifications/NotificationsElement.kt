@@ -23,21 +23,23 @@ import com.morpho.app.util.getFormattedDateTimeSince
 import com.morpho.butterfly.AtIdentifier
 import com.morpho.butterfly.AtUri
 import com.morpho.butterfly.model.RecordType
-import kotlinx.coroutines.Deferred
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.firstOrNull
 
 @Composable
 fun NotificationsElement(
     item: NotificationsListItem,
     showPost: Boolean = true,
-    getPost: suspend (AtUri) -> Deferred<BskyPost?>,
+    getPost: suspend (AtUri) -> Flow<BskyPost?>,
     onPostClicked: OnPostClicked,
     onAvatarClicked: (AtIdentifier) -> Unit = {},
     onReplyClicked: (BskyPost) -> Unit = { },
     onRepostClicked: (BskyPost) -> Unit = { },
     onLikeClicked: (StrongRef) -> Unit = { },
-    onMenuClicked: (MenuOptions) -> Unit = { },
+    onMenuClicked: (MenuOptions, BskyPost) -> Unit = { _, _ -> },
     onUnClicked: (type: RecordType, uri: AtUri) -> Unit = { _, _ -> },
+    readOnLoad: Boolean = false,
+    markRead: (AtUri) -> Unit = {  }
 ) {
     var expand by remember { mutableStateOf(showPost) }
     var post: BskyPost? by remember { mutableStateOf(null) }
@@ -45,24 +47,32 @@ fun NotificationsElement(
     LaunchedEffect(expand) {
         @Suppress("REDUNDANT_ELSE_IN_WHEN")
         when (val notif = item.notifications.first()) {
-            is BskyNotification.Like -> post = getPost(notif.subject.uri).await()
+            is BskyNotification.Like -> {
+                if(showPost) post = getPost(notif.subject.uri).firstOrNull()
+            }
             is BskyNotification.Follow -> {}
             is BskyNotification.Post -> {
                 post = notif.post
-                launch {
-                    post = getPost(notif.uri).await()
-                }
+                if(showPost) post = getPost(notif.uri).firstOrNull()
             }
 
-            is BskyNotification.Repost -> post = getPost(notif.subject.uri).await()
+            is BskyNotification.Repost -> {
+                if(showPost) post = getPost(notif.subject.uri).firstOrNull()
+            }
             is BskyNotification.Unknown -> {
-                if (notif.reasonSubject != null) {
-                    post = getPost(notif.reasonSubject!!).await()
+                if (notif.reasonSubject != null && showPost) {
+                    post = getPost(notif.reasonSubject!!).firstOrNull()
                 }
             }
 
             else -> {}
         }
+    }
+    remember {
+        if (!readOnLoad) return@remember
+        // We just mark the first notification as read,
+        // because that propagates to the rest and is slightly faster
+        markRead(item.notifications.first().uri)
     }
     val firstName = remember {
         if (item.notifications.first().author.displayName?.isNotEmpty() == true) {
@@ -92,6 +102,7 @@ fun NotificationsElement(
                         checked = expand,
                         onCheckedChange = {
                             expand = it
+                            markRead(item.notifications.first().uri)
                         },
                     ) {
                         if (expand) {
@@ -123,13 +134,34 @@ fun NotificationsElement(
                     // TODO: maybe do a more compact variant
                     PostFragment(
                         post = post!!, elevate = true,
-                        onItemClicked = { onPostClicked(it) },
-                        onProfileClicked = { onAvatarClicked(it) },
-                        onUnClicked = onUnClicked,
-                        onRepostClicked = onRepostClicked,
-                        onReplyClicked = onReplyClicked,
-                        onMenuClicked = onMenuClicked,
-                        onLikeClicked = onLikeClicked,
+                        onItemClicked = {
+                            if(!readOnLoad) markRead(item.notifications.first().uri)
+                            onPostClicked(it)
+                                        },
+                        onProfileClicked = {
+                            if(!readOnLoad) markRead(item.notifications.first().uri)
+                            onAvatarClicked(it)
+                                           },
+                        onUnClicked = { type, uri ->
+                            if(!readOnLoad) markRead(item.notifications.first().uri)
+                            onUnClicked(type, uri)
+                        },
+                        onRepostClicked = {
+                            onRepostClicked(it)
+                            if(!readOnLoad) markRead(item.notifications.first().uri)
+                        },
+                        onReplyClicked = {
+                            onReplyClicked(it)
+                            if(!readOnLoad) markRead(item.notifications.first().uri)
+                        },
+                        onMenuClicked = { option, p ->
+                            onMenuClicked(option, p)
+                            if(!readOnLoad) markRead(item.notifications.first().uri)
+                        },
+                        onLikeClicked = {
+                            onLikeClicked(it)
+                            if(!readOnLoad) markRead(item.notifications.first().uri)
+                                        },
                     )
                 }
             }

@@ -46,7 +46,7 @@ fun <T: MorphoDataItem> SkylineFragment (
     onReplyClicked: (BskyPost) -> Unit = { },
     onRepostClicked: (BskyPost) -> Unit = { },
     onLikeClicked: (StrongRef) -> Unit = { },
-    onMenuClicked: (MenuOptions) -> Unit = { },
+    onMenuClicked: (MenuOptions, BskyPost) -> Unit = { _, _ -> },
     onUnClicked: (type: RecordType, uri: AtUri) -> Unit = { _, _ -> },
     contentPadding: PaddingValues = PaddingValues(0.dp),
     isProfileFeed: Boolean = false,
@@ -58,7 +58,7 @@ fun <T: MorphoDataItem> SkylineFragment (
     val loading = state.value.loadingState
     val cursor by rememberUpdatedState(state.value.feed.cursor)
 
-    val coroutineScope = rememberCoroutineScope()
+    val scope = rememberCoroutineScope()
     var refreshing by remember { mutableStateOf(false) }
 
     val listState: LazyListState = rememberLazyListState()
@@ -78,7 +78,7 @@ fun <T: MorphoDataItem> SkylineFragment (
         }
     }
 
-    fun refreshPull() = coroutineScope.launch {
+    fun refreshPull() = scope.launch {
         refreshing = true
         launch { currentRefresh(null) }
             .invokeOnCompletion { refreshing = false }
@@ -235,7 +235,7 @@ fun <T: MorphoDataItem> SkylineFragment (
 
             OutlinedIconButton(
                 onClick = {
-                    coroutineScope.launch {
+                    scope.launch {
                         refreshPull()
                         if (scrolledDownLots) {
                             listState.scrollToItem(0)
