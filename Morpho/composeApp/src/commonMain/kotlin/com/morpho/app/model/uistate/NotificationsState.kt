@@ -1,5 +1,6 @@
 package com.morpho.app.model.uistate
 
+import androidx.compose.runtime.Immutable
 import com.morpho.app.model.bluesky.NotificationsList
 import com.morpho.app.model.bluesky.NotificationsListItem
 import com.morpho.app.model.uidata.AtCursor
@@ -37,6 +38,7 @@ data class NotificationsUIState(
 
 }
 
+@Immutable
 @Serializable
 data class NotificationsFilterState(
     val showAlreadyRead: Boolean = true,

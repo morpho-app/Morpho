@@ -10,8 +10,7 @@ import com.morpho.app.model.uistate.NotificationsFilterState
 import com.morpho.butterfly.AtIdentifier
 import com.morpho.butterfly.Butterfly
 import io.github.xxfast.kstore.KStore
-import io.github.xxfast.kstore.extensions.minus
-import io.github.xxfast.kstore.extensions.plus
+import io.github.xxfast.kstore.extensions.updatesOrEmpty
 import io.github.xxfast.kstore.file.extensions.listStoreOf
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.*
@@ -48,7 +47,7 @@ class PreferencesRepository(storageDir: String): KoinComponent {
     }
 
     val prefs: Flow<List<BskyUserPreferences>?>
-        get() = _prefsStore.updates.distinctUntilChanged()
+        get() = _prefsStore.updatesOrEmpty.distinctUntilChanged()
 
     fun userPrefs(id: AtIdentifier): Flow<BskyUserPreferences?> = flow {
         prefs.onEach { preferencesList ->
@@ -152,12 +151,16 @@ class PreferencesRepository(storageDir: String): KoinComponent {
 
     //@NativeCoroutines
     suspend fun setPreferences(user: BskyUser, pref: BskyPreferences, morphoPrefs: MorphoPreferences = MorphoPreferences()) = coroutineScope {
-        val p =  this@PreferencesRepository.prefs.first()
-        val prefsIndex = p?.indexOfFirst { it.user.userDid == user.userDid }
-        if (prefsIndex != -1 && prefsIndex != null) {
-            _prefsStore.minus(p[prefsIndex])
+        _prefsStore.update {
+            it?.toMutableList()?.apply {
+                val prefsIndex = it.indexOfFirst { user.userDid == user.userDid }
+                if (prefsIndex != -1) {
+                    this[prefsIndex] = BskyUserPreferences(user, pref, morphoPrefs)
+                } else {
+                    add(BskyUserPreferences(user, pref, morphoPrefs))
+                }
+            }
         }
-        _prefsStore.plus(BskyUserPreferences(user, pref, morphoPrefs))
     }
 
     //@NativeCoroutines
