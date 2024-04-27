@@ -1,7 +1,5 @@
 package com.morpho.app.screens.base.tabbed
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -10,7 +8,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
@@ -19,6 +16,7 @@ import cafe.adriel.voyager.core.screen.ScreenKey
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.currentOrThrow
+import cafe.adriel.voyager.navigator.tab.LocalTabNavigator
 import cafe.adriel.voyager.navigator.tab.Tab
 import cafe.adriel.voyager.navigator.tab.TabNavigator
 import cafe.adriel.voyager.navigator.tab.TabOptions
@@ -31,25 +29,19 @@ import org.koin.compose.koinInject
 import kotlin.math.min
 
 
-data class TabbedBaseScreen(
-    val k: ScreenKey = ""
-) : Tab {
+data object TabbedBaseScreen: Tab {
 
-    override val key: ScreenKey =  hashCode().toString() + "BaseTabbedScreen" + k
+    override val key: ScreenKey = "TabbedBaseScreen_${hashCode()}"
 
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     override fun Content() {
+        val tabNavigator = LocalTabNavigator.current
         Navigator(
             HomeTab("startHome"),
         ) { navigator ->
-
             /*LaunchedEffect(Unit) { navigator.replaceAll(HomeTab("startHome2")) }*/
             SlideTabTransition(navigator)
-            Text(
-                text = "Level #${navigator.level}",
-                modifier = Modifier.padding(8.dp).background(Color.Gray)
-            )
         }
 
     }

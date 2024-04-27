@@ -2,9 +2,9 @@ package com.morpho.app
 
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import cafe.adriel.voyager.navigator.tab.CurrentTab
 import cafe.adriel.voyager.navigator.tab.TabDisposable
 import cafe.adriel.voyager.navigator.tab.TabNavigator
@@ -23,26 +23,28 @@ fun App() {
     KoinContext {
         MaterialTheme {
             val screenModel = koinInject<BaseScreenModel>()
-            val loggedIn by remember { derivedStateOf { screenModel.isLoggedIn } }
+            val loggedIn by derivedStateOf { screenModel.isLoggedIn }
+
+
             TabNavigator(
                 tab = if(loggedIn) {
-                    TabbedBaseScreen("startup")
+                    TabbedBaseScreen
                 } else {
                     LoginScreen
                 },
                 tabDisposable = {
                     TabDisposable(
                         navigator = it,
-                        tabs = listOf(TabbedBaseScreen("list"), LoginScreen)
+                        tabs = listOf(TabbedBaseScreen, LoginScreen)
                     )
                 }
             ) {
-                /*LaunchedEffect(Unit) {
-                    when {
-                        loggedIn -> it.current = TabbedBaseScreen
-                        else -> it.current = LoginScreen
+                LaunchedEffect(it.current) {
+                    if(screenModel.isLoggedIn) {
+                        it.current = TabbedBaseScreen
+                    } else {
                     }
-                }*/
+                }
                 CurrentTab()
             }
         }

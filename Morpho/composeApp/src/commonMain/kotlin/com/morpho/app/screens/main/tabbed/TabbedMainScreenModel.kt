@@ -18,6 +18,7 @@ import com.morpho.app.model.uistate.UiLoadingState
 import com.morpho.app.screens.main.MainScreenModel
 import com.morpho.butterfly.AtUri
 import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -49,39 +50,34 @@ TabbedMainScreenModel : MainScreenModel() {
         initialized = true
         val home = initHomeTab()
         val savedFeedsPref = userPrefs.value?.preferences?.savedFeeds
-        if (savedFeedsPref != null) {
-            val newFeeds = mutableListOf<StateFlow<ContentCardState<MorphoDataItem>>>()
-
-            tabs.clear()
-            if(home.isSuccess) {
-                val homeState = _feedStates.firstOrNull {
-                    it.value.uri == home.getOrThrow().first.uri
-                }
-                if (homeState != null && home.getOrNull()?.second != null) {
-                    tabs.add(home.getOrThrow().first)
-                    _tabFlow.value = tabs.toImmutableList()
-                    newFeeds.add(homeState as StateFlow<ContentCardState<MorphoDataItem>>)
-                    //uiState = uiState.copy(loadingState = UiLoadingState.Idle, tabs = tabFlow, tabStates = newFeeds.toImmutableList())
-                } else {
-                    log.e { "Failed to initialize home tab state" }
-                    log.d {
-                        "Home tab: ${home.getOrNull()?.first}\n" +
-                        "Home state: ${homeState?.value}"
-                    }
+        tabs.clear()
+        val newFeeds = mutableListOf<StateFlow<ContentCardState<MorphoDataItem>>>()
+        if(home.isSuccess) {
+            val homeState = _feedStates.firstOrNull {
+                it.value.uri == home.getOrThrow().first.uri
+            }
+            if (homeState != null && home.getOrNull()?.second != null) {
+                tabs.add(home.getOrThrow().first)
+                _tabFlow.value = tabs.toImmutableList()
+                newFeeds.add(homeState as StateFlow<ContentCardState<MorphoDataItem>>)
+                //uiState = uiState.copy(loadingState = UiLoadingState.Idle, tabs = tabFlow, tabStates = newFeeds.toImmutableList())
+            } else {
+                log.e { "Failed to initialize home tab state" }
+                log.d {
+                    "Home tab: ${home.getOrNull()?.first}\n" +
+                            "Home state: ${homeState?.value}"
                 }
             }
-
-            //uiState = uiState.copy(loadingState = UiLoadingState.Loading)
-            val feeds = api.api
-                .getFeedGenerators(GetFeedGeneratorsQuery(savedFeedsPref.pinned))
+        }
+        if (savedFeedsPref != null) {
+            log.d { "Pinned feeds: ${savedFeedsPref.pinned}" }
+            api.api.getFeedGenerators(GetFeedGeneratorsQuery(savedFeedsPref.pinned))
                 .map { resp ->
-                    _pinnedFeeds.addAll(resp.feeds.map{ it.toFeedGenerator() })
+                    _pinnedFeeds.addAll(resp.feeds.map { it.toFeedGenerator() })
                     _pinnedFeeds.associateBy { _pinnedFeeds.indexOf(it) }.mapValues { feedGen ->
                         initFeedTab(feedGen.value)
                     }
-                }.getOrNull()
-            if (feeds != null) {
-                feeds.forEach { (index, pair) ->
+                }.getOrNull()?.forEach { (index, pair) ->
                     val feed = pair.getOrNull()
                     if (feed != null) {
                         feedStates.firstOrNull {
@@ -94,13 +90,39 @@ TabbedMainScreenModel : MainScreenModel() {
                         log.e { "Failed to initialize feed tab at index $index" }
                     }
                 }
-                _tabFlow.value = tabs.toImmutableList()
-                //uiState = uiState.copy(loadingState = UiLoadingState.Idle, tabs = tabFlow, tabStates = newFeeds.toImmutableList())
-            }
-            uiState = uiState.copy(loadingState = UiLoadingState.Idle, tabs = tabFlow, tabStates = newFeeds.toImmutableList())
-        } else {
+        } else if(false) { // Temporarily disabled
             // Init some default feeds
+            api.api.getFeedGenerators(GetFeedGeneratorsQuery(
+                persistentListOf(
+                    AtUri("at://did:plc:z72i7hdynmk6r22z27h6tvur/app.bsky.feed.generator/whats-hot"),
+                    AtUri("at://did:plc:tenurhgjptubkk5zf5qhi3og/app.bsky.feed.generator/discover"),
+                    AtUri("at://did:plc:z72i7hdynmk6r22z27h6tvur/app.bsky.feed.generator/with-friends"),
+                    AtUri("at://did:plc:tenurhgjptubkk5zf5qhi3og/app.bsky.feed.generator/feed-of-feeds"),
+                )
+            )).onSuccess { resp ->
+                _pinnedFeeds.addAll(resp.feeds.map{ it.toFeedGenerator() })
+                _pinnedFeeds.associateBy { _pinnedFeeds.indexOf(it) }.mapValues { feedGen ->
+                    val result = initFeedTab(feedGen.value)
+                    if (result.isFailure) { MainScreenModel.log.e { "Failed to initialize feed: ${feedGen.value.displayName}" } }
+                    else {
+                        feedStates.firstOrNull {
+                            it.value.uri == result.getOrNull()?.first?.uri
+                        }?.let { state ->
+                            tabs.add(result.getOrNull()?.first!!)
+                            newFeeds.add(state as StateFlow<ContentCardState<MorphoDataItem>>)
+                        }
+                    }
+                }
+
+            }
+        } else {
+            log.d { "Saved Feeds: $savedFeedsPref" }
+            log.d {
+                "Prefs ${preferences.prefs.firstOrNull()}"
+            }
         }
+        _tabFlow.value = tabs.toImmutableList()
+        uiState = uiState.copy(loadingState = UiLoadingState.Idle, tabs = tabFlow, tabStates = newFeeds.toImmutableList())
         return@launch
     }
 

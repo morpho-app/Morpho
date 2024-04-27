@@ -68,7 +68,7 @@ open class MainScreenModel: BaseScreenModel() {
         initialized = true
         userId = api.id
         if(userId != null){
-            if(preferences.prefs.firstOrNull().isNullOrEmpty()) {
+            if(preferences.prefs.firstOrNull().isNullOrEmpty()){
                 val prefs = userId?.let {
                     preferences.getPreferences(it, true)
                 }?.getOrNull()
@@ -79,16 +79,31 @@ open class MainScreenModel: BaseScreenModel() {
                 } else {
                     log.e { "Failed to get preferences" }
                 }
+            } else if(preferences.getUser(userId!!).isFailure) {
+                currentUser = userId?.let { GetProfileQuery(it) }?.let {
+                    api.api.getProfile(it).getOrNull()?.toProfile()
+                }
+                val prefs = userId?.let {
+                    api.api.getPreferences().getOrNull()?.toPreferences()
+                }
+                if(prefs != null && currentUser != null) {
+                    preferences.setPreferences(BskyUser.makeUser(currentUser!!), prefs)
+                } else {
+                    log.e { "Failed to get preferences" }
+                }
             } else {
                 log.d { "Preferences already set maybe?" }
             }
             currentUser = userPrefs.value?.user?.getProfile()
-            if(userPrefs.value == null) userPrefs.value = preferences
-                .getFullPrefsLocal(userId!!).getOrNull()
-            if(currentUser == null) currentUser = userId?.let { GetProfileQuery(it) }?.let {
-                api.api.getProfile(it).getOrNull()?.toProfile()
+            if(userPrefs.value == null) {
+                userPrefs.value = preferences.getFullPrefs(userId!!).getOrNull()
             }
-            preferences.userPrefs(userId!!).onEach { userPrefs.value = it }.launchIn(screenModelScope)
+            if(currentUser == null) {
+                currentUser = userId?.let { GetProfileQuery(it) }?.let {
+                    api.api.getProfile(it).getOrNull()?.toProfile()
+                }
+            }
+            preferences.userPrefs(userId!!).collect { userPrefs.value = it }
         }
         if(populateFeeds) initFeeds()
     }
@@ -312,14 +327,14 @@ open class MainScreenModel: BaseScreenModel() {
             }.stateIn(screenModelScope, SharingStarted.Lazily, BskyFeedPref())
         }
         val feedService = dataService.dataFlows[timeline.uri]
-        log.d { "Feed service: $feedService"}
+        log.d { "Timeline service: $feedService"}
         // Delete the feed if it's already there, initializing from scratch
         if(force && feedService != null) dataService.removeFeed(timeline.uri)
         _cursors[timeline.uri] = timeline.cursorFlow
         timeline.cursorFlow.emit(null)
         val feedState = _feedStates
             .firstOrNull { it.value.uri == timeline.uri }
-        log.d { "Feed state: $feedState"}
+        log.d { "Timeline state: $feedState"}
         val newFeed = dataService
             .timeline(timeline.cursorFlow, 100, prefs)
             .handleToState(MorphoData(cursor = timeline.cursorFlow.replayCache.lastOrNull()))

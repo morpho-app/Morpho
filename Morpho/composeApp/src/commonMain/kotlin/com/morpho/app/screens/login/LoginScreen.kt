@@ -15,6 +15,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.core.model.screenModelScope
 import cafe.adriel.voyager.core.screen.ScreenKey
+import cafe.adriel.voyager.koin.getScreenModel
 import cafe.adriel.voyager.navigator.tab.LocalTabNavigator
 import cafe.adriel.voyager.navigator.tab.Tab
 import cafe.adriel.voyager.navigator.tab.TabOptions
@@ -22,7 +23,6 @@ import com.morpho.app.model.uistate.AuthState
 import com.morpho.app.screens.base.tabbed.TabbedBaseScreen
 import com.morpho.app.ui.common.LoadingCircle
 import kotlinx.coroutines.launch
-import org.koin.compose.koinInject
 
 data object LoginScreen: Tab {
 
@@ -30,10 +30,15 @@ data object LoginScreen: Tab {
     @Composable
     override fun Content() {
 
-        val screenModel = koinInject<LoginScreenModel>()
+
         val focusManager = LocalFocusManager.current
         val snackbarHostState = remember { SnackbarHostState() }
         val tabNavigator = LocalTabNavigator.current
+        val screenModel = getScreenModel<LoginScreenModel>()
+
+        if(screenModel.isLoggedIn) {
+            tabNavigator.current = TabbedBaseScreen
+        }
 
         Scaffold (
             snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -60,9 +65,9 @@ data object LoginScreen: Tab {
                         )
                     }
                     screenModel.loginState.authState is AuthState.Success -> {
-                        tabNavigator.current = TabbedBaseScreen("loginSuccess")
+                        tabNavigator.current = TabbedBaseScreen
                     }
-                    screenModel.loginState.isLoading -> {
+                    screenModel.loginState.isLoading && (screenModel.loginState.authState is AuthState.NoAuth) -> {
                         LoadingCircle()
                     }
                     else -> {
