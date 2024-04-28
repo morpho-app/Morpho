@@ -127,7 +127,10 @@ fun TabScreen.NotificationViewContent(
                                 NotificationsFilterElement(
                                     sm.uiState.value.filterState,
                                     onFilterClicked = {
-                                        sm.notifService.updateFilter(it)
+                                        sm.notifService.updateFilter(it).invokeOnCompletion {
+                                            // forcing a refresh should reload the list with new filters
+                                            sm.refreshNotifications(cursor)
+                                        }
                                     }
                                 )
                                 HorizontalDivider(Modifier.fillMaxWidth(),thickness = Dp.Hairline)

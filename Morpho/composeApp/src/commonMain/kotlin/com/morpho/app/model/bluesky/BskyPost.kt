@@ -115,13 +115,13 @@ fun ThreadViewPost.toPost() : BskyPost {
         is ThreadViewPostParentUnion.BlockedPost -> null
         is ThreadViewPostParentUnion.NotFoundPost -> null
         is ThreadViewPostParentUnion.ThreadViewPost -> {
-            val parentPost = parent.value.toPost()
-            val rootPost = findRootPost() ?: parentPost
+            val parentPost = (parent as ThreadViewPostParentUnion.ThreadViewPost).value.toPost()
+            val rootPost = findRootPost()?.toPost() ?: parentPost
             BskyPostReply(root = rootPost, parent = parentPost)
         }
         null -> null
     }
-    return post.toPost(reply = replyRef, reason = reason?.toReason())
+    return post.toPost(reply = replyRef, reason = null)
 }
 
 fun ThreadViewPost.findRootPost(): ThreadViewPost? {
