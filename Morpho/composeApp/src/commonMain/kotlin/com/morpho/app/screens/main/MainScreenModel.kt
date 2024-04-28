@@ -206,7 +206,7 @@ open class MainScreenModel: BaseScreenModel() {
     }
     @OptIn(ExperimentalCoroutinesApi::class)
     suspend fun loadThread(state: ContentCardState.PostThread): StateFlow<ContentCardState.PostThread> = flow {
-        val r = api.api.getPostThread(GetPostThreadQuery(state.uri)).map { response ->
+        val r = api.api.getPostThread(GetPostThreadQuery(state.uri, 15, 200)).map { response ->
             response.thread.let { thread ->
                 when (thread) {
                     is GetPostThreadResponseThreadUnion.BlockedPost -> {

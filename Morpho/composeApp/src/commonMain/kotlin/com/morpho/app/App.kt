@@ -2,7 +2,6 @@ package com.morpho.app
 
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import cafe.adriel.voyager.navigator.tab.CurrentTab
@@ -39,12 +38,6 @@ fun App() {
                     )
                 }
             ) {
-                LaunchedEffect(it.current) {
-                    if(screenModel.isLoggedIn) {
-                        it.current = TabbedBaseScreen
-                    } else {
-                    }
-                }
                 CurrentTab()
             }
         }

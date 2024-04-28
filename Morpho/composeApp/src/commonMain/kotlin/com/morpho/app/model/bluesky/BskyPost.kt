@@ -10,6 +10,7 @@ import com.morpho.butterfly.Cid
 import com.morpho.butterfly.Language
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
+import kotlinx.collections.immutable.toImmutableList
 import kotlinx.serialization.Serializable
 
 
@@ -133,12 +134,20 @@ fun ThreadViewPost.findRootPost(): ThreadViewPost? {
     }.lastOrNull()
 }
 
+fun ThreadViewPost.findParentChain(): ImmutableList<ThreadViewPost> {
+    return generateSequence(this) { currentPost ->
+        when (val parentUnion = currentPost.parent) {
+            is ThreadViewPostParentUnion.ThreadViewPost -> parentUnion.value
+            else -> null
+        }
+    }.toImmutableList()
+}
+
 fun PostView.toPost(
     reply: BskyPostReply?,
     reason: BskyPostReason?,
 ): BskyPost {
     // TODO verify via recordType before blindly deserialized.
-    //Log.v("PostRecord", record.toString())
     val postRecord = Post.serializer().deserialize(record)
 
     return BskyPost(

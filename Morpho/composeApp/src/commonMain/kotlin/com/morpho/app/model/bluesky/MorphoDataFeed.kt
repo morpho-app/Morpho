@@ -274,7 +274,7 @@ data class MorphoDataFeed<T: MorphoDataItem> (
                         feed._items[index] = MorphoDataItem.Thread(
                             BskyPostThread(
                                 post,
-                                parents.toList(),
+                                parents.toList().toImmutableList(),
                                 replies.toList().toImmutableList()
                             )
                         )
@@ -417,7 +417,7 @@ data class MorphoDataFeed<T: MorphoDataItem> (
     }
 
     fun collectThreads(
-        depth: Int = 3, height: Int = 10,
+        depth: Int = 3, height: Int = 80,
         timeRange: Delta = Delta(Duration.parse("4h"))
     ): Flow<MorphoDataFeed<MorphoDataItem.FeedItem>> = flow {
         emit(collectThreads(this@MorphoDataFeed as MorphoDataFeed<MorphoDataItem.FeedItem>,
