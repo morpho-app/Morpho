@@ -111,29 +111,26 @@ fun PostView.toPost(): BskyPost {
 }
 
 fun ThreadViewPost.toPost() : BskyPost {
-    val replyRef = when(parent) {
+    val replyRef = when (parent) {
         is ThreadViewPostParentUnion.BlockedPost -> null
         is ThreadViewPostParentUnion.NotFoundPost -> null
         is ThreadViewPostParentUnion.ThreadViewPost -> {
-            val root = generateSequence(parent) { parentPost ->
-                when (parentPost) {
-                    is ThreadViewPostParentUnion.BlockedPost -> null
-                    is ThreadViewPostParentUnion.NotFoundPost -> null
-                    is ThreadViewPostParentUnion.ThreadViewPost -> parentPost.value.parent
-                }
-            }.last { it is ThreadViewPostParentUnion.ThreadViewPost }
-            if (root is ThreadViewPostParentUnion.ThreadViewPost) {
-                BskyPostReply(root.value.toPost(), (parent as ThreadViewPostParentUnion.ThreadViewPost).value.toPost())
-            } else {
-                BskyPostReply(
-                    (parent as ThreadViewPostParentUnion.ThreadViewPost).value.toPost(),
-                    (parent as ThreadViewPostParentUnion.ThreadViewPost).value.toPost(),
-                )
-            }
+            val parentPost = parent.value.toPost()
+            val rootPost = findRootPost() ?: parentPost
+            BskyPostReply(root = rootPost, parent = parentPost)
         }
         null -> null
     }
-    return post.toPost(replyRef, null)
+    return post.toPost(reply = replyRef, reason = reason?.toReason())
+}
+
+fun ThreadViewPost.findRootPost(): ThreadViewPost? {
+    return generateSequence(this) { currentPost ->
+        when (val parentUnion = currentPost.parent) {
+            is ThreadViewPostParentUnion.ThreadViewPost -> parentUnion.value
+            else -> null
+        }
+    }.lastOrNull()
 }
 
 fun PostView.toPost(
