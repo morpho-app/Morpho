@@ -1,6 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
-    <background android:drawable="@drawable/_0tigj8" />
-    <foreground android:drawable="@drawable/morpho_test_icon_t" />
-    <monochrome android:drawable="@drawable/morpho_test_icon_t" />
-</adaptive-icon>
