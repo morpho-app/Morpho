@@ -26,6 +26,7 @@ import com.morpho.app.model.bluesky.*
 import com.morpho.app.model.uidata.Moment
 import com.morpho.app.ui.common.OnPostClicked
 import com.morpho.app.ui.elements.*
+import com.morpho.app.ui.lists.FeedListEntryFragment
 import com.morpho.app.ui.theme.MorphoTheme
 import com.morpho.app.util.getFormattedDateTimeSince
 import com.morpho.app.util.openBrowser
@@ -305,7 +306,7 @@ inline fun ColumnScope.PostFeatureElement(
             PostImages(imagesFeature = feature,
                 modifier = Modifier.align(Alignment.CenterHorizontally))
         }
-        is BskyPostFeature.MediaPostFeature -> {
+        is BskyPostFeature.MediaRecordFeature -> {
             @Suppress("REDUNDANT_ELSE_IN_WHEN")
             when(feature.media) {
                 is BskyPostFeature.ExternalFeature -> {
@@ -322,27 +323,39 @@ inline fun ColumnScope.PostFeatureElement(
                 else -> {}
             }
             @Suppress("REDUNDANT_ELSE_IN_WHEN")
-            when (feature.post) {
-                is EmbedPost.BlockedEmbedPost -> EmbedBlockedPostFragment(uri = feature.post.uri)
-                is EmbedPost.InvisibleEmbedPost -> EmbedNotFoundPostFragment(uri = feature.post.uri)
-                is EmbedPost.VisibleEmbedPost -> EmbedPostFragment(
-                    post = feature.post,
-                    onItemClicked =  {onItemClicked(feature.post.uri)},
+            when (feature.record) {
+                is EmbedRecord.BlockedEmbedPost -> EmbedBlockedPostFragment(uri = feature.record.uri)
+                is EmbedRecord.InvisibleEmbedPost -> EmbedNotFoundPostFragment(uri = feature.record.uri)
+                is EmbedRecord.VisibleEmbedPost -> EmbedPostFragment(
+                    post = feature.record,
+                    onItemClicked =  {onItemClicked(feature.record.uri)},
                     modifier = Modifier.align(Alignment.CenterHorizontally)
                 )
+                is EmbedRecord.EmbedFeed -> {
+                    FeedListEntryFragment(
+                        feature.record.feed,
+                        onFeedClicked = {  }
+                    )
+                }
                 else -> {}
             }
         }
-        is BskyPostFeature.PostFeature -> {
+        is BskyPostFeature.RecordFeature -> {
             @Suppress("REDUNDANT_ELSE_IN_WHEN")
-            when (feature.post) {
-                is EmbedPost.BlockedEmbedPost -> EmbedBlockedPostFragment(uri = feature.post.uri)
-                is EmbedPost.InvisibleEmbedPost -> EmbedNotFoundPostFragment(uri = feature.post.uri)
-                is EmbedPost.VisibleEmbedPost -> EmbedPostFragment(
-                    post = feature.post,
-                    onItemClicked =  {onItemClicked(feature.post.uri)},
+            when (feature.record) {
+                is EmbedRecord.BlockedEmbedPost -> EmbedBlockedPostFragment(uri = feature.record.uri)
+                is EmbedRecord.InvisibleEmbedPost -> EmbedNotFoundPostFragment(uri = feature.record.uri)
+                is EmbedRecord.VisibleEmbedPost -> EmbedPostFragment(
+                    post = feature.record,
+                    onItemClicked =  {onItemClicked(feature.record.uri)},
                     modifier = Modifier.align(Alignment.CenterHorizontally)
                 )
+                is EmbedRecord.EmbedFeed -> {
+                    FeedListEntryFragment(
+                        feature.record.feed,
+                        onFeedClicked = {  }
+                    )
+                }
                 else -> {}
             }
         }

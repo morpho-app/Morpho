@@ -22,6 +22,7 @@ import com.morpho.app.model.bluesky.*
 import com.morpho.app.ui.elements.OutlinedAvatar
 import com.morpho.app.ui.elements.RichTextElement
 import com.morpho.app.ui.elements.WrappedColumn
+import com.morpho.app.ui.lists.FeedListEntryFragment
 import com.morpho.app.util.getFormattedDateTimeSince
 import com.morpho.app.util.openBrowser
 import com.morpho.app.util.parseImageFullRef
@@ -33,7 +34,7 @@ import kotlinx.collections.immutable.toImmutableList
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun EmbedPostFragment(
-    post: EmbedPost.VisibleEmbedPost,
+    post: EmbedRecord.VisibleEmbedPost,
     modifier: Modifier = Modifier,
     onItemClicked: (AtUri) -> Unit = {},
     onProfileClicked: (AtIdentifier) -> Unit = {},
@@ -158,7 +159,7 @@ fun EmbedPostFragment(
                     },
                     modifier = Modifier.padding(horizontal = 4.dp)
                 )
-                EmbedPostFeature(post = post, onItemClicked, onLinkClicked = {
+                EmbedPostFeature(embed = post, onItemClicked, onLinkClicked = {
                     openBrowser(it)
                 })
 
@@ -172,65 +173,41 @@ fun EmbedPostFragment(
 
 @Composable
 fun ColumnScope.EmbedPostFeature(
-    post: EmbedPost.VisibleEmbedPost,
+    embed: EmbedRecord,
     onItemClicked: (AtUri) -> Unit = {},
     onLinkClicked: (String) -> Unit = {},
 ) {
     @Suppress("REDUNDANT_ELSE_IN_WHEN")
-    when (post.litePost.feature) {
-        is BskyPostFeature.ExternalFeature -> {
-            if (post.litePost.feature.thumb?.contains("{") == true) {
-                val embed = post.litePost.feature
-                val thumb = remember { parseImageThumbRef(post.litePost.feature.thumb, post.author.did) }
-                PostLinkEmbed(
-                    linkData = BskyPostFeature.ExternalFeature(
-                        uri = embed.uri,
-                        title = embed.title,
-                        description = embed.description,
-                        thumb = thumb
-                    ),
-                    linkPress = {onLinkClicked(it)},
-                    modifier = Modifier.align(Alignment.CenterHorizontally)
-                )
-            } else {
-                PostLinkEmbed(
-                    linkData = post.litePost.feature,
-                    linkPress = {onLinkClicked(it)},
-                    modifier = Modifier.align(Alignment.CenterHorizontally)
-                )
-            }
+    when(embed) {
+        is EmbedRecord.BlockedEmbedPost -> {
+            EmbedBlockedPostFragment(uri = embed.uri)
         }
-        is BskyPostFeature.ImagesFeature -> {
-            if (post.litePost.feature.images.isNotEmpty()
-                && post.litePost.feature.images.first().thumb.contains("{")
-            ) {
-                val images = remember {
-                    post.litePost.feature.images.map {
-                        EmbedImage(
-                            thumb = parseImageThumbRef(it.thumb, post.author.did),
-                            fullsize = parseImageFullRef(it.fullsize, post.author.did),
-                            alt = it.alt
-                        )
-                    }}
-                PostImages(imagesFeature = BskyPostFeature.ImagesFeature(images.toImmutableList()),
-                    modifier = Modifier.align(Alignment.CenterHorizontally))
-            } else {
-                PostImages(imagesFeature = post.litePost.feature,
-                    modifier = Modifier.align(Alignment.CenterHorizontally))
-            }
+        is EmbedRecord.EmbedFeed -> {
+            FeedListEntryFragment(
+                embed.feed,
+                onFeedClicked = {  }
+            )
         }
-        is BskyPostFeature.MediaPostFeature -> {
-            @Suppress("REDUNDANT_ELSE_IN_WHEN")
-            when(post.litePost.feature.media) {
+        is EmbedRecord.EmbedLabelService -> {
+
+        }
+        is EmbedRecord.EmbedList -> {
+
+        }
+        is EmbedRecord.InvisibleEmbedPost -> {
+            EmbedNotFoundPostFragment(uri = embed.uri)
+        }
+        is EmbedRecord.VisibleEmbedPost -> {
+            when (embed.litePost.feature) {
                 is BskyPostFeature.ExternalFeature -> {
-                    if (post.litePost.feature.media.thumb?.contains("{") == true) {
-                        val embed = post.litePost.feature.media
-                        val thumb = remember { parseImageThumbRef(post.litePost.feature.media.thumb, post.author.did) }
+                    if (embed.litePost.feature.thumb?.contains("{") == true) {
+                        val linkEmbed = embed.litePost.feature
+                        val thumb = remember { parseImageThumbRef(embed.litePost.feature.thumb, embed.author.did) }
                         PostLinkEmbed(
                             linkData = BskyPostFeature.ExternalFeature(
-                                uri = embed.uri,
-                                title = embed.title,
-                                description = embed.description,
+                                uri = linkEmbed.uri,
+                                title = linkEmbed.title,
+                                description = linkEmbed.description,
                                 thumb = thumb
                             ),
                             linkPress = {onLinkClicked(it)},
@@ -238,64 +215,125 @@ fun ColumnScope.EmbedPostFeature(
                         )
                     } else {
                         PostLinkEmbed(
-                            linkData = post.litePost.feature.media,
+                            linkData = embed.litePost.feature,
                             linkPress = {onLinkClicked(it)},
                             modifier = Modifier.align(Alignment.CenterHorizontally)
                         )
                     }
                 }
                 is BskyPostFeature.ImagesFeature -> {
-                    if (post.litePost.feature.media.images.isNotEmpty()
-                        && post.litePost.feature.media.images.first().thumb.contains("{")
+                    if (embed.litePost.feature.images.isNotEmpty()
+                        && embed.litePost.feature.images.first().thumb.contains("{")
                     ) {
                         val images = remember {
-                            post.litePost.feature.media.images.map {
+                            embed.litePost.feature.images.map {
                                 EmbedImage(
-                                    thumb = parseImageThumbRef(it.thumb, post.author.did),
-                                    fullsize = parseImageFullRef(it.fullsize, post.author.did),
+                                    thumb = parseImageThumbRef(it.thumb, embed.author.did),
+                                    fullsize = parseImageFullRef(it.fullsize, embed.author.did),
                                     alt = it.alt
                                 )
                             }}
                         PostImages(imagesFeature = BskyPostFeature.ImagesFeature(images.toImmutableList()),
-                            modifier = Modifier.align(Alignment.CenterHorizontally))
+                                   modifier = Modifier.align(Alignment.CenterHorizontally))
                     } else {
-                        PostImages(imagesFeature = post.litePost.feature.media,
-                            modifier = Modifier.align(Alignment.CenterHorizontally))
+                        PostImages(imagesFeature = embed.litePost.feature,
+                                   modifier = Modifier.align(Alignment.CenterHorizontally))
                     }
                 }
+                is BskyPostFeature.MediaRecordFeature -> {
+                    @Suppress("REDUNDANT_ELSE_IN_WHEN")
+                    when(embed.litePost.feature.media) {
+                        is BskyPostFeature.ExternalFeature -> {
+                            if (embed.litePost.feature.media.thumb?.contains("{") == true) {
+                                val linkEmbed = embed.litePost.feature.media
+                                val thumb = remember { parseImageThumbRef(embed.litePost.feature.media.thumb, embed.author.did) }
+                                PostLinkEmbed(
+                                    linkData = BskyPostFeature.ExternalFeature(
+                                        uri = linkEmbed.uri,
+                                        title = linkEmbed.title,
+                                        description = linkEmbed.description,
+                                        thumb = thumb
+                                    ),
+                                    linkPress = {onLinkClicked(it)},
+                                    modifier = Modifier.align(Alignment.CenterHorizontally)
+                                )
+                            } else {
+                                PostLinkEmbed(
+                                    linkData = embed.litePost.feature.media,
+                                    linkPress = {onLinkClicked(it)},
+                                    modifier = Modifier.align(Alignment.CenterHorizontally)
+                                )
+                            }
+                        }
+                        is BskyPostFeature.ImagesFeature -> {
+                            if (embed.litePost.feature.media.images.isNotEmpty()
+                                && embed.litePost.feature.media.images.first().thumb.contains("{")
+                            ) {
+                                val images = remember {
+                                    embed.litePost.feature.media.images.map {
+                                        EmbedImage(
+                                            thumb = parseImageThumbRef(it.thumb, embed.author.did),
+                                            fullsize = parseImageFullRef(it.fullsize, embed.author.did),
+                                            alt = it.alt
+                                        )
+                                    }}
+                                PostImages(imagesFeature = BskyPostFeature.ImagesFeature(images.toImmutableList()),
+                                           modifier = Modifier.align(Alignment.CenterHorizontally))
+                            } else {
+                                PostImages(imagesFeature = embed.litePost.feature.media,
+                                           modifier = Modifier.align(Alignment.CenterHorizontally))
+                            }
+                        }
 
-                else -> {}
-            }
-            @Suppress("REDUNDANT_ELSE_IN_WHEN")
-            when (post.litePost.feature.post) {
-                is EmbedPost.BlockedEmbedPost -> EmbedBlockedPostFragment(uri = post.litePost.feature.post.uri)
-                is EmbedPost.InvisibleEmbedPost -> EmbedNotFoundPostFragment(uri = post.litePost.feature.post.uri)
-                is EmbedPost.VisibleEmbedPost -> EmbedPostFragment(
-                    post = post.litePost.feature.post,
-                    onItemClicked = onItemClicked,
-                    modifier = Modifier.align(Alignment.CenterHorizontally)
-                )
-
+                        else -> {}
+                    }
+                    @Suppress("REDUNDANT_ELSE_IN_WHEN")
+                    when (embed.litePost.feature.record) {
+                        is EmbedRecord.BlockedEmbedPost -> EmbedBlockedPostFragment(uri = embed.litePost.feature.record.uri)
+                        is EmbedRecord.InvisibleEmbedPost -> EmbedNotFoundPostFragment(uri = embed.litePost.feature.record.uri)
+                        is EmbedRecord.VisibleEmbedPost -> EmbedPostFragment(
+                            post = embed.litePost.feature.record,
+                            onItemClicked = onItemClicked,
+                            modifier = Modifier.align(Alignment.CenterHorizontally)
+                        )
+                        is EmbedRecord.EmbedList -> {}
+                        is EmbedRecord.EmbedFeed -> {
+                            FeedListEntryFragment(
+                                embed.litePost.feature.record.feed,
+                                onFeedClicked = {  }
+                            )
+                        }
+                        is EmbedRecord.EmbedLabelService -> {}
+                        else -> {}
+                    }
+                }
+                is BskyPostFeature.RecordFeature -> {
+                    @Suppress("REDUNDANT_ELSE_IN_WHEN")
+                    when (embed.litePost.feature.record) {
+                        is EmbedRecord.BlockedEmbedPost -> EmbedBlockedPostFragment(uri = embed.litePost.feature.record.uri)
+                        is EmbedRecord.InvisibleEmbedPost -> EmbedNotFoundPostFragment(uri = embed.litePost.feature.record.uri)
+                        is EmbedRecord.VisibleEmbedPost -> EmbedPostFragment(
+                            post = embed.litePost.feature.record,
+                            onItemClicked = onItemClicked,
+                            modifier = Modifier.align(Alignment.CenterHorizontally)
+                        )
+                        is EmbedRecord.EmbedList -> {}
+                        is EmbedRecord.EmbedFeed -> {
+                            FeedListEntryFragment(
+                                embed.litePost.feature.record.feed,
+                                onFeedClicked = {  }
+                            )
+                        }
+                        is EmbedRecord.EmbedLabelService -> {}
+                        else -> {}
+                    }
+                }
+                null -> {}
                 else -> {}
             }
         }
-        is BskyPostFeature.PostFeature -> {
-            @Suppress("REDUNDANT_ELSE_IN_WHEN")
-            when (post.litePost.feature.post) {
-                is EmbedPost.BlockedEmbedPost -> EmbedBlockedPostFragment(uri = post.litePost.feature.post.uri)
-                is EmbedPost.InvisibleEmbedPost -> EmbedNotFoundPostFragment(uri = post.litePost.feature.post.uri)
-                is EmbedPost.VisibleEmbedPost -> EmbedPostFragment(
-                    post = post.litePost.feature.post,
-                    onItemClicked = onItemClicked,
-                    modifier = Modifier.align(Alignment.CenterHorizontally)
-                )
-
-                else -> {}
-            }
-        }
-        null -> {}
-        else -> {}
     }
+
 }
 
 @OptIn(ExperimentalLayoutApi::class)

@@ -3,6 +3,7 @@ package com.morpho.app.screens.main.tabbed
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.util.fastForEach
 import app.bsky.feed.GetFeedGeneratorsQuery
 import cafe.adriel.voyager.core.model.screenModelScope
 import com.morpho.app.model.bluesky.FeedGenerator
@@ -123,7 +124,9 @@ TabbedMainScreenModel : MainScreenModel() {
         }
         _tabFlow.value = tabs.toImmutableList()
         uiState = uiState.copy(loadingState = UiLoadingState.Idle, tabs = tabFlow, tabStates = newFeeds.toImmutableList())
-        return@launch
+        uiState.tabStates.fastForEach {
+
+        }
     }
 
     fun refreshTab(index: Int, cursor: AtCursor = null) :Boolean {
@@ -179,68 +182,6 @@ TabbedMainScreenModel : MainScreenModel() {
             Result.failure(Exception("Failed to initialize profile tab $title"))
         }
     }
-
-
-
-    /*@OptIn(ExperimentalCoroutinesApi::class)
-    suspend fun switchTab(index: Int): ReceiveChannel<Boolean> = screenModelScope.produce{
-        if(index < 0 || index > tabs.lastIndex) { send(false); return@produce }
-        val uri = tabs[index].uri
-        val map = skylineUiState.tabMap.toMutableMap()
-        val state = map[uri]
-        if (state == null) { send(false); return@produce }
-        loadState(state).receive().onSuccess {newState ->
-            map[uri] = newState as ContentCardState<MorphoDataItem.FeedItem>
-            val list = map.values.toImmutableList()
-            val i = list.indexOfFirst { it.uri == uri }
-            if (i == -1) { send(false); return@produce }
-            skylineUiState = skylineUiState.copy(selectedTabIndex = i, tabStates = list)
-            send(true)
-            return@produce
-        }
-        send(true)
-    }
-    @OptIn(ExperimentalCoroutinesApi::class)
-    suspend fun switchTab(entry: ContentCardMapEntry): ReceiveChannel<Boolean> = screenModelScope.produce {
-        loadState(entry).receive().onSuccess { newState ->
-            val map = skylineUiState.tabMap.toMutableMap()
-            map[entry.uri] = newState as ContentCardState<MorphoDataItem.FeedItem>
-            val list = map.values.toImmutableList()
-            val i = list.indexOfFirst { it.uri == entry.uri }
-            if (i == -1) { send(false); return@produce }
-            skylineUiState = skylineUiState.copy(selectedTabIndex = i, tabStates = list)
-            send(true)
-            return@produce
-        }
-        send(true)
-    }
-
-    @OptIn(ExperimentalCoroutinesApi::class)
-    suspend fun switchTab(uri: AtUri):  ReceiveChannel<Boolean> = screenModelScope.produce {
-        val tab = skylineUiState.tabs.fastFirstOrNull { it.uri == uri }
-        if (tab != null) send(switchTab(tab).receive()) else send(false)
-    }
-
-    @OptIn(ExperimentalCoroutinesApi::class)
-    suspend fun loadContent(state: ContentCardState<MorphoDataItem>) = screenModelScope.produce {
-        skylineUiState = skylineUiState.copy(loadingState = UiLoadingState.Loading)
-        send(loadState(state).receive())
-    }
-
-    suspend fun loadTab(index: Int) = screenModelScope.produce {
-        if(index < 0 || index > tabs.lastIndex) {
-            send(Result.failure(Exception("Tab index out of bounds")))
-            return@produce
-        }
-        val uri = tabs[index].uri
-        val state = skylineUiState.tabMap[uri]
-        if(state == null) {
-            send(Result.failure(Exception("Tab state not found")))
-            return@produce
-        }
-        skylineUiState = skylineUiState.copy(loadingState = UiLoadingState.Loading)
-        send(loadState(state).receive())
-    }*/
 
     override fun unloadContent(entry: ContentCardMapEntry): MorphoData<MorphoDataItem>? {
         val maybeTab = uiState.tabMap[entry.uri]

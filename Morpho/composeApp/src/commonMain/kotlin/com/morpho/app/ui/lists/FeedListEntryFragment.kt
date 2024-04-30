@@ -1,32 +1,15 @@
 package com.morpho.app.ui.lists
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentWidth
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.SpanStyle
@@ -36,8 +19,11 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import com.atproto.repo.StrongRef
+import com.morpho.app.model.bluesky.FacetType
 import com.morpho.app.model.bluesky.FeedGenerator
 import com.morpho.app.ui.elements.OutlinedAvatar
+import com.morpho.app.ui.elements.RichTextElement
+import com.morpho.app.util.openBrowser
 
 @Composable
 fun FeedListEntryFragment(
@@ -53,23 +39,22 @@ fun FeedListEntryFragment(
     var numLikes by remember { mutableStateOf(feed.likeCount)}
     Surface (
         shadowElevation = 1.dp,
-        tonalElevation =  3.dp,
+        tonalElevation =  4.dp,
         shape = MaterialTheme.shapes.small,
         modifier = modifier
             .fillMaxWidth()
-            .clickable { onFeedClicked(feed) }
 
     ) {
         Column(
             Modifier
                 .fillMaxWidth()
-                .background(MaterialTheme.colorScheme.background)
-                .padding(vertical = 4.dp)
-                .padding(start = 6.dp, end = 6.dp)
+                .clickable { onFeedClicked(feed) }
+                .padding(bottom = 4.dp)
+                .padding(start = 0.dp, end = 6.dp)
         ) {
             Row(
                 modifier = Modifier
-                    .padding(horizontal = 4.dp),
+                    .padding(end = 4.dp),
                 horizontalArrangement = Arrangement.End
 
             ) {
@@ -79,14 +64,14 @@ fun FeedListEntryFragment(
                     modifier = Modifier
                         .size(55.dp)
                         .align(Alignment.CenterVertically),
-                    outlineColor = MaterialTheme.colorScheme.background,
+                    outlineColor = MaterialTheme.colorScheme.tertiary,
                     onClicked = { onFeedClicked(feed) }
                 )
                 SelectionContainer(
                     modifier = Modifier
                         //.padding(bottom = 12.dp
                         .align(Alignment.CenterVertically)
-                        .padding(start = 16.dp)
+                        .padding(start = 16.dp, top = 4.dp)
                         .clickable { onFeedClicked(feed) },
                 ) {
                     Text(
@@ -129,10 +114,12 @@ fun FeedListEntryFragment(
                         .width(1.dp)
                         .weight(0.1F),
                 )
-                IconButton(onClick = {
-                    saved = !saved
-                    saveFeedClicked(StrongRef(feed.uri, feed.cid), saved)
-                }) {
+                IconButton(
+                    onClick = {
+                        saved = !saved
+                        saveFeedClicked(StrongRef(feed.uri, feed.cid), saved)
+                    },
+                ) {
                     Icon(
                         imageVector = if (saved) Icons.Default.DeleteOutline else Icons.Default.Add,
                         contentDescription = if(saved) "Remove from my Feeds" else "Add to my Feeds",
@@ -140,12 +127,35 @@ fun FeedListEntryFragment(
                     )
                 }
             }
-            Text(
+            RichTextElement(
                 text = feed.description.orEmpty(),
-                modifier = Modifier.padding(start = 4.dp, top = 4.dp, bottom = 4.dp)
+                facets = feed.descriptionFacets,
+                onClick = {
+                    when (it) {
+                        is FacetType.ExternalLink -> { openBrowser(it.uri.uri) }
+                        is FacetType.Format -> {  }
+                        is FacetType.PollBlueOption -> {}
+                        is FacetType.Tag -> { }
+                        is FacetType.UserDidMention -> { }
+                        is FacetType.UserHandleMention -> { }
+                        null -> { onFeedClicked(feed) }
+                        else -> {}
+                    }
+                },
+                modifier = Modifier.padding(horizontal = 6.dp)
             )
-            Row {
-                Text(text = "Liked by $numLikes users", fontWeight = FontWeight.Medium)
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.End,
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 6.dp)
+            ) {
+                Text(
+                    text = "Liked by $numLikes users",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontSize = MaterialTheme.typography.labelLarge.fontSize.times(1.0f),
+                    style = MaterialTheme.typography.labelLarge,
+                )
+
                 IconButton(
                     onClick = {
                         liked = !liked

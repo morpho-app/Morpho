@@ -1,20 +1,13 @@
 package com.morpho.app.model.bluesky
 
-import app.bsky.embed.ExternalView
-import app.bsky.embed.ImagesAspectRatio
-import app.bsky.embed.ImagesView
-import app.bsky.embed.RecordViewRecordUnion
-import app.bsky.embed.RecordWithMediaViewMediaUnion
+import app.bsky.embed.*
 import app.bsky.feed.Post
 import app.bsky.feed.PostEmbedUnion
 import app.bsky.feed.PostViewEmbedUnion
+import com.morpho.app.util.mapImmutable
+import com.morpho.butterfly.*
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.serialization.Serializable
-import com.morpho.butterfly.AtUri
-import com.morpho.butterfly.Cid
-import com.morpho.butterfly.Uri
-import com.morpho.app.util.deserialize
-import com.morpho.app.util.mapImmutable
 
 sealed interface BskyPostFeature {
     @Serializable
@@ -31,13 +24,13 @@ sealed interface BskyPostFeature {
     ) : BskyPostFeature, TimelinePostMedia
 
     @Serializable
-    data class PostFeature(
-        val post: EmbedPost,
+    data class RecordFeature(
+        val record: EmbedRecord,
     ) : BskyPostFeature
 
     @Serializable
-    data class MediaPostFeature(
-        val post: EmbedPost,
+    data class MediaRecordFeature(
+        val record: EmbedRecord,
         val media: TimelinePostMedia,
     ) : BskyPostFeature
 }
@@ -52,7 +45,7 @@ data class EmbedImage(
     val aspectRatio: ImagesAspectRatio? = null,
 )
 
-sealed interface EmbedPost {
+sealed interface EmbedRecord {
 
     @Serializable
     data class VisibleEmbedPost(
@@ -60,19 +53,45 @@ sealed interface EmbedPost {
         val cid: Cid,
         val author: Profile,
         val litePost: LitePost,
-    ) : EmbedPost {
+    ) : EmbedRecord {
         val reference: Reference = Reference(uri, cid)
     }
 
     @Serializable
+    data class EmbedFeed(
+        val uri: AtUri,
+        val cid: Cid,
+        val did: Did,
+        val author: Profile,
+        val feed: FeedGenerator,
+    ) : EmbedRecord
+
+    @Serializable
+    data class EmbedList(
+        val uri: AtUri,
+        val cid: Cid,
+        val author: Profile,
+        val list: BskyList,
+    ) : EmbedRecord
+
+    @Serializable
+    data class EmbedLabelService(
+        val uri: AtUri,
+        val cid: Cid,
+        val author: Profile,
+        val labelService: BskyLabelService,
+    ) : EmbedRecord
+
+
+    @Serializable
     data class InvisibleEmbedPost(
         val uri: AtUri,
-    ) : EmbedPost
+    ) : EmbedRecord
 
     @Serializable
     data class BlockedEmbedPost(
         val uri: AtUri,
-    ) : EmbedPost
+    ) : EmbedRecord
 }
 
 fun PostViewEmbedUnion.toFeature(): BskyPostFeature {
@@ -84,13 +103,13 @@ fun PostViewEmbedUnion.toFeature(): BskyPostFeature {
             value.toExternalFeature()
         }
         is PostViewEmbedUnion.RecordView -> {
-            BskyPostFeature.PostFeature(
-                post = value.record.toEmbedPost(),
+            BskyPostFeature.RecordFeature(
+                record = value.record.toEmbedRecord(),
             )
         }
         is PostViewEmbedUnion.RecordWithMediaView -> {
-            BskyPostFeature.MediaPostFeature(
-                post = value.record.record.toEmbedPost(),
+            BskyPostFeature.MediaRecordFeature(
+                record = value.record.record.toEmbedRecord(),
                 media = when (val media = value.media) {
                     is RecordWithMediaViewMediaUnion.ExternalView -> media.value.toExternalFeature()
                     is RecordWithMediaViewMediaUnion.ImagesView -> media.value.toImagesFeature()
@@ -122,15 +141,15 @@ private fun ExternalView.toExternalFeature(): BskyPostFeature.ExternalFeature {
     )
 }
 
-private fun RecordViewRecordUnion.toEmbedPost(): EmbedPost {
+private fun RecordViewRecordUnion.toEmbedRecord(): EmbedRecord {
     return when (this) {
         is RecordViewRecordUnion.ViewBlocked -> {
-            EmbedPost.BlockedEmbedPost(
+            EmbedRecord.BlockedEmbedPost(
                 uri = value.uri,
             )
         }
         is RecordViewRecordUnion.ViewNotFound -> {
-            EmbedPost.InvisibleEmbedPost(
+            EmbedRecord.InvisibleEmbedPost(
                 uri = value.uri,
             )
         }
@@ -138,7 +157,7 @@ private fun RecordViewRecordUnion.toEmbedPost(): EmbedPost {
             // TODO verify via recordType before blindly deserialized.
             val litePost = Post.serializer().deserialize(value.value).toLitePost()
 
-            EmbedPost.VisibleEmbedPost(
+            EmbedRecord.VisibleEmbedPost(
                 uri = value.uri,
                 cid = value.cid,
                 author = value.author.toProfile(),
@@ -146,19 +165,34 @@ private fun RecordViewRecordUnion.toEmbedPost(): EmbedPost {
             )
         }
         is RecordViewRecordUnion.FeedGeneratorView -> {
-            // TODO support generator views.
-            EmbedPost.InvisibleEmbedPost(
+
+            EmbedRecord.EmbedFeed(
                 uri = value.uri,
+                cid = value.cid,
+                did = value.did,
+                author = value.creator.toProfile(),
+                feed = value.toFeedGenerator(),
             )
         }
         is RecordViewRecordUnion.GraphListView -> {
-            // TODO support graph list views.
-            EmbedPost.InvisibleEmbedPost(
+
+            EmbedRecord.EmbedList(
                 uri = value.uri,
+                cid = value.cid,
+                author = value.creator.toProfile(),
+                list = value.toList(),
             )
         }
 
-        is RecordViewRecordUnion.LabelerLabelerView -> TODO()
+        is RecordViewRecordUnion.LabelerLabelerView -> {
+
+            EmbedRecord.EmbedLabelService(
+                uri = value.uri,
+                cid = value.cid,
+                author = value.creator.toProfile(),
+                labelService = value.toLabelService(),
+            )
+        }
     }
 }
 

@@ -473,8 +473,8 @@ fun isFollowingAllAuthors(post: BskyPost, follows: List<Did>): Boolean {
 
 fun isQuotePost(post: BskyPost) : Boolean {
     return when(post.feature) {
-        is BskyPostFeature.MediaPostFeature -> true
-        is BskyPostFeature.PostFeature -> true
+        is BskyPostFeature.MediaRecordFeature -> true
+        is BskyPostFeature.RecordFeature -> true
         else ->  false
     }
 }

@@ -28,6 +28,7 @@ import com.morpho.app.ui.post.PostFragment
 import com.morpho.butterfly.AtIdentifier
 import com.morpho.butterfly.AtUri
 import com.morpho.butterfly.model.RecordType
+import io.ktor.util.encodeBase64
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
@@ -185,7 +186,13 @@ fun <T: MorphoDataItem> SkylineFragment (
                 }
             }
             items(
-                data.items, key = {it.hashCode()},
+                data.items, key = {
+                    when(it) {
+                        is MorphoDataItem.Post -> "post_${it.post.uri}_${it.post.hashCode()}_${it.post.cid}".encodeBase64()
+                        is MorphoDataItem.Thread -> "thread_${it.thread.post.uri}_${it.thread.hashCode()}_${it.thread.post.cid}".encodeBase64()
+                        else -> "${it.hashCode()}".encodeBase64()
+                    }
+                },
                 contentType = {
                     when(it) {
                         is MorphoDataItem.Post -> MorphoDataItem.Post::class
