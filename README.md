@@ -2,7 +2,7 @@
 # Morpho
 Fast, flexible native multi-platform client for Bluesky (and possibly other ATProto applications).
 
-Currently supporting Android and non-Apple desktop platforms. ~~Will support Apple once I can get my partner to update his MacBook Pro.~~
+Currently supporting Android and non-Apple desktop platforms. Will support MacOS and iOS ~~once I can get my partner to update his MacBook Pro~~ once Nova gets her dev environment set up.
 
 ### Goals:  
  - Fast

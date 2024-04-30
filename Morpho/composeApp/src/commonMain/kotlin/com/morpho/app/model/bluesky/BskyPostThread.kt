@@ -171,34 +171,30 @@ fun ThreadViewPost.toThread(): BskyPostThread {
         }
         else -> persistentListOf()
     }
-    val rootPost = parents.last().toPost()
-    val entryPost = this.post.toPost(BskyPostReply(parents.first().toPost(), rootPost), null)
-    return BskyPostThread(
-        post = entryPost,
-        parents = parents.mapIndexed { index, post ->
+    if (parents.isEmpty()) {
+        return BskyPostThread(
+            post = post.toPost(),
+            parents = persistentListOf(),
+            replies = replies.mapImmutable { it.toThreadPost(post.toPost(), post.toPost()) }
+        )
+    } else {
+        val rootPost = parents.last().toPost()
+        val entryPost = this.post.toPost(BskyPostReply(parents.first().toPost(), rootPost), null)
+        return BskyPostThread(
+            post = entryPost,
+            parents = parents.mapIndexed { index, post ->
                 post.toThreadPost(
                     if(index == parents.lastIndex) {
-                       post.toPost()
+                        post.toPost()
                     } else {
                         parents[index + 1].toPost()
                     },
                     rootPost
                 )
             }.reversed().toImmutableList(),
-        replies = replies.mapImmutable { reply -> reply.toThreadPost(entryPost, rootPost) },
-    )
-}
-
-fun ThreadViewPostParentUnion.toThreadPost(parent: BskyPost, root: BskyPost): ThreadPost = when (this) {
-    is ThreadViewPostParentUnion.ThreadViewPost -> {
-        val post = value.post.toPost(BskyPostReply(root, parent), null)
-        ViewablePost(
-            post = post,
-            replies = value.replies.mapImmutable { it.toThreadPost(post, root) }
+            replies = replies.mapImmutable { reply -> reply.toThreadPost(entryPost, rootPost) },
         )
     }
-    is ThreadViewPostParentUnion.NotFoundPost -> NotFoundPost(value.uri)
-    is ThreadViewPostParentUnion.BlockedPost -> BlockedPost(value.uri)
 }
 
 fun ThreadViewPost.toThreadPost(parent: BskyPost, root: BskyPost): ThreadPost {

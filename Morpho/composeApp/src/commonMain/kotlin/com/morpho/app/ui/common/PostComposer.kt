@@ -21,11 +21,14 @@ import app.bsky.feed.PostReplyRef
 import com.atproto.repo.StrongRef
 import com.morpho.app.model.bluesky.BskyPost
 import com.morpho.app.model.bluesky.DraftPost
+import com.morpho.app.model.uidata.getReplyRefs
 import com.morpho.app.ui.post.ComposerPostFragment
 import com.morpho.app.ui.post.testPost
 import com.morpho.app.ui.theme.MorphoTheme
 import com.morpho.butterfly.Language
 import kotlinx.collections.immutable.persistentListOf
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.singleOrNull
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import org.jetbrains.compose.ui.tooling.preview.Preview
@@ -51,8 +54,8 @@ inline fun BottomSheetPostComposer(
     crossinline onCancel: () -> Unit = {},
     crossinline onUpdate: (DraftPost) -> Unit = {},
     sheetState:SheetState = rememberModalBottomSheetState(),
+    scope: CoroutineScope = rememberCoroutineScope()
 ) {
-    val scope = rememberCoroutineScope()
     BackHandler {
         scope.launch { sheetState.hide() }
             .invokeOnCompletion {
@@ -85,6 +88,7 @@ inline fun BottomSheetPostComposer(
                 scope.launch { sheetState.hide() }
                     .invokeOnCompletion {
                         if (!sheetState.isVisible) {onDismissRequest() } } },
+            scope = scope
         )
     }
 }
@@ -100,34 +104,49 @@ fun PostComposer(
     onCancel: () -> Unit = {},
     onUpdate: (DraftPost) -> Unit = {},
     onDismissRequest: () -> Unit = {},
+    scope: CoroutineScope = rememberCoroutineScope(),
 ) {
     val focusManager = LocalFocusManager.current
     var postText by rememberSaveable { mutableStateOf(draft.text) }
-    val replyRef = remember { if(role == ComposerRole.Reply) {
-        val root: StrongRef? = if(initialContent != null) {
-            if (initialContent.reply?.root != null) {
-                StrongRef(initialContent.reply.root.uri,initialContent.reply.root.cid)
-            } else if (initialContent.reply?.parent != null) {
-                StrongRef(initialContent.reply.parent.uri, initialContent.reply.parent.cid)
+    val localReplyRef = remember {
+        if(role == ComposerRole.Reply) {
+            val root: StrongRef? = if(initialContent != null) {
+                if (initialContent.reply?.root != null) {
+                    StrongRef(initialContent.reply.root.uri,initialContent.reply.root.cid)
+                } else if (initialContent.reply?.parent != null) {
+                    StrongRef(initialContent.reply.parent.uri, initialContent.reply.parent.cid)
+                } else {
+                    StrongRef(initialContent.uri,initialContent.cid)
+                }
             } else {
-                StrongRef(initialContent.uri,initialContent.cid)
+                if (draft.reply?.reply?.root != null) {
+                    StrongRef(draft.reply.reply.root.uri,draft.reply.reply.root.cid)
+                } else if (draft.reply?.reply?.parent != null) {
+                    StrongRef(draft.reply.reply.parent.uri, draft.reply.reply.parent.cid)
+                } else null
             }
-        } else {
-            if (draft.reply?.reply?.root != null) {
+            val parent: StrongRef? = if(initialContent != null) {
+                StrongRef(initialContent.uri,initialContent.cid)
+            } else if (draft.reply?.reply?.root != null) {
                 StrongRef(draft.reply.reply.root.uri,draft.reply.reply.root.cid)
-            } else if (draft.reply?.reply?.parent != null) {
+            } else if (draft.reply?.reply?.parent != null){
                 StrongRef(draft.reply.reply.parent.uri, draft.reply.reply.parent.cid)
             } else null
-        }
-        val parent: StrongRef? = if(initialContent != null) {
-            StrongRef(initialContent.uri,initialContent.cid)
-        } else if (draft.reply?.reply?.root != null) {
-            StrongRef(draft.reply.reply.root.uri,draft.reply.reply.root.cid)
-        } else if (draft.reply?.reply?.parent != null){
-            StrongRef(draft.reply.reply.parent.uri, draft.reply.reply.parent.cid)
+            if(root != null && parent != null ) {
+                PostReplyRef(root, parent)
+            } else null
         } else null
-        if(root != null && parent != null ) PostReplyRef(root, parent) else null
-    } else null }
+    }
+    var replyRef by remember { mutableStateOf(localReplyRef) }
+    // TODO: Probably put this somewhere saner, but for now this works
+    LaunchedEffect(localReplyRef) {
+        val uri = initialContent?.uri ?: draft.reply?.uri
+        if (localReplyRef == null && uri != null) {
+            getReplyRefs(uri).singleOrNull()?.getOrNull()?.let {
+                replyRef = it
+            }
+        }
+    }
     val quoteRef = remember { if(role == ComposerRole.QuotePost) {
         if(initialContent != null) {
             StrongRef(initialContent.uri,initialContent.cid)
@@ -149,10 +168,10 @@ fun PostComposer(
     LaunchedEffect(postText) {
         onUpdate(
             DraftPost(
-            text = postText,
-            reply = if (replyRef != null && role == ComposerRole.Reply) initialContent else null,
-            quote = if (quoteRef != null && role == ComposerRole.QuotePost) initialContent else null,
-        )
+                text = postText,
+                reply = if (replyRef != null && role == ComposerRole.Reply) initialContent else null,
+                quote = if (quoteRef != null && role == ComposerRole.QuotePost) initialContent else null,
+            )
         )
     }
     Column(

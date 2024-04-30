@@ -27,6 +27,7 @@ import com.morpho.app.di.appModule
 import com.morpho.app.di.dataModule
 import com.morpho.app.di.storageModule
 import com.morpho.app.ui.theme.MorphoTheme
+import com.morpho.butterfly.Butterfly
 import com.morpho.butterfly.auth.SessionRepository
 import com.morpho.butterfly.auth.UserRepository
 import kotlinx.coroutines.flow.firstOrNull
@@ -68,7 +69,8 @@ fun main() = application {
     koin.get<SessionRepository> { parametersOf(storageDir) }
     koin.get<UserRepository> { parametersOf(storageDir) }
     val prefs = koin.get<PreferencesRepository> { parametersOf(storageDir) }
-    //koin.get<Butterfly>()
+    val api = koin.get<Butterfly>()
+
     val morphoPrefs = runBlocking {
         prefs.prefs.firstOrNull()?.firstOrNull()?.morphoPrefs
     }
@@ -85,7 +87,12 @@ fun main() = application {
     )
 
     Window(
-        onCloseRequest = ::exitApplication,
+        onCloseRequest = {
+            runBlocking {
+                api.refreshSession()
+            }
+            (::exitApplication)()
+        },
         state = windowState,
         title = "Morpho",
         undecorated = undecorated,
@@ -96,7 +103,12 @@ fun main() = application {
             if(undecorated) {
                 MorphoWindow(
                     windowState = windowState,
-                    onCloseRequest = ::exitApplication
+                    onCloseRequest = {
+                        runBlocking {
+                            api.refreshSession()
+                        }
+                        (::exitApplication)()
+                    }
                 ) {
                     App()
                 }
