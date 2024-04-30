@@ -89,7 +89,7 @@ fun main() = application {
     Window(
         onCloseRequest = {
             runBlocking {
-                api.refreshSession()
+                api.refreshSession().join()
             }
             (::exitApplication)()
         },
@@ -105,7 +105,7 @@ fun main() = application {
                     windowState = windowState,
                     onCloseRequest = {
                         runBlocking {
-                            api.refreshSession()
+                            api.refreshSession().join()
                         }
                         (::exitApplication)()
                     }
