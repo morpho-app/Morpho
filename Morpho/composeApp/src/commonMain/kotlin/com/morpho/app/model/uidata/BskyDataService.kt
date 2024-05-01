@@ -8,6 +8,8 @@ import app.bsky.graph.GetFollowsQuery
 import app.bsky.graph.GetListsQuery
 import app.bsky.labeler.GetServicesQuery
 import app.bsky.labeler.GetServicesResponseViewUnion
+import com.atproto.repo.GetRecordQuery
+import com.atproto.repo.StrongRef
 import com.morpho.app.di.UpdateTick
 import com.morpho.app.model.bluesky.*
 import com.morpho.app.model.bluesky.MorphoDataFeed.Companion.filterByPrefs
@@ -16,10 +18,7 @@ import com.morpho.app.model.uistate.ContentLoadingState
 import com.morpho.app.model.uistate.FeedType
 import com.morpho.app.util.json
 import com.morpho.app.util.mapImmutable
-import com.morpho.butterfly.AtIdentifier
-import com.morpho.butterfly.AtUri
-import com.morpho.butterfly.Butterfly
-import com.morpho.butterfly.Did
+import com.morpho.butterfly.*
 import kotlinx.collections.immutable.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.BufferOverflow
@@ -29,6 +28,7 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.decodeFromJsonElement
 import kotlinx.serialization.json.encodeToJsonElement
+import kotlinx.serialization.json.jsonObject
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import org.koin.mp.KoinPlatform.getKoin
@@ -77,6 +77,35 @@ suspend fun getPost(uri: AtUri, api: Butterfly = getKoin().get<Butterfly>()): Fl
         BskyDataService.log.e { "Failed to get post at $uri.\nError: $it" }
         emit(null)
     }
+}
+
+fun getReplyRefs(uri: AtUri, api: Butterfly = getKoin().get<Butterfly>()): Flow<Result<PostReplyRef>> = flow {
+    uri.toParts().onFailure { emit(Result.failure(it)) }.onSuccess { uriParts->
+        api.api.getRecord(GetRecordQuery(uriParts.repo, uriParts.collection, uriParts.rkey))
+            .onSuccess { parentResponse ->
+                val parentReply = parentResponse.value.jsonObject["reply"]?.jsonObject
+                if(parentReply != null) {
+                    val rootUri = parentReply["root"]?.jsonObject?.get("uri")?.recordType
+                    if (rootUri != null) {
+                        AtUri.parseAtUri(rootUri).onFailure { emit(Result.failure(it)) }.onSuccess { parts ->
+                            api.api.getRecord(GetRecordQuery(parts.repo, parts.collection, parts.rkey))
+                                .onSuccess { rootResponse ->
+                                    val rootRef = rootResponse.cid?.let { StrongRef(rootResponse.uri, it) }
+                                    val parentRef = parentResponse.cid?.let { StrongRef(parentResponse.uri, it) }
+                                    if(rootRef != null && parentRef != null) {
+                                        emit(Result.success(PostReplyRef(rootRef, parentRef)))
+                                    } else {
+                                        emit(Result.failure(Error(
+                                            "Failed to get reply refs:\nRoot: $rootResponse\nParent: $parentResponse")))
+                                    }
+                                }.onFailure { emit(Result.failure(it)) }
+                        }
+
+                    }
+                }
+            }.onFailure { emit(Result.failure(it)) }
+    }
+
 }
 
 suspend fun getPosts(posts: ImmutableList<AtUri>, api: Butterfly = getKoin().get<Butterfly>()): Flow<ImmutableList<BskyPost>?> = flow {
