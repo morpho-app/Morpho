@@ -152,8 +152,8 @@ fun FeedListEntryFragment(
                 Text(
                     text = "Liked by $numLikes users",
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontSize = MaterialTheme.typography.labelLarge.fontSize.times(1.0f),
-                    style = MaterialTheme.typography.labelLarge,
+                    fontSize = MaterialTheme.typography.labelMedium.fontSize,
+                    style = MaterialTheme.typography.labelMedium,
                 )
 
                 IconButton(

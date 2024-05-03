@@ -41,6 +41,7 @@ val dataModule = module {
     single { Butterfly() }
     single { BskyDataService() }
     single { BskyNotificationService() }
+    single {}
 }
 
 @Suppress("MemberVisibilityCanBePrivate")

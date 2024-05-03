@@ -52,7 +52,7 @@ sealed interface MorphoDataItem {
     @Immutable
     @Serializable
     data class ModLabel(
-        val label: BskyModLabelDefinition,
+        val label: BskyLabelDefinition,
     ): MorphoDataItem
 
     @Immutable

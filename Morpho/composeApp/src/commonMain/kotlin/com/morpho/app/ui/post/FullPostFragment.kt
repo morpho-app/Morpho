@@ -6,12 +6,12 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.NavigateNext
-import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.MoreHoriz
-import androidx.compose.material3.*
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.*
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.SpanStyle
@@ -23,21 +23,18 @@ import androidx.compose.ui.unit.dp
 import com.atproto.repo.StrongRef
 import com.morpho.app.model.bluesky.BskyPost
 import com.morpho.app.model.bluesky.FacetType
+import com.morpho.app.model.bluesky.HideReason
+import com.morpho.app.model.bluesky.LabelScope
 import com.morpho.app.ui.elements.*
-import com.morpho.app.ui.theme.MorphoTheme
 import com.morpho.app.util.openBrowser
 import com.morpho.butterfly.AtIdentifier
 import com.morpho.butterfly.AtUri
 import com.morpho.butterfly.model.RecordType
+import kotlinx.collections.immutable.persistentListOf
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
-import morpho.composeapp.generated.resources.Res
-import morpho.composeapp.generated.resources.hideMutedPost
-import morpho.composeapp.generated.resources.showMutedPost
 import org.jetbrains.compose.resources.ExperimentalResourceApi
-import org.jetbrains.compose.resources.stringResource
-import org.jetbrains.compose.ui.tooling.preview.Preview
 
 @OptIn(ExperimentalLayoutApi::class, ExperimentalResourceApi::class)
 @Composable
@@ -54,7 +51,8 @@ fun FullPostFragment(
     ) {
     val postDate = remember { post.createdAt.instant.toLocalDateTime(TimeZone.currentSystemDefault()).date }
     var menuExpanded by remember { mutableStateOf(false) }
-    var hidePost by rememberSaveable { mutableStateOf(post.author.mutedByMe) }
+    val maybeMuted = remember { if (post.author.mutedByMe) HideReason.MUTE else HideReason.SHOW }
+
 
     WrappedColumn(
         modifier
@@ -63,31 +61,10 @@ fun FullPostFragment(
             .padding(vertical = 4.dp)
             .padding(start = 6.dp, end = 6.dp)
     ) {
-        if(post.author.mutedByMe) {
-            TextButton(
-                onClick = { hidePost = !hidePost },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Icon(
-                    imageVector = if (hidePost) {
-                        Icons.AutoMirrored.Default.NavigateNext
-                    } else {
-                        Icons.Default.ExpandMore
-                    },
-                    contentDescription = null)
-                Spacer(modifier = Modifier
-                    .width(1.dp)
-                    .weight(0.3f))
-                Text(
-                    text = if(hidePost) {
-                        stringResource(Res.string.showMutedPost)
-                    } else {
-                        stringResource(Res.string.hideMutedPost)
-                    }
-                )
-            }
-        }
-        if(!hidePost) {
+        ContentHider(
+            reasons = persistentListOf(maybeMuted),
+            scope = LabelScope.CONTENT,
+        ) {
             Row(
                 modifier = Modifier
                     .padding(horizontal = 4.dp),
@@ -207,21 +184,5 @@ fun FullPostFragment(
                 }
             }
         }
-    }
-}
-
-@Preview
-@Composable
-fun PreviewFullPostFragment() {
-    MorphoTheme(darkTheme = false) {
-        Column (modifier = Modifier.fillMaxWidth()
-        ){
-            FullPostFragment(
-                post = testThreadRoot,
-                onItemClicked = {},
-                modifier = Modifier.fillMaxWidth()
-            )
-        }
-
     }
 }

@@ -23,7 +23,7 @@ data class BskyLabelService(
     val liked: Boolean,
     val likeUri: AtUri?,
     val indexedAt: Moment,
-    val policies: ImmutableList<BskyModLabelDefinition>,
+    val policies: ImmutableList<BskyLabelDefinition>,
     override val labels: ImmutableList<BskyLabel>,
 ): Profile {
     override val did: Did

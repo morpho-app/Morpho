@@ -85,7 +85,7 @@ data class MorphoDataFeed<T: MorphoDataItem> (
         }
 
         fun fromModLabelDefs(
-            labels: List<BskyModLabelDefinition>,
+            labels: List<BskyLabelDefinition>,
             cursor: AtCursor = null,
         ): MorphoDataFeed<MorphoDataItem.ModLabel> {
             return MorphoDataFeed(
