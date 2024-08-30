@@ -3,8 +3,8 @@ package com.morpho.app.model.bluesky
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.util.fastMap
 import app.bsky.feed.GeneratorView
-import app.bsky.richtext.Facet
 import com.morpho.app.model.uidata.Moment
+import com.morpho.app.util.mapImmutable
 import com.morpho.butterfly.AtUri
 import com.morpho.butterfly.Cid
 import com.morpho.butterfly.Did
@@ -20,7 +20,7 @@ data class FeedGenerator(
     public val creator: Profile,
     public val displayName: String,
     public val description: String?,
-    public val descriptionFacets: ImmutableList<Facet>,
+    public val descriptionFacets: ImmutableList<BskyFacet>,
     public val avatar: String?,
     public val likeCount: Long,
     public val likedByMe: Boolean,
@@ -37,7 +37,7 @@ fun GeneratorView.toFeedGenerator() : FeedGenerator {
         creator = creator.toProfile(),
         displayName = displayName,
         description = description,
-        descriptionFacets = descriptionFacets,
+        descriptionFacets = descriptionFacets.mapImmutable { it.toBskyFacet() },
         avatar = avatar,
         likeCount = likeCount ?: 0,
         likedByMe = viewer?.like != null,

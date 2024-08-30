@@ -7,6 +7,7 @@ import cafe.adriel.voyager.core.model.screenModelScope
 import com.morpho.app.model.uidata.AtCursor
 import com.morpho.app.model.uidata.initAtCursor
 import com.morpho.app.model.uistate.NotificationsUIState
+import com.morpho.app.model.uistate.UiLoadingState
 import com.morpho.app.screens.base.BaseScreenModel
 import com.morpho.butterfly.AtUri
 import kotlinx.coroutines.flow.*
@@ -22,7 +23,8 @@ class TabbedNotificationScreenModel: BaseScreenModel() {
             NotificationsUIState(
                 notifService.notifications,
                 notifService.filter,
-                showPosts
+                showPosts,
+                UiLoadingState.Loading
             )
         )
 
@@ -30,12 +32,17 @@ class TabbedNotificationScreenModel: BaseScreenModel() {
         screenModelScope.launch {
             val f = notifService.notifications(cursorFlow).map { it.getOrNull() }
             cursorFlow.emit(null)
-            if(f.first()!= null) {
-                _uiState.update { NotificationsUIState(
-                    notifService.notifications,
-                    notifService.filter,
-                    showPosts
-                ) }
+            f.collect {
+                if(it != null) {
+                    _uiState.update {
+                        NotificationsUIState(
+                            notifService.notifications,
+                            notifService.filter,
+                            showPosts,
+                            UiLoadingState.Idle
+                        )
+                    }
+                }
             }
         }
     }

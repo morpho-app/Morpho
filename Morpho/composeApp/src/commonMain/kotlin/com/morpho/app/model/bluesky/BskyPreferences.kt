@@ -60,8 +60,8 @@ public data class BskyPreferences(
         return prefs.toImmutableList()
     }
 
-    fun labelsToHide(feed: String): List<BskyLabel> {
-        return feedViewPrefs[feed]?.labelsToHide ?: contentLabelPrefs.filter { it.visibility == Visibility.HIDE }.map { BskyLabel(it.label) }
+    fun labelsToHide(feed: String): List<ContentLabelPref> {
+        return feedViewPrefs[feed]?.labelsToHide ?: contentLabelPrefs.filter { it.visibility == Visibility.HIDE }
     }
 }
 
@@ -116,7 +116,7 @@ public data class BskyFeedPref(
     public var hideQuotePosts: Boolean = false,
 
     // Can be per feed, maybe add "warn" to this as well
-    public var labelsToHide: List<BskyLabel> = persistentListOf(),
+    public var labelsToHide: List<ContentLabelPref> = persistentListOf(),
     public var languages: List<Language> = persistentListOf(),
     public var hidePostsByMuted: Boolean = false
 )
@@ -158,7 +158,7 @@ fun GetPreferencesResponse.toPreferences() : BskyPreferences {
   val prefs = this.toPreferences(BskyPreferences())
   prefs.feedViewPrefs.map { feed ->
     prefs.contentLabelPrefs.map { label ->
-      if (label.visibility == Visibility.HIDE) feed.value.labelsToHide + BskyLabel(label.label)
+      if (label.visibility == Visibility.HIDE) feed.value.labelsToHide + label
     }
     feed.value.languages = prefs.languages
   }

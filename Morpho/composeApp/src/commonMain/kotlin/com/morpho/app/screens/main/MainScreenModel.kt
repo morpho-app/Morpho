@@ -306,7 +306,7 @@ open class MainScreenModel: BaseScreenModel() {
 
         } else {
             val i = _feedStates.indexOf(feedState)
-            _feedStates[i] = newFeed.filterNotNull().stateIn(screenModelScope)
+            _feedStates[i] = newFeed
             emit(newFeed.value)
         }
     }

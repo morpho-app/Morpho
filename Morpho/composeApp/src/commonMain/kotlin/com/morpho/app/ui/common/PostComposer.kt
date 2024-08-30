@@ -23,15 +23,12 @@ import com.morpho.app.model.bluesky.BskyPost
 import com.morpho.app.model.bluesky.DraftPost
 import com.morpho.app.model.uidata.getReplyRefs
 import com.morpho.app.ui.post.ComposerPostFragment
-import com.morpho.app.ui.post.testPost
-import com.morpho.app.ui.theme.MorphoTheme
 import com.morpho.butterfly.Language
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.singleOrNull
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
-import org.jetbrains.compose.ui.tooling.preview.Preview
 
 
 enum class ComposerRole {
@@ -326,22 +323,3 @@ fun PostComposer(
 }
 
 
-@Preview
-@Composable
-fun PreviewQuotePost() {
-    MorphoTheme(darkTheme = false) {
-        Surface {
-            PostComposer(initialContent = testPost, role = ComposerRole.QuotePost)
-        }
-    }
-}
-
-@Preview
-@Composable
-fun PreviewReply() {
-    MorphoTheme(darkTheme = false) {
-        Surface {
-            PostComposer(initialContent = testPost, role = ComposerRole.Reply)
-        }
-    }
-}

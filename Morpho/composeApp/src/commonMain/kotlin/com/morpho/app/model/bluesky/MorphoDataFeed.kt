@@ -85,7 +85,7 @@ data class MorphoDataFeed<T: MorphoDataItem> (
         }
 
         fun fromModLabelDefs(
-            labels: List<BskyModLabelDefinition>,
+            labels: List<BskyLabelDefinition>,
             cursor: AtCursor = null,
         ): MorphoDataFeed<MorphoDataItem.ModLabel> {
             return MorphoDataFeed(
@@ -320,7 +320,7 @@ data class MorphoDataFeed<T: MorphoDataItem> (
                         || (post.reply == null && !isQuotePost(post) && post.reason == null)
             }
             //feed = filterbyLanguage(feed, prefs.languages)
-            feed = filterByContentLabel(feed, prefs.labelsToHide)
+            //feed = filterByContentLabel(feed, prefs.labelsToHide)
             return feed
         }
 
@@ -473,8 +473,8 @@ fun isFollowingAllAuthors(post: BskyPost, follows: List<Did>): Boolean {
 
 fun isQuotePost(post: BskyPost) : Boolean {
     return when(post.feature) {
-        is BskyPostFeature.MediaPostFeature -> true
-        is BskyPostFeature.PostFeature -> true
+        is BskyPostFeature.MediaRecordFeature -> true
+        is BskyPostFeature.RecordFeature -> true
         else ->  false
     }
 }
