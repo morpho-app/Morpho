@@ -115,6 +115,11 @@ sealed interface EmbedRecord {
     data class BlockedEmbedPost(
         val uri: AtUri,
     ) : EmbedRecord
+
+    @Serializable
+    data class DetachedQuotePost(
+        val uri: AtUri,
+    ) : EmbedRecord
 }
 
 fun PostViewEmbedUnion.toFeature(): BskyPostFeature {
@@ -135,11 +140,12 @@ fun PostViewEmbedUnion.toFeature(): BskyPostFeature {
                 video = EmbedVideo(
                     blob = value.video,
                     captions = value.captions.mapImmutable {
-                    VideoCaption(
-                        lang = it.lang,
-                        file = it.file,
-                    )
-                },),
+                        VideoCaption(
+                            lang = it.lang,
+                            file = it.file,
+                        )
+                    }
+                ),
                 alt = value.alt,
                 aspectRatio = value.aspectRatio,
             )
@@ -198,6 +204,11 @@ private fun RecordViewRecordUnion.toEmbedRecord(): EmbedRecord {
         }
         is RecordViewRecordUnion.ViewNotFound -> {
             EmbedRecord.InvisibleEmbedPost(
+                uri = value.uri,
+            )
+        }
+        is RecordViewRecordUnion.ViewDetached -> {
+            EmbedRecord.DetachedQuotePost(
                 uri = value.uri,
             )
         }
@@ -260,6 +271,12 @@ public fun PostEmbedUnion.toFeature(): BskyPostFeature? {
             null // Don't nest embeds too hard
         }
 
+        is PostEmbedUnion.VideoView -> {
+            this.toEmbedVideoFeature()
+        }
+        is PostEmbedUnion.VideoViewVideo -> {
+            this.toEmbedVideoFeature()
+        }
     }
 }
 
@@ -282,5 +299,33 @@ private fun PostEmbedUnion.Images.toEmbedImagesFeature(): BskyPostFeature.Images
                 aspectRatio = it.aspectRatio
             )
         }
+    )
+}
+
+private fun PostEmbedUnion.VideoView.toEmbedVideoFeature(): BskyPostFeature.VideoFeature {
+    return BskyPostFeature.VideoFeature(
+        video = EmbedVideo(
+            blob = this.value.video,
+            captions = this.value.captions.mapImmutable {
+                VideoCaption(
+                    lang = it.lang,
+                    file = it.file,
+                )
+            },
+        ),
+        alt = this.value.alt,
+        aspectRatio = this.value.aspectRatio,
+    )
+}
+
+private fun PostEmbedUnion.VideoViewVideo.toEmbedVideoFeature(): BskyPostFeature.VideoFeature {
+    return BskyPostFeature.VideoFeature(
+        video = EmbedVideoView(
+            cid = this.value.cid,
+            playlist = this.value.playlist,
+            thumbnail = this.value.thumbnail,
+        ),
+        alt = this.value.alt,
+        aspectRatio = this.value.aspectRatio,
     )
 }

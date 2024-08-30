@@ -182,6 +182,9 @@ fun ColumnScope.EmbedPostFeature(
         is EmbedRecord.BlockedEmbedPost -> {
             EmbedBlockedPostFragment(uri = embed.uri)
         }
+        is EmbedRecord.DetachedQuotePost -> {
+            DetachedQuotePostFragment(uri = embed.uri)
+        }
         is EmbedRecord.EmbedFeed -> {
             FeedListEntryFragment(
                 embed.feed,
@@ -424,6 +427,33 @@ fun ComposerPostFragment(
                 }
 
 
+        }
+    }
+
+}
+
+@Composable
+fun DetachedQuotePostFragment(
+    uri: AtUri
+) {
+    Surface (
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.inverseOnSurface),
+        shape = MaterialTheme.shapes.small,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(6.dp)
+
+    ) {
+        Column {
+            SelectionContainer {
+                Text(
+                    text = "User has detached their post from this quote",
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier
+                        .padding(12.dp)
+                        .align(Alignment.CenterHorizontally)
+                )
+            }
         }
     }
 

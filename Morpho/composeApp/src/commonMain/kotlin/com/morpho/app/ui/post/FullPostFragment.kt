@@ -61,6 +61,7 @@ fun FullPostFragment(
         ContentHider(
             reasons = persistentListOf(maybeMuted),
             scope = LabelScope.Content,
+            target = LabelTarget.Content,
         ) {
             Row(
                 modifier = Modifier

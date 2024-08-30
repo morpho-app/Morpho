@@ -22,7 +22,7 @@ import kotlinx.collections.immutable.toImmutableList
 
 
 @Composable
-fun ColumnScope.ContentHider(
+public fun ColumnScope.ContentHider(
     reasons: ImmutableList<DescribedBehaviours> = persistentListOf(),
     scope: LabelScope = LabelScope.None,
     target: LabelTarget = LabelTarget.Content,
@@ -38,25 +38,27 @@ fun ColumnScope.ContentHider(
     ) }
     val reasonText = scopedBehaviours.fastFirstOrNull {
         it.action == LabelAction.Alert || it.action == LabelAction.Blur || it.action == LabelAction.Inform
-    }?.label ?: "Unknown reason"
-    TextButton(
-        onClick = { hideContent = !hideContent },
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Icon(
-            imageVector = Icons.Default.Info,
-            contentDescription = null
-        )
-        Text(
-            text = reasonText,
+    }?.label ?: ""
+    if (toHide.isNotEmpty()) {
+        TextButton(
+            onClick = { hideContent = !hideContent },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Icon(
+                imageVector = Icons.Default.Info,
+                contentDescription = null
+            )
+            Text(
+                text = reasonText,
 
-        )
-        Spacer(modifier = Modifier
-            .width(1.dp)
-            .weight(0.3f))
-        Text(
-            text = if(hideContent) { "Show" } else { "Hide" }
-        )
+                )
+            Spacer(modifier = Modifier
+                .width(1.dp)
+                .weight(0.3f))
+            Text(
+                text = if(hideContent) { "Show" } else { "Hide" }
+            )
+        }
     }
     if(!hideContent) {
         content()

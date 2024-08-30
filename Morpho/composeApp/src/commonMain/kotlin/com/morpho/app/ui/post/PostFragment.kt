@@ -126,6 +126,7 @@ fun PostFragment(
             ContentHider(
                 reasons = persistentListOf(maybeMuted),
                 scope = LabelScope.Content,
+                target = LabelTarget.Content,
             ) {
                 SelectionContainer(
                     Modifier.clickable { onItemClicked(post.uri) }
@@ -334,8 +335,12 @@ inline fun ColumnScope.PostFeatureElement(
             linkPress = { openBrowser(it) },
             modifier = Modifier.align(Alignment.CenterHorizontally))
         is BskyPostFeature.ImagesFeature -> {
-            PostImages(imagesFeature = feature,
-                modifier = Modifier.align(Alignment.CenterHorizontally))
+            ContentHider(
+
+            ) {
+                PostImages(imagesFeature = feature,
+                           modifier = Modifier.align(Alignment.CenterHorizontally))
+            }
         }
         is BskyPostFeature.MediaRecordFeature -> {
             RecordFeature(
@@ -354,8 +359,13 @@ inline fun ColumnScope.PostFeatureElement(
                 onUnClicked = onUnClicked
             )
         }
+        is BskyPostFeature.VideoFeature -> {
+            Text(text = "This would be a video embed")
+            Text("Alt text: ${feature.alt}")
+        }
         null -> {}
-        else -> {}
+
+        else -> {Text(text = "Feature type not supported")}
     }
 }
 
@@ -377,10 +387,18 @@ inline fun ColumnScope.RecordFeature(
                 )
             }
             is BskyPostFeature.ImagesFeature -> {
-                PostImages(imagesFeature = media,
-                           modifier = Modifier.align(Alignment.CenterHorizontally))
+                ContentHider(
+                    modifier = Modifier.align(Alignment.CenterHorizontally)
+                ) {
+                    PostImages(imagesFeature = media,
+                               modifier = Modifier.align(Alignment.CenterHorizontally))
+                }
             }
-            else -> {}
+            is BskyPostFeature.VideoFeature -> {
+                Text(text = "This would be a video embed")
+                Text("Alt text: ${media.alt}")
+            }
+            else -> {Text(text = "Record Feature not supported")}
         }
     }
     if(record != null) {
@@ -402,7 +420,9 @@ inline fun ColumnScope.RecordFeature(
                     onFeedClicked = {  }
                 )
             }
-            else -> {}
+            else -> {
+                Text(text = "Record Media Feature not supported")
+            }
         }
     }
 
