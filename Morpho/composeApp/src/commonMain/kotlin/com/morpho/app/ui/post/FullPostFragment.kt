@@ -21,10 +21,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import com.atproto.repo.StrongRef
-import com.morpho.app.model.bluesky.BskyPost
-import com.morpho.app.model.bluesky.FacetType
-import com.morpho.app.model.bluesky.HideReason
-import com.morpho.app.model.bluesky.LabelScope
+import com.morpho.app.model.bluesky.*
 import com.morpho.app.ui.elements.*
 import com.morpho.app.util.openBrowser
 import com.morpho.butterfly.AtIdentifier
@@ -51,7 +48,7 @@ fun FullPostFragment(
     ) {
     val postDate = remember { post.createdAt.instant.toLocalDateTime(TimeZone.currentSystemDefault()).date }
     var menuExpanded by remember { mutableStateOf(false) }
-    val maybeMuted = remember { if (post.author.mutedByMe) HideReason.MUTE else HideReason.SHOW }
+    val maybeMuted = remember { if (post.author.mutedByMe) MutePersonDescribed else NoDescribed }
 
 
     WrappedColumn(
@@ -63,7 +60,7 @@ fun FullPostFragment(
     ) {
         ContentHider(
             reasons = persistentListOf(maybeMuted),
-            scope = LabelScope.CONTENT,
+            scope = LabelScope.Content,
         ) {
             Row(
                 modifier = Modifier

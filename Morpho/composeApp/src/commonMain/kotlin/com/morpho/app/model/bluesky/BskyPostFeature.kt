@@ -6,6 +6,7 @@ import app.bsky.feed.PostEmbedUnion
 import app.bsky.feed.PostViewEmbedUnion
 import com.morpho.app.util.mapImmutable
 import com.morpho.butterfly.*
+import com.morpho.butterfly.model.Blob
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.serialization.Serializable
 
@@ -13,6 +14,13 @@ sealed interface BskyPostFeature {
     @Serializable
     data class ImagesFeature(
         val images: ImmutableList<EmbedImage>,
+    ) : BskyPostFeature, TimelinePostMedia
+
+    data class VideoFeature(
+        val video: VideoEmbed,
+
+        val alt: String,
+        val aspectRatio: AspectRatio,
     ) : BskyPostFeature, TimelinePostMedia
 
     @Serializable
@@ -37,12 +45,27 @@ sealed interface BskyPostFeature {
 
 sealed interface TimelinePostMedia
 
+sealed interface VideoEmbed
+
+@Serializable
+data class EmbedVideoView(
+    val cid: Cid,
+    val playlist: AtUri,
+    val thumbnail: AtUri,
+): VideoEmbed
+
+@Serializable
+data class EmbedVideo(
+    val blob: Blob,
+    val captions: ImmutableList<VideoCaption>,
+): VideoEmbed
+
 @Serializable
 data class EmbedImage(
     val thumb: String,
     val fullsize: String,
     val alt: String,
-    val aspectRatio: ImagesAspectRatio? = null,
+    val aspectRatio: AspectRatio? = null,
 )
 
 sealed interface EmbedRecord {
@@ -105,6 +128,31 @@ fun PostViewEmbedUnion.toFeature(): BskyPostFeature {
         is PostViewEmbedUnion.RecordView -> {
             BskyPostFeature.RecordFeature(
                 record = value.record.toEmbedRecord(),
+            )
+        }
+        is PostViewEmbedUnion.VideoView -> {
+            BskyPostFeature.VideoFeature(
+                video = EmbedVideo(
+                    blob = value.video,
+                    captions = value.captions.mapImmutable {
+                    VideoCaption(
+                        lang = it.lang,
+                        file = it.file,
+                    )
+                },),
+                alt = value.alt,
+                aspectRatio = value.aspectRatio,
+            )
+        }
+        is PostViewEmbedUnion.VideoViewVideo -> {
+            BskyPostFeature.VideoFeature(
+                video = EmbedVideoView(
+                    cid = value.cid,
+                    playlist = value.playlist,
+                    thumbnail = value.thumbnail,
+                ),
+                alt = value.alt,
+                aspectRatio = value.aspectRatio,
             )
         }
         is PostViewEmbedUnion.RecordWithMediaView -> {

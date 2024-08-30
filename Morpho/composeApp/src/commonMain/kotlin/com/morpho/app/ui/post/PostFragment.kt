@@ -111,7 +111,7 @@ fun PostFragment(
             MaterialTheme.colorScheme.surfaceColorAtElevation(if (elevate || indentLevel > 0) 2.dp else 0.dp)
         }
 
-        val maybeMuted = remember { if (post.author.mutedByMe) HideReason.MUTE else HideReason.SHOW }
+        val maybeMuted = remember { if (post.author.mutedByMe) MutePersonDescribed else NoDescribed }
 
         Surface (
             shadowElevation = if (elevate || indentLevel > 0) 1.dp else 0.dp,
@@ -125,7 +125,7 @@ fun PostFragment(
         ) {
             ContentHider(
                 reasons = persistentListOf(maybeMuted),
-                scope = LabelScope.CONTENT,
+                scope = LabelScope.Content,
             ) {
                 SelectionContainer(
                     Modifier.clickable { onItemClicked(post.uri) }

@@ -320,7 +320,7 @@ data class MorphoDataFeed<T: MorphoDataItem> (
                         || (post.reply == null && !isQuotePost(post) && post.reason == null)
             }
             //feed = filterbyLanguage(feed, prefs.languages)
-            feed = filterByContentLabel(feed, prefs.labelsToHide)
+            //feed = filterByContentLabel(feed, prefs.labelsToHide)
             return feed
         }
 

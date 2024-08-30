@@ -12,28 +12,33 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.util.fastAny
-import app.bsky.actor.Visibility
-import com.morpho.app.model.bluesky.HideReason
-import com.morpho.app.model.bluesky.LabelScope
+import androidx.compose.ui.util.fastFilter
+import androidx.compose.ui.util.fastFirstOrNull
+import androidx.compose.ui.util.fastFlatMap
+import com.morpho.app.model.bluesky.*
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
+import kotlinx.collections.immutable.toImmutableList
 
 
 @Composable
 fun ColumnScope.ContentHider(
-    reasons: ImmutableList<HideReason> = persistentListOf(HideReason.SHOW),
-    scope: LabelScope = LabelScope.NONE,
+    reasons: ImmutableList<DescribedBehaviours> = persistentListOf(),
+    scope: LabelScope = LabelScope.None,
+    target: LabelTarget = LabelTarget.Content,
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit,
 ) {
+    val scopedBehaviours: ImmutableList<DescribedAction> = reasons.fastFlatMap {
+        it.describeAction(scope, target)
+    }.toImmutableList()
+    val toHide = scopedBehaviours.fastFilter { it.action == LabelAction.Blur || it.action == LabelAction.Alert }
     var hideContent by remember { mutableStateOf(
-        reasons.fastAny { it.visibility == Visibility.HIDE  || it.visibility == Visibility.WARN } &&
-                reasons.fastAny { scope != LabelScope.NONE && it.scope == scope }
+        toHide.isNotEmpty()
     ) }
-    val reasonText = reasons.filter{it.scope == scope}
-        .firstOrNull { it.visibility == Visibility.WARN || it.visibility == Visibility.HIDE }
-        ?.label ?: "Unknown reason"
+    val reasonText = scopedBehaviours.fastFirstOrNull {
+        it.action == LabelAction.Alert || it.action == LabelAction.Blur || it.action == LabelAction.Inform
+    }?.label ?: "Unknown reason"
     TextButton(
         onClick = { hideContent = !hideContent },
         modifier = Modifier.fillMaxWidth()

@@ -4,14 +4,14 @@ package com.morpho.app.model.bluesky
 
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.text.intl.Locale
+import androidx.compose.ui.util.fastMap
 import com.atproto.label.*
 import com.morpho.app.model.uidata.Moment
 import com.morpho.butterfly.AtUri
 import com.morpho.butterfly.Cid
 import com.morpho.butterfly.Did
 import com.morpho.butterfly.Language
-import kotlinx.collections.immutable.ImmutableMap
-import kotlinx.collections.immutable.toImmutableMap
+import kotlinx.collections.immutable.*
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -113,6 +113,7 @@ open class ModBehaviour(
         require(contentMedia != LabelAction.Inform && contentMedia != LabelAction.Alert)
     }
 
+
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other == null || this::class != other::class) return false
@@ -149,6 +150,75 @@ data class ModBehaviours(
     val account: ModBehaviour = ModBehaviour(),
     val profile: ModBehaviour = ModBehaviour(),
     val content: ModBehaviour = ModBehaviour(),
+) {
+    fun forScope(scope: LabelScope, target: LabelTarget): ImmutableList<LabelAction> {
+        return when (target) {
+            LabelTarget.Account -> when (scope) {
+                LabelScope.Content -> persistentListOf(
+                    account.contentList, account.contentView, account.avatar,
+                    account.banner, account.profileList, account.profileView,
+                    account.displayName
+                )
+                LabelScope.Media -> persistentListOf(account.contentMedia, account.avatar, account.banner)
+                LabelScope.None -> persistentListOf()
+            }
+            LabelTarget.Profile -> when (scope) {
+                LabelScope.Content -> persistentListOf(profile.contentList, profile.contentView, profile.displayName)
+                LabelScope.Media -> persistentListOf(profile.avatar, profile.banner, profile.contentMedia)
+                LabelScope.None -> persistentListOf()
+            }
+            LabelTarget.Content -> when (scope) {
+                LabelScope.Content -> persistentListOf(content.contentList, content.contentView)
+                LabelScope.Media -> persistentListOf(
+                    content.contentMedia,
+                    content.avatar,
+                    content.banner
+                )
+
+                LabelScope.None -> persistentListOf()
+            }
+        }
+    }
+}
+
+@Immutable
+@Serializable
+open class DescribedBehaviours(
+    val behaviours: ModBehaviours,
+    val label: String,
+    val description: String,
+){
+    fun describeAction(scope: LabelScope, target: LabelTarget) : ImmutableList<DescribedAction> {
+        return behaviours.forScope(scope, target).fastMap { DescribedAction(it, label, description) }.toImmutableList()
+    }
+}
+
+@Immutable
+@Serializable
+data class DescribedAction(
+    val action: LabelAction,
+    val label: String,
+    val description: String,
+)
+
+data object MutePersonDescribed: DescribedBehaviours(
+    behaviours = ModBehaviours(
+        account = MuteBehaviour,
+        profile = MuteBehaviour,
+        content = MuteBehaviour,
+    ),
+    label = "Mute",
+    description = "You have muted this person",
+)
+
+data object NoDescribed: DescribedBehaviours(
+    behaviours = ModBehaviours(
+        account = NoopBehaviour,
+        profile = NoopBehaviour,
+        content = NoopBehaviour,
+    ),
+    label = "No",
+    description = "No action taken",
 )
 
 @Serializable
