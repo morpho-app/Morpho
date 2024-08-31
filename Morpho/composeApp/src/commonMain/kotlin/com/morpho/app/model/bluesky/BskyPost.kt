@@ -28,8 +28,10 @@ data class BskyPost (
     val cid: Cid,
     val author: Profile,
     val text: String,
-    val facets: ImmutableList<BskyFacet> = persistentListOf(),
-    val tags: ImmutableList<String> = persistentListOf(),
+    @Serializable
+    val facets: List<BskyFacet> = persistentListOf(),
+    @Serializable
+    val tags: List<String> = persistentListOf(),
     val createdAt: Moment,
     val feature: BskyPostFeature? = null,
     val replyCount: Long,
@@ -40,10 +42,12 @@ data class BskyPost (
     val repostUri: AtUri? = null,
     val liked: Boolean,
     val likeUri: AtUri? = null,
-    val labels: ImmutableList<BskyLabel>,
+    @Serializable
+    val labels: List<BskyLabel>,
     val reply: BskyPostReply? = null,
     val reason: BskyPostReason? = null,
-    val langs: ImmutableList<Language> = persistentListOf(),
+    @Serializable
+    val langs: List<Language> = persistentListOf(),
 ) {
     override operator fun equals(other: Any?) : Boolean {
         return when(other) {
@@ -118,7 +122,7 @@ fun ThreadViewPost.toPost() : BskyPost {
         is ThreadViewPostParentUnion.ThreadViewPost -> {
             val parentPost = (parent as ThreadViewPostParentUnion.ThreadViewPost).value.toPost()
             val rootPost = findRootPost()?.toPost() ?: parentPost
-            BskyPostReply(root = rootPost, parent = parentPost)
+            BskyPostReply(root = rootPost, parent = parentPost, grandparentAuthor = parentPost.reply?.parent?.author)
         }
         null -> null
     }

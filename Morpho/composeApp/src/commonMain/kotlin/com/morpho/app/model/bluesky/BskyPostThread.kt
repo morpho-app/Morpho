@@ -179,7 +179,7 @@ fun ThreadViewPost.toThread(): BskyPostThread {
         )
     } else {
         val rootPost = parents.last().toPost()
-        val entryPost = this.post.toPost(BskyPostReply(parents.first().toPost(), rootPost), null)
+        val entryPost = this.post.toPost(BskyPostReply(parents.first().toPost(), rootPost, parents.first().toPost().reply?.parent?.author), null)
         return BskyPostThread(
             post = entryPost,
             parents = parents.mapIndexed { index, post ->
@@ -198,7 +198,7 @@ fun ThreadViewPost.toThread(): BskyPostThread {
 }
 
 fun ThreadViewPost.toThreadPost(parent: BskyPost, root: BskyPost): ThreadPost {
-    val post = post.toPost(BskyPostReply(root, parent), null)
+    val post = post.toPost(BskyPostReply(root, parent, root.reply?.parent?.author), null)
     return ViewablePost(
         post = post,
         replies = replies.mapImmutable { it.toThreadPost(post, root) }
@@ -207,7 +207,7 @@ fun ThreadViewPost.toThreadPost(parent: BskyPost, root: BskyPost): ThreadPost {
 
 fun ThreadViewPostReplyUnion.toThreadPost(parent: BskyPost, root: BskyPost): ThreadPost = when (this) {
     is ThreadViewPostReplyUnion.ThreadViewPost -> {
-        val post = value.post.toPost(BskyPostReply(root, parent), null)
+        val post = value.post.toPost(BskyPostReply(root, parent, root.reply?.parent?.author), null)
         ViewablePost(
             post = post,
             replies = value.replies.mapImmutable { it.toThreadPost(post, root) }

@@ -1,6 +1,7 @@
 package com.morpho.app.ui.post
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.text.selection.DisableSelection
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.MoreHoriz
@@ -68,6 +69,7 @@ fun PostActions(
             active = post.liked
         )
         if (showMenu) {
+
             PostAction(
                 parameter = -1,
                 iconNormal = Icons.Default.MoreHoriz,
@@ -79,7 +81,7 @@ fun PostActions(
                     menuExpanded = true
                 },
             )
-            PostMenu(menuExpanded, onMenuClicked, onDismissRequest = { menuExpanded = false })
+            DisableSelection { PostMenu(menuExpanded, onMenuClicked, onDismissRequest = { menuExpanded = false }) }
         }
 
     }

@@ -34,9 +34,11 @@ import com.morpho.app.ui.elements.WrappedLazyColumn
 import com.morpho.app.ui.elements.doMenuOperation
 import com.morpho.app.ui.notifications.NotificationsElement
 import com.morpho.app.ui.notifications.NotificationsFilterElement
+import com.morpho.app.util.ClipboardManager
 import com.morpho.butterfly.model.RecordUnion
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.launch
+import org.koin.compose.getKoin
 
 
 @OptIn(ExperimentalMaterialApi::class, ExperimentalMaterial3Api::class)
@@ -88,7 +90,7 @@ fun TabScreen.NotificationViewContent(
             //      but this means if you don't explicitly cancel you don't lose the post
             var draft by remember{ mutableStateOf(DraftPost()) }
 
-
+            val clipboardManager = getKoin().get<ClipboardManager>()
             val cursor by rememberUpdatedState(sm.uiState.value.cursor)
 
             LaunchedEffect(
@@ -163,7 +165,7 @@ fun TabScreen.NotificationViewContent(
                                 composerRole = ComposerRole.Reply
                                 showComposer = true
                             },
-                            onMenuClicked = { option, post -> doMenuOperation(option, post) },
+                            onMenuClicked = { option, post -> doMenuOperation(option, post, clipboardManager = clipboardManager ) },
                             onLikeClicked = {
                                 sm.api.createRecord(RecordUnion.Like(it))
                             },

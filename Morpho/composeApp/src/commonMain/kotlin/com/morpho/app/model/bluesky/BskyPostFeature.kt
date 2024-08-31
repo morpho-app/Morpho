@@ -10,6 +10,7 @@ import com.morpho.butterfly.model.Blob
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.serialization.Serializable
 
+@Serializable
 sealed interface BskyPostFeature {
     @Serializable
     data class ImagesFeature(
@@ -20,7 +21,7 @@ sealed interface BskyPostFeature {
         val video: VideoEmbed,
 
         val alt: String,
-        val aspectRatio: AspectRatio,
+        val aspectRatio: AspectRatio?,
     ) : BskyPostFeature, TimelinePostMedia
 
     @Serializable
@@ -43,8 +44,10 @@ sealed interface BskyPostFeature {
     ) : BskyPostFeature
 }
 
+@Serializable
 sealed interface TimelinePostMedia
 
+@Serializable
 sealed interface VideoEmbed
 
 @Serializable
@@ -57,7 +60,7 @@ data class EmbedVideoView(
 @Serializable
 data class EmbedVideo(
     val blob: Blob,
-    val captions: ImmutableList<VideoCaption>,
+    val captions: ImmutableList<VideoCaption>?,
 ): VideoEmbed
 
 @Serializable
@@ -68,6 +71,7 @@ data class EmbedImage(
     val aspectRatio: AspectRatio? = null,
 )
 
+@Serializable
 sealed interface EmbedRecord {
 
     @Serializable
@@ -139,14 +143,14 @@ fun PostViewEmbedUnion.toFeature(): BskyPostFeature {
             BskyPostFeature.VideoFeature(
                 video = EmbedVideo(
                     blob = value.video,
-                    captions = value.captions.mapImmutable {
+                    captions = value.captions?.mapImmutable {
                         VideoCaption(
                             lang = it.lang,
                             file = it.file,
                         )
                     }
                 ),
-                alt = value.alt,
+                alt = value.alt?:"",
                 aspectRatio = value.aspectRatio,
             )
         }
@@ -157,7 +161,7 @@ fun PostViewEmbedUnion.toFeature(): BskyPostFeature {
                     playlist = value.playlist,
                     thumbnail = value.thumbnail,
                 ),
-                alt = value.alt,
+                alt = value.alt?:"",
                 aspectRatio = value.aspectRatio,
             )
         }
@@ -306,14 +310,14 @@ private fun PostEmbedUnion.VideoView.toEmbedVideoFeature(): BskyPostFeature.Vide
     return BskyPostFeature.VideoFeature(
         video = EmbedVideo(
             blob = this.value.video,
-            captions = this.value.captions.mapImmutable {
+            captions = this.value.captions?.mapImmutable {
                 VideoCaption(
                     lang = it.lang,
                     file = it.file,
                 )
             },
         ),
-        alt = this.value.alt,
+        alt = this.value.alt?:"",
         aspectRatio = this.value.aspectRatio,
     )
 }
@@ -325,7 +329,7 @@ private fun PostEmbedUnion.VideoViewVideo.toEmbedVideoFeature(): BskyPostFeature
             playlist = this.value.playlist,
             thumbnail = this.value.thumbnail,
         ),
-        alt = this.value.alt,
+        alt = this.value.alt?:"",
         aspectRatio = this.value.aspectRatio,
     )
 }

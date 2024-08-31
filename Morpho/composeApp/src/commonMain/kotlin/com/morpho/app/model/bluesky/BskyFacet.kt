@@ -16,6 +16,7 @@ data class BskyFacet(
     val facetType: FacetType,
 )
 
+@Serializable
 sealed interface FacetType {
     @Serializable
     data class UserHandleMention(
@@ -52,6 +53,7 @@ sealed interface FacetType {
     ) : FacetType
 }
 
+@Serializable
 enum class RichTextFormat {
     BOLD,
     ITALIC,

@@ -21,11 +21,14 @@ import com.morpho.app.screens.base.tabbed.TabScreen
 import com.morpho.app.screens.base.tabbed.ThreadTab
 import com.morpho.app.screens.main.MainScreenModel
 import com.morpho.app.ui.common.*
+import com.morpho.app.ui.elements.doMenuOperation
 import com.morpho.app.ui.thread.ThreadFragment
+import com.morpho.app.util.ClipboardManager
 import com.morpho.butterfly.AtUri
 import com.morpho.butterfly.model.RecordType
 import com.morpho.butterfly.model.RecordUnion
 import kotlinx.coroutines.flow.StateFlow
+import org.koin.compose.getKoin
 
 @OptIn(ExperimentalAnimationApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -87,7 +90,7 @@ fun ThreadView(
     // Probably pull this farther up,
     //      but this means if you don't explicitly cancel you don't lose the post
     var draft by remember{ mutableStateOf(DraftPost()) }
-
+    val clipboard = getKoin().get<ClipboardManager>()
     ThreadFragment(thread = thread,
                    contentPadding = insets,
                    onItemClicked = { navigator.push(ThreadTab(it)) },
@@ -103,7 +106,7 @@ fun ThreadView(
                        composerRole = ComposerRole.Reply
                        showComposer = true
                    },
-                   onMenuClicked = { _, _ -> },
+                   onMenuClicked = { option, post -> doMenuOperation(option, post, clipboardManager = clipboard) },
                    onLikeClicked = { createRecord(RecordUnion.Like(it)) },
     )
     if(repostClicked) {

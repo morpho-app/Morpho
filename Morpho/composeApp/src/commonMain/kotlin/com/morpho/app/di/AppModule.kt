@@ -9,6 +9,7 @@ import com.morpho.app.screens.main.MainScreenModel
 import com.morpho.app.screens.main.tabbed.TabbedMainScreenModel
 import com.morpho.app.screens.notifications.TabbedNotificationScreenModel
 import com.morpho.app.screens.profile.TabbedProfileViewModel
+import com.morpho.app.util.ClipboardManager
 import com.morpho.butterfly.Butterfly
 import com.morpho.butterfly.auth.SessionRepository
 import com.morpho.butterfly.auth.UserRepository
@@ -29,6 +30,7 @@ val appModule = module {
     factory { TabbedNotificationScreenModel() }
     factory { LoginScreenModel() }
     factory { p-> UpdateTick(p.get()) }
+    single { ClipboardManager }
 }
 
 val storageModule = module {

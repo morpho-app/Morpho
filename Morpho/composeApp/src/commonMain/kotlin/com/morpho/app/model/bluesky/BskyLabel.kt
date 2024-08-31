@@ -68,6 +68,7 @@ data class BskyLabel @OptIn(ExperimentalSerializationApi::class) constructor(
     }
 }
 
+@Serializable
 enum class LabelScope {
     Content,
     Media,
@@ -82,6 +83,7 @@ fun Blurs.toScope(): LabelScope {
     }
 }
 
+@Serializable
 enum class LabelAction {
     Blur,
     Alert,
@@ -89,6 +91,7 @@ enum class LabelAction {
     None
 }
 
+@Serializable
 enum class LabelTarget {
     Account,
     Profile,
@@ -211,6 +214,7 @@ data object MutePersonDescribed: DescribedBehaviours(
     description = "You have muted this person",
 )
 
+
 data object NoDescribed: DescribedBehaviours(
     behaviours = ModBehaviours(
         account = NoopBehaviour,
@@ -250,6 +254,7 @@ data object HideBehaviour: ModBehaviour(
 
 data object NoopBehaviour: ModBehaviour()
 
+@Serializable
 enum class LabelValueDefFlag {
     NoOverride,
     Adult,
@@ -257,6 +262,7 @@ enum class LabelValueDefFlag {
     NoSelf,
 }
 
+@Serializable
 enum class LabelSetting {
     @SerialName("ignore")
     IGNORE,

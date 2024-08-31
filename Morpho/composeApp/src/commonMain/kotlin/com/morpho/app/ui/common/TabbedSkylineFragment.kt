@@ -17,9 +17,12 @@ import com.morpho.app.model.uistate.ContentCardState
 import com.morpho.app.screens.base.tabbed.ProfileTab
 import com.morpho.app.screens.base.tabbed.ThreadTab
 import com.morpho.app.screens.main.MainScreenModel
+import com.morpho.app.ui.elements.doMenuOperation
+import com.morpho.app.util.ClipboardManager
 import com.morpho.butterfly.model.RecordUnion
 import io.ktor.util.reflect.instanceOf
 import kotlinx.coroutines.flow.StateFlow
+import org.koin.compose.getKoin
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -64,6 +67,7 @@ fun <T: MainScreenModel, I: MorphoDataItem, S: ContentCardState<I>> TabbedSkylin
     }
     val content = state?.collectAsState()
     if(content?.value != null) {
+        val clipboard = getKoin().get<ClipboardManager>()
         SkylineFragment(
             content = state,
             onProfileClicked = {
@@ -74,6 +78,7 @@ fun <T: MainScreenModel, I: MorphoDataItem, S: ContentCardState<I>> TabbedSkylin
             refresh = { cursor -> refresh(cursor)},
             onUnClicked = { type, rkey -> sm.deleteRecord(type, rkey) },
             onRepostClicked = { onRepostClicked(it) },
+            onMenuClicked = { option, post -> doMenuOperation(option, post, clipboardManager = clipboard) },
             onReplyClicked = { onReplyClicked(it) },
             onLikeClicked = { uri -> sm.createRecord(RecordUnion.Like(uri)) },
             onPostButtonClicked = { onPostButtonClicked() },

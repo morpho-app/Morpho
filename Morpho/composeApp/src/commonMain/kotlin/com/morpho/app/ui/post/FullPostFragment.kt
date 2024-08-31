@@ -4,6 +4,7 @@ package com.morpho.app.ui.post
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.text.selection.DisableSelection
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreHoriz
@@ -128,9 +129,10 @@ fun FullPostFragment(
                         tint = MaterialTheme.colorScheme.onSurface
                     )
                 }
-                PostMenu(menuExpanded, {
+                DisableSelection { PostMenu(menuExpanded, {
                     onMenuClicked(it, post)
-                }, onDismissRequest = { menuExpanded = false })
+                }, onDismissRequest = { menuExpanded = false }) }
+
             }
 
 

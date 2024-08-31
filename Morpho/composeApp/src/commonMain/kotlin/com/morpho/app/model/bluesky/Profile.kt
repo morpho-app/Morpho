@@ -9,7 +9,6 @@ import com.morpho.app.model.uidata.Moment
 import com.morpho.app.util.mapImmutable
 import com.morpho.butterfly.Did
 import com.morpho.butterfly.Handle
-import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.serialization.Serializable
 
@@ -31,7 +30,7 @@ sealed interface Profile {
     val followingMe: Boolean
     val followedByMe: Boolean
     @Serializable
-    val labels: ImmutableList<BskyLabel>
+    val labels: List<BskyLabel>
     val type: ProfileType
         get() = when (this) {
             is BasicProfile -> ProfileType.Basic
@@ -52,7 +51,7 @@ data class BasicProfile(
     override val followingMe: Boolean,
     override val followedByMe: Boolean,
     @Serializable
-    override val labels: ImmutableList<BskyLabel>,
+    override val labels: List<BskyLabel>,
 ) : Profile
 
 @Immutable
@@ -72,7 +71,7 @@ data class DetailedProfile(
     override val followingMe: Boolean,
     override val followedByMe: Boolean,
     @Serializable
-    override val labels: ImmutableList<BskyLabel>,
+    override val labels: List<BskyLabel>,
 ) : Profile {
     fun toSerializableProfile(): SerializableProfile {
         return SerializableProfile(

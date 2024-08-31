@@ -11,15 +11,16 @@ actual fun openBrowser(url: String) {
     try {
         when {
             Desktop.isDesktopSupported() && desktop.isSupported(Desktop.Action.BROWSE) -> {
-                desktop.browse(URI.create(url))
+                desktop.browse(URI.create(url.replace(" ", "%20")))
             }
             "mac" in osName -> {
-                Runtime.getRuntime().exec("open $url")
+                Runtime.getRuntime().exec("open  \"$url\"")
             }
-            "nix" in osName || "nux" in osName -> Runtime.getRuntime().exec("xdg-open $url")
+            "nix" in osName || "nux" in osName -> Runtime.getRuntime().exec("xdg-open \"$url\"")
             else -> throw RuntimeException("cannot open $url")
         }
     } catch (e: Exception) {
+        println("Error opening URL: $url")
         e.printStackTrace()
     }
 }
