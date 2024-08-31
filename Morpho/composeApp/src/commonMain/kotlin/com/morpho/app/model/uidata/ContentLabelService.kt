@@ -1,8 +1,17 @@
 package com.morpho.app.model.uidata
 
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.util.fastAny
+import androidx.compose.ui.util.fastFilter
+import androidx.compose.ui.util.fastForEach
 import app.bsky.actor.ContentLabelPref
+import app.bsky.actor.MutedWord
+import app.bsky.actor.Visibility
 import app.bsky.labeler.GetServicesQuery
 import app.bsky.labeler.GetServicesResponseViewUnion
 import com.atproto.label.LabelValue
@@ -14,9 +23,7 @@ import com.morpho.butterfly.Butterfly
 import com.morpho.butterfly.Language
 import kotlinx.collections.immutable.*
 import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.*
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
 import org.koin.core.component.KoinComponent
@@ -27,7 +34,9 @@ import org.lighthousegames.logging.logging
 @Serializable
 data class ContentHandling(
     val scope: LabelScope,
+    val action: LabelAction,
     val source: LabelDescription,
+    val id: String,
     @Contextual
     val icon: ImageVector,
 )
@@ -181,6 +190,30 @@ open class InterpretedLabelDefinition(
 ) {
     companion object {
 
+    }
+
+    public fun toContentHandling(target: LabelTarget, icon: ImageVector? = null): ContentHandling {
+        val action = behaviours.forScope(whatToHide, target).minOrNull() ?: when(defaultSetting) {
+            LabelSetting.HIDE -> LabelAction.Blur
+            LabelSetting.WARN -> LabelAction.Alert
+            LabelSetting.IGNORE -> LabelAction.Inform
+            null -> LabelAction.None
+        }
+        return ContentHandling(
+            id = identifier,
+            scope = whatToHide,
+            action = action,
+            source = LabelDescription.Label(
+                name = localizedName,
+                description = localizedDescription,
+                severity = severity,
+            ),
+            icon = icon ?: when(severity) {
+                Severity.ALERT -> Icons.Default.Warning
+                Severity.NONE -> Icons.Default.Info
+                Severity.INFORM -> Icons.Default.Info
+            }
+        )
     }
 }
 
@@ -373,8 +406,25 @@ class ContentLabelService: KoinComponent {
     val api:Butterfly by inject()
     val preferences: PreferencesRepository by inject()
 
-    val labelPrefs: MutableStateFlow<List<ContentLabelPref>> = MutableStateFlow(listOf())
-    val labelers: MutableStateFlow<List<BskyLabelService>> = MutableStateFlow(listOf())
+    private val _labelPrefs: MutableStateFlow<List<ContentLabelPref>> = MutableStateFlow(listOf())
+    private val _labelers: MutableStateFlow<List<BskyLabelService>> = MutableStateFlow(listOf())
+    private val _mutedWords: MutableStateFlow<List<MutedWord>> = MutableStateFlow(listOf())
+    private val _hiddenPosts: MutableStateFlow<List<AtUri>> = MutableStateFlow(listOf())
+    private val _showAdultContent: MutableStateFlow<Boolean> = MutableStateFlow(false)
+    private val _feedPrefs: MutableStateFlow<Map<String, BskyFeedPref>> = MutableStateFlow(mapOf())
+
+    val labelers = _labelers.asStateFlow()
+    val labelPrefs = _labelPrefs.asStateFlow()
+    val mutedWords = _mutedWords.asStateFlow()
+    val hiddenPosts = _hiddenPosts.asStateFlow()
+    val showAdultContent = _showAdultContent.asStateFlow()
+    val feedPrefs = _feedPrefs.asStateFlow()
+    val labelsToHide = labelPrefs.map { contentLabelPrefs ->
+        contentLabelPrefs.fastFilter { it.visibility == Visibility.HIDE }
+    }.stateIn(serviceScope, SharingStarted.Eagerly, persistentListOf())
+
+    private val handlingCache = mutableStateMapOf<AtUri, ImmutableList<ContentHandling>>()
+    private val definitionCache = mutableStateMapOf<String, InterpretedLabelDefinition>()
 
     companion object {
         val log = logging()
@@ -388,7 +438,11 @@ class ContentLabelService: KoinComponent {
             }
             if (api.id != null) {
                 preferences.userPrefs(api.id!!).map { prefs ->
-                    labelPrefs.update { prefs?.preferences?.contentLabelPrefs ?: emptyList() }
+                    _labelPrefs.update { prefs?.preferences?.contentLabelPrefs ?: emptyList() }
+                    _mutedWords.update { prefs?.preferences?.mutedWords ?: emptyList() }
+                    _hiddenPosts.update { prefs?.preferences?.hiddenPosts ?: emptyList() }
+                    _showAdultContent.update { prefs?.preferences?.adultContent?.enabled ?: false }
+                    _feedPrefs.update { prefs?.preferences?.feedViewPrefs ?: emptyMap() }
                     val labelerProfiles = prefs?.preferences?.labelers?.toImmutableList()
                         ?.let { GetServicesQuery(it) }?.let {
                             api.api.getServices(it)
@@ -403,13 +457,419 @@ class ContentLabelService: KoinComponent {
                                     }
                                 }.getOrNull()
                         } ?: emptyList()
-                    labelers.update { labelerProfiles }
+                    _labelers.update { labelerProfiles }
                 }
+                initDefinitionCache()
             }
 
         }
 
     }
 
+    private fun initDefinitionCache() {
+        val labelers = labelers.value
+        val labelPrefs = labelPrefs.value
+        val labelPrefMap = labelPrefs.associateBy { if (it.labelerDid == null) it.label else it.labelerDid.toString() }
+        val labelerMap = labelers.associateBy { it.did.toString() }
+
+        val labelMap = labelerMap.mapValues { (id, labeler) ->
+            val labelPref = labelPrefMap[id]
+            if (labelPref != null) {
+                val policy = labeler.policies.firstOrNull { it.identifier == labelPref.label }
+                if (policy != null) {
+                    Pair(
+                        labeler.labels.first { it.value == policy.identifier },
+                        policy.copy(defaultSetting = labelPref.visibility.toLabelSetting()),
+                    )
+                } else {
+                    Pair(
+                        labeler.labels.first { label ->
+                            labeler.policies.fastAny { it.identifier == label.value } },
+                        labeler.policies.first { def ->
+                            labeler.labels.fastAny { it.value == def.identifier } },
+                    )
+                }
+            } else {
+                Pair(
+                    labeler.labels.first { label ->
+                        labeler.policies.fastAny { it.identifier == label.value } },
+                    labeler.policies.first { def ->
+                        labeler.labels.fastAny { it.value == def.identifier } },
+                )
+            }
+        }
+        val definitionMap = labelMap.mapValues { (id, pair) ->
+            val (label, policy) = pair
+            val name = label.value
+            val flags = mutableListOf<LabelValueDefFlag>()
+            var interpreted: InterpretedLabelDefinition? = null
+            if (policy.adultOnly == true) {
+                flags.add(LabelValueDefFlag.Adult)
+            }
+            when (label.getLabelValue()) {
+                LabelValue.HIDE -> interpreted = Hide
+                LabelValue.WARN -> interpreted = Warn
+                LabelValue.NO_UNAUTHENTICATED -> interpreted = NoUnauthed
+                LabelValue.PORN -> interpreted = Porn
+                LabelValue.SEXUAL -> interpreted = Sexual
+                LabelValue.NSFL -> interpreted = GraphicMedia
+                LabelValue.GORE -> interpreted = GraphicMedia
+                LabelValue.GRAPHIC_MEDIA -> interpreted = GraphicMedia
+                else -> {}
+            }
+
+            if (interpreted == null) {
+                val behaviours = when (policy.whatToHide) {
+                    LabelScope.Content -> ModBehaviours(
+                        account = ModBehaviour(
+                            contentList = LabelAction.Blur,
+                            contentView = LabelAction.Blur,
+                        ),
+                        profile = ModBehaviour(
+                            contentList = LabelAction.Blur,
+                            contentView = LabelAction.Blur,
+                        ),
+                        content = ModBehaviour(
+                            contentList = LabelAction.Blur,
+                            contentView = LabelAction.Blur,
+                        ),
+                    )
+                    LabelScope.Media -> BlurAllMedia
+                    LabelScope.None -> ModBehaviours(
+                        NoopBehaviour,
+                        NoopBehaviour,
+                        NoopBehaviour,
+                    )
+                }
+                interpreted = InterpretedLabelDefinition(
+                    policy.identifier,
+                    true,
+                    policy.severity,
+                    policy.whatToHide,
+                    policy.defaultSetting,
+                    flags.toImmutableList(),
+                    behaviours,
+                    localizedName = policy.localizedName,
+                    localizedDescription = policy.localizedDescription,
+                    allDescriptions = policy.allDescriptions,
+                )
+            }
+            Pair(name, interpreted)
+        }.values.toMap()
+    }
+
+    fun getContentHandlingForPost(post: BskyPost): ImmutableList<ContentHandling> {
+//        // TODO: Add some way to invalidate the cache
+//        if (handlingCache.containsKey(post.uri)) {
+//            return handlingCache[post.uri]!!
+//        }
+        val result = mutableListOf<ContentHandling>()
+        val causes = mutableListOf<LabelCause>()
+        val labels = post.labels
+        if (hiddenPosts.value.contains(post.uri)) {
+            causes.add(LabelCause.Hidden(LabelSource.User, false))
+            result.add(Hide.toContentHandling(LabelTarget.Content))
+            // Short circuit if the post is hidden, we shouldn't really get here
+            // Generally it will be filtered out at the feed retrieval level
+            return result.toImmutableList()
+        }
+        if (labels.isNotEmpty()) {
+            if (!showAdultContent.value) {
+                val adultLabeler = labelPrefs.value.fastFilter { prefLabel ->
+                    labels.fastAny { bskyLabel ->
+                        prefLabel.label == bskyLabel.value &&
+                            labelers.value.fastAny { it.policies.fastAny { policy ->
+                                policy.adultOnly == true && policy.identifier == prefLabel.label
+                            } }
+                    }
+                }
+                val adultLabel = labels.firstOrNull { bskyLabel ->
+                    val value = bskyLabel.getLabelValue()
+                    value == LabelValue.GRAPHIC_MEDIA
+                        || value == LabelValue.GORE
+                        || value == LabelValue.NSFL
+                        || value == LabelValue.PORN
+                        || value == LabelValue.SEXUAL
+                        || value == LabelValue.NUDITY
+                        || adultLabeler.isNotEmpty()
+                }
+                when (adultLabel?.getLabelValue()) {
+                    LabelValue.PORN -> causes.add(LabelCause.Label(
+                        LabelSource.Labeler(labelers.value.firstOrNull { it.did == adultLabel.creator }!!),
+                        adultLabel,
+                        Porn,
+                        LabelTarget.Content,
+                        LabelSetting.HIDE,
+                        Porn.behaviours.content,
+                        noOverride = true,
+                        priority = 7,
+                        downgraded = false,
+                    ))
+                    LabelValue.SEXUAL -> causes.add(LabelCause.Label(
+                        LabelSource.Labeler(labelers.value.firstOrNull { it.did == adultLabel.creator }!!),
+                        adultLabel,
+                        Sexual,
+                        LabelTarget.Content,
+                        LabelSetting.HIDE,
+                        Sexual.behaviours.content,
+                        noOverride = true,
+                        priority = 7,
+                        downgraded = false,
+                    ))
+                    LabelValue.NUDITY -> causes.add(LabelCause.Label(
+                        LabelSource.Labeler(labelers.value.firstOrNull { it.did == adultLabel.creator }!!),
+                        adultLabel,
+                        Nudity,
+                        LabelTarget.Content,
+                        LabelSetting.HIDE,
+                        Nudity.behaviours.content,
+                        noOverride = true,
+                        priority = 6,
+                        downgraded = false,
+                    ))
+                    LabelValue.GRAPHIC_MEDIA -> causes.add(LabelCause.Label(
+                        LabelSource.Labeler(labelers.value.firstOrNull { it.did == adultLabel.creator }!!),
+                        adultLabel,
+                        GraphicMedia,
+                        LabelTarget.Content,
+                        LabelSetting.HIDE,
+                        GraphicMedia.behaviours.content,
+                        noOverride = true,
+                        priority = 8,
+                        downgraded = false,
+                    ))
+                    LabelValue.NSFL -> causes.add(LabelCause.Label(
+                        LabelSource.Labeler(labelers.value.firstOrNull { it.did == adultLabel.creator }!!),
+                        adultLabel,
+                        GraphicMedia,
+                        LabelTarget.Content,
+                        LabelSetting.HIDE,
+                        GraphicMedia.behaviours.content,
+                        noOverride = true,
+                        priority = 8,
+                        downgraded = false,
+                    ))
+                    LabelValue.GORE -> causes.add(LabelCause.Label(
+                        LabelSource.Labeler(labelers.value.firstOrNull { it.did == adultLabel.creator }!!),
+                        adultLabel,
+                        GraphicMedia,
+                        LabelTarget.Content,
+                        LabelSetting.HIDE,
+                        GraphicMedia.behaviours.content,
+                        noOverride = true,
+                        priority = 8,
+                        downgraded = false,
+                    ))
+                    null -> {}
+                    else -> {
+                        adultLabeler.fastForEach { prefLabel ->
+                            val labeler = labelers.value.firstOrNull { it.did == prefLabel.labelerDid }
+                            val labelDef = labeler?.policies?.firstOrNull { it.identifier == prefLabel.label }
+                            if (labeler != null && labelDef != null) {
+                                val cached = definitionCache[prefLabel.label]
+                                if (cached != null) {
+                                    val cause = LabelCause.Label(
+                                        LabelSource.Labeler(labeler),
+                                        adultLabel,
+                                        cached,
+                                        LabelTarget.Content,
+                                        prefLabel.visibility.toLabelSetting(),
+                                        cached.behaviours.content,
+                                        noOverride = false,
+                                        priority = 7,
+                                        downgraded = false,
+                                    )
+                                    causes.add(cause)
+                                } else {
+                                    val behaviours = when (labelDef.whatToHide) {
+                                        LabelScope.Content -> ModBehaviours(
+                                            account = ModBehaviour(
+                                                contentList = LabelAction.Blur,
+                                                contentView = LabelAction.Blur,
+                                            ),
+                                            profile = ModBehaviour(
+                                                contentList = LabelAction.Blur,
+                                                contentView = LabelAction.Blur,
+                                            ),
+                                            content = ModBehaviour(
+                                                contentList = LabelAction.Blur,
+                                                contentView = LabelAction.Blur,
+                                            ),
+                                        )
+                                        LabelScope.Media -> BlurAllMedia
+                                        LabelScope.None -> ModBehaviours(
+                                            NoopBehaviour,
+                                            NoopBehaviour,
+                                            NoopBehaviour,
+                                        )
+                                    }
+                                    val interpreted = InterpretedLabelDefinition(
+                                        adultLabel.value,
+                                        true,
+                                        labelDef.severity,
+                                        labelDef.whatToHide,
+                                        labelDef.defaultSetting,
+                                        persistentListOf(LabelValueDefFlag.Adult),
+                                        behaviours,
+                                        localizedName = labelDef.localizedName,
+                                        localizedDescription = labelDef.localizedDescription,
+                                    )
+                                    val cause = LabelCause.Label(
+                                        LabelSource.Labeler(labeler),
+                                        adultLabel,
+                                        interpreted,
+                                        LabelTarget.Content,
+                                        prefLabel.visibility.toLabelSetting(),
+                                        interpreted.behaviours.content,
+                                        noOverride = false,
+                                        priority = 7,
+                                        downgraded = false,
+                                    )
+                                    causes.add(cause)
+                                    definitionCache[prefLabel.label] = interpreted
+                                }
+                            }
+
+                        }
+                    }
+
+                }
+            }
+            val labelsWeCareAbout = labelPrefs.value.fastFilter { prefLabel ->
+                labels.fastAny { it.value == prefLabel.label }
+            }
+            labelsWeCareAbout.fastForEach { prefLabel ->
+                val cachedInterpretation = definitionCache[prefLabel.label]
+                if (cachedInterpretation != null) {
+                    val cause = LabelCause.Label(
+                        LabelSource.Labeler(labelers.value.firstOrNull { it.did == prefLabel.labelerDid }!!),
+                        labels.first { it.value == prefLabel.label },
+                        cachedInterpretation,
+                        LabelTarget.Content,
+                        prefLabel.visibility.toLabelSetting(),
+                        cachedInterpretation.behaviours.content,
+                        noOverride = false,
+                        priority = 5,
+                        downgraded = false,
+                    )
+                    causes.add(cause)
+                } else {
+                    val labeler = labelers.value.firstOrNull { it.did == prefLabel.labelerDid }
+                    val labelDef = labeler?.policies?.firstOrNull { it.identifier == prefLabel.label }
+                    if (labeler != null && labelDef != null) {
+                        val behaviours = when (labelDef.whatToHide) {
+                            LabelScope.Content -> ModBehaviours(
+                                account = ModBehaviour(
+                                    contentList = LabelAction.Blur,
+                                    contentView = LabelAction.Blur,
+                                ),
+                                profile = ModBehaviour(
+                                    contentList = LabelAction.Blur,
+                                    contentView = LabelAction.Blur,
+                                ),
+                                content = ModBehaviour(
+                                    contentList = LabelAction.Blur,
+                                    contentView = LabelAction.Blur,
+                                ),
+                            )
+                            LabelScope.Media -> BlurAllMedia
+                            LabelScope.None -> ModBehaviours(
+                                NoopBehaviour,
+                                NoopBehaviour,
+                                NoopBehaviour,
+                            )
+                        }
+                        val interpreted = InterpretedLabelDefinition(
+                            labelDef.identifier,
+                            true,
+                            labelDef.severity,
+                            labelDef.whatToHide,
+                            labelDef.defaultSetting,
+                            persistentListOf(LabelValueDefFlag.Adult),
+                            behaviours,
+                            localizedName = labelDef.localizedName,
+                            localizedDescription = labelDef.localizedDescription,
+                        )
+                        val cause = LabelCause.Label(
+                            LabelSource.Labeler(labeler),
+                            labels.first { it.value == prefLabel.label },
+                            interpreted,
+                            LabelTarget.Content,
+                            prefLabel.visibility.toLabelSetting(),
+                            interpreted.behaviours.content,
+                            noOverride = false,
+                            priority = 5,
+                            downgraded = false,
+                        )
+                        causes.add(cause)
+                        definitionCache[prefLabel.label] = interpreted
+                    }
+                }
+            }
+        }
+        causes.sortByDescending { it.priority }
+        causes.fastForEach { cause ->
+            // TODO: handle stuff from lists and so on
+            when (cause) {
+                is LabelCause.Blocking -> {
+                    result.add(ContentHandling(
+                        scope = LabelScope.Content,
+                        action = LabelAction.Blur,
+                        source = LabelDescription.Blocking,
+                        id = "blocking",
+                        icon = Icons.Default.Info,
+                    ))
+                }
+                is LabelCause.BlockedBy -> {
+                    result.add(ContentHandling(
+                        scope = LabelScope.Content,
+                        action = LabelAction.Blur,
+                        source = LabelDescription.BlockedBy,
+                        id = "blocked-by",
+                        icon = Icons.Default.Info,
+                    ))
+                }
+                is LabelCause.BlockOther -> {
+                    result.add(ContentHandling(
+                        scope = LabelScope.Content,
+                        action = LabelAction.Blur,
+                        source = LabelDescription.OtherBlocked,
+                        id = "blocked-other",
+                        icon = Icons.Default.Info,
+                    ))
+                }
+                is LabelCause.Muted -> {
+
+                    result.add(ContentHandling(
+                        scope = LabelScope.Content,
+                        action = LabelAction.Blur,
+                        source = LabelDescription.YouMuted,
+                        id = "muted",
+                        icon = Icons.Default.Info,
+                    ))
+                }
+                is LabelCause.MutedWord -> {
+                    result.add(
+                        ContentHandling(
+                            scope = LabelScope.Content,
+                            action = LabelAction.Blur,
+                            source = LabelDescription.MutedWord("Some word"),
+                            id = "muted-word",
+                            icon = Icons.Default.Info,
+                        )
+                    )
+                }
+                is LabelCause.Label -> {
+                    val handling = cause.labelDef.toContentHandling(cause.target)
+                    result.add(handling)
+                }
+                is LabelCause.Hidden -> {
+                    result.add(Hide.toContentHandling(LabelTarget.Content))
+                }
+            }
+        }
+
+        return result.toImmutableList()
+    }
 
 }

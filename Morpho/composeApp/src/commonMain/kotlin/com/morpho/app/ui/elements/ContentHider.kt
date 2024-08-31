@@ -13,9 +13,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastFilter
-import androidx.compose.ui.util.fastFirstOrNull
-import androidx.compose.ui.util.fastFlatMap
-import com.morpho.app.model.bluesky.*
+import com.morpho.app.model.bluesky.LabelAction
+import com.morpho.app.model.bluesky.LabelScope
+import com.morpho.app.model.bluesky.LabelTarget
+import com.morpho.app.model.uidata.ContentHandling
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
@@ -23,34 +24,29 @@ import kotlinx.collections.immutable.toImmutableList
 
 @Composable
 public fun ColumnScope.ContentHider(
-    reasons: ImmutableList<DescribedBehaviours> = persistentListOf(),
+    reasons: ImmutableList<ContentHandling> = persistentListOf(),
     scope: LabelScope = LabelScope.None,
     target: LabelTarget = LabelTarget.Content,
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit,
 ) {
-    val scopedBehaviours: ImmutableList<DescribedAction> = reasons.fastFlatMap {
-        it.describeAction(scope, target)
-    }.toImmutableList()
+    val scopedBehaviours: ImmutableList<ContentHandling> = reasons.filter { it.scope == scope }.toImmutableList()
     val toHide = scopedBehaviours.fastFilter { it.action == LabelAction.Blur || it.action == LabelAction.Alert }
     var hideContent by remember { mutableStateOf(
         toHide.isNotEmpty()
     ) }
-    val reasonText = scopedBehaviours.fastFirstOrNull {
-        it.action == LabelAction.Alert || it.action == LabelAction.Blur || it.action == LabelAction.Inform
-    }?.label ?: ""
+    val reason = toHide.firstOrNull()
     if (toHide.isNotEmpty()) {
         TextButton(
             onClick = { hideContent = !hideContent },
             modifier = Modifier.fillMaxWidth()
         ) {
             Icon(
-                imageVector = Icons.Default.Info,
+                imageVector = reason?.icon ?: Icons.Default.Info,
                 contentDescription = null
             )
             Text(
-                text = reasonText,
-
+                text = reason?.source?.name ?: "",
                 )
             Spacer(modifier = Modifier
                 .width(1.dp)

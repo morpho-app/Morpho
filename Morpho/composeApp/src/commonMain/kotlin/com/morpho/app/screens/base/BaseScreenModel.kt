@@ -5,6 +5,7 @@ import cafe.adriel.voyager.core.model.screenModelScope
 import com.morpho.app.data.PreferencesRepository
 import com.morpho.app.model.bluesky.BskyPost
 import com.morpho.app.model.uidata.BskyNotificationService
+import com.morpho.app.model.uidata.ContentLabelService
 import com.morpho.butterfly.AtUri
 import com.morpho.butterfly.Butterfly
 import com.morpho.butterfly.model.RecordType
@@ -21,6 +22,7 @@ open class BaseScreenModel : ScreenModel, KoinComponent {
     val api: Butterfly by inject()
     val preferences: PreferencesRepository by inject()
     val notifService: BskyNotificationService by inject()
+    val labelServicee: ContentLabelService by inject()
 
     val isLoggedIn: Boolean
         get() = api.isLoggedIn()

@@ -23,12 +23,15 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import com.atproto.repo.StrongRef
 import com.morpho.app.model.bluesky.*
+import com.morpho.app.model.uidata.ContentHandling
+import com.morpho.app.model.uidata.LabelDescription
 import com.morpho.app.ui.elements.*
 import com.morpho.app.util.openBrowser
 import com.morpho.butterfly.AtIdentifier
 import com.morpho.butterfly.AtUri
 import com.morpho.butterfly.model.RecordType
 import kotlinx.collections.immutable.persistentListOf
+import kotlinx.collections.immutable.toImmutableList
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
@@ -49,7 +52,13 @@ fun FullPostFragment(
     ) {
     val postDate = remember { post.createdAt.instant.toLocalDateTime(TimeZone.currentSystemDefault()).date }
     var menuExpanded by remember { mutableStateOf(false) }
-    val maybeMuted = remember { if (post.author.mutedByMe) MutePersonDescribed else NoDescribed }
+    val maybeMuted = remember { if (post.author.mutedByMe) ContentHandling(
+        id = "muted",
+        scope = LabelScope.Content,
+        icon = Icons.Default.MoreHoriz,
+        action = LabelAction.Blur,
+        source = LabelDescription.YouMuted,
+    ) else null }
 
 
     WrappedColumn(
@@ -60,7 +69,7 @@ fun FullPostFragment(
             .padding(start = 6.dp, end = 6.dp)
     ) {
         ContentHider(
-            reasons = persistentListOf(maybeMuted),
+            reasons = persistentListOf(maybeMuted).filterNotNull().toImmutableList(),
             scope = LabelScope.Content,
             target = LabelTarget.Content,
         ) {

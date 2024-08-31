@@ -4,14 +4,17 @@ package com.morpho.app.model.bluesky
 
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.text.intl.Locale
-import androidx.compose.ui.util.fastMap
+import app.bsky.actor.Visibility
 import com.atproto.label.*
 import com.morpho.app.model.uidata.Moment
 import com.morpho.butterfly.AtUri
 import com.morpho.butterfly.Cid
 import com.morpho.butterfly.Did
 import com.morpho.butterfly.Language
-import kotlinx.collections.immutable.*
+import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.ImmutableMap
+import kotlinx.collections.immutable.persistentListOf
+import kotlinx.collections.immutable.toImmutableMap
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -65,6 +68,24 @@ data class BskyLabel @OptIn(ExperimentalSerializationApi::class) constructor(
         result = 31 * result + (expirationTimestamp?.hashCode() ?: 0)
         result = 31 * result + (signature?.contentHashCode() ?: 0)
         return result
+    }
+
+    fun getLabelValue(): LabelValue? {
+        return when (value) {
+            LabelValue.PORN.value -> LabelValue.PORN
+            LabelValue.GORE.value -> LabelValue.GORE
+            LabelValue.NSFL.value -> LabelValue.NSFL
+            LabelValue.SEXUAL.value -> LabelValue.SEXUAL
+            LabelValue.GRAPHIC_MEDIA.value -> LabelValue.GRAPHIC_MEDIA
+            LabelValue.NUDITY.value -> LabelValue.NUDITY
+            LabelValue.DOXXING.value -> LabelValue.DOXXING
+            LabelValue.DMCA_VIOLATION.value -> LabelValue.DMCA_VIOLATION
+            LabelValue.NO_PROMOTE.value -> LabelValue.NO_PROMOTE
+            LabelValue.NO_UNAUTHENTICATED.value -> LabelValue.NO_UNAUTHENTICATED
+            LabelValue.WARN.value -> LabelValue.WARN
+            LabelValue.HIDE.value -> LabelValue.HIDE
+            else -> null
+        }
     }
 }
 
@@ -191,39 +212,9 @@ open class DescribedBehaviours(
     val label: String,
     val description: String,
 ){
-    fun describeAction(scope: LabelScope, target: LabelTarget) : ImmutableList<DescribedAction> {
-        return behaviours.forScope(scope, target).fastMap { DescribedAction(it, label, description) }.toImmutableList()
-    }
+
 }
 
-@Immutable
-@Serializable
-data class DescribedAction(
-    val action: LabelAction,
-    val label: String,
-    val description: String,
-)
-
-data object MutePersonDescribed: DescribedBehaviours(
-    behaviours = ModBehaviours(
-        account = MuteBehaviour,
-        profile = MuteBehaviour,
-        content = MuteBehaviour,
-    ),
-    label = "Mute",
-    description = "You have muted this person",
-)
-
-
-data object NoDescribed: DescribedBehaviours(
-    behaviours = ModBehaviours(
-        account = NoopBehaviour,
-        profile = NoopBehaviour,
-        content = NoopBehaviour,
-    ),
-    label = "No",
-    description = "No action taken",
-)
 
 @Serializable
 data object BlockBehaviour: ModBehaviour(
@@ -251,6 +242,38 @@ data object HideBehaviour: ModBehaviour(
     contentList = LabelAction.Blur,
     contentView = LabelAction.Blur,
 )
+
+data object InappropriateMediaBehaviour: ModBehaviour(
+    contentMedia = LabelAction.Blur,
+)
+
+data object InappropriateAvatarBehaviour: ModBehaviour(
+    avatar = LabelAction.Blur,
+)
+
+data object InappropriateBannerBehaviour: ModBehaviour(
+    banner = LabelAction.Blur,
+)
+
+data object InappropriateDisplayNameBehaviour: ModBehaviour(
+    displayName = LabelAction.Blur,
+)
+
+val BlurAllMedia = ModBehaviours(
+    content = InappropriateMediaBehaviour,
+    profile = ModBehaviour(
+        avatar = LabelAction.Blur,
+        banner = LabelAction.Blur,
+        contentMedia = LabelAction.Blur,
+    ),
+    account = ModBehaviour(
+        avatar = LabelAction.Blur,
+        banner = LabelAction.Blur,
+        contentMedia = LabelAction.Blur,
+    ),
+)
+
+
 
 data object NoopBehaviour: ModBehaviour()
 
@@ -281,6 +304,16 @@ fun DefaultSetting.toLabelSetting(): LabelSetting {
 
 }
 
+fun Visibility.toLabelSetting(): LabelSetting {
+    return when (this) {
+        Visibility.SHOW -> LabelSetting.IGNORE
+        Visibility.WARN -> LabelSetting.WARN
+        Visibility.HIDE -> LabelSetting.HIDE
+        Visibility.IGNORE -> LabelSetting.IGNORE
+    }
+
+}
+
 @Serializable
 @Immutable
 data class BskyLabelDefinition(
@@ -292,7 +325,16 @@ data class BskyLabelDefinition(
     val localizedName: String,
     val localizedDescription: String,
     val allDescriptions: ImmutableMap<Language, LocalizedLabelDescription>
-)
+) {
+    fun getVisibility(): Visibility {
+        return when(defaultSetting)  {
+            LabelSetting.IGNORE -> Visibility.SHOW
+            LabelSetting.WARN -> Visibility.WARN
+            LabelSetting.HIDE -> Visibility.HIDE
+            null -> Visibility.IGNORE
+        }
+    }
+}
 
 
 fun LabelValueDefinition.toModLabelDef() :BskyLabelDefinition {

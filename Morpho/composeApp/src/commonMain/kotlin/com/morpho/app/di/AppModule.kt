@@ -3,6 +3,7 @@ package com.morpho.app.di
 import com.morpho.app.data.PreferencesRepository
 import com.morpho.app.model.uidata.BskyDataService
 import com.morpho.app.model.uidata.BskyNotificationService
+import com.morpho.app.model.uidata.ContentLabelService
 import com.morpho.app.screens.base.BaseScreenModel
 import com.morpho.app.screens.login.LoginScreenModel
 import com.morpho.app.screens.main.MainScreenModel
@@ -43,7 +44,7 @@ val dataModule = module {
     single { Butterfly() }
     single { BskyDataService() }
     single { BskyNotificationService() }
-    single {}
+    single { ContentLabelService() }
 }
 
 @Suppress("MemberVisibilityCanBePrivate")

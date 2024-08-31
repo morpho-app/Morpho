@@ -1,6 +1,7 @@
 package com.morpho.app.model.uidata
 
 //import com.rickclephas.kmp.nativecoroutines.NativeCoroutines
+import androidx.compose.ui.util.fastFirstOrNull
 import app.bsky.actor.GetProfilesQuery
 import app.bsky.feed.*
 import app.bsky.graph.GetFollowersQuery
@@ -12,7 +13,9 @@ import com.atproto.repo.GetRecordQuery
 import com.atproto.repo.StrongRef
 import com.morpho.app.di.UpdateTick
 import com.morpho.app.model.bluesky.*
+import com.morpho.app.model.bluesky.MorphoDataFeed.Companion.filterByContentLabel
 import com.morpho.app.model.bluesky.MorphoDataFeed.Companion.filterByPrefs
+import com.morpho.app.model.bluesky.MorphoDataFeed.Companion.filterbyLanguage
 import com.morpho.app.model.uistate.ContentCardState
 import com.morpho.app.model.uistate.ContentLoadingState
 import com.morpho.app.model.uistate.FeedType
@@ -126,7 +129,20 @@ class BskyDataService: KoinComponent {
     private val _dataFlows = mutableMapOf<AtUri, MutableStateFlow<MorphoData<MorphoDataItem>>>()
 
     private val mutex = Mutex()
-    private var timelineTuners = persistentListOf<TunerFunction>()
+    private var timelineTuners = persistentListOf<TunerFunction>(
+        { posts -> filterByContentLabel(posts, contentLabelService.labelsToHide.value) },
+        { posts -> filterbyLanguage(posts, languages.value) },
+    )
+    private val contentLabelService by inject<ContentLabelService>()
+    private val languages: StateFlow<List<Language>> = contentLabelService.preferences.prefs
+        .distinctUntilChanged().map { preferencesList ->
+        preferencesList?.fastFirstOrNull {
+            it.user.userDid == api.atpUser?.id?.toString()
+        }?.preferences?.languages?: persistentListOf(Language("en"))   } .stateIn(
+        serviceScope,
+        SharingStarted.WhileSubscribed(100),
+        persistentListOf(Language("en"))
+    )
 
 
     // Secondary way to make sure you have the most recent stuff, in case you lose the original reference
@@ -149,7 +165,7 @@ class BskyDataService: KoinComponent {
         when(data.feedType) {
             FeedType.HOME -> {
                 try {
-                    val query = Json.decodeFromJsonElement<GetTimelineQuery>(data.query).copy(cursor = cursor)
+                    val query = json.decodeFromJsonElement<GetTimelineQuery>(data.query).copy(cursor = cursor)
                     api.api.getTimeline(query).onSuccess { response ->
 
                         val newPosts = MorphoDataFeed
@@ -176,7 +192,7 @@ class BskyDataService: KoinComponent {
             }
             FeedType.PROFILE_POSTS -> {
                 try {
-                    val query = Json.decodeFromJsonElement<GetAuthorFeedQuery>(data.query).copy(cursor = cursor)
+                    val query = json.decodeFromJsonElement<GetAuthorFeedQuery>(data.query).copy(cursor = cursor)
                     api.api.getAuthorFeed(query).onSuccess { response ->
                         val newPosts = MorphoDataFeed
                             .collectThreads(api, response.cursor, response.feed.toBskyPostList()).last()
@@ -226,7 +242,7 @@ class BskyDataService: KoinComponent {
             }
             FeedType.PROFILE_MEDIA -> {
                 try {
-                    val query = Json.decodeFromJsonElement<GetAuthorFeedQuery>(data.query).copy(cursor = cursor)
+                    val query = json.decodeFromJsonElement<GetAuthorFeedQuery>(data.query).copy(cursor = cursor)
                     api.api.getAuthorFeed(query).onSuccess { response ->
                         val newPosts = MorphoDataFeed
                             .collectThreads(api, response.cursor, response.feed.toBskyPostList()).last()
@@ -251,7 +267,7 @@ class BskyDataService: KoinComponent {
             }
             FeedType.PROFILE_LIKES -> {
                 try {
-                    val query = Json.decodeFromJsonElement<GetActorLikesQuery>(data.query).copy(cursor = cursor)
+                    val query = json.decodeFromJsonElement<GetActorLikesQuery>(data.query).copy(cursor = cursor)
                     api.api.getActorLikes(query).onSuccess { response ->
                         val newPosts = MorphoDataFeed
                             .collectThreads(api, response.cursor, response.feed.toBskyPostList()).last()
@@ -276,7 +292,7 @@ class BskyDataService: KoinComponent {
             }
             FeedType.PROFILE_USER_LISTS -> {
                 try {
-                    val query = Json.decodeFromJsonElement<GetListsQuery>(data.query).copy(cursor = cursor)
+                    val query = json.decodeFromJsonElement<GetListsQuery>(data.query).copy(cursor = cursor)
                     api.api.getLists(query).onSuccess { response ->
                         val newData = if (cursor != null && data.items.isNotEmpty()) {
                             MorphoData.concat(data, response.lists.mapImmutable { MorphoDataItem.ListInfo(it.toList()) })
@@ -298,7 +314,7 @@ class BskyDataService: KoinComponent {
             }
             FeedType.PROFILE_MOD_SERVICE -> {
                 try {
-                    val query = Json.decodeFromJsonElement<GetServicesQuery>(data.query)
+                    val query = json.decodeFromJsonElement<GetServicesQuery>(data.query)
                     api.api.getServices(query).onSuccess { response ->
                         val newData = if (cursor != null && data.items.isNotEmpty()) {
                             MorphoData.concat(data, response.views.mapImmutable {
@@ -341,7 +357,7 @@ class BskyDataService: KoinComponent {
             }
             FeedType.PROFILE_FEEDS_LIST -> {
                 try {
-                    val query = Json.decodeFromJsonElement<GetActorFeedsQuery>(data.query).copy(cursor = cursor)
+                    val query = json.decodeFromJsonElement<GetActorFeedsQuery>(data.query).copy(cursor = cursor)
                     api.api.getActorFeeds(query).onSuccess { response ->
                         val newData = if (cursor != null && data.items.isNotEmpty()) {
                             MorphoData.concat(data, response.feeds.mapImmutable { MorphoDataItem.FeedInfo(it.toFeedGenerator()) })
@@ -363,7 +379,7 @@ class BskyDataService: KoinComponent {
             }
             FeedType.OTHER -> {
                 try {
-                    val query = Json.decodeFromJsonElement<GetFeedQuery>(data.query).copy(cursor = cursor)
+                    val query = json.decodeFromJsonElement<GetFeedQuery>(data.query).copy(cursor = cursor)
                     api.api.getFeed(query).onSuccess { response ->
                         val tuners = persistentListOf<TunerFunction>()
 

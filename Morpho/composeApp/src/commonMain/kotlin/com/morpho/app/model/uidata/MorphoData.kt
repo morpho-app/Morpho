@@ -5,7 +5,6 @@ import androidx.compose.ui.util.fastAny
 import com.morpho.app.model.bluesky.MorphoDataFeed
 import com.morpho.app.model.bluesky.MorphoDataItem
 import com.morpho.app.model.uistate.FeedType
-import com.morpho.app.util.validDid
 import com.morpho.butterfly.*
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
@@ -170,7 +169,3 @@ fun AtUri.id(api:Butterfly): AtIdentifier {
         if (idString.contains("did:")) Did(idString) else Handle(idString)
     }
 }
-
-val PROFILE_FEEDS_URI = Regex("at://app.morpho/(me|${validDid})/profile.feeds")
-val PROFILE_LISTS_URI = Regex("at://app.morpho/(me|${validDid})/profile.lists")
-val PROFILE_LABELS_URI = Regex("at://app.morpho/(me|${validDid})/profile.labels")

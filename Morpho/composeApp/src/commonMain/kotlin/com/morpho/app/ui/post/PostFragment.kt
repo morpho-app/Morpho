@@ -9,6 +9,7 @@ import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Reply
+import androidx.compose.material.icons.filled.MoreHoriz
 import androidx.compose.material.icons.filled.Repeat
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -23,6 +24,8 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import com.atproto.repo.StrongRef
 import com.morpho.app.model.bluesky.*
+import com.morpho.app.model.uidata.ContentHandling
+import com.morpho.app.model.uidata.LabelDescription
 import com.morpho.app.ui.common.OnPostClicked
 import com.morpho.app.ui.elements.*
 import com.morpho.app.ui.lists.FeedListEntryFragment
@@ -32,6 +35,7 @@ import com.morpho.butterfly.AtIdentifier
 import com.morpho.butterfly.AtUri
 import com.morpho.butterfly.model.RecordType
 import kotlinx.collections.immutable.persistentListOf
+import kotlinx.collections.immutable.toImmutableList
 import morpho.app.ui.utils.indentLevel
 import morpho.composeapp.generated.resources.Res
 import morpho.composeapp.generated.resources.replyIndicator
@@ -111,7 +115,13 @@ fun PostFragment(
             MaterialTheme.colorScheme.surfaceColorAtElevation(if (elevate || indentLevel > 0) 2.dp else 0.dp)
         }
 
-        val maybeMuted = remember { if (post.author.mutedByMe) MutePersonDescribed else NoDescribed }
+        val maybeMuted = remember { if (post.author.mutedByMe) ContentHandling(
+            scope = LabelScope.Content,
+            id = "muted",
+            icon = Icons.Default.MoreHoriz,
+            action = LabelAction.Blur,
+            source = LabelDescription.YouMuted,
+        ) else null }
 
         Surface (
             shadowElevation = if (elevate || indentLevel > 0) 1.dp else 0.dp,
@@ -124,7 +134,7 @@ fun PostFragment(
 
         ) {
             ContentHider(
-                reasons = persistentListOf(maybeMuted),
+                reasons = persistentListOf(maybeMuted).filterNotNull().toImmutableList(),
                 scope = LabelScope.Content,
                 target = LabelTarget.Content,
             ) {
@@ -360,8 +370,10 @@ inline fun ColumnScope.PostFeatureElement(
             )
         }
         is BskyPostFeature.VideoFeature -> {
-            Text(text = "This would be a video embed")
-            Text("Alt text: ${feature.alt}")
+            VideoEmbedThumb(
+                video = feature,
+                modifier = Modifier.align(Alignment.CenterHorizontally)
+            )
         }
         null -> {}
 
@@ -395,8 +407,10 @@ inline fun ColumnScope.RecordFeature(
                 }
             }
             is BskyPostFeature.VideoFeature -> {
-                Text(text = "This would be a video embed")
-                Text("Alt text: ${media.alt}")
+                VideoEmbedThumb(
+                    video = media,
+                    modifier = Modifier.align(Alignment.CenterHorizontally)
+                )
             }
             else -> {Text(text = "Record Feature not supported")}
         }

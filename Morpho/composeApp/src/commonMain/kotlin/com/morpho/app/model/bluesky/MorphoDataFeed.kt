@@ -2,6 +2,7 @@ package com.morpho.app.model.bluesky
 
 //import com.rickclephas.kmp.nativecoroutines.NativeCoroutines
 import androidx.compose.ui.util.*
+import app.bsky.actor.ContentLabelPref
 import app.bsky.feed.FeedViewPost
 import app.bsky.feed.GetPostThreadQuery
 import app.bsky.feed.GetPostThreadResponseThreadUnion
@@ -319,10 +320,12 @@ data class MorphoDataFeed<T: MorphoDataItem> (
                             && (!prefs.hideRepliesByUnfollowed && isFollowingAllAuthors(post, follows)) )
                         || (post.reply == null && !isQuotePost(post) && post.reason == null)
             }
-            //feed = filterbyLanguage(feed, prefs.languages)
-            //feed = filterByContentLabel(feed, prefs.labelsToHide)
+            feed = filterbyLanguage(feed, prefs.languages)
+            feed = filterByContentLabel(feed, prefs.labelsToHide)
             return feed
         }
+
+
 
         fun filterbyLanguage(
             posts: List<BskyPost>,
@@ -333,9 +336,9 @@ data class MorphoDataFeed<T: MorphoDataItem> (
 
         fun filterByContentLabel(
             posts: List<BskyPost>,
-            toHide: List<BskyLabel> = persistentListOf(),
+            toHide: List<ContentLabelPref> = persistentListOf(),
         ): List<BskyPost> {
-            return posts.fastFilter { post -> post.labels.none { toHide.contains(it) } }
+            return posts.fastFilter { post -> post.labels.none { label -> toHide.fastAny { it.label == label.value } } }
         }
 
         fun filterBy(did: Did, posts: List<BskyPost>): List<BskyPost> {

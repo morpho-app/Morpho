@@ -17,9 +17,9 @@ sealed interface BskyPostFeature {
         val images: ImmutableList<EmbedImage>,
     ) : BskyPostFeature, TimelinePostMedia
 
+    @Serializable
     data class VideoFeature(
         val video: VideoEmbed,
-
         val alt: String,
         val aspectRatio: AspectRatio?,
     ) : BskyPostFeature, TimelinePostMedia

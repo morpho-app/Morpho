@@ -11,9 +11,10 @@ import com.morpho.butterfly.Language
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
+import kotlinx.datetime.Clock
 import kotlinx.serialization.Serializable
 
-
+@Serializable
 enum class PostType {
     BlockedThread,
     NotFoundThread,
@@ -33,6 +34,7 @@ data class BskyPost (
     @Serializable
     val tags: List<String> = persistentListOf(),
     val createdAt: Moment,
+    @Serializable
     val feature: BskyPostFeature? = null,
     val replyCount: Long,
     val repostCount: Long,
@@ -152,7 +154,17 @@ fun PostView.toPost(
     reason: BskyPostReason?,
 ): BskyPost {
     // TODO verify via recordType before blindly deserialized.
-    val postRecord = Post.serializer().deserialize(record)
+    val postRecord = try {
+        Post.serializer().deserialize(record)
+    } catch (e: Exception) {
+        Post(
+            text = "Error deserializing post",
+            facets = persistentListOf(),
+            tags = persistentListOf(),
+            createdAt = Clock.System.now(),
+            langs = persistentListOf(),
+        )
+    }
 
     return BskyPost(
         uri = uri,
