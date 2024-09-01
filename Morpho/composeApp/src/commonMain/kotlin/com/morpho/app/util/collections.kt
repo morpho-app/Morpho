@@ -1,17 +1,20 @@
 package com.morpho.app.util
 
-import kotlinx.collections.immutable.ImmutableList
+import com.morpho.butterfly.model.ReadOnlyList
 import kotlinx.collections.immutable.toImmutableList
 
-inline fun <T, R> Iterable<T>.mapImmutable(transform: (T) -> R): ImmutableList<R> {
+inline fun <T, R> Iterable<T>.mapImmutable(transform: (T) -> R): ReadOnlyList<R> {
     return map { transform(it) }.toImmutableList()
 }
 
-inline fun <T, R> Iterable<T>.flatMapImmutable(transform: (T) -> Iterable<R>): ImmutableList<R> {
+inline fun <T, R> Iterable<T>.flatMapImmutable(transform: (T) -> Iterable<R>): ReadOnlyList<R> {
     return flatMap { transform(it) }.toImmutableList()
 }
 
-fun <T> ImmutableList<T>.plus(iterable: Iterable<T>): ImmutableList<T> {
+fun <T> ReadOnlyList<T>.plus(iterable: Iterable<T>): ReadOnlyList<T> {
     return (this + iterable).toImmutableList()
 }
+
+
+
 

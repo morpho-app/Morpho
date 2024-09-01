@@ -2,11 +2,15 @@ import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
-    alias(libs.plugins.androidApplication)
     alias(libs.plugins.jetbrainsCompose)
     alias(libs.plugins.kotlinxSerialization)
     alias(libs.plugins.kspPlugin)
     alias(libs.plugins.kotlinxAbiPlugin)
+    alias(libs.plugins.compose.compiler)
+
+    alias(libs.plugins.androidApplication)
+    id("kotlin-parcelize")
+
     //id("com.rickclephas.kmp.nativecoroutines") version "1.0.0-ALPHA-27"
 }
 
@@ -105,6 +109,8 @@ kotlin {
             implementation(libs.kotlinx.immutable)
             implementation(libs.kotlinx.serialization.cbor)
             implementation(libs.kotlinx.serialization.json)
+
+
             implementation(kotlin("reflect"))
 
             api(libs.logging)
@@ -120,7 +126,7 @@ kotlin {
             implementation(libs.koin.annotations)
             implementation(libs.koin.compose)
 
-            //api(libs.kmm.viewmodel.core)
+
 
             // Ktor networking
             implementation(libs.okio)
@@ -149,6 +155,7 @@ kotlin {
             implementation(libs.ktor.logging)
             implementation(libs.slf4j.api)
             //implementation(libs.slf4j.simple)
+
         }
         desktopMain.dependencies {
             implementation(compose.desktop.currentOs)
@@ -207,6 +214,7 @@ android {
     }
     buildFeatures {
         compose = true
+        viewBinding = true
     }
 
     composeOptions {
@@ -238,6 +246,7 @@ compose.desktop {
 }
 
 dependencies {
+
     add("kspCommonMainMetadata", libs.koin.ksp.compiler) // Run KSP on [commonMain] code
     add("kspAndroid", libs.koin.ksp.compiler)
     //add("kspIosX64", libs.koin.ksp.compiler)

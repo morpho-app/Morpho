@@ -11,11 +11,8 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.IntOffset
@@ -40,8 +37,6 @@ import com.morpho.app.ui.common.TabbedScreenScaffold
 import com.morpho.app.ui.common.TabbedSkylineFragment
 import com.morpho.app.ui.elements.AvatarShape
 import com.morpho.app.ui.elements.OutlinedAvatar
-import kotlinx.collections.immutable.ImmutableList
-import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.flow.StateFlow
 import org.jetbrains.compose.resources.ExperimentalResourceApi
 import kotlin.math.max
@@ -85,9 +80,9 @@ fun TabScreen.TabbedHomeView() {
                     }
                 }
             )
-        }.toImmutableList()
+        }
     }
-    val tabsCreated = rememberSaveable(tabs.size, sm.uiState.loadingState) {
+    val tabsCreated = remember(tabs.size, sm.uiState.loadingState) {
         tabs.isNotEmpty() && sm.uiState.loadingState == UiLoadingState.Idle
     }
     if (tabsCreated) {
@@ -153,7 +148,7 @@ fun SlideTabTransition(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeTabRow(
-    tabs: ImmutableList<HomeSkylineTab>,
+    tabs: List<HomeSkylineTab>,
     modifier: Modifier = Modifier,
     tabIndex: Int = 0,
     onChanged: (Int) -> Unit = {},

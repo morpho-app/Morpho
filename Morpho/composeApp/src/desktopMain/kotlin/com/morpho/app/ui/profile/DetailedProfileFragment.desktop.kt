@@ -30,6 +30,7 @@ import com.morpho.app.model.bluesky.DetailedProfile
 import com.morpho.app.ui.elements.AvatarShape
 import com.morpho.app.ui.elements.OutlinedAvatar
 import com.morpho.app.ui.elements.RichTextElement
+import kotlinx.collections.immutable.toImmutableList
 import morpho.composeapp.generated.resources.Res
 import morpho.composeapp.generated.resources.test_banner
 import org.jetbrains.compose.resources.ExperimentalResourceApi
@@ -97,7 +98,7 @@ actual fun DetailedProfileFragment(
         )
         if(!collapsed){
             ProfileLabels(
-                labels = profile.labels,
+                labels = profile.labels.toImmutableList(),
                 modifier = Modifier
                     .constrainAs(labels) {
                         top.linkTo(anchor = parent.top, margin = 12.dp)

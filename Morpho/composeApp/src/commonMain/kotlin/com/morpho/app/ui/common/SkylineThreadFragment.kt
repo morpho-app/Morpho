@@ -15,6 +15,7 @@ import com.atproto.repo.StrongRef
 import com.morpho.app.model.bluesky.BskyPost
 import com.morpho.app.model.bluesky.BskyPostThread
 import com.morpho.app.model.bluesky.ThreadPost
+import com.morpho.app.model.uidata.ContentHandling
 import com.morpho.app.ui.elements.MenuOptions
 import com.morpho.app.ui.post.PostFragment
 import com.morpho.app.ui.post.PostFragmentRole
@@ -35,6 +36,7 @@ inline fun SkylineThreadFragment(
     crossinline onLikeClicked: (StrongRef) -> Unit = { },
     noinline onMenuClicked: (MenuOptions, BskyPost) -> Unit = { _, _ -> },
     crossinline onUnClicked: (type: RecordType, uri: AtUri) -> Unit = { _, _ -> },
+    crossinline getContentHandling: (BskyPost) -> List<ContentHandling> = { listOf() }
 ) {
     val threadPost = remember { ThreadPost.ViewablePost(thread.post, thread.replies) }
     val hasReplies = rememberSaveable { threadPost.replies.isNotEmpty() }
@@ -70,6 +72,7 @@ inline fun SkylineThreadFragment(
                                 onReplyClicked = { onReplyClicked(it) },
                                 onMenuClicked = onMenuClicked,
                                 onLikeClicked = { onLikeClicked(it) },
+                                getContentHandling = { getContentHandling(it) }
                             )
                         }
                     } else {
@@ -96,6 +99,7 @@ inline fun SkylineThreadFragment(
                                         onReplyClicked = onReplyClicked,
                                         onLikeClicked = onLikeClicked,
                                         onMenuClicked = onMenuClicked,
+                                        getContentHandling = getContentHandling
                                     )
                                     Surface(
                                         tonalElevation = 2.dp,
@@ -159,6 +163,7 @@ inline fun SkylineThreadFragment(
                                                     onReplyClicked = onReplyClicked,
                                                     onLikeClicked = onLikeClicked,
                                                     onMenuClicked = onMenuClicked,
+                                                    getContentHandling = getContentHandling
                                                 )
                                             }
                                         }
@@ -175,6 +180,7 @@ inline fun SkylineThreadFragment(
                                         onReplyClicked = onReplyClicked,
                                         onLikeClicked = onLikeClicked,
                                         onMenuClicked = onMenuClicked,
+                                        getContentHandling = getContentHandling
                                     )
                                 } else {
                                     thread.parents.fastForEachIndexed { index, post ->
@@ -208,6 +214,7 @@ inline fun SkylineThreadFragment(
                                                 onReplyClicked = onReplyClicked,
                                                 onLikeClicked = onLikeClicked,
                                                 onMenuClicked = onMenuClicked,
+                                                getContentHandling = getContentHandling
                                             )
                                         }
                                     }
@@ -234,6 +241,7 @@ inline fun SkylineThreadFragment(
                                     onReplyClicked = onReplyClicked,
                                     onLikeClicked = onLikeClicked,
                                     onMenuClicked = onMenuClicked,
+                                    getContentHandling = getContentHandling
                                 )
                             }
                         }
@@ -264,6 +272,7 @@ inline fun SkylineThreadFragment(
                     onReplyClicked = onReplyClicked,
                     onLikeClicked = onLikeClicked,
                     onMenuClicked = onMenuClicked,
+                    getContentHandling = getContentHandling
                 )
             }
 
@@ -317,6 +326,7 @@ inline fun SkylineThreadFragment(
                                             onReplyClicked = { onReplyClicked(it) },
                                             onMenuClicked = { menu, p -> onMenuClicked(menu, p) },
                                             onLikeClicked = { onLikeClicked(it) },
+                                            getContentHandling = { getContentHandling(it) }
                                         )
                                     } else {
                                         ThreadItem(
@@ -331,6 +341,7 @@ inline fun SkylineThreadFragment(
                                             onReplyClicked = onReplyClicked,
                                             onLikeClicked = onLikeClicked,
                                             onMenuClicked = onMenuClicked,
+                                            getContentHandling = getContentHandling
                                         )
                                     }
                                 }

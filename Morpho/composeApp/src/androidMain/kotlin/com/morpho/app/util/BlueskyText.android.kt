@@ -5,9 +5,7 @@ import com.morpho.app.model.bluesky.BskyFacet
 import com.morpho.app.model.bluesky.FacetType
 import com.morpho.butterfly.Handle
 import com.morpho.butterfly.Uri
-import kotlinx.collections.immutable.ImmutableList
 import okio.ByteString.Companion.encodeUtf8
-import java.lang.StringBuilder
 
 actual fun makeBlueskyText(text: String): BlueskyText {
     val segments: MutableList<Pair<String, BskyFacet?>> = mutableListOf()
@@ -20,30 +18,36 @@ actual fun makeBlueskyText(text: String): BlueskyText {
         val group = match.groups[3]
         if (group != null) {
             val handle = group.value
-            match.groups[2]?.range?.let { segments += Pair("@$handle", BskyFacet(it.first, match.range.last, FacetType.UserHandleMention(
-                Handle(handle)
+            match.groups[2]?.range?.let { segments += Pair("@$handle", BskyFacet(it.first, match.range.last, listOf(
+                FacetType.UserHandleMention(
+                    Handle(handle)
+                )
             ))
             ) }
         }
     }
-    markdownLinkMatches.forEach {match: MatchResult ->
+    markdownLinkMatches.forEach {match ->
         val labelMatch = match.groups[1]
         val linkMatch = match.groups[2]
         if (labelMatch != null && linkMatch != null) {
-            segments += Pair(labelMatch.value, BskyFacet(labelMatch.range.first, labelMatch.range.last, FacetType.ExternalLink(
+            segments += Pair(labelMatch.value, BskyFacet(labelMatch.range.first, labelMatch.range.last, listOf(FacetType.ExternalLink(
                 Uri(linkMatch.value)
-            ))
+            )))
             )
         }
     }
-    bareLinkMatches.forEach { match: MatchResult ->
-        segments += Pair(match.value, BskyFacet(match.range.first, match.range.last, FacetType.ExternalLink(
-            Uri(match.value)
+    bareLinkMatches.forEach { match ->
+        segments += Pair(match.value, BskyFacet(match.range.first, match.range.last, listOf(
+            FacetType.ExternalLink(
+                Uri(match.value)
+            )
         ))
         )
     }
     val outString = StringBuilder(text.length)
-    if (segments.first().second?.start == 0) {
+    if (segments.isEmpty()) {
+        outString.append(text)
+    } else if (segments.first().second?.start == 0) {
         unmatchedText.forEachIndexed { index: Int, s:String ->
             outString.append(s)
             outString.append(segments[index].first)
@@ -70,5 +74,5 @@ actual fun makeBlueskyText(text: String): BlueskyText {
 
     }.filterNotNull()
 
-    return BlueskyText( outString.toString(), facets as ImmutableList<BskyFacet>)
+    return BlueskyText( outString.toString(), facets)
 }

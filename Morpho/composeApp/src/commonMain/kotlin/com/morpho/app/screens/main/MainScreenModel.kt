@@ -21,7 +21,9 @@ import com.morpho.app.model.uistate.FeedType
 import com.morpho.app.screens.base.BaseScreenModel
 import com.morpho.butterfly.AtIdentifier
 import com.morpho.butterfly.AtUri
-import kotlinx.collections.immutable.*
+import kotlinx.collections.immutable.ImmutableMap
+import kotlinx.collections.immutable.persistentListOf
+import kotlinx.collections.immutable.toImmutableMap
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.runBlocking
@@ -38,8 +40,8 @@ open class MainScreenModel: BaseScreenModel() {
     protected val _savedFeeds = mutableListOf<FeedGenerator>()
 
     protected val _feedStates = mutableListOf<StateFlow<ContentCardState.Skyline<MorphoDataItem.FeedItem>>>()
-    val feedStates: ImmutableList<StateFlow<ContentCardState.Skyline<MorphoDataItem.FeedItem>>>
-        get() = _feedStates.toImmutableList()
+    val feedStates: List<StateFlow<ContentCardState.Skyline<MorphoDataItem.FeedItem>>>
+        get() = _feedStates.toList()
     protected val _threadStates = mutableListOf<StateFlow<ContentCardState.PostThread>>()
     protected val _profileStates = mutableListOf<StateFlow<ContentCardState.FullProfile<Profile>>>()
     protected val _profileFeeds = mutableListOf<StateFlow<ContentCardState.ProfileTimeline<MorphoDataItem>>>()

@@ -20,6 +20,7 @@ import com.atproto.repo.StrongRef
 import com.morpho.app.model.bluesky.BskyPost
 import com.morpho.app.model.bluesky.MorphoDataItem
 import com.morpho.app.model.uidata.AtCursor
+import com.morpho.app.model.uidata.ContentHandling
 import com.morpho.app.model.uistate.ContentCardState
 import com.morpho.app.model.uistate.ContentLoadingState
 import com.morpho.app.ui.elements.MenuOptions
@@ -49,6 +50,7 @@ fun <T: MorphoDataItem> SkylineFragment (
     onLikeClicked: (StrongRef) -> Unit = { },
     onMenuClicked: (MenuOptions, BskyPost) -> Unit = { _, _ -> },
     onUnClicked: (type: RecordType, uri: AtUri) -> Unit = { _, _ -> },
+    getContentHandling: (BskyPost) -> List<ContentHandling> = { listOf() },
     contentPadding: PaddingValues = PaddingValues(0.dp),
     isProfileFeed: Boolean = false,
 ) {
@@ -215,6 +217,7 @@ fun <T: MorphoDataItem> SkylineFragment (
                             onReplyClicked = onReplyClicked,
                             onMenuClicked = onMenuClicked,
                             onLikeClicked = onLikeClicked,
+                            getContentHandling = getContentHandling,
                         )
                     }
                     is MorphoDataItem.Post -> {
@@ -231,6 +234,7 @@ fun <T: MorphoDataItem> SkylineFragment (
                             onReplyClicked = onReplyClicked,
                             onMenuClicked = onMenuClicked,
                             onLikeClicked = onLikeClicked,
+                            getContentHandling = getContentHandling,
                         )
                     }
 

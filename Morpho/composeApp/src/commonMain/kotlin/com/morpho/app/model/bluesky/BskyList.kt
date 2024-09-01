@@ -6,8 +6,7 @@ import app.bsky.graph.ListView
 import com.morpho.app.model.uidata.Moment
 import com.morpho.app.util.mapImmutable
 import com.morpho.butterfly.*
-import kotlinx.collections.immutable.ImmutableList
-import kotlinx.collections.immutable.persistentListOf
+import com.morpho.butterfly.model.ReadOnlyList
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.serialization.Serializable
 
@@ -20,13 +19,13 @@ data class BskyList(
     val name: String,
     val purpose: ListType,
     val description: String? = null,
-    val descriptionFacets: ImmutableList<BskyFacet> = persistentListOf(),
+    val descriptionFacets: List<BskyFacet> = listOf(),
     val avatar: String? = null,
     val viewerMuted: Boolean,
     val viewerBlocked: AtUri? = null,
     val indexedAt: Moment,
-    val labels: ImmutableList<BskyLabel> = persistentListOf(),
-    val listItems: ImmutableList<Profile> =  persistentListOf(),
+    val labels: List<BskyLabel> = listOf(),
+    val listItems: List<Profile> =  listOf(),
 ) {
     override operator fun equals(other: Any?) : Boolean {
         return when(other) {
@@ -58,7 +57,7 @@ data class BskyList(
     }
 }
 
-fun ImmutableList<Profile>.contains(other: Any?): Boolean {
+fun ReadOnlyList<Profile>.contains(other: Any?): Boolean {
     return when(other) {
         null            -> false
         is Did          -> this.any { it.did == other }

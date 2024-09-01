@@ -4,14 +4,16 @@ package com.morpho.app.model.bluesky
 
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.text.intl.Locale
-import androidx.compose.ui.util.fastMap
+import app.bsky.actor.Visibility
 import com.atproto.label.*
 import com.morpho.app.model.uidata.Moment
 import com.morpho.butterfly.AtUri
 import com.morpho.butterfly.Cid
 import com.morpho.butterfly.Did
 import com.morpho.butterfly.Language
-import kotlinx.collections.immutable.*
+import kotlinx.collections.immutable.ImmutableMap
+import kotlinx.collections.immutable.toImmutableMap
+import kotlinx.datetime.Clock
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -66,8 +68,27 @@ data class BskyLabel @OptIn(ExperimentalSerializationApi::class) constructor(
         result = 31 * result + (signature?.contentHashCode() ?: 0)
         return result
     }
+
+    fun getLabelValue(): LabelValue? {
+        return when (value) {
+            LabelValue.PORN.value -> LabelValue.PORN
+            LabelValue.GORE.value -> LabelValue.GORE
+            LabelValue.NSFL.value -> LabelValue.NSFL
+            LabelValue.SEXUAL.value -> LabelValue.SEXUAL
+            LabelValue.GRAPHIC_MEDIA.value -> LabelValue.GRAPHIC_MEDIA
+            LabelValue.NUDITY.value -> LabelValue.NUDITY
+            LabelValue.DOXXING.value -> LabelValue.DOXXING
+            LabelValue.DMCA_VIOLATION.value -> LabelValue.DMCA_VIOLATION
+            LabelValue.NO_PROMOTE.value -> LabelValue.NO_PROMOTE
+            LabelValue.NO_UNAUTHENTICATED.value -> LabelValue.NO_UNAUTHENTICATED
+            LabelValue.WARN.value -> LabelValue.WARN
+            LabelValue.HIDE.value -> LabelValue.HIDE
+            else -> null
+        }
+    }
 }
 
+@Serializable
 enum class LabelScope {
     Content,
     Media,
@@ -82,6 +103,7 @@ fun Blurs.toScope(): LabelScope {
     }
 }
 
+@Serializable
 enum class LabelAction {
     Blur,
     Alert,
@@ -89,6 +111,7 @@ enum class LabelAction {
     None
 }
 
+@Serializable
 enum class LabelTarget {
     Account,
     Profile,
@@ -151,31 +174,31 @@ data class ModBehaviours(
     val profile: ModBehaviour = ModBehaviour(),
     val content: ModBehaviour = ModBehaviour(),
 ) {
-    fun forScope(scope: LabelScope, target: LabelTarget): ImmutableList<LabelAction> {
+    fun forScope(scope: LabelScope, target: LabelTarget): List<LabelAction> {
         return when (target) {
             LabelTarget.Account -> when (scope) {
-                LabelScope.Content -> persistentListOf(
+                LabelScope.Content -> listOf(
                     account.contentList, account.contentView, account.avatar,
                     account.banner, account.profileList, account.profileView,
                     account.displayName
                 )
-                LabelScope.Media -> persistentListOf(account.contentMedia, account.avatar, account.banner)
-                LabelScope.None -> persistentListOf()
+                LabelScope.Media -> listOf(account.contentMedia, account.avatar, account.banner)
+                LabelScope.None -> listOf()
             }
             LabelTarget.Profile -> when (scope) {
-                LabelScope.Content -> persistentListOf(profile.contentList, profile.contentView, profile.displayName)
-                LabelScope.Media -> persistentListOf(profile.avatar, profile.banner, profile.contentMedia)
-                LabelScope.None -> persistentListOf()
+                LabelScope.Content -> listOf(profile.contentList, profile.contentView, profile.displayName)
+                LabelScope.Media -> listOf(profile.avatar, profile.banner, profile.contentMedia)
+                LabelScope.None -> listOf()
             }
             LabelTarget.Content -> when (scope) {
-                LabelScope.Content -> persistentListOf(content.contentList, content.contentView)
-                LabelScope.Media -> persistentListOf(
+                LabelScope.Content -> listOf(content.contentList, content.contentView)
+                LabelScope.Media -> listOf(
                     content.contentMedia,
                     content.avatar,
                     content.banner
                 )
 
-                LabelScope.None -> persistentListOf()
+                LabelScope.None -> listOf()
             }
         }
     }
@@ -188,38 +211,9 @@ open class DescribedBehaviours(
     val label: String,
     val description: String,
 ){
-    fun describeAction(scope: LabelScope, target: LabelTarget) : ImmutableList<DescribedAction> {
-        return behaviours.forScope(scope, target).fastMap { DescribedAction(it, label, description) }.toImmutableList()
-    }
+
 }
 
-@Immutable
-@Serializable
-data class DescribedAction(
-    val action: LabelAction,
-    val label: String,
-    val description: String,
-)
-
-data object MutePersonDescribed: DescribedBehaviours(
-    behaviours = ModBehaviours(
-        account = MuteBehaviour,
-        profile = MuteBehaviour,
-        content = MuteBehaviour,
-    ),
-    label = "Mute",
-    description = "You have muted this person",
-)
-
-data object NoDescribed: DescribedBehaviours(
-    behaviours = ModBehaviours(
-        account = NoopBehaviour,
-        profile = NoopBehaviour,
-        content = NoopBehaviour,
-    ),
-    label = "No",
-    description = "No action taken",
-)
 
 @Serializable
 data object BlockBehaviour: ModBehaviour(
@@ -248,8 +242,41 @@ data object HideBehaviour: ModBehaviour(
     contentView = LabelAction.Blur,
 )
 
+data object InappropriateMediaBehaviour: ModBehaviour(
+    contentMedia = LabelAction.Blur,
+)
+
+data object InappropriateAvatarBehaviour: ModBehaviour(
+    avatar = LabelAction.Blur,
+)
+
+data object InappropriateBannerBehaviour: ModBehaviour(
+    banner = LabelAction.Blur,
+)
+
+data object InappropriateDisplayNameBehaviour: ModBehaviour(
+    displayName = LabelAction.Blur,
+)
+
+val BlurAllMedia = ModBehaviours(
+    content = InappropriateMediaBehaviour,
+    profile = ModBehaviour(
+        avatar = LabelAction.Blur,
+        banner = LabelAction.Blur,
+        contentMedia = LabelAction.Blur,
+    ),
+    account = ModBehaviour(
+        avatar = LabelAction.Blur,
+        banner = LabelAction.Blur,
+        contentMedia = LabelAction.Blur,
+    ),
+)
+
+
+
 data object NoopBehaviour: ModBehaviour()
 
+@Serializable
 enum class LabelValueDefFlag {
     NoOverride,
     Adult,
@@ -257,6 +284,7 @@ enum class LabelValueDefFlag {
     NoSelf,
 }
 
+@Serializable
 enum class LabelSetting {
     @SerialName("ignore")
     IGNORE,
@@ -275,6 +303,16 @@ fun DefaultSetting.toLabelSetting(): LabelSetting {
 
 }
 
+fun Visibility.toLabelSetting(): LabelSetting {
+    return when (this) {
+        Visibility.SHOW -> LabelSetting.IGNORE
+        Visibility.WARN -> LabelSetting.WARN
+        Visibility.HIDE -> LabelSetting.HIDE
+        Visibility.IGNORE -> LabelSetting.IGNORE
+    }
+
+}
+
 @Serializable
 @Immutable
 data class BskyLabelDefinition(
@@ -286,7 +324,16 @@ data class BskyLabelDefinition(
     val localizedName: String,
     val localizedDescription: String,
     val allDescriptions: ImmutableMap<Language, LocalizedLabelDescription>
-)
+) {
+    fun getVisibility(): Visibility {
+        return when(defaultSetting)  {
+            LabelSetting.IGNORE -> Visibility.SHOW
+            LabelSetting.WARN -> Visibility.WARN
+            LabelSetting.HIDE -> Visibility.HIDE
+            null -> Visibility.IGNORE
+        }
+    }
+}
 
 
 fun LabelValueDefinition.toModLabelDef() :BskyLabelDefinition {
@@ -331,5 +378,26 @@ fun Label.toLabel(): BskyLabel {
         createdTimestamp = Moment(cts),
         expirationTimestamp = exp?.let { Moment(it) },
         signature = sig,
+    )
+}
+
+fun SelfLabel.toLabel(did: Did): BskyLabel {
+    return BskyLabel(
+        value = `val`,
+        version = 0,
+        creator = did,
+        // TODO: this is a hack, make sure this doesn't go over the wire
+        uri = AtUri("at://$did/selfLabel/${`val`}"),
+        cid = null,
+        overwritesPrevious = null,
+        createdTimestamp = Moment(Clock.System.now()),
+        expirationTimestamp = null,
+        signature = null,
+    )
+}
+
+fun BskyLabel.toSelfLabel(): SelfLabel {
+    return SelfLabel(
+        `val` = value
     )
 }

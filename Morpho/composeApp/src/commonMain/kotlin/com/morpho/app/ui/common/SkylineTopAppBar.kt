@@ -15,7 +15,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.morpho.app.model.uidata.ContentCardMapEntry
 import com.morpho.app.ui.theme.roundedBotR
-import kotlinx.collections.immutable.ImmutableList
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import kotlin.math.max
 import kotlin.math.min
@@ -23,7 +22,7 @@ import kotlin.math.min
 @Composable
 @OptIn(ExperimentalMaterial3Api::class)
 fun SkylineTopBar(
-    tabList: ImmutableList<ContentCardMapEntry>,
+    tabList: List<ContentCardMapEntry>,
     modifier: Modifier = Modifier,
     tabIndex: Int = 0,
     onChanged: (Int) -> Unit = {},

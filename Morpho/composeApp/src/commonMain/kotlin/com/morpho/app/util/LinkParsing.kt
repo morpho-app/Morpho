@@ -4,6 +4,7 @@ package com.morpho.app.util
 import cafe.adriel.voyager.navigator.Navigator
 import com.morpho.app.screens.base.tabbed.ProfileTab
 import com.morpho.butterfly.AtUri
+import com.morpho.butterfly.Cid
 import com.morpho.butterfly.Did
 import com.morpho.butterfly.Handle
 
@@ -26,6 +27,16 @@ fun linkVisit(string: String, navigator: Navigator) {
 }
 
 expect fun openBrowser(url: String)
+
+fun didCidToImageLink(did: Did, cid: Cid, avatar: Boolean, type: String = "jpeg"): String {
+    val collection = if (avatar) {
+        "avatar_thumbnail"
+    } else {
+        "feed_thumbnail"
+    }
+    return "https://cdn.bsky.app/img/$collection/plain/$did/$cid@$type"
+}
+
 
 fun parseImageThumbRef(string: String, did: Did): String {
     //Log.v("ImageThumb", string)

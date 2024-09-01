@@ -5,11 +5,8 @@ import androidx.compose.ui.util.fastAny
 import com.morpho.app.model.bluesky.MorphoDataFeed
 import com.morpho.app.model.bluesky.MorphoDataItem
 import com.morpho.app.model.uistate.FeedType
-import com.morpho.app.util.validDid
 import com.morpho.butterfly.*
-import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
-import kotlinx.collections.immutable.toImmutableList
 import kotlinx.collections.immutable.toPersistentList
 import kotlinx.datetime.Instant
 import kotlinx.serialization.Serializable
@@ -23,7 +20,7 @@ data class MorphoData<T: MorphoDataItem>(
     val title: String = "Home",
     val uri: AtUri = AtUri.HOME_URI,
     val cursor: AtCursor = null,
-    val items: ImmutableList<T> = persistentListOf(),
+    val items: List<T> = persistentListOf(),
     val query: JsonElement = JsonObject(emptyMap()),
 ) {
     companion object {
@@ -49,7 +46,7 @@ data class MorphoData<T: MorphoDataItem>(
                                 Moment(Instant.DISTANT_PAST)
                             }
                         }
-                    }.toImmutableList(),
+                    }.toList(),
                 cursor = cursor, title = first.title, uri = first.uri
             )
         }
@@ -74,7 +71,7 @@ data class MorphoData<T: MorphoDataItem>(
                                 Moment(Instant.DISTANT_PAST)
                             }
                         }
-                    }.toImmutableList(),
+                    }.toList(),
                 cursor = cursor, title = first.title, uri = first.uri
             )
         }
@@ -99,7 +96,7 @@ data class MorphoData<T: MorphoDataItem>(
                                 Moment(Instant.DISTANT_PAST)
                             }
                         }
-                    }.toImmutableList(),
+                    }.toList(),
                 cursor = cursor, title = last.title, uri = last.uri
             )
         }
@@ -170,7 +167,3 @@ fun AtUri.id(api:Butterfly): AtIdentifier {
         if (idString.contains("did:")) Did(idString) else Handle(idString)
     }
 }
-
-val PROFILE_FEEDS_URI = Regex("at://app.morpho/(me|${validDid})/profile.feeds")
-val PROFILE_LISTS_URI = Regex("at://app.morpho/(me|${validDid})/profile.lists")
-val PROFILE_LABELS_URI = Regex("at://app.morpho/(me|${validDid})/profile.labels")

@@ -3,12 +3,14 @@ package com.morpho.app.di
 import com.morpho.app.data.PreferencesRepository
 import com.morpho.app.model.uidata.BskyDataService
 import com.morpho.app.model.uidata.BskyNotificationService
+import com.morpho.app.model.uidata.ContentLabelService
 import com.morpho.app.screens.base.BaseScreenModel
 import com.morpho.app.screens.login.LoginScreenModel
 import com.morpho.app.screens.main.MainScreenModel
 import com.morpho.app.screens.main.tabbed.TabbedMainScreenModel
 import com.morpho.app.screens.notifications.TabbedNotificationScreenModel
 import com.morpho.app.screens.profile.TabbedProfileViewModel
+import com.morpho.app.util.ClipboardManager
 import com.morpho.butterfly.Butterfly
 import com.morpho.butterfly.auth.SessionRepository
 import com.morpho.butterfly.auth.UserRepository
@@ -22,26 +24,27 @@ import org.koin.dsl.bind
 import org.koin.dsl.module
 
 val appModule = module {
-    single { BaseScreenModel() }
-    factory { MainScreenModel() }
-    factory { TabbedMainScreenModel() }
-    factory { TabbedProfileViewModel() }
-    factory { TabbedNotificationScreenModel() }
-    factory { LoginScreenModel() }
-    factory { p-> UpdateTick(p.get()) }
+    single<BaseScreenModel> { BaseScreenModel() }
+    factory<MainScreenModel> { MainScreenModel() }
+    factory<TabbedMainScreenModel> { TabbedMainScreenModel() }
+    factory<TabbedProfileViewModel> { TabbedProfileViewModel() }
+    factory<TabbedNotificationScreenModel> { TabbedNotificationScreenModel() }
+    factory<LoginScreenModel> { LoginScreenModel() }
+    factory<UpdateTick> { p-> UpdateTick(p.get<Long>()) }
+    single<ClipboardManager> { ClipboardManager }
 }
 
 val storageModule = module {
-    single { p-> SessionRepository(p.get()) }
-    single { p-> PreferencesRepository(p.get())}
+    single<SessionRepository> { p-> SessionRepository(p.get()) }
+    single<PreferencesRepository> { p-> PreferencesRepository(p.get())}
     singleOf(::UserRepositoryImpl) bind UserRepository::class
 }
 
 val dataModule = module {
-    single { Butterfly() }
-    single { BskyDataService() }
-    single { BskyNotificationService() }
-    single {}
+    single<Butterfly> { Butterfly() }
+    single<BskyDataService> { BskyDataService() }
+    single<BskyNotificationService> { BskyNotificationService() }
+    single<ContentLabelService> { ContentLabelService() }
 }
 
 @Suppress("MemberVisibilityCanBePrivate")

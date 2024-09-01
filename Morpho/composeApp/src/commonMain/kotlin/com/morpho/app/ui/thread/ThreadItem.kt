@@ -6,6 +6,7 @@ import com.atproto.repo.StrongRef
 import com.morpho.app.model.bluesky.BskyPost
 import com.morpho.app.model.bluesky.BskyPostReason
 import com.morpho.app.model.bluesky.ThreadPost
+import com.morpho.app.model.uidata.ContentHandling
 import com.morpho.app.ui.common.OnPostClicked
 import com.morpho.app.ui.elements.MenuOptions
 import com.morpho.app.ui.post.*
@@ -28,6 +29,7 @@ inline fun ThreadItem(
     crossinline onLikeClicked: (StrongRef) -> Unit = { },
     noinline onMenuClicked: (MenuOptions, BskyPost) -> Unit = { _, _ -> },
     crossinline onUnClicked: (type: RecordType, uri: AtUri) -> Unit = { _, _ -> },
+    crossinline getContentHandling: (BskyPost) -> List<ContentHandling> = { listOf() }
 ) {
     when(item) {
         is ThreadPost.ViewablePost -> {
@@ -41,6 +43,7 @@ inline fun ThreadItem(
                     onReplyClicked = { onReplyClicked(it) },
                     onMenuClicked = onMenuClicked,
                     onLikeClicked = { onLikeClicked(it) },
+                    getContentHandling = { getContentHandling(it) }
                 )
             } else {
                 PostFragment(
@@ -55,6 +58,7 @@ inline fun ThreadItem(
                     onReplyClicked = { onReplyClicked(it) },
                     onMenuClicked = onMenuClicked,
                     onLikeClicked = { onLikeClicked(it) },
+                    getContentHandling = { getContentHandling(it) }
                 )
             }
         }

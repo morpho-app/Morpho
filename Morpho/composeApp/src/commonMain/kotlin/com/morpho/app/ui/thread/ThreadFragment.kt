@@ -17,6 +17,7 @@ import com.atproto.repo.StrongRef
 import com.morpho.app.model.bluesky.BskyPost
 import com.morpho.app.model.bluesky.BskyPostThread
 import com.morpho.app.model.bluesky.ThreadPost
+import com.morpho.app.model.uidata.ContentHandling
 import com.morpho.app.ui.common.OnPostClicked
 import com.morpho.app.ui.elements.MenuOptions
 import com.morpho.app.ui.post.BlockedPostFragment
@@ -46,6 +47,7 @@ fun ThreadFragment(
     onLikeClicked: (StrongRef) -> Unit = { },
     onMenuClicked: (MenuOptions, BskyPost) -> Unit = { _, _ -> },
     onUnClicked: (type: RecordType, uri: AtUri) -> Unit = { _, _ -> },
+    getContentHandling: (BskyPost) -> List<ContentHandling> = { listOf() },
     listState: LazyListState = rememberLazyListState(),
     contentPadding: PaddingValues = PaddingValues(0.dp)
 ) {
@@ -79,6 +81,7 @@ fun ThreadFragment(
                                 onReplyClicked = { onReplyClicked(it) },
                                 onMenuClicked = { option, post -> onMenuClicked(option, post) },
                                 onLikeClicked = { onLikeClicked(it) },
+                                getContentHandling = { getContentHandling(it) }
                             )
                         }
                     } else {
@@ -109,6 +112,7 @@ fun ThreadFragment(
                                     onReplyClicked = onReplyClicked,
                                     onLikeClicked = onLikeClicked,
                                     onMenuClicked = onMenuClicked,
+                                    getContentHandling = getContentHandling
                                 )
                             }
                         }
@@ -124,6 +128,7 @@ fun ThreadFragment(
                                 onReplyClicked = onReplyClicked,
                                 onMenuClicked = onMenuClicked,
                                 onLikeClicked = onLikeClicked,
+                                getContentHandling = getContentHandling
                             )
                         }
                     }
@@ -162,6 +167,7 @@ fun ThreadFragment(
                     onReplyClicked = onReplyClicked,
                     onLikeClicked = onLikeClicked,
                     onMenuClicked = onMenuClicked,
+                    getContentHandling = getContentHandling
                 )
             }
         }
@@ -180,6 +186,7 @@ fun ThreadFragment(
                                 onReplyClicked = { onReplyClicked(it) },
                                 onMenuClicked = { option, post -> onMenuClicked(option, post) },
                                 onLikeClicked = { onLikeClicked(it) },
+                                getContentHandling = { getContentHandling(it) }
                             )
                         }
                     } else {
@@ -194,6 +201,7 @@ fun ThreadFragment(
                                 onReplyClicked = onReplyClicked,
                                 onMenuClicked = onMenuClicked,
                                 onLikeClicked = onLikeClicked,
+                                getContentHandling = getContentHandling
                             )
                         }
                     }

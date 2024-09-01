@@ -18,7 +18,6 @@ import com.morpho.app.model.uistate.TabbedScreenState
 import com.morpho.app.model.uistate.UiLoadingState
 import com.morpho.app.screens.main.MainScreenModel
 import com.morpho.butterfly.AtUri
-import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.flow.*
@@ -34,8 +33,8 @@ TabbedMainScreenModel : MainScreenModel() {
 
     private val tabs = mutableListOf<ContentCardMapEntry>()
 
-    val _tabFlow = MutableStateFlow(tabs.toImmutableList())
-    val tabFlow: StateFlow<ImmutableList<ContentCardMapEntry>>
+    val _tabFlow = MutableStateFlow(tabs.toList())
+    val tabFlow: StateFlow<List<ContentCardMapEntry>>
         get() = _tabFlow.asStateFlow()
     companion object {
         val log = logging()

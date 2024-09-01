@@ -4,17 +4,22 @@ import app.bsky.feed.FeedViewPostReasonUnion
 import app.bsky.feed.SkeletonFeedPostReasonUnion
 import com.morpho.app.model.uidata.Moment
 import com.morpho.butterfly.AtUri
+import kotlinx.serialization.Serializable
 
+@Serializable
 sealed interface BskyPostReason {
+    @Serializable
     data class BskyPostRepost(
         val repostAuthor: Profile,
         val indexedAt: Moment,
     ) : BskyPostReason
 
+    @Serializable
     data class BskyPostFeedPost(
         val repost: AtUri
     ) : BskyPostReason
 
+    @Serializable
     data class SourceFeed(
         val feed: FeedGenerator
     ) : BskyPostReason

@@ -13,7 +13,6 @@ import com.morpho.app.model.uistate.TabbedProfileScreenState
 import com.morpho.app.model.uistate.UiLoadingState
 import com.morpho.app.screens.main.MainScreenModel
 import com.morpho.butterfly.AtIdentifier
-import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -40,8 +39,8 @@ class TabbedProfileViewModel(
 
     private val tabs = mutableListOf<ContentCardMapEntry>()
 
-    val _tabFlow = MutableStateFlow(tabs.toImmutableList())
-    val tabFlow: StateFlow<ImmutableList<ContentCardMapEntry>>
+    val _tabFlow = MutableStateFlow(tabs.toList())
+    val tabFlow: StateFlow<List<ContentCardMapEntry>>
         get() = _tabFlow.asStateFlow()
 
     var profileId: AtIdentifier?  by mutableStateOf(null)

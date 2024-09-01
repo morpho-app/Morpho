@@ -9,10 +9,11 @@ import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Reply
+import androidx.compose.material.icons.filled.MoreHoriz
 import androidx.compose.material.icons.filled.Repeat
 import androidx.compose.material3.*
-import androidx.compose.runtime.*
-import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.SpanStyle
@@ -21,8 +22,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.util.fastForEach
 import com.atproto.repo.StrongRef
 import com.morpho.app.model.bluesky.*
+import com.morpho.app.model.uidata.ContentHandling
+import com.morpho.app.model.uidata.LabelDescription
 import com.morpho.app.ui.common.OnPostClicked
 import com.morpho.app.ui.elements.*
 import com.morpho.app.ui.lists.FeedListEntryFragment
@@ -31,7 +35,7 @@ import com.morpho.app.util.openBrowser
 import com.morpho.butterfly.AtIdentifier
 import com.morpho.butterfly.AtUri
 import com.morpho.butterfly.model.RecordType
-import kotlinx.collections.immutable.persistentListOf
+import kotlinx.collections.immutable.toImmutableList
 import morpho.app.ui.utils.indentLevel
 import morpho.composeapp.generated.resources.Res
 import morpho.composeapp.generated.resources.replyIndicator
@@ -54,6 +58,7 @@ fun PostFragment(
     onLikeClicked: (StrongRef) -> Unit = { },
     onMenuClicked: (MenuOptions, BskyPost) -> Unit = { _, _ -> },
     onUnClicked: (type: RecordType, uri: AtUri) -> Unit = { _, _ -> },
+    getContentHandling: (BskyPost) -> List<ContentHandling> = { listOf() }
 ) {
     val padding = remember { when(role) {
         PostFragmentRole.Solo -> Modifier.padding(2.dp)
@@ -66,7 +71,7 @@ fun PostFragment(
     }}
     WrappedColumn(modifier = padding.fillMaxWidth()) {
         val delta = remember { getFormattedDateTimeSince(post.createdAt) }
-        val indent = rememberSaveable { when(role) {
+        val indent = remember { when(role) {
             PostFragmentRole.Solo -> indentLevel.toFloat()
             PostFragmentRole.PrimaryThreadRoot -> indentLevel.toFloat()
             PostFragmentRole.ThreadBranchStart -> 0.0f//indentLevel.toFloat()
@@ -75,8 +80,6 @@ fun PostFragment(
             PostFragmentRole.ThreadRootUnfocused -> indentLevel.toFloat()
             PostFragmentRole.ThreadEnd -> 0.0f
         }}
-        var hidePost by rememberSaveable { mutableStateOf(post.author.mutedByMe) }
-        val muted = rememberSaveable { post.author.mutedByMe }
         val baseShape = MaterialTheme.shapes.small
         val shape =  when(role) {
             PostFragmentRole.Solo -> baseShape
@@ -111,7 +114,19 @@ fun PostFragment(
             MaterialTheme.colorScheme.surfaceColorAtElevation(if (elevate || indentLevel > 0) 2.dp else 0.dp)
         }
 
-        val maybeMuted = remember { if (post.author.mutedByMe) MutePersonDescribed else NoDescribed }
+        val contentHandling = remember {
+            if (post.author.mutedByMe) {
+                getContentHandling(post) + ContentHandling(
+                    scope = LabelScope.Content,
+                    id = "muted",
+                    icon = Icons.Default.MoreHoriz,
+                    action = LabelAction.Blur,
+                    source = LabelDescription.YouMuted,
+                )
+            } else {
+                getContentHandling(post)
+            }.toImmutableList()
+        }
 
         Surface (
             shadowElevation = if (elevate || indentLevel > 0) 1.dp else 0.dp,
@@ -124,9 +139,8 @@ fun PostFragment(
 
         ) {
             ContentHider(
-                reasons = persistentListOf(maybeMuted),
+                reasons = contentHandling,
                 scope = LabelScope.Content,
-                target = LabelTarget.Content,
             ) {
                 SelectionContainer(
                     Modifier.clickable { onItemClicked(post.uri) }
@@ -244,38 +258,36 @@ fun PostFragment(
                             RichTextElement(
                                 text = post.text,
                                 facets = post.facets,
-                                onClick = {
-                                    when (it) {
-                                        is FacetType.ExternalLink -> {
-                                            openBrowser(it.uri.uri)
-                                        }
-
-                                        is FacetType.Format -> {
-                                            onItemClicked(post.uri)
-                                        }
-
-                                        is FacetType.PollBlueOption -> {}
-                                        is FacetType.Tag -> {
-                                            onItemClicked(post.uri)
-                                        }
-
-                                        is FacetType.UserDidMention -> {
-                                            onProfileClicked(post.author.did)
-                                        }
-
-                                        is FacetType.UserHandleMention -> {
-                                            onProfileClicked(it.handle)
-                                        }
-
-                                        null -> {
-                                            onItemClicked(post.uri)
-                                        }
-
-                                        else -> {}
+                                onClick = { facetTypes ->
+                                    if (facetTypes.isEmpty()) {
+                                        onItemClicked(post.uri)
+                                        return@RichTextElement
                                     }
-                                }
+                                    facetTypes.fastForEach {
+                                        when(it) {
+                                            is FacetType.ExternalLink -> {
+                                                openBrowser(it.uri.uri)
+                                            }
+                                            is FacetType.Format -> {onItemClicked(post.uri)}
+                                            is FacetType.PollBlueOption -> {
+
+                                            }
+                                            is FacetType.Tag -> {onItemClicked(post.uri)}
+                                            is FacetType.UserDidMention -> {
+                                                onProfileClicked(post.author.did)
+                                            }
+                                            is FacetType.UserHandleMention -> {
+                                                onProfileClicked(it.handle)
+                                            }
+
+                                            else -> {}
+                                        }
+                                    }
+                                },
                             )
-                            PostFeatureElement(post.feature, onItemClicked)
+                            PostFeatureElement(
+                                post.feature, onItemClicked, contentHandling = contentHandling
+                            )
 
                             PostActions(
                                 post = post,
@@ -328,6 +340,7 @@ inline fun ColumnScope.PostFeatureElement(
     crossinline onItemClicked: OnPostClicked = {},
     crossinline onLikeClicked: (StrongRef) -> Unit = { },
     crossinline onUnClicked: (type: RecordType, uri: AtUri) -> Unit = { _, _ -> },
+    contentHandling: List<ContentHandling> = listOf()
 ) {
     @Suppress("REDUNDANT_ELSE_IN_WHEN")
     when (feature) {
@@ -336,32 +349,55 @@ inline fun ColumnScope.PostFeatureElement(
             modifier = Modifier.align(Alignment.CenterHorizontally))
         is BskyPostFeature.ImagesFeature -> {
             ContentHider(
-
+                reasons = contentHandling,
+                scope = LabelScope.Media,
             ) {
                 PostImages(imagesFeature = feature,
                            modifier = Modifier.align(Alignment.CenterHorizontally))
             }
         }
         is BskyPostFeature.MediaRecordFeature -> {
-            RecordFeature(
-                record = feature.record,
-                media = feature.media,
-                onItemClicked = onItemClicked,
-                onLikeClicked = onLikeClicked,
-                onUnClicked = onUnClicked
-            )
+            ContentHider(
+                reasons = contentHandling,
+                scope = LabelScope.Media,
+            ) {
+                RecordFeature(
+                    record = feature.record,
+                    media = feature.media,
+                    onItemClicked = onItemClicked,
+                    onLikeClicked = onLikeClicked,
+                    onUnClicked = onUnClicked,
+                    contentHandling = contentHandling
+                )
+            }
         }
         is BskyPostFeature.RecordFeature -> {
-            RecordFeature(
-                record = feature.record,
-                onItemClicked = onItemClicked,
-                onLikeClicked = onLikeClicked,
-                onUnClicked = onUnClicked
-            )
+            ContentHider(
+                reasons = contentHandling,
+                scope = LabelScope.Content,
+            ) {
+                RecordFeature(
+                    record = feature.record,
+                    onItemClicked = onItemClicked,
+                    onLikeClicked = onLikeClicked,
+                    onUnClicked = onUnClicked,
+                    contentHandling = contentHandling
+                )
+            }
         }
         is BskyPostFeature.VideoFeature -> {
-            Text(text = "This would be a video embed")
-            Text("Alt text: ${feature.alt}")
+            ContentHider(
+                reasons = contentHandling,
+                scope = LabelScope.Media,
+            ) {
+                VideoEmbedThumb(
+                    video = feature.video,
+                    alt = feature.alt,
+                    aspectRatio = feature.aspectRatio,
+                    modifier = Modifier.align(Alignment.CenterHorizontally)
+                )
+            }
+
         }
         null -> {}
 
@@ -376,52 +412,70 @@ inline fun ColumnScope.RecordFeature(
     crossinline onItemClicked: OnPostClicked = {},
     crossinline onLikeClicked: (StrongRef) -> Unit = { },
     crossinline onUnClicked: (type: RecordType, uri: AtUri) -> Unit = { _, _ -> },
+    contentHandling: List<ContentHandling> = listOf(),
+    getContentHandling: (EmbedRecord) -> List<ContentHandling> = { listOf() }
 ) {
     if(media != null) {
-        when(media) {
-            is BskyPostFeature.ExternalFeature -> {
-                PostLinkEmbed(
-                    linkData = media,
-                    linkPress = { openBrowser(it) },
-                    modifier = Modifier.align(Alignment.CenterHorizontally)
-                )
-            }
-            is BskyPostFeature.ImagesFeature -> {
-                ContentHider(
-                    modifier = Modifier.align(Alignment.CenterHorizontally)
-                ) {
-                    PostImages(imagesFeature = media,
-                               modifier = Modifier.align(Alignment.CenterHorizontally))
+        ContentHider(
+            reasons = contentHandling,
+            scope = LabelScope.Media,
+            modifier = Modifier.align(Alignment.CenterHorizontally)
+        ) {
+            when(media) {
+                is BskyPostFeature.ExternalFeature -> {
+                    PostLinkEmbed(
+                        linkData = media,
+                        linkPress = { openBrowser(it) },
+                        modifier = Modifier.align(Alignment.CenterHorizontally)
+                    )
                 }
+                is BskyPostFeature.ImagesFeature -> {
+                    PostImages(
+                        imagesFeature = media,
+                        modifier = Modifier.align(Alignment.CenterHorizontally)
+                    )
+                }
+                is BskyPostFeature.VideoFeature -> {
+                    VideoEmbedThumb(
+                        video = media.video,
+                        alt = media.alt,
+                        aspectRatio = media.aspectRatio,
+                        modifier = Modifier.align(Alignment.CenterHorizontally)
+                    )
+                }
+                else -> {Text(text = "Record Feature not supported")}
             }
-            is BskyPostFeature.VideoFeature -> {
-                Text(text = "This would be a video embed")
-                Text("Alt text: ${media.alt}")
-            }
-            else -> {Text(text = "Record Feature not supported")}
         }
     }
     if(record != null) {
-        when (record) {
-            is EmbedRecord.BlockedEmbedPost -> EmbedBlockedPostFragment(uri = record.uri)
-            is EmbedRecord.InvisibleEmbedPost -> EmbedNotFoundPostFragment(uri = record.uri)
-            is EmbedRecord.VisibleEmbedPost -> EmbedPostFragment(
-                post = record,
-                onItemClicked =  {onItemClicked(record.uri)},
-                modifier = Modifier.align(Alignment.CenterHorizontally)
-            )
-            is EmbedRecord.EmbedFeed -> {
-                FeedListEntryFragment(
-                    record.feed,
-                    likeClicked = { ref, liked ->
-                        if(liked) onLikeClicked(ref)
-                        else onUnClicked(RecordType.Like, ref.uri)
-                    },
-                    onFeedClicked = {  }
+        ContentHider(
+            reasons = contentHandling,
+            scope = LabelScope.Content,
+            modifier = Modifier.align(Alignment.CenterHorizontally)
+        ) {
+            when (record) {
+                is EmbedRecord.BlockedEmbedPost -> EmbedBlockedPostFragment(uri = record.uri)
+                is EmbedRecord.InvisibleEmbedPost -> EmbedNotFoundPostFragment(uri = record.uri)
+                is EmbedRecord.VisibleEmbedPost -> EmbedPostFragment(
+                    post = record,
+                    onItemClicked = { onItemClicked(record.uri) },
+                    modifier = Modifier.align(Alignment.CenterHorizontally)
                 )
-            }
-            else -> {
-                Text(text = "Record Media Feature not supported")
+
+                is EmbedRecord.EmbedFeed -> {
+                    FeedListEntryFragment(
+                        record.feed,
+                        likeClicked = { ref, liked ->
+                            if (liked) onLikeClicked(ref)
+                            else onUnClicked(RecordType.Like, ref.uri)
+                        },
+                        onFeedClicked = { }
+                    )
+                }
+
+                else -> {
+                    Text(text = "Record Media Feature not supported")
+                }
             }
         }
     }

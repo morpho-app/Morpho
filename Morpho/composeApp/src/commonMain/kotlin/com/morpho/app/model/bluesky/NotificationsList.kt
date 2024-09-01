@@ -6,7 +6,6 @@ import app.bsky.notification.ListNotificationsReason
 import com.morpho.app.model.uidata.AtCursor
 import com.morpho.app.util.mapImmutable
 import com.morpho.butterfly.AtUri
-import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.collections.immutable.toPersistentList
@@ -19,16 +18,16 @@ import kotlinx.serialization.Serializable
  */
 @Serializable
 data class NotificationsList(
-    private val notifications: ImmutableList<BskyNotification> = persistentListOf(),
+    private val notifications: List<BskyNotification> = persistentListOf(),
     val cursor: AtCursor = null,
 ) {
     private var _notificationsList: MutableList<MutableNotificationsListItem> = mutableListOf()
-    val notificationsList: ImmutableList<NotificationsListItem>
+    val notificationsList: List<NotificationsListItem>
         get() {
             if (!initialized) {
                 initList()
             }
-            return _notificationsList.fastMap { it.toImmutable() }.toImmutableList()
+            return _notificationsList.fastMap { it.toImmutable() }.toList()
         }
 
     private var initialized = false
@@ -88,7 +87,7 @@ data class NotificationsList(
         }
         initialized = true
     }
-    fun concat(new: ImmutableList<ListNotificationsNotification>): NotificationsList {
+    fun concat(new: List<ListNotificationsNotification>): NotificationsList {
         return NotificationsList(
             notifications.toPersistentList().addAll(new.map {
                 it.toBskyNotification()
@@ -167,7 +166,7 @@ data class MutableNotificationsListItem(
 
 @Serializable
 data class NotificationsListItem(
-    val notifications: ImmutableList<BskyNotification>,
+    val notifications: List<BskyNotification>,
     val reason: ListNotificationsReason,
     val isRead: Boolean,
     val reasonSubject: AtUri?,

@@ -5,6 +5,7 @@ import androidx.compose.ui.Modifier
 import com.atproto.repo.StrongRef
 import com.morpho.app.model.bluesky.BskyPost
 import com.morpho.app.model.bluesky.ThreadPost
+import com.morpho.app.model.uidata.ContentHandling
 import com.morpho.app.ui.common.OnPostClicked
 import com.morpho.app.ui.elements.MenuOptions
 import com.morpho.app.ui.post.BlockedPostFragment
@@ -28,6 +29,7 @@ inline fun ThreadReply(
     crossinline onLikeClicked: (StrongRef) -> Unit = { },
     crossinline onMenuClicked: (MenuOptions, BskyPost) -> Unit = { _, _ -> },
     crossinline onUnClicked: (type: RecordType, uri: AtUri) -> Unit = { _, _ -> },
+    crossinline getContentHandling: (BskyPost) -> List<ContentHandling> = { listOf() }
 ) {
     when(item) {
         is ThreadPost.ViewablePost -> {
@@ -48,6 +50,7 @@ inline fun ThreadReply(
                 onReplyClicked = { onReplyClicked(it) },
                 onMenuClicked = { menu, post -> onMenuClicked(menu, post) },
                 onLikeClicked = { onLikeClicked(it) },
+                getContentHandling = { getContentHandling(it) }
             )
         }
         is ThreadPost.BlockedPost -> {

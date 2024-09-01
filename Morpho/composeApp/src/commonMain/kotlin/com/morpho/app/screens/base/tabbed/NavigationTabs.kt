@@ -6,7 +6,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.*
-import androidx.compose.runtime.saveable.rememberSaveable
 import cafe.adriel.voyager.core.lifecycle.LifecycleEffect
 import cafe.adriel.voyager.core.model.rememberScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
@@ -170,7 +169,7 @@ data class ProfileTab(
     @Composable
     override fun Content() {
         val screenModel = rememberScreenModel { TabbedProfileViewModel(id) }
-        val ownProfile = rememberSaveable { screenModel.api.id == id }
+        val ownProfile = remember { screenModel.api.id == id }
         TabbedProfileContent(ownProfile, screenModel)
 
     }

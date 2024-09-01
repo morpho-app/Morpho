@@ -4,6 +4,7 @@ package com.morpho.app.ui.post
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.text.selection.DisableSelection
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreHoriz
@@ -20,14 +21,20 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.util.fastForEach
 import com.atproto.repo.StrongRef
-import com.morpho.app.model.bluesky.*
+import com.morpho.app.model.bluesky.BskyPost
+import com.morpho.app.model.bluesky.FacetType
+import com.morpho.app.model.bluesky.LabelAction
+import com.morpho.app.model.bluesky.LabelScope
+import com.morpho.app.model.uidata.ContentHandling
+import com.morpho.app.model.uidata.LabelDescription
 import com.morpho.app.ui.elements.*
 import com.morpho.app.util.openBrowser
 import com.morpho.butterfly.AtIdentifier
 import com.morpho.butterfly.AtUri
 import com.morpho.butterfly.model.RecordType
-import kotlinx.collections.immutable.persistentListOf
+import kotlinx.collections.immutable.toImmutableList
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
@@ -45,10 +52,23 @@ fun FullPostFragment(
     onLikeClicked: (StrongRef) -> Unit = { },
     onMenuClicked: (MenuOptions, BskyPost) -> Unit = { _, _ -> },
     onUnClicked: (type: RecordType, uri: AtUri) -> Unit = { _, _ -> },
-    ) {
+    getContentHandling: (BskyPost) -> List<ContentHandling> = { listOf() }
+) {
     val postDate = remember { post.createdAt.instant.toLocalDateTime(TimeZone.currentSystemDefault()).date }
     var menuExpanded by remember { mutableStateOf(false) }
-    val maybeMuted = remember { if (post.author.mutedByMe) MutePersonDescribed else NoDescribed }
+    val contentHandling = remember {
+        if (post.author.mutedByMe) {
+            getContentHandling(post) + ContentHandling(
+                scope = LabelScope.Content,
+                id = "muted",
+                icon = Icons.Default.MoreHoriz,
+                action = LabelAction.Blur,
+                source = LabelDescription.YouMuted,
+            )
+        } else {
+            getContentHandling(post)
+        }.toImmutableList()
+    }
 
 
     WrappedColumn(
@@ -59,9 +79,8 @@ fun FullPostFragment(
             .padding(start = 6.dp, end = 6.dp)
     ) {
         ContentHider(
-            reasons = persistentListOf(maybeMuted),
+            reasons = contentHandling,
             scope = LabelScope.Content,
-            target = LabelTarget.Content,
         ) {
             Row(
                 modifier = Modifier
@@ -128,27 +147,42 @@ fun FullPostFragment(
                         tint = MaterialTheme.colorScheme.onSurface
                     )
                 }
-                PostMenu(menuExpanded, {
+                DisableSelection { PostMenu(menuExpanded, {
                     onMenuClicked(it, post)
-                }, onDismissRequest = { menuExpanded = false })
+                }, onDismissRequest = { menuExpanded = false }) }
+
             }
 
 
             RichTextElement(
                 text = post.text,
                 facets = post.facets,
-                onClick = {
-                    when (it) {
-                        is FacetType.ExternalLink -> { openBrowser(it.uri.uri) }
-                        is FacetType.Format -> { onItemClicked(post.uri) }
-                        is FacetType.PollBlueOption -> {}
-                        is FacetType.Tag -> { onItemClicked(post.uri) }
-                        is FacetType.UserDidMention -> { onProfileClicked(post.author.did) }
-                        is FacetType.UserHandleMention -> { onProfileClicked(it.handle) }
-                        null -> { onItemClicked(post.uri) }
-                        else -> {}
+                onClick = { facetTypes ->
+                    if (facetTypes.isEmpty()) {
+                        onItemClicked(post.uri)
+                        return@RichTextElement
                     }
-                }
+                    facetTypes.fastForEach {
+                        when(it) {
+                            is FacetType.ExternalLink -> {
+                                openBrowser(it.uri.uri)
+                            }
+                            is FacetType.Format -> {onItemClicked(post.uri)}
+                            is FacetType.PollBlueOption -> {
+
+                            }
+                            is FacetType.Tag -> {onItemClicked(post.uri)}
+                            is FacetType.UserDidMention -> {
+                                onProfileClicked(post.author.did)
+                            }
+                            is FacetType.UserHandleMention -> {
+                                onProfileClicked(it.handle)
+                            }
+
+                            else -> {}
+                        }
+                    }
+                },
             )
             val postTimestamp = remember {
                 val seconds = post.createdAt.instant.epochSeconds % 60
@@ -156,7 +190,9 @@ fun FullPostFragment(
                     .toLocalDateTime(TimeZone.currentSystemDefault()).time
             }
 
-            PostFeatureElement(post.feature, onItemClicked)
+            PostFeatureElement(
+                post.feature, onItemClicked, contentHandling =  contentHandling
+            )
 
             Row(verticalAlignment = Alignment.CenterVertically) {
                 PostActions(

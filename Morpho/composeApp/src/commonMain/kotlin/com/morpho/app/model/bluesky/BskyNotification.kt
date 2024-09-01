@@ -10,15 +10,14 @@ import app.bsky.notification.ListNotificationsNotification
 import app.bsky.notification.ListNotificationsReason
 import com.atproto.repo.StrongRef
 import com.morpho.app.model.uidata.Moment
-import kotlinx.collections.immutable.persistentListOf
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.JsonElement
-import com.morpho.butterfly.AtUri
-import com.morpho.butterfly.Cid
-import com.morpho.butterfly.Did
 import com.morpho.app.util.deserialize
 import com.morpho.app.util.mapImmutable
 import com.morpho.app.util.recordType
+import com.morpho.butterfly.AtUri
+import com.morpho.butterfly.Cid
+import com.morpho.butterfly.Did
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonElement
 
 @Immutable
 @Serializable
@@ -45,7 +44,7 @@ sealed interface BskyNotification {
         override val reasonSubject: AtUri? = null,
         override val isRead: Boolean,
         override val indexedAt: Moment,
-        override val labels: List<BskyLabel> = persistentListOf(),
+        override val labels: List<BskyLabel> = listOf(),
         val subject: StrongRef,
         val createdAt: Moment,
     ): BskyNotification
@@ -60,7 +59,7 @@ sealed interface BskyNotification {
         override val reasonSubject: AtUri? = null,
         override val isRead: Boolean,
         override val indexedAt: Moment,
-        override val labels: List<BskyLabel> = persistentListOf(),
+        override val labels: List<BskyLabel> = listOf(),
         val subject: StrongRef,
         val createdAt: Moment,
     ): BskyNotification
@@ -75,7 +74,7 @@ sealed interface BskyNotification {
         override val reasonSubject: AtUri? = null,
         override val isRead: Boolean,
         override val indexedAt: Moment,
-        override val labels: List<BskyLabel> = persistentListOf(),
+        override val labels: List<BskyLabel> = listOf(),
         val subject: Did,
         val createdAt: Moment,
     ): BskyNotification
@@ -90,7 +89,7 @@ sealed interface BskyNotification {
         override val reasonSubject: AtUri? = null,
         override val isRead: Boolean,
         override val indexedAt: Moment,
-        override val labels: List<BskyLabel> = persistentListOf(),
+        override val labels: List<BskyLabel> = listOf(),
         val post: BskyPost,
     ): BskyNotification
 
@@ -104,7 +103,7 @@ sealed interface BskyNotification {
         override val reasonSubject: AtUri? = null,
         override val isRead: Boolean,
         override val indexedAt: Moment,
-        override val labels: List<BskyLabel> = persistentListOf(),
+        override val labels: List<BskyLabel> = listOf(),
         val record: JsonElement,
     ): BskyNotification
 }
