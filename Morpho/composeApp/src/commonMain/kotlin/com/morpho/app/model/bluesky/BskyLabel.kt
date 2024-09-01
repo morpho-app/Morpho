@@ -15,6 +15,7 @@ import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.ImmutableMap
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableMap
+import kotlinx.datetime.Clock
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -379,5 +380,26 @@ fun Label.toLabel(): BskyLabel {
         createdTimestamp = Moment(cts),
         expirationTimestamp = exp?.let { Moment(it) },
         signature = sig,
+    )
+}
+
+fun SelfLabel.toLabel(did: Did): BskyLabel {
+    return BskyLabel(
+        value = `val`,
+        version = 0,
+        creator = did,
+        // TODO: this is a hack, make sure this doesn't go over the wire
+        uri = AtUri("at://$did/selfLabel/${`val`}"),
+        cid = null,
+        overwritesPrevious = null,
+        createdTimestamp = Moment(Clock.System.now()),
+        expirationTimestamp = null,
+        signature = null,
+    )
+}
+
+fun BskyLabel.toSelfLabel(): SelfLabel {
+    return SelfLabel(
+        `val` = value
     )
 }

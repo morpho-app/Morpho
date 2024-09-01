@@ -484,12 +484,12 @@ class ContentLabelService: KoinComponent {
 
     private fun initDefinitionCache() {
         val labelers = labelers.value
-        log.debug { "Labelers: $labelers" }
+        log.verbose { "Labelers: $labelers" }
         val labelPrefs = labelPrefs.value
-        log.debug { "Label prefs: $labelPrefs" }
+        log.verbose { "Label prefs: $labelPrefs" }
         val labelPrefMap = labelPrefs.associateBy { if (it.labelerDid == null) it.label else it.labelerDid.toString() }
         val labelerMap = labelers.associateBy { it.did.toString() }
-        log.debug { "Labeler map: $labelerMap" }
+        log.verbose { "Labeler map: $labelerMap" }
         val labelMap = labelerMap.mapValues { (id, labeler) ->
             val labelPref = labelPrefMap[id]
             if (labelPref != null) {
@@ -593,7 +593,7 @@ class ContentLabelService: KoinComponent {
             return result.toImmutableList()
         }
         if (labels.isNotEmpty()) {
-            log.debug { "Post ${post.uri} has labels: ${labels.joinToString { it.value }}" }
+            log.verbose { "Post ${post.uri} has labels: ${labels.joinToString { it.value }}" }
             if (!showAdultContent.value) {
                 val adultLabeler = labelPrefs.value.fastFilter { prefLabel ->
                     labels.fastAny { bskyLabel ->
@@ -760,11 +760,11 @@ class ContentLabelService: KoinComponent {
                 labels.fastAny { it.value == prefLabel.label }
             }
 
-            log.debug { "Post ${post.uri} has labels we care about: ${labelsWeCareAbout.joinToString { it.label }}" }
+            log.verbose { "Post ${post.uri} has labels we care about: ${labelsWeCareAbout.joinToString { it.label }}" }
             labelsWeCareAbout.fastForEach { prefLabel ->
                 val cachedInterpretation = definitionCache[prefLabel.label]
                 if (cachedInterpretation != null) {
-                    log.debug { "Post ${post.uri} has cached interpretation for ${prefLabel.label}" }
+                    log.verbose { "Post ${post.uri} has cached interpretation for ${prefLabel.label}" }
                     val cause = LabelCause.Label(
                         LabelSource.Labeler(labelers.value.firstOrNull { it.did == prefLabel.labelerDid }!!),
                         labels.first { it.value == prefLabel.label },
@@ -893,7 +893,7 @@ class ContentLabelService: KoinComponent {
             }
         }
 
-        log.debug { "Post ${post.uri} has handling: \n$result" }
+        log.verbose { "Post ${post.uri} has handling: \n$result" }
         return result.toImmutableList()
     }
 
