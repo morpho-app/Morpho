@@ -10,7 +10,6 @@ import com.morpho.app.model.bluesky.ThreadPost.*
 import com.morpho.app.util.mapImmutable
 import com.morpho.butterfly.AtUri
 import com.morpho.butterfly.Cid
-import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.serialization.Serializable
@@ -20,8 +19,8 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class BskyPostThread(
     val post: BskyPost,
-    val parents: ImmutableList<ThreadPost>,
-    val replies: ImmutableList<ThreadPost>,
+    val parents: List<ThreadPost>,
+    val replies: List<ThreadPost>,
 ) {
     operator fun contains(other: Any?) : Boolean {
         when(other) {
@@ -59,7 +58,7 @@ sealed interface ThreadPost {
     @Serializable
     data class ViewablePost(
         val post: BskyPost,
-        val replies: ImmutableList<ThreadPost> = persistentListOf(),
+        val replies: List<ThreadPost> = persistentListOf(),
     ) : ThreadPost {
         override fun equals(other: Any?) : Boolean {
             return when(other) {

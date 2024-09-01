@@ -32,7 +32,7 @@ data class MorphoDataFeed<T: MorphoDataItem> (
     val uri: AtUri = AtUri.HOME_URI,
     var hasNewPosts: Boolean = false,
 ) {
-    val items = _items.toImmutableList()
+    val items: List<T> = _items.toList()
     companion object {
 
         fun fromPosts(

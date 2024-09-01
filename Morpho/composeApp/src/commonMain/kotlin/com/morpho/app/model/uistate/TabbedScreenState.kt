@@ -6,7 +6,8 @@ package com.morpho.app.model.uistate
 import com.morpho.app.model.bluesky.MorphoDataItem
 import com.morpho.app.model.uidata.ContentCardMapEntry
 import com.morpho.butterfly.AtUri
-import kotlinx.collections.immutable.*
+import kotlinx.collections.immutable.ImmutableMap
+import kotlinx.collections.immutable.toImmutableMap
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -16,9 +17,9 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class TabbedScreenState(
     override val loadingState: UiLoadingState = UiLoadingState.Idle,
-    val tabs:  StateFlow<ImmutableList<ContentCardMapEntry>> =
-        MutableStateFlow<ImmutableList<ContentCardMapEntry>>(persistentListOf()).asStateFlow(),
-    val tabStates:  ImmutableList<StateFlow<ContentCardState<MorphoDataItem>>> = persistentListOf(),
+    val tabs:  StateFlow<List<ContentCardMapEntry>> =
+        MutableStateFlow<List<ContentCardMapEntry>>(listOf()).asStateFlow(),
+    val tabStates:  List<StateFlow<ContentCardState<MorphoDataItem>>> = listOf(),
 ): UiState {
 
     val tabMap: ImmutableMap<AtUri, ContentCardState<MorphoDataItem>>
@@ -26,8 +27,8 @@ data class TabbedScreenState(
             .filter { entry -> entry.value.value.uri in tabs.value.map { it.uri } }
             .mapValues { it.value.value }
             .toImmutableMap()
-    val tabsWithNewPosts: ImmutableList<AtUri>
-        get() = tabMap.filterValues { it.hasNewPosts }.keys.toImmutableList()
+    val tabsWithNewPosts: List<AtUri>
+        get() = tabMap.filterValues { it.hasNewPosts }.keys.toList()
 
 }
 
@@ -35,9 +36,9 @@ data class TabbedScreenState(
 
 data class TabbedProfileScreenState(
     override val loadingState: UiLoadingState = UiLoadingState.Idle,
-    val tabs: StateFlow<ImmutableList<ContentCardMapEntry>> =
-        MutableStateFlow<ImmutableList<ContentCardMapEntry>>(persistentListOf()).asStateFlow(),
-    val tabStates:  ImmutableList<StateFlow<ContentCardState.ProfileTimeline<MorphoDataItem>>> = persistentListOf(),
+    val tabs: StateFlow<List<ContentCardMapEntry>> =
+        MutableStateFlow<List<ContentCardMapEntry>>(listOf()).asStateFlow(),
+    val tabStates:  List<StateFlow<ContentCardState.ProfileTimeline<MorphoDataItem>>> = listOf(),
 ): UiState {
 
     val tabMap: ImmutableMap<AtUri, ContentCardState.ProfileTimeline<MorphoDataItem>>
@@ -45,8 +46,8 @@ data class TabbedProfileScreenState(
             .filter { entry -> entry.value.value.uri in tabs.value.map { it.uri } }
             .mapValues { it.value.value }
             .toImmutableMap()
-    val tabsWithNewPosts: ImmutableList<AtUri>
-        get() = tabMap.filterValues { it.hasNewPosts }.keys.toImmutableList()
+    val tabsWithNewPosts: List<AtUri>
+        get() = tabMap.filterValues { it.hasNewPosts }.keys.toList()
 
 
 }

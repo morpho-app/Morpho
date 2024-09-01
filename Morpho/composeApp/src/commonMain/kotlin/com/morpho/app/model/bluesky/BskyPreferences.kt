@@ -8,13 +8,11 @@ import com.morpho.app.util.mapImmutable
 import com.morpho.butterfly.AtUri
 import com.morpho.butterfly.Did
 import com.morpho.butterfly.Language
-import kotlinx.collections.immutable.ImmutableList
+import com.morpho.butterfly.model.ReadOnlyList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.collections.immutable.toPersistentList
 import kotlinx.serialization.Serializable
-
-
 
 @Serializable
 public data class BskyPreferences(
@@ -34,7 +32,7 @@ public data class BskyPreferences(
     public var hiddenPosts: List<AtUri> = persistentListOf(),
     public var labelers: List<Did> = persistentListOf(),
 ) {
-    fun toRemotePrefs(): ImmutableList<PreferencesUnion> {
+    fun toRemotePrefs(): ReadOnlyList<PreferencesUnion> {
         val prefs = persistentListOf<PreferencesUnion>()
         if (this.adultContent != null) prefs.add(PreferencesUnion.AdultContentPref(this.adultContent!!))
         if (this.personalDetails != null) prefs.add(PreferencesUnion.PersonalDetailsPref(this.personalDetails!!))
@@ -66,6 +64,7 @@ public data class BskyPreferences(
         return feedViewPrefs[feed]?.labelsToHide ?: contentLabelPrefs.filter { it.visibility == Visibility.HIDE }
     }
 }
+
 
 @Immutable
 @Serializable

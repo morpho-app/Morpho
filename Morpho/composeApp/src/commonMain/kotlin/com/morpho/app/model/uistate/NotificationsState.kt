@@ -5,15 +5,12 @@ import com.morpho.app.model.bluesky.NotificationsList
 import com.morpho.app.model.bluesky.NotificationsListItem
 import com.morpho.app.model.uidata.AtCursor
 import com.morpho.app.model.uidata.filterNotifications
-import kotlinx.collections.immutable.ImmutableList
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.serialization.Serializable
 import org.koin.core.component.KoinComponent
-
-
 
 
 @Serializable
@@ -27,7 +24,7 @@ data class NotificationsUIState(
     val cursor:AtCursor
         get() = notificationsList.value.cursor
 
-    val notifications: Flow<ImmutableList<NotificationsListItem>>
+    val notifications: Flow<List<NotificationsListItem>>
         get() = notificationsList.map {
             filterNotifications(it.notificationsList, filterState.value)
         }

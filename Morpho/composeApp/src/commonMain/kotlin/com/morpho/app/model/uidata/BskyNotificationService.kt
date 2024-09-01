@@ -12,8 +12,6 @@ import com.morpho.app.model.uistate.NotificationsFilterState
 import com.morpho.app.util.mapImmutable
 import com.morpho.butterfly.AtUri
 import com.morpho.butterfly.Butterfly
-import kotlinx.collections.immutable.ImmutableList
-import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.sync.Mutex
@@ -140,9 +138,9 @@ class BskyNotificationService: KoinComponent {
 }
 
 fun filterNotifications(
-    list: ImmutableList<NotificationsListItem>,
+    list: List<NotificationsListItem>,
     filter: NotificationsFilterState,
-): ImmutableList<NotificationsListItem> {
+): List<NotificationsListItem> {
     return list.filter {
         (if(it.isRead) filter.showAlreadyRead else true) &&
         when(it.reason) {
@@ -154,5 +152,5 @@ fun filterNotifications(
             ListNotificationsReason.QUOTE -> filter.showQuotes
             else -> true
         }
-    }.toImmutableList()
+    }.toList()
 }

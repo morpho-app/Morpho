@@ -21,6 +21,7 @@ import com.morpho.app.model.bluesky.*
 import com.morpho.butterfly.AtUri
 import com.morpho.butterfly.Butterfly
 import com.morpho.butterfly.Language
+import com.morpho.butterfly.model.ReadOnlyList
 import kotlinx.collections.immutable.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
@@ -183,7 +184,7 @@ open class InterpretedLabelDefinition(
     val whatToHide: LabelScope,
     val defaultSetting: LabelSetting?,
     @Contextual
-    val flags: ImmutableList<LabelValueDefFlag> = persistentListOf(),
+    val flags: List<LabelValueDefFlag> = persistentListOf(),
     val behaviours: ModBehaviours,
     val localizedName: String = "",
     val localizedDescription: String = "",
@@ -439,7 +440,7 @@ class ContentLabelService: KoinComponent {
         contentLabelPrefs.fastFilter { it.visibility == Visibility.HIDE }
     }.stateIn(serviceScope, SharingStarted.Eagerly, persistentListOf())
 
-    private val handlingCache = mutableStateMapOf<AtUri, ImmutableList<ContentHandling>>()
+    private val handlingCache = mutableStateMapOf<AtUri, ReadOnlyList<ContentHandling>>()
     private val definitionCache = mutableStateMapOf<String, InterpretedLabelDefinition>()
 
     companion object {
@@ -577,7 +578,7 @@ class ContentLabelService: KoinComponent {
         definitionCache.putAll(definitionMap)
     }
 
-    fun getContentHandlingForPost(post: BskyPost): ImmutableList<ContentHandling> {
+    fun getContentHandlingForPost(post: BskyPost): List<ContentHandling> {
 //        // TODO: Add some way to invalidate the cache
 //        if (handlingCache.containsKey(post.uri)) {
 //            return handlingCache[post.uri]!!
@@ -894,7 +895,7 @@ class ContentLabelService: KoinComponent {
         }
 
         log.verbose { "Post ${post.uri} has handling: \n$result" }
-        return result.toImmutableList()
+        return result.toList()
     }
 
 }

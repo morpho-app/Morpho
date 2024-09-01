@@ -11,9 +11,7 @@ import com.morpho.butterfly.AtUri
 import com.morpho.butterfly.Cid
 import com.morpho.butterfly.Did
 import com.morpho.butterfly.Language
-import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.ImmutableMap
-import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableMap
 import kotlinx.datetime.Clock
 import kotlinx.serialization.ExperimentalSerializationApi
@@ -176,31 +174,31 @@ data class ModBehaviours(
     val profile: ModBehaviour = ModBehaviour(),
     val content: ModBehaviour = ModBehaviour(),
 ) {
-    fun forScope(scope: LabelScope, target: LabelTarget): ImmutableList<LabelAction> {
+    fun forScope(scope: LabelScope, target: LabelTarget): List<LabelAction> {
         return when (target) {
             LabelTarget.Account -> when (scope) {
-                LabelScope.Content -> persistentListOf(
+                LabelScope.Content -> listOf(
                     account.contentList, account.contentView, account.avatar,
                     account.banner, account.profileList, account.profileView,
                     account.displayName
                 )
-                LabelScope.Media -> persistentListOf(account.contentMedia, account.avatar, account.banner)
-                LabelScope.None -> persistentListOf()
+                LabelScope.Media -> listOf(account.contentMedia, account.avatar, account.banner)
+                LabelScope.None -> listOf()
             }
             LabelTarget.Profile -> when (scope) {
-                LabelScope.Content -> persistentListOf(profile.contentList, profile.contentView, profile.displayName)
-                LabelScope.Media -> persistentListOf(profile.avatar, profile.banner, profile.contentMedia)
-                LabelScope.None -> persistentListOf()
+                LabelScope.Content -> listOf(profile.contentList, profile.contentView, profile.displayName)
+                LabelScope.Media -> listOf(profile.avatar, profile.banner, profile.contentMedia)
+                LabelScope.None -> listOf()
             }
             LabelTarget.Content -> when (scope) {
-                LabelScope.Content -> persistentListOf(content.contentList, content.contentView)
-                LabelScope.Media -> persistentListOf(
+                LabelScope.Content -> listOf(content.contentList, content.contentView)
+                LabelScope.Media -> listOf(
                     content.contentMedia,
                     content.avatar,
                     content.banner
                 )
 
-                LabelScope.None -> persistentListOf()
+                LabelScope.None -> listOf()
             }
         }
     }

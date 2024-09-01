@@ -26,8 +26,6 @@ import com.morpho.app.ui.post.PostFragmentRole
 import com.morpho.butterfly.AtIdentifier
 import com.morpho.butterfly.AtUri
 import com.morpho.butterfly.model.RecordType
-import kotlinx.collections.immutable.ImmutableList
-import kotlinx.collections.immutable.persistentListOf
 import morpho.app.ui.utils.indentLevel
 
 @LazyScopeMarker
@@ -50,7 +48,7 @@ fun ThreadTree(
     onLikeClicked: (StrongRef) -> Unit = { },
     onMenuClicked: (MenuOptions, BskyPost) -> Unit = { _, _ -> },
     onUnClicked: (type: RecordType, uri: AtUri) -> Unit = { _, _ -> },
-    getContentHandling: (BskyPost) -> ImmutableList<ContentHandling> = { persistentListOf() }
+    getContentHandling: (BskyPost) -> List<ContentHandling> = { listOf() }
 ) {
 
 

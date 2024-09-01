@@ -30,7 +30,6 @@ import com.morpho.app.util.parseImageFullRef
 import com.morpho.app.util.parseImageThumbRef
 import com.morpho.butterfly.AtIdentifier
 import com.morpho.butterfly.AtUri
-import kotlinx.collections.immutable.toImmutableList
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -240,7 +239,7 @@ fun ColumnScope.EmbedPostFeature(
                                     alt = it.alt
                                 )
                             }}
-                        PostImages(imagesFeature = BskyPostFeature.ImagesFeature(images.toImmutableList()),
+                        PostImages(imagesFeature = BskyPostFeature.ImagesFeature(images),
                                    modifier = Modifier.align(Alignment.CenterHorizontally))
                     } else {
                         PostImages(imagesFeature = embed.litePost.feature,
@@ -284,7 +283,7 @@ fun ColumnScope.EmbedPostFeature(
                                             alt = it.alt
                                         )
                                     }}
-                                PostImages(imagesFeature = BskyPostFeature.ImagesFeature(images.toImmutableList()),
+                                PostImages(imagesFeature = BskyPostFeature.ImagesFeature(images),
                                            modifier = Modifier.align(Alignment.CenterHorizontally))
                             } else {
                                 PostImages(imagesFeature = embed.litePost.feature.media,

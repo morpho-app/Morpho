@@ -8,13 +8,12 @@ import com.morpho.app.model.bluesky.BskyFacet
 import com.morpho.app.model.bluesky.FacetType
 import com.morpho.app.model.bluesky.RichTextFormat
 import com.morpho.butterfly.Butterfly
-import kotlinx.collections.immutable.ImmutableList
 import kotlinx.serialization.Serializable
 
 
 data class BlueskyText(
     val text: String,
-    val facets: ImmutableList<BskyFacet>
+    val facets: List<BskyFacet>
 )
 
 @Serializable
@@ -94,5 +93,5 @@ suspend fun resolveBlueskyText(text: BlueskyText, api: Butterfly): Result<Bluesk
         }
 
     }.fastFilterNotNull()
-    return Result.success(BlueskyText(text.text, facets as ImmutableList<BskyFacet>))
+    return Result.success(BlueskyText(text.text, facets))
 }

@@ -27,6 +27,7 @@ data class BskyUserPreferences(
     val morphoPrefs: MorphoPreferences,
 )
 
+
 @Serializable
 data class MorphoPreferences(
     val tabbed: Boolean = true,

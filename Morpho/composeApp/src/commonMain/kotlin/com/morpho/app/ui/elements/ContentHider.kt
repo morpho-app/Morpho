@@ -18,20 +18,17 @@ import androidx.compose.ui.util.fastFilter
 import com.morpho.app.model.bluesky.LabelAction
 import com.morpho.app.model.bluesky.LabelScope
 import com.morpho.app.model.uidata.ContentHandling
-import kotlinx.collections.immutable.ImmutableList
-import kotlinx.collections.immutable.persistentListOf
-import kotlinx.collections.immutable.toImmutableList
 
 
 @Composable
 public fun ContentHider(
-    reasons: ImmutableList<ContentHandling> = persistentListOf(),
+    reasons: List<ContentHandling> = listOf(),
     scope: LabelScope,
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit,
 ) {
 
-    val scopedBehaviours: ImmutableList<ContentHandling> = reasons.filter { it.scope == scope }.toImmutableList()
+    val scopedBehaviours = reasons.filter { it.scope == scope }
     val toHide = scopedBehaviours.fastFilter { it.action == LabelAction.Blur || it.action == LabelAction.Alert }
     var hideContent by remember {
         mutableStateOf(

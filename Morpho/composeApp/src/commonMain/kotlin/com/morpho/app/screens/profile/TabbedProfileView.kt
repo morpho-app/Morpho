@@ -29,7 +29,6 @@ import com.morpho.app.ui.common.LoadingCircle
 import com.morpho.app.ui.common.TabbedProfileScreenScaffold
 import com.morpho.app.ui.common.TabbedSkylineFragment
 import com.morpho.app.ui.profile.DetailedProfileFragment
-import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.flow.StateFlow
 import org.jetbrains.compose.resources.ExperimentalResourceApi
@@ -42,7 +41,7 @@ fun TabbedProfileTopBar(
     ownProfile: Boolean,
     scrollBehavior: TopAppBarScrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(
         rememberTopAppBarState()),
-    tabs: ImmutableList<ProfileSkylineTab>,
+    tabs: List<ProfileSkylineTab>,
     onBackClicked: () -> Unit,
     tabIndex: Int = 0,
 ) {
@@ -155,7 +154,7 @@ fun TabScreen.TabbedProfileContent(
                 paddingValues = insets,
                 ownProfile = ownProfile,
             )
-        }.toImmutableList()
+        }
     }
     val tabsCreated = rememberSaveable(tabs.size, sm.profileUiState.loadingState) {
         tabs.isNotEmpty() && sm.profileUiState.loadingState == UiLoadingState.Idle

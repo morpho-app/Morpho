@@ -14,7 +14,6 @@ import androidx.compose.material.icons.filled.Repeat
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.SpanStyle
@@ -36,8 +35,6 @@ import com.morpho.app.util.openBrowser
 import com.morpho.butterfly.AtIdentifier
 import com.morpho.butterfly.AtUri
 import com.morpho.butterfly.model.RecordType
-import kotlinx.collections.immutable.ImmutableList
-import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
 import morpho.app.ui.utils.indentLevel
 import morpho.composeapp.generated.resources.Res
@@ -61,7 +58,7 @@ fun PostFragment(
     onLikeClicked: (StrongRef) -> Unit = { },
     onMenuClicked: (MenuOptions, BskyPost) -> Unit = { _, _ -> },
     onUnClicked: (type: RecordType, uri: AtUri) -> Unit = { _, _ -> },
-    getContentHandling: (BskyPost) -> ImmutableList<ContentHandling> = { persistentListOf() }
+    getContentHandling: (BskyPost) -> List<ContentHandling> = { listOf() }
 ) {
     val padding = remember { when(role) {
         PostFragmentRole.Solo -> Modifier.padding(2.dp)
@@ -74,7 +71,7 @@ fun PostFragment(
     }}
     WrappedColumn(modifier = padding.fillMaxWidth()) {
         val delta = remember { getFormattedDateTimeSince(post.createdAt) }
-        val indent = rememberSaveable { when(role) {
+        val indent = remember { when(role) {
             PostFragmentRole.Solo -> indentLevel.toFloat()
             PostFragmentRole.PrimaryThreadRoot -> indentLevel.toFloat()
             PostFragmentRole.ThreadBranchStart -> 0.0f//indentLevel.toFloat()
@@ -343,7 +340,7 @@ inline fun ColumnScope.PostFeatureElement(
     crossinline onItemClicked: OnPostClicked = {},
     crossinline onLikeClicked: (StrongRef) -> Unit = { },
     crossinline onUnClicked: (type: RecordType, uri: AtUri) -> Unit = { _, _ -> },
-    contentHandling: ImmutableList<ContentHandling> = persistentListOf()
+    contentHandling: List<ContentHandling> = listOf()
 ) {
     @Suppress("REDUNDANT_ELSE_IN_WHEN")
     when (feature) {
@@ -415,8 +412,8 @@ inline fun ColumnScope.RecordFeature(
     crossinline onItemClicked: OnPostClicked = {},
     crossinline onLikeClicked: (StrongRef) -> Unit = { },
     crossinline onUnClicked: (type: RecordType, uri: AtUri) -> Unit = { _, _ -> },
-    contentHandling: ImmutableList<ContentHandling> = persistentListOf(),
-    getContentHandling: (EmbedRecord) -> ImmutableList<ContentHandling> = { persistentListOf() }
+    contentHandling: List<ContentHandling> = listOf(),
+    getContentHandling: (EmbedRecord) -> List<ContentHandling> = { listOf() }
 ) {
     if(media != null) {
         ContentHider(

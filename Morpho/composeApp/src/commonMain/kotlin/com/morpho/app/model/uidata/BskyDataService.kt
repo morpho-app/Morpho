@@ -111,8 +111,8 @@ fun getReplyRefs(uri: AtUri, api: Butterfly = getKoin().get<Butterfly>()): Flow<
 
 }
 
-suspend fun getPosts(posts: ImmutableList<AtUri>, api: Butterfly = getKoin().get<Butterfly>()): Flow<ImmutableList<BskyPost>?> = flow {
-    val query = GetPostsQuery(posts)
+suspend fun getPosts(posts: List<AtUri>, api: Butterfly = getKoin().get<Butterfly>()): Flow<List<BskyPost>?> = flow {
+    val query = GetPostsQuery(posts.toPersistentList())
     api.api.getPosts(query).onSuccess { response ->
         emit(response.posts.mapImmutable { it.toPost() })
     }.onFailure {
@@ -857,13 +857,13 @@ class BskyDataService: KoinComponent {
         .flowOn(dispatcher + CoroutineName("Likes of $id"))
 
     suspend fun profiles(
-        profiles: ImmutableList<AtIdentifier>,
+        profiles: List<AtIdentifier>,
         update: SharedFlow<Unit>,
         dispatcher: CoroutineDispatcher = Dispatchers.IO,
     ): Flow<Result<MorphoData<MorphoDataItem.ProfileItem>>> = flow<Result<MorphoData<MorphoDataItem.ProfileItem>>> {
         val uri = AtUri.myUserListUri(profiles.hashCode().toString())
         update.collect {
-            val query = GetProfilesQuery(profiles)
+            val query = GetProfilesQuery(profiles.toPersistentList())
             api.api.getProfiles(query).onSuccess { response ->
 
                 val data = MorphoData("Profiles", uri, null,

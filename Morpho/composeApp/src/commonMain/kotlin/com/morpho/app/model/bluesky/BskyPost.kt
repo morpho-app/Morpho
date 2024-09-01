@@ -8,9 +8,7 @@ import com.morpho.app.util.mapImmutable
 import com.morpho.butterfly.AtUri
 import com.morpho.butterfly.Cid
 import com.morpho.butterfly.Language
-import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
-import kotlinx.collections.immutable.toImmutableList
 import kotlinx.datetime.Clock
 import kotlinx.serialization.Serializable
 
@@ -30,9 +28,9 @@ data class BskyPost (
     val author: Profile,
     val text: String,
     @Serializable
-    val facets: List<BskyFacet> = persistentListOf(),
+    val facets: List<BskyFacet> = listOf(),
     @Serializable
-    val tags: List<String> = persistentListOf(),
+    val tags: List<String> = listOf(),
     val createdAt: Moment,
     @Serializable
     val feature: BskyPostFeature? = null,
@@ -49,7 +47,7 @@ data class BskyPost (
     val reply: BskyPostReply? = null,
     val reason: BskyPostReason? = null,
     @Serializable
-    val langs: List<Language> = persistentListOf(),
+    val langs: List<Language> = listOf(),
 ) {
     override operator fun equals(other: Any?) : Boolean {
         return when(other) {
@@ -140,13 +138,13 @@ fun ThreadViewPost.findRootPost(): ThreadViewPost? {
     }.lastOrNull()
 }
 
-fun ThreadViewPost.findParentChain(): ImmutableList<ThreadViewPost> {
+fun ThreadViewPost.findParentChain(): List<ThreadViewPost> {
     return generateSequence(this) { currentPost ->
         when (val parentUnion = currentPost.parent) {
             is ThreadViewPostParentUnion.ThreadViewPost -> parentUnion.value
             else -> null
         }
-    }.toImmutableList()
+    }.toList()
 }
 
 fun PostView.toPost(

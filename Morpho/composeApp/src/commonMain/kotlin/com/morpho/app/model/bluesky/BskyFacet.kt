@@ -205,6 +205,6 @@ fun BskyFacet.toFacet(): Facet {
                 is FacetType.UnknownFacet -> null
                 else -> throw IllegalArgumentException("Unknown facet type: $it")
             }
-        } as ReadOnlyList<FacetFeatureUnion>
+        }.toImmutableList() as ReadOnlyList<FacetFeatureUnion>
     )
 }

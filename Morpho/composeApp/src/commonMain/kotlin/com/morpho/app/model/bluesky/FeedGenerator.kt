@@ -8,7 +8,6 @@ import com.morpho.app.util.mapImmutable
 import com.morpho.butterfly.AtUri
 import com.morpho.butterfly.Cid
 import com.morpho.butterfly.Did
-import kotlinx.collections.immutable.ImmutableList
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -20,7 +19,7 @@ data class FeedGenerator(
     public val creator: Profile,
     public val displayName: String,
     public val description: String?,
-    public val descriptionFacets: ImmutableList<BskyFacet>,
+    public val descriptionFacets: List<BskyFacet>,
     public val avatar: String?,
     public val likeCount: Long,
     public val likedByMe: Boolean,

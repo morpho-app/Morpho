@@ -24,8 +24,6 @@ import com.morpho.app.ui.thread.ThreadTree
 import com.morpho.butterfly.AtIdentifier
 import com.morpho.butterfly.AtUri
 import com.morpho.butterfly.model.RecordType
-import kotlinx.collections.immutable.ImmutableList
-import kotlinx.collections.immutable.persistentListOf
 
 @Composable
 inline fun SkylineThreadFragment(
@@ -38,7 +36,7 @@ inline fun SkylineThreadFragment(
     crossinline onLikeClicked: (StrongRef) -> Unit = { },
     noinline onMenuClicked: (MenuOptions, BskyPost) -> Unit = { _, _ -> },
     crossinline onUnClicked: (type: RecordType, uri: AtUri) -> Unit = { _, _ -> },
-    crossinline getContentHandling: (BskyPost) -> ImmutableList<ContentHandling> = { persistentListOf() }
+    crossinline getContentHandling: (BskyPost) -> List<ContentHandling> = { listOf() }
 ) {
     val threadPost = remember { ThreadPost.ViewablePost(thread.post, thread.replies) }
     val hasReplies = rememberSaveable { threadPost.replies.isNotEmpty() }
