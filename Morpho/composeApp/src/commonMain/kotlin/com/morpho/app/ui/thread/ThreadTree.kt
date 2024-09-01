@@ -18,6 +18,7 @@ import androidx.compose.ui.util.fastForEach
 import com.atproto.repo.StrongRef
 import com.morpho.app.model.bluesky.BskyPost
 import com.morpho.app.model.bluesky.ThreadPost
+import com.morpho.app.model.uidata.ContentHandling
 import com.morpho.app.ui.common.OnPostClicked
 import com.morpho.app.ui.elements.MenuOptions
 import com.morpho.app.ui.elements.WrappedColumn
@@ -25,6 +26,8 @@ import com.morpho.app.ui.post.PostFragmentRole
 import com.morpho.butterfly.AtIdentifier
 import com.morpho.butterfly.AtUri
 import com.morpho.butterfly.model.RecordType
+import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.persistentListOf
 import morpho.app.ui.utils.indentLevel
 
 @LazyScopeMarker
@@ -47,6 +50,7 @@ fun ThreadTree(
     onLikeClicked: (StrongRef) -> Unit = { },
     onMenuClicked: (MenuOptions, BskyPost) -> Unit = { _, _ -> },
     onUnClicked: (type: RecordType, uri: AtUri) -> Unit = { _, _ -> },
+    getContentHandling: (BskyPost) -> ImmutableList<ContentHandling> = { persistentListOf() }
 ) {
 
 
@@ -62,7 +66,7 @@ fun ThreadTree(
                 onReplyClicked = onReplyClicked,
                 onMenuClicked = onMenuClicked,
                 onLikeClicked = onLikeClicked,
-
+                getContentHandling = getContentHandling
             )
         } else {
             val replies = remember { reply.replies.sortedWith(comparator) }
@@ -111,6 +115,7 @@ fun ThreadTree(
                             onReplyClicked = { onReplyClicked(it) },
                             onMenuClicked = { menu, post -> onMenuClicked(menu, post) },
                             onLikeClicked = { onLikeClicked(it) },
+                            getContentHandling = { getContentHandling(it) }
                         )
 
                         replies.fastForEach { reply ->
@@ -123,6 +128,7 @@ fun ThreadTree(
                                 onReplyClicked = { onReplyClicked(it) },
                                 onMenuClicked = { option, p -> onMenuClicked(option, p) },
                                 onLikeClicked = { onLikeClicked(it) },
+                                getContentHandling = { getContentHandling(it) }
                             )
                         }
                     }

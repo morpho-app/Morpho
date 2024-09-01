@@ -172,6 +172,8 @@ sealed interface LabelCause {
 
 }
 
+
+
 @Serializable
 @Immutable
 open class InterpretedLabelDefinition(
@@ -252,7 +254,9 @@ data object Hide: InterpretedLabelDefinition(
             contentList = LabelAction.Blur,
             contentView = LabelAction.Blur,
         ),
-    )
+    ),
+    localizedName = "Hide",
+    localizedDescription = "Hide",
 )
 
 data object Warn: InterpretedLabelDefinition(
@@ -281,7 +285,9 @@ data object Warn: InterpretedLabelDefinition(
             contentList = LabelAction.Blur,
             contentView = LabelAction.Blur,
         ),
-    )
+    ),
+    localizedName = "Warn",
+    localizedDescription = "Warn",
 )
 
 data object NoUnauthed: InterpretedLabelDefinition(
@@ -310,7 +316,9 @@ data object NoUnauthed: InterpretedLabelDefinition(
             contentList = LabelAction.Blur,
             contentView = LabelAction.Blur,
         ),
-    )
+    ),
+    localizedName = "No Unauthenticated",
+    localizedDescription = "Do not show to unauthenticated users",
 )
 
 data object Porn: InterpretedLabelDefinition(
@@ -332,7 +340,9 @@ data object Porn: InterpretedLabelDefinition(
         content = ModBehaviour(
             contentMedia = LabelAction.Blur,
         ),
-    )
+    ),
+    localizedName = "Sexually Explicit",
+    localizedDescription = "This content is sexually explicit",
 )
 
 data object Sexual: InterpretedLabelDefinition(
@@ -354,7 +364,9 @@ data object Sexual: InterpretedLabelDefinition(
         content = ModBehaviour(
             contentMedia = LabelAction.Blur,
         ),
-    )
+    ),
+    localizedName = "Suggestive",
+    localizedDescription = "This content may be suggestive or sexual in nature",
 )
 
 data object Nudity: InterpretedLabelDefinition(
@@ -376,7 +388,9 @@ data object Nudity: InterpretedLabelDefinition(
         content = ModBehaviour(
             contentMedia = LabelAction.Blur,
         ),
-    )
+    ),
+    localizedName = "Nudity",
+    localizedDescription = "This content contains nudity, artistic or otherwise",
 )
 
 data object GraphicMedia: InterpretedLabelDefinition(
@@ -398,7 +412,9 @@ data object GraphicMedia: InterpretedLabelDefinition(
         content = ModBehaviour(
             contentMedia = LabelAction.Blur,
         ),
-    )
+    ),
+    localizedName = "Graphic Content",
+    localizedDescription = "This content is graphic or violent in nature",
 )
 
 
@@ -468,10 +484,12 @@ class ContentLabelService: KoinComponent {
 
     private fun initDefinitionCache() {
         val labelers = labelers.value
+        log.debug { "Labelers: $labelers" }
         val labelPrefs = labelPrefs.value
+        log.debug { "Label prefs: $labelPrefs" }
         val labelPrefMap = labelPrefs.associateBy { if (it.labelerDid == null) it.label else it.labelerDid.toString() }
         val labelerMap = labelers.associateBy { it.did.toString() }
-
+        log.debug { "Labeler map: $labelerMap" }
         val labelMap = labelerMap.mapValues { (id, labeler) ->
             val labelPref = labelPrefMap[id]
             if (labelPref != null) {
@@ -556,6 +574,7 @@ class ContentLabelService: KoinComponent {
             }
             Pair(name, interpreted)
         }.values.toMap()
+        definitionCache.putAll(definitionMap)
     }
 
     fun getContentHandlingForPost(post: BskyPost): ImmutableList<ContentHandling> {
@@ -574,6 +593,7 @@ class ContentLabelService: KoinComponent {
             return result.toImmutableList()
         }
         if (labels.isNotEmpty()) {
+            log.debug { "Post ${post.uri} has labels: ${labels.joinToString { it.value }}" }
             if (!showAdultContent.value) {
                 val adultLabeler = labelPrefs.value.fastFilter { prefLabel ->
                     labels.fastAny { bskyLabel ->
@@ -593,9 +613,10 @@ class ContentLabelService: KoinComponent {
                         || value == LabelValue.NUDITY
                         || adultLabeler.isNotEmpty()
                 }
+                log.debug { "Post ${post.uri} has adult label: $adultLabel" }
                 when (adultLabel?.getLabelValue()) {
                     LabelValue.PORN -> causes.add(LabelCause.Label(
-                        LabelSource.Labeler(labelers.value.firstOrNull { it.did == adultLabel.creator }!!),
+                        LabelSource.Labeler(labelers.value.firstOrNull { it.did == adultLabel.creator } ?: BlueskyHardcodedLabeler),
                         adultLabel,
                         Porn,
                         LabelTarget.Content,
@@ -606,7 +627,7 @@ class ContentLabelService: KoinComponent {
                         downgraded = false,
                     ))
                     LabelValue.SEXUAL -> causes.add(LabelCause.Label(
-                        LabelSource.Labeler(labelers.value.firstOrNull { it.did == adultLabel.creator }!!),
+                        LabelSource.Labeler(labelers.value.firstOrNull { it.did == adultLabel.creator } ?: BlueskyHardcodedLabeler),
                         adultLabel,
                         Sexual,
                         LabelTarget.Content,
@@ -617,18 +638,18 @@ class ContentLabelService: KoinComponent {
                         downgraded = false,
                     ))
                     LabelValue.NUDITY -> causes.add(LabelCause.Label(
-                        LabelSource.Labeler(labelers.value.firstOrNull { it.did == adultLabel.creator }!!),
+                        LabelSource.Labeler(labelers.value.firstOrNull { it.did == adultLabel.creator } ?: BlueskyHardcodedLabeler),
                         adultLabel,
                         Nudity,
                         LabelTarget.Content,
                         LabelSetting.HIDE,
                         Nudity.behaviours.content,
                         noOverride = true,
-                        priority = 6,
+                        priority = 7,
                         downgraded = false,
                     ))
                     LabelValue.GRAPHIC_MEDIA -> causes.add(LabelCause.Label(
-                        LabelSource.Labeler(labelers.value.firstOrNull { it.did == adultLabel.creator }!!),
+                        LabelSource.Labeler(labelers.value.firstOrNull { it.did == adultLabel.creator } ?: BlueskyHardcodedLabeler),
                         adultLabel,
                         GraphicMedia,
                         LabelTarget.Content,
@@ -639,7 +660,7 @@ class ContentLabelService: KoinComponent {
                         downgraded = false,
                     ))
                     LabelValue.NSFL -> causes.add(LabelCause.Label(
-                        LabelSource.Labeler(labelers.value.firstOrNull { it.did == adultLabel.creator }!!),
+                        LabelSource.Labeler(labelers.value.firstOrNull { it.did == adultLabel.creator } ?: BlueskyHardcodedLabeler),
                         adultLabel,
                         GraphicMedia,
                         LabelTarget.Content,
@@ -650,7 +671,7 @@ class ContentLabelService: KoinComponent {
                         downgraded = false,
                     ))
                     LabelValue.GORE -> causes.add(LabelCause.Label(
-                        LabelSource.Labeler(labelers.value.firstOrNull { it.did == adultLabel.creator }!!),
+                        LabelSource.Labeler(labelers.value.firstOrNull { it.did == adultLabel.creator } ?: BlueskyHardcodedLabeler),
                         adultLabel,
                         GraphicMedia,
                         LabelTarget.Content,
@@ -738,9 +759,12 @@ class ContentLabelService: KoinComponent {
             val labelsWeCareAbout = labelPrefs.value.fastFilter { prefLabel ->
                 labels.fastAny { it.value == prefLabel.label }
             }
+
+            log.debug { "Post ${post.uri} has labels we care about: ${labelsWeCareAbout.joinToString { it.label }}" }
             labelsWeCareAbout.fastForEach { prefLabel ->
                 val cachedInterpretation = definitionCache[prefLabel.label]
                 if (cachedInterpretation != null) {
+                    log.debug { "Post ${post.uri} has cached interpretation for ${prefLabel.label}" }
                     val cause = LabelCause.Label(
                         LabelSource.Labeler(labelers.value.firstOrNull { it.did == prefLabel.labelerDid }!!),
                         labels.first { it.value == prefLabel.label },
@@ -869,6 +893,7 @@ class ContentLabelService: KoinComponent {
             }
         }
 
+        log.debug { "Post ${post.uri} has handling: \n$result" }
         return result.toImmutableList()
     }
 

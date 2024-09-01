@@ -18,6 +18,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.util.fastForEach
 import com.morpho.app.model.bluesky.*
 import com.morpho.app.ui.elements.OutlinedAvatar
 import com.morpho.app.ui.elements.RichTextElement
@@ -134,27 +135,30 @@ fun EmbedPostFragment(
                 RichTextElement(
                     text = post.litePost.text,
                     facets = post.litePost.facets,
-                    onClick = {
-                        when(it) {
-                            is FacetType.ExternalLink -> {
-                                openBrowser(it.uri.uri)
-                            }
-                            is FacetType.Format -> {}
-                            is FacetType.PollBlueOption -> {
+                    onClick = { facetTypes ->
+                        if (facetTypes.isEmpty()) {
+                            onItemClicked(post.uri)
+                            return@RichTextElement
+                        }
+                        facetTypes.fastForEach {
+                            when(it) {
+                                is FacetType.ExternalLink -> {
+                                    openBrowser(it.uri.uri)
+                                }
+                                is FacetType.Format -> {}
+                                is FacetType.PollBlueOption -> {
 
-                            }
-                            is FacetType.Tag -> {}
-                            is FacetType.UserDidMention -> {
-                                onProfileClicked(post.author.did)
-                            }
-                            is FacetType.UserHandleMention -> {
-                                onProfileClicked(it.handle)
-                            }
-                            null -> {
-                                onItemClicked(post.uri)
-                            }
+                                }
+                                is FacetType.Tag -> {}
+                                is FacetType.UserDidMention -> {
+                                    onProfileClicked(post.author.did)
+                                }
+                                is FacetType.UserHandleMention -> {
+                                    onProfileClicked(it.handle)
+                                }
 
-                            else -> {}
+                                else -> {}
+                            }
                         }
                     },
                     modifier = Modifier.padding(horizontal = 4.dp)
@@ -335,6 +339,19 @@ fun ColumnScope.EmbedPostFeature(
                 else -> {}
             }
         }
+
+        is EmbedRecord.EmbedVideo -> {
+            VideoEmbedThumb(
+                video = embed.video,
+                alt = embed.alt,
+                aspectRatio = embed.aspectRatio,
+                modifier = Modifier
+                    .padding(vertical = 6.dp)
+                    .heightIn(10.dp, 700.dp)
+                    .fillMaxWidth(),
+            )
+        }
+        else -> {}
     }
 
 }

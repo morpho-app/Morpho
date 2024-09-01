@@ -18,6 +18,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.util.fastForEach
 import com.atproto.repo.StrongRef
 import com.morpho.app.model.bluesky.FacetType
 import com.morpho.app.model.bluesky.FeedGenerator
@@ -130,16 +131,21 @@ fun FeedListEntryFragment(
             RichTextElement(
                 text = feed.description.orEmpty(),
                 facets = feed.descriptionFacets,
-                onClick = {
-                    when (it) {
-                        is FacetType.ExternalLink -> { openBrowser(it.uri.uri) }
-                        is FacetType.Format -> {  }
-                        is FacetType.PollBlueOption -> {}
-                        is FacetType.Tag -> { }
-                        is FacetType.UserDidMention -> { }
-                        is FacetType.UserHandleMention -> { }
-                        null -> { onFeedClicked(feed) }
-                        else -> {}
+                onClick = { facetTypes ->
+                    if (facetTypes.isEmpty()) {
+                        onFeedClicked(feed)
+                        return@RichTextElement
+                    }
+                    facetTypes.fastForEach { facetType ->
+                        when (facetType) {
+                            is FacetType.ExternalLink -> { openBrowser(facetType.uri.uri) }
+                            is FacetType.Format -> {  }
+                            is FacetType.PollBlueOption -> {}
+                            is FacetType.Tag -> { }
+                            is FacetType.UserDidMention -> { }
+                            is FacetType.UserHandleMention -> { }
+                            else -> {}
+                        }
                     }
                 },
                 modifier = Modifier.padding(horizontal = 6.dp)

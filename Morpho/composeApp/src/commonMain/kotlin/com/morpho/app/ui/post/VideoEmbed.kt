@@ -20,18 +20,21 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import app.bsky.embed.AspectRatio
 import coil3.compose.AsyncImage
 import coil3.compose.LocalPlatformContext
 import coil3.request.ImageRequest
 import coil3.size.Size
-import com.morpho.app.model.bluesky.BskyPostFeature
 import com.morpho.app.model.bluesky.EmbedVideo
 import com.morpho.app.model.bluesky.EmbedVideoView
+import com.morpho.app.model.bluesky.VideoEmbed
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun VideoEmbedThumb(
-    video: BskyPostFeature.VideoFeature,
+    video: VideoEmbed,
+    alt: String = "",
+    aspectRatio: AspectRatio? = null,
     modifier: Modifier = Modifier
         .padding(vertical = 6.dp)
         .heightIn(10.dp, 700.dp)
@@ -42,16 +45,16 @@ fun VideoEmbedThumb(
     BoxWithConstraints(
         modifier = modifier.padding(2.dp)
     ) {
-        if (video.aspectRatio == null) {
-            when(video.video) {
+        if (aspectRatio == null) {
+            when(video) {
                 is EmbedVideo -> {
                 }
                 is EmbedVideoView -> {
                     AsyncImage(
                         model = ImageRequest.Builder(LocalPlatformContext.current)
-                            .data(video.video.thumbnail.atUri)
+                            .data(video.thumbnail.atUri)
                             .build(),
-                        contentDescription = video.alt,
+                        contentDescription = alt,
                         contentScale = ContentScale.Inside,
                         modifier = Modifier
                             .clip(MaterialTheme.shapes.small)
@@ -79,22 +82,22 @@ fun VideoEmbedThumb(
         } else {
             var width = with(LocalDensity.current) { maxWidth.value.dp.toPx() }
             var height = with(LocalDensity.current) { maxHeight.value.dp.toPx() }
-            val ratio = video.aspectRatio.width.toFloat() / video.aspectRatio.height.toFloat()
+            val ratio = aspectRatio.width.toFloat() / aspectRatio.height.toFloat()
             if (ratio > 1) {
                 height /= ratio
             } else {
                 width /= ratio
             }
-            when(video.video) {
+            when(video) {
                 is EmbedVideo -> {
                 }
                 is EmbedVideoView -> {
                     AsyncImage(
                         model = ImageRequest.Builder(LocalPlatformContext.current)
-                            .data(video.video.thumbnail.atUri)
+                            .data(video.thumbnail.atUri)
                             .size(Size(width.toInt(), height.toInt()))
                             .build(),
-                        contentDescription = video.alt,
+                        contentDescription = alt,
                         contentScale = ContentScale.Inside,
                         modifier = Modifier
                             .clip(MaterialTheme.shapes.small)
@@ -121,7 +124,7 @@ fun VideoEmbedThumb(
 
         }
 
-        if (video.alt.isNotEmpty()) {
+        if (alt.isNotEmpty()) {
             when(showAltText.value) {
                 true -> {
 
@@ -135,7 +138,7 @@ fun VideoEmbedThumb(
                     ){
                         SelectionContainer {
                             Text(
-                                text = video.alt,
+                                text = alt,
                                 color = Color.White,
                                 style = MaterialTheme.typography.bodyLarge,
                                 modifier = Modifier.padding(6.dp),

@@ -22,7 +22,7 @@ open class BaseScreenModel : ScreenModel, KoinComponent {
     val api: Butterfly by inject()
     val preferences: PreferencesRepository by inject()
     val notifService: BskyNotificationService by inject()
-    val labelServicee: ContentLabelService by inject()
+    val labelService: ContentLabelService by inject()
 
     val isLoggedIn: Boolean
         get() = api.isLoggedIn()

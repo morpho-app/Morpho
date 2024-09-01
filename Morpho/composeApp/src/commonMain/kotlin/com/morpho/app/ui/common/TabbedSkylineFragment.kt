@@ -82,6 +82,7 @@ fun <T: MainScreenModel, I: MorphoDataItem, S: ContentCardState<I>> TabbedSkylin
             onReplyClicked = { onReplyClicked(it) },
             onLikeClicked = { uri -> sm.createRecord(RecordUnion.Like(uri)) },
             onPostButtonClicked = { onPostButtonClicked() },
+            getContentHandling = { post -> sm.labelService.getContentHandlingForPost(post)},
             contentPadding = paddingValues,
             isProfileFeed = isProfileFeed,
         )

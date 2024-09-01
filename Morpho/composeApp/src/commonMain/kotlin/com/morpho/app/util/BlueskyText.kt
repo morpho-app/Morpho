@@ -1,14 +1,15 @@
 package com.morpho.app.util
 
 import androidx.compose.ui.util.fastFilterNotNull
+import androidx.compose.ui.util.fastFlatMap
 import androidx.compose.ui.util.fastMap
 import com.atproto.identity.ResolveHandleQuery
-import kotlinx.serialization.Serializable
-import com.morpho.butterfly.Butterfly
 import com.morpho.app.model.bluesky.BskyFacet
 import com.morpho.app.model.bluesky.FacetType
 import com.morpho.app.model.bluesky.RichTextFormat
+import com.morpho.butterfly.Butterfly
 import kotlinx.collections.immutable.ImmutableList
+import kotlinx.serialization.Serializable
 
 
 data class BlueskyText(
@@ -75,16 +76,23 @@ sealed interface Segment {
 expect fun makeBlueskyText(text: String): BlueskyText
 
 suspend fun resolveBlueskyText(text: BlueskyText, api: Butterfly): Result<BlueskyText> = runCatching {
-    val facets:List<BskyFacet> = text.facets.fastMap { facet: BskyFacet ->
-        if (facet.facetType is FacetType.UserHandleMention) {
-            // Resolve handles
-            val response = api.api.resolveHandle(ResolveHandleQuery(facet.facetType.handle)).getOrNull()
-            if (response != null) facet.copy(facetType = FacetType.UserDidMention(response.did))
-            else null
+    val facets:List<BskyFacet> = text.facets.fastFlatMap { facet: BskyFacet ->
+        facet.facetType.fastMap {
+            if (it is FacetType.UserHandleMention) {
+                // Resolve handles
+                val response = api.api.resolveHandle(ResolveHandleQuery(it.handle)).getOrNull()
+                if (response != null) {
+                    val index = facet.facetType.indexOf(it)
+                    val facetTypes = facet.facetType.toMutableList()
+                    facetTypes[index] = FacetType.UserDidMention(response.did)
+                    facet.copy(facetType = facetTypes)
+                } else null
 
-        } else {
-            facet
+            } else {
+                facet
+            }
         }
+
     }.fastFilterNotNull()
     return Result.success(BlueskyText(text.text, facets as ImmutableList<BskyFacet>))
 }

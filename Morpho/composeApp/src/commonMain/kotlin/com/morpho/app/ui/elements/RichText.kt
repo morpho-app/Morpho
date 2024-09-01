@@ -13,13 +13,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import kotlinx.collections.immutable.persistentListOf
+import androidx.compose.ui.util.fastForEach
 import com.morpho.app.model.bluesky.BskyFacet
-import com.morpho.app.model.bluesky.RichTextFormat.BOLD
-import com.morpho.app.model.bluesky.RichTextFormat.ITALIC
-import com.morpho.app.model.bluesky.RichTextFormat.STRIKETHROUGH
-import com.morpho.app.model.bluesky.RichTextFormat.UNDERLINE
 import com.morpho.app.model.bluesky.FacetType
+import com.morpho.app.model.bluesky.RichTextFormat.*
+import kotlinx.collections.immutable.persistentListOf
 import kotlin.math.min
 
 @Composable
@@ -27,72 +25,78 @@ fun RichTextElement(
     text: String,
     modifier: Modifier = Modifier,
     facets: List<BskyFacet> = persistentListOf(),
-    onClick: (FacetType?) -> Unit = {},
+    onClick: (List<FacetType>) -> Unit = {},
     maxLines: Int = 20,
 
     ) {
     val formattedText = buildAnnotatedString {
         pushStyle(SpanStyle(MaterialTheme.colorScheme.onSurface))
         append(text)
-        facets.forEach {
-            when(it.facetType) {
-                is FacetType.ExternalLink -> {
-                    addStringAnnotation(tag = "Link", it.facetType.uri.uri, min(it.start, text.length-1), min(it.end, text.length-1))
-                    addStyle(
-                        style = SpanStyle(MaterialTheme.colorScheme.tertiary),
-                        start = min(it.start, text.length-1),
-                        end = min(it.end, text.length-1)
-                    )
-                }
-                is FacetType.PollBlueOption -> {
-                    addStringAnnotation(tag = "PollBlue", it.facetType.number.toString(), min(it.start, text.length-1), min(it.end, text.length-1))
-                    addStyle(
-                        style = SpanStyle(MaterialTheme.colorScheme.tertiary),
-                        start = min(it.start, text.length-1),
-                        end = min(it.end, text.length-1)
-                    )
-                }
-
-                is FacetType.Tag -> {
-                    addStringAnnotation(tag = "Tag", it.facetType.tag, min(it.start, text.length-1), min(it.end, text.length-1))
-                    addStyle(
-                        style = SpanStyle(MaterialTheme.colorScheme.tertiary),
-                        start = min(it.start, text.length-1),
-                        end = min(it.end, text.length-1)
-                    )
-                }
-                is FacetType.UserDidMention -> {
-                    addStringAnnotation(tag = "Mention", it.facetType.did.did, min(it.start, text.length-1), min(it.end, text.length-1))
-                    addStyle(
-                        style = SpanStyle(MaterialTheme.colorScheme.tertiary),
-                        start = min(it.start, text.length-1),
-                        end = min(it.end, text.length-1)
-                    )
-                }
-                is FacetType.UserHandleMention -> {
-                    addStringAnnotation(tag = "Mention", it.facetType.handle.handle, min(it.start, text.length-1), min(it.end, text.length-1))
-                    addStyle(
-                        style = SpanStyle(MaterialTheme.colorScheme.tertiary),
-                        start = min(it.start, text.length-1),
-                        end = min(it.end, text.length-1)
-                    )
-                }
-                is FacetType.Format -> {
-                    val style = when(it.facetType.format) {
-                        BOLD -> SpanStyle(fontWeight = FontWeight.Bold)
-                        ITALIC -> SpanStyle(fontStyle = FontStyle.Italic)
-                        STRIKETHROUGH ->SpanStyle(textDecoration = TextDecoration.LineThrough)
-                        UNDERLINE -> SpanStyle(textDecoration = TextDecoration.Underline)
+        facets.fastForEach { facet ->
+            facet.facetType.fastForEach { facetType ->
+                when(facetType) {
+                    is FacetType.ExternalLink -> {
+                        addStringAnnotation(tag = "Link", facetType.uri.uri, min(facet.start, text.length-1), min(facet.end, text.length-1))
+                        addStyle(
+                            style = SpanStyle(MaterialTheme.colorScheme.tertiary),
+                            start = min(facet.start, text.length-1),
+                            end = min(facet.end, text.length-1)
+                        )
                     }
-                    addStyle(
-                        style = style,
-                        start = min(it.start, text.length-1),
-                        end = min(it.end, text.length-1)
-                    )
-                }
+                    is FacetType.PollBlueOption -> {
+                        addStringAnnotation(tag = "PollBlue", facetType.number.toString(), min(facet.start, text.length-1), min(facet.end, text.length-1))
+                        addStyle(
+                            style = SpanStyle(MaterialTheme.colorScheme.tertiary),
+                            start = min(facet.start, text.length-1),
+                            end = min(facet.end, text.length-1)
+                        )
+                    }
 
-                else -> {}
+                    is FacetType.Tag -> {
+                        addStringAnnotation(tag = "Tag", facetType.tag, min(facet.start, text.length-1), min(facet.end, text.length-1))
+                        addStyle(
+                            style = SpanStyle(MaterialTheme.colorScheme.tertiary),
+                            start = min(facet.start, text.length-1),
+                            end = min(facet.end, text.length-1)
+                        )
+                    }
+                    is FacetType.UserDidMention -> {
+                        addStringAnnotation(tag = "Mention", facetType.did.did, min(facet.start, text.length-1), min(facet.end, text.length-1))
+                        addStyle(
+                            style = SpanStyle(MaterialTheme.colorScheme.tertiary),
+                            start = min(facet.start, text.length-1),
+                            end = min(facet.end, text.length-1)
+                        )
+                    }
+                    is FacetType.UserHandleMention -> {
+                        addStringAnnotation(tag = "Mention", facetType.handle.handle, min(facet.start, text.length-1), min(facet.end, text.length-1))
+                        addStyle(
+                            style = SpanStyle(MaterialTheme.colorScheme.tertiary),
+                            start = min(facet.start, text.length-1),
+                            end = min(facet.end, text.length-1)
+                        )
+                    }
+                    is FacetType.Format -> {
+                        val style = when(facetType.format) {
+                            BOLD -> SpanStyle(fontWeight = FontWeight.Bold)
+                            ITALIC -> SpanStyle(fontStyle = FontStyle.Italic)
+                            STRIKETHROUGH ->SpanStyle(textDecoration = TextDecoration.LineThrough)
+                            UNDERLINE -> SpanStyle(textDecoration = TextDecoration.Underline)
+                        }
+                        addStyle(
+                            style = style,
+                            start = min(facet.start, text.length-1),
+                            end = min(facet.end, text.length-1)
+                        )
+                    }
+                    is FacetType.BlueMoji -> {
+                        // TODO: Add BlueMoji support
+                    }
+
+                    else -> {}
+                }
             }
+
 
         }
         toAnnotatedString()
@@ -108,7 +112,7 @@ fun RichTextElement(
                         return@ClickableText onClick(it.facetType)
                     }
                 }
-                onClick(null)
+                onClick(listOf())
             },
             maxLines = maxLines, // Sorry @retr0.id, no more 200 line posts.
             overflow = TextOverflow.Ellipsis,

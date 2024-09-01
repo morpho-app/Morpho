@@ -158,7 +158,8 @@ fun PostView.toPost(
         Post.serializer().deserialize(record)
     } catch (e: Exception) {
         Post(
-            text = "Error deserializing post",
+            text = "Error deserializing post: $e\n" +
+                    "Record: $record",
             facets = persistentListOf(),
             tags = persistentListOf(),
             createdAt = Clock.System.now(),
