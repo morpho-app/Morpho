@@ -8,5 +8,6 @@ plugins {
     alias(libs.plugins.kotlinxSerialization).apply(false)
     alias(libs.plugins.kspPlugin).apply(false)
     alias(libs.plugins.kotlinxAbiPlugin).apply(false)
+    alias(libs.plugins.kotlinParcelize).apply(false)
     id("com.rickclephas.kmp.nativecoroutines") version "1.0.0-ALPHA-27" apply false
 }

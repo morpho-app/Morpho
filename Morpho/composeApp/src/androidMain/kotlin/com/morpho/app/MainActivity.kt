@@ -11,10 +11,11 @@ import androidx.window.layout.WindowMetricsCalculator
 import org.koin.androidx.viewmodel.ext.android.viewModel
 
 
-class MainActivity : ComponentActivity() {
+class MorphoAndroidActivity : ComponentActivity() {
 
     val viewModel: AndroidMainViewModel by viewModel()
     override fun onCreate(savedInstanceState: Bundle?) {
+
         super.onCreate(savedInstanceState)
         WindowCompat.setDecorFitsSystemWindows(window, false)
 

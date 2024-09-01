@@ -7,6 +7,7 @@ plugins {
     alias(libs.plugins.kotlinxSerialization)
     alias(libs.plugins.kspPlugin)
     alias(libs.plugins.kotlinxAbiPlugin)
+    alias(libs.plugins.kotlinParcelize)
     //id("com.rickclephas.kmp.nativecoroutines") version "1.0.0-ALPHA-27"
 }
 
@@ -105,6 +106,7 @@ kotlin {
             implementation(libs.kotlinx.immutable)
             implementation(libs.kotlinx.serialization.cbor)
             implementation(libs.kotlinx.serialization.json)
+
             implementation(kotlin("reflect"))
 
             api(libs.logging)
@@ -149,6 +151,7 @@ kotlin {
             implementation(libs.ktor.logging)
             implementation(libs.slf4j.api)
             //implementation(libs.slf4j.simple)
+
         }
         desktopMain.dependencies {
             implementation(compose.desktop.currentOs)
@@ -207,6 +210,7 @@ android {
     }
     buildFeatures {
         compose = true
+        viewBinding = true
     }
 
     composeOptions {

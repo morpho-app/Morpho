@@ -24,27 +24,27 @@ import org.koin.dsl.bind
 import org.koin.dsl.module
 
 val appModule = module {
-    single { BaseScreenModel() }
-    factory { MainScreenModel() }
-    factory { TabbedMainScreenModel() }
-    factory { TabbedProfileViewModel() }
-    factory { TabbedNotificationScreenModel() }
-    factory { LoginScreenModel() }
-    factory { p-> UpdateTick(p.get()) }
-    single { ClipboardManager }
+    single<BaseScreenModel> { BaseScreenModel() }
+    factory<MainScreenModel> { MainScreenModel() }
+    factory<TabbedMainScreenModel> { TabbedMainScreenModel() }
+    factory<TabbedProfileViewModel> { TabbedProfileViewModel() }
+    factory<TabbedNotificationScreenModel> { TabbedNotificationScreenModel() }
+    factory<LoginScreenModel> { LoginScreenModel() }
+    factory<UpdateTick> { p-> UpdateTick(p.get<Long>()) }
+    single<ClipboardManager> { ClipboardManager }
 }
 
 val storageModule = module {
-    single { p-> SessionRepository(p.get()) }
-    single { p-> PreferencesRepository(p.get())}
+    single<SessionRepository> { p-> SessionRepository(p.get()) }
+    single<PreferencesRepository> { p-> PreferencesRepository(p.get())}
     singleOf(::UserRepositoryImpl) bind UserRepository::class
 }
 
 val dataModule = module {
-    single { Butterfly() }
-    single { BskyDataService() }
-    single { BskyNotificationService() }
-    single { ContentLabelService() }
+    single<Butterfly> { Butterfly() }
+    single<BskyDataService> { BskyDataService() }
+    single<BskyNotificationService> { BskyNotificationService() }
+    single<ContentLabelService> { ContentLabelService() }
 }
 
 @Suppress("MemberVisibilityCanBePrivate")

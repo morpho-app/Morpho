@@ -2,7 +2,7 @@ package com.morpho.app.ui.common
 
 import android.content.Intent
 import android.net.Uri
-import com.morpho.app.MainApplication
+import com.morpho.app.MorphoApplication
 import com.morpho.app.model.bluesky.BskyPost
 
 actual fun sharePost(post: BskyPost) {
@@ -18,5 +18,5 @@ actual fun sharePost(post: BskyPost) {
         flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
     }, null)
 
-    MainApplication().applicationContext.startActivity(shareIntent)
+    MorphoApplication().applicationContext.startActivity(shareIntent)
 }
