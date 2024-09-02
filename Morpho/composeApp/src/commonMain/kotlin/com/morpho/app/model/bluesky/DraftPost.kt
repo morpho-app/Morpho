@@ -20,6 +20,7 @@ import kotlinx.datetime.Clock
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
 
+
 @Serializable
 data class DraftPost(
     val text: String = "",
