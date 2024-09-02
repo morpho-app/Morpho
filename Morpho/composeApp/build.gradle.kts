@@ -54,7 +54,7 @@ kotlin {
             implementation(libs.androidx.activity.compose)
             implementation(libs.androidx.window)
             implementation(libs.androidx.material3.window.sizeclass)
-
+            implementation(libs.accompanist.permissions)
 
             // Koin dependency injection
             implementation(libs.koin.android)
@@ -127,6 +127,11 @@ kotlin {
             implementation(libs.koin.compose)
 
 
+            // Enables FileKit without Compose dependencies
+            implementation(libs.filekit.core)
+
+            // Enables FileKit with Composable utilities
+            implementation(libs.filekit.compose)
 
             // Ktor networking
             implementation(libs.okio)
@@ -161,6 +166,7 @@ kotlin {
             implementation(compose.desktop.currentOs)
             implementation(libs.appdirs)
             implementation(libs.kotlinx.coroutines.swing)
+            implementation(kotlin("stdlib"))
             implementation(libs.logback.core)
             implementation(libs.logback.classic)
             implementation(libs.nativeparameterstoreaccess)

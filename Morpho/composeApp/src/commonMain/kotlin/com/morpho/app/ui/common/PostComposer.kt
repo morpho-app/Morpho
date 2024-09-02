@@ -15,20 +15,22 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import app.bsky.feed.Post
-import app.bsky.feed.PostEmbedUnion
 import app.bsky.feed.PostReplyRef
 import com.atproto.repo.StrongRef
+import com.morpho.app.data.toSharedImage
 import com.morpho.app.model.bluesky.BskyPost
+import com.morpho.app.model.bluesky.DraftImage
 import com.morpho.app.model.bluesky.DraftPost
 import com.morpho.app.model.uidata.getReplyRefs
 import com.morpho.app.ui.post.ComposerPostFragment
-import com.morpho.butterfly.Language
-import kotlinx.collections.immutable.persistentListOf
+import io.github.vinceglb.filekit.compose.rememberFilePickerLauncher
+import io.github.vinceglb.filekit.core.PickerMode
+import io.github.vinceglb.filekit.core.PickerType
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
 import kotlinx.coroutines.flow.singleOrNull
 import kotlinx.coroutines.launch
-import kotlinx.datetime.Clock
 
 
 enum class ComposerRole {
@@ -47,7 +49,7 @@ inline fun BottomSheetPostComposer(
     initialContent: BskyPost? = null,
     role: ComposerRole = ComposerRole.StandalonePost,
     draft: DraftPost = DraftPost(),
-    crossinline onSend: (Post) -> Unit = {},
+    crossinline onSend: (DraftPost) -> Unit = {},
     crossinline onCancel: () -> Unit = {},
     crossinline onUpdate: (DraftPost) -> Unit = {},
     sheetState:SheetState = rememberModalBottomSheetState(),
@@ -97,7 +99,7 @@ fun PostComposer(
     initialContent: BskyPost? = null,
     role: ComposerRole = ComposerRole.StandalonePost,
     draft: DraftPost = DraftPost(),
-    onSend: (Post) -> Unit = {},
+    onSend: (DraftPost) -> Unit = {},
     onCancel: () -> Unit = {},
     onUpdate: (DraftPost) -> Unit = {},
     onDismissRequest: () -> Unit = {},
@@ -162,12 +164,37 @@ fun PostComposer(
     }
     val textLeft = 300 - postText.length
     val textFractionUsed: Float = postText.length.toFloat() / 300.0f
-    LaunchedEffect(postText) {
+    var postImages by rememberSaveable { mutableStateOf(draft.images) }
+    val imagePicker = rememberFilePickerLauncher(
+        type = PickerType.Image,
+        mode = PickerMode.Multiple(),
+        title = "Pick a media",
+        initialDirectory = null
+    ) { files ->
+        scope.launch(Dispatchers.IO) {
+            // Handle the picked files
+            val images = files?.map {
+                val image = it.toSharedImage()
+                DraftImage(
+                    image = image,
+                    aspectRatio = image.getAspectRatio()
+                )
+            }
+            if (images != null) {
+                postImages = postImages.toMutableList().apply {
+                    addAll(images)
+                }
+            }
+        }
+    }
+
+    LaunchedEffect(postText, postImages) {
         onUpdate(
             DraftPost(
                 text = postText,
                 reply = if (replyRef != null && role == ComposerRole.Reply) initialContent else null,
                 quote = if (quoteRef != null && role == ComposerRole.QuotePost) initialContent else null,
+                images = postImages
             )
         )
     }
@@ -194,20 +221,7 @@ fun PostComposer(
                 .weight(0.1f))
             Button(
                 onClick = {
-                    onSend(
-                        Post(
-                            text = postText.lines().reduce { acc, s ->  acc.trimEnd() + s.trimEnd()},
-                            reply = replyRef,
-                            embed = if(quoteRef != null) {
-                                PostEmbedUnion.Record(value = app.bsky.embed.Record(quoteRef))
-                            } else null,
-                            createdAt = Clock.System.now(),
-                            // Placeholder until can pull the system language or check user prefs
-                            langs = persistentListOf(Language("en")),
-                            //Deal with facets, etc. later
-
-                        )
-                    )
+                    onSend(draft)
                     onUpdate(DraftPost())
                 },
                 modifier = Modifier.padding(horizontal = 8.dp)
@@ -252,20 +266,7 @@ fun PostComposer(
                     keyboardActions = KeyboardActions(
                         onDone = {
                             focusManager.clearFocus()
-                            onSend(
-                                Post(
-                                    text = postText.lines().reduce { acc, s ->  acc.trimEnd() + s.trimEnd()},
-                                    reply = replyRef,
-                                    embed = if(quoteRef != null) {
-                                        PostEmbedUnion.Record(value = app.bsky.embed.Record(quoteRef))
-                                    } else null,
-                                    createdAt = Clock.System.now(),
-                                    // Placeholder until can pull the system language or check user prefs
-                                    langs = persistentListOf(Language("en")),
-                                    //Deal with facets, etc. later
-
-                                )
-                            )
+                            onSend(draft)
                         },
                         onPrevious = {
                             focusManager.clearFocus()
@@ -273,23 +274,20 @@ fun PostComposer(
                         },
                         onSend = {
                             focusManager.clearFocus()
-                            onSend(
-                                Post(
-                                    text = postText.lines().reduce { acc, s ->  acc.trimEnd() + s.trimEnd()},
-                                    reply = replyRef,
-                                    embed = if(quoteRef != null) {
-                                        PostEmbedUnion.Record(value = app.bsky.embed.Record(quoteRef))
-                                    } else null,
-                                    createdAt = Clock.System.now(),
-                                    // Placeholder until can pull the system language or check user prefs
-                                    langs = persistentListOf(Language("en")),
-                                    //Deal with facets, etc. later
-
-                                )
-                            )
+                            onSend(draft)
                         },
                     ),
                 )
+                Row {
+                    postImages.forEach { image ->
+                        ComposerThumbnail(image, Modifier.padding(4.dp),
+                        removeCallback = {
+                            postImages = postImages.toMutableList().apply {
+                                remove(image)
+                            }
+                        })
+                    }
+                }
             }
         }
         Row(
@@ -298,7 +296,7 @@ fun PostComposer(
             modifier = Modifier.imePadding()
         ) {
             IconButton(
-                onClick = { },
+                onClick = {imagePicker.launch() },
                 modifier = Modifier.padding(horizontal = 4.dp)
             ) {
                 Icon(imageVector = Icons.Default.Image, contentDescription = "Select Image")

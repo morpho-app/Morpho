@@ -20,7 +20,7 @@ import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.*
 import ch.qos.logback.classic.LoggerContext
-import ch.qos.logback.core.util.StatusPrinter
+import ch.qos.logback.core.util.StatusPrinter2
 import com.morpho.app.App
 import com.morpho.app.data.PreferencesRepository
 import com.morpho.app.di.appModule
@@ -51,8 +51,7 @@ val log = logging("main")
 
 @OptIn(KoinExperimentalAPI::class, ExperimentalResourceApi::class)
 fun main() = application {
-    //val logger: Logger = LoggerFactory.getLogger("main")
-    StatusPrinter.print(LoggerFactory.getILoggerFactory() as LoggerContext)
+    StatusPrinter2().print(LoggerFactory.getILoggerFactory() as LoggerContext)
     KmLogging.setLoggers(PlatformLogger(VariableLogLevel(LogLevel.Verbose)))
     val koin = startKoin {
         printLogger(Level.DEBUG)

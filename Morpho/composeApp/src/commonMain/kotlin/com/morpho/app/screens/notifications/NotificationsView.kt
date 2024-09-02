@@ -16,6 +16,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.Dp
 import androidx.constraintlayout.compose.ConstraintLayout
+import cafe.adriel.voyager.core.model.screenModelScope
 import cafe.adriel.voyager.koin.getNavigatorScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.Navigator
@@ -37,6 +38,8 @@ import com.morpho.app.ui.notifications.NotificationsFilterElement
 import com.morpho.app.util.ClipboardManager
 import com.morpho.butterfly.model.RecordUnion
 import kotlinx.collections.immutable.persistentListOf
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
 import kotlinx.coroutines.launch
 import org.koin.compose.getKoin
 
@@ -201,8 +204,11 @@ fun TabScreen.NotificationViewContent(
                             showComposer = false
                             draft = DraftPost()
                         },
-                        onSend = {
-                            sm.api.createRecord(RecordUnion.MakePost(it))
+                        onSend = { finishedDraft ->
+                            sm.screenModelScope.launch(Dispatchers.IO) {
+                                val post = finishedDraft.createPost(sm.api)
+                                sm.api.createRecord(RecordUnion.MakePost(post))
+                            }
                             showComposer = false
                         },
                         onUpdate = { draft = it }
