@@ -1,6 +1,7 @@
 package com.morpho.app.model.bluesky
 
 import androidx.compose.runtime.Immutable
+import app.bsky.actor.ProfileAssociated
 import app.bsky.labeler.LabelerView
 import app.bsky.labeler.LabelerViewDetailed
 import com.morpho.app.model.uidata.Moment
@@ -22,7 +23,7 @@ open class BskyLabelService(
     val likeCount: Long?,
     val liked: Boolean,
     val likeUri: AtUri?,
-    val indexedAt: Moment,
+    override val indexedAt: Moment,
     val policies: List<BskyLabelDefinition>,
     override val labels: List<BskyLabel>,
 ): Profile {
@@ -36,10 +37,30 @@ open class BskyLabelService(
         get() = creator?.avatar
     override val mutedByMe: Boolean
         get() = creator?.mutedByMe ?: false
+    override val mutedByList: UserListBasic?
+        get() = null
+    override val block: BlockRecord?
+        get() = null
+    override val blockedBy: Boolean
+        get() = false
+    override val blockingByList: UserListBasic?
+        get() = null
+    override val following: FollowRecord?
+        get() = null
+    override val followedBy: FollowRecord?
+        get() = null
+    override val numKnownFollowers: Long
+        get() = 0
+    override val knownFollowers: List<Profile>
+        get() = listOf()
+    override val associated: ProfileAssociated?
+        get() = null
+    override val createdAt: Moment?
+        get() = null
     override val followingMe: Boolean
-        get() = creator?.followingMe ?: false
+        get() = false
     override val followedByMe: Boolean
-        get() = creator?.followedByMe ?: false
+        get() = false
 }
 
 public data object BlueskyHardcodedLabeler: BskyLabelService(

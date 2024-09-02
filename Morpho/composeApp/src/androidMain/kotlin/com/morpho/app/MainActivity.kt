@@ -8,6 +8,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.core.view.WindowCompat
 import androidx.window.layout.WindowMetrics
 import androidx.window.layout.WindowMetricsCalculator
+import io.github.vinceglb.filekit.core.FileKit
 
 
 class MorphoAndroidActivity : ComponentActivity() {
@@ -15,6 +16,7 @@ class MorphoAndroidActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
 
         super.onCreate(savedInstanceState)
+        FileKit.init(this)
         WindowCompat.setDecorFitsSystemWindows(window, false)
 
         setContent {

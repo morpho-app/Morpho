@@ -401,3 +401,17 @@ fun BskyLabel.toSelfLabel(): SelfLabel {
         `val` = value
     )
 }
+
+fun BskyLabel.toAtProtoLabel(): com.atproto.label.Label {
+    return Label(
+        `val` = value,
+        ver = version,
+        src = creator,
+        uri = uri,
+        cid = cid,
+        neg = overwritesPrevious,
+        cts = createdTimestamp.instant,
+        exp = expirationTimestamp?.instant,
+        sig = signature,
+    )
+}

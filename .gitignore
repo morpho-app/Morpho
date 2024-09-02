@@ -2,6 +2,7 @@
 .gradle
 .idea
 .DS_Store
+**/.kotlin
 build
 captures
 .externalNativeBuild
@@ -9,3 +10,7 @@ captures
 local.properties
 xcuserdata
 Test Results*
+.kotlin/
+Morpho/.kotlin
+.kotlin
+/.kotlin/

@@ -25,9 +25,13 @@ import com.morpho.app.ui.elements.doMenuOperation
 import com.morpho.app.ui.thread.ThreadFragment
 import com.morpho.app.util.ClipboardManager
 import com.morpho.butterfly.AtUri
+import com.morpho.butterfly.Butterfly
 import com.morpho.butterfly.model.RecordType
 import com.morpho.butterfly.model.RecordUnion
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
 import org.koin.compose.getKoin
 
 @OptIn(ExperimentalAnimationApi::class, ExperimentalMaterial3Api::class)
@@ -91,6 +95,7 @@ fun ThreadView(
     //      but this means if you don't explicitly cancel you don't lose the post
     var draft by remember{ mutableStateOf(DraftPost()) }
     val clipboard = getKoin().get<ClipboardManager>()
+    val scope = rememberCoroutineScope()
     ThreadFragment(thread = thread,
                    contentPadding = insets,
                    onItemClicked = { navigator.push(ThreadTab(it)) },
@@ -130,6 +135,7 @@ fun ThreadView(
         )
     }
     if(showComposer) {
+        val api = getKoin().get<Butterfly>()
         BottomSheetPostComposer(
             onDismissRequest = { showComposer = false },
             sheetState = sheetState,
@@ -141,8 +147,11 @@ fun ThreadView(
                 showComposer = false
                 draft = DraftPost()
             },
-            onSend = {
-                createRecord(RecordUnion.MakePost(it))
+            onSend = { finishedDraft ->
+                scope.launch(Dispatchers.IO) {
+                    val post = finishedDraft.createPost(api)
+                    createRecord(RecordUnion.MakePost(post))
+                }
                 showComposer = false
             },
             onUpdate = { draft = it }
