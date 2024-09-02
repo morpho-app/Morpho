@@ -28,8 +28,10 @@ import coil3.request.crossfade
 import com.morpho.app.model.bluesky.BskyFacet
 import com.morpho.app.model.bluesky.FacetType
 import com.morpho.app.model.bluesky.RichTextFormat.*
+import com.morpho.app.util.utf16FacetIndex
 import kotlinx.collections.immutable.persistentListOf
-import kotlin.math.min
+import okio.ByteString.Companion.encodeUtf8
+
 
 @Composable
 fun RichTextElement(
@@ -40,52 +42,56 @@ fun RichTextElement(
     maxLines: Int = 20,
 
     ) {
+    val utf8Text = text.encodeUtf8()
     val splitText = text.split("◌").listIterator() // special BlueMoji character
     val formattedText = buildAnnotatedString {
         pushStyle(SpanStyle(MaterialTheme.colorScheme.onSurface))
         append(splitText.next())
         facets.fastForEach { facet ->
+            val bounds = utf16FacetIndex(text, utf8Text, facet.start, facet.end)
+            val start = bounds.first
+            val end = bounds.second
             facet.facetType.fastForEach { facetType ->
                 when(facetType) {
                     is FacetType.ExternalLink -> {
-                        addStringAnnotation(tag = "Link", facetType.uri.uri, min(facet.start, text.length-1), min(facet.end, text.length-1))
+                        addStringAnnotation(tag = "Link", facetType.uri.uri, start, end)
                         addStyle(
                             style = SpanStyle(MaterialTheme.colorScheme.tertiary),
-                            start = min(facet.start, text.length-1),
-                            end = min(facet.end, text.length-1)
+                            start = start,
+                            end = end
                         )
                     }
                     is FacetType.PollBlueOption -> {
-                        addStringAnnotation(tag = "PollBlue", facetType.number.toString(), min(facet.start, text.length-1), min(facet.end, text.length-1))
+                        addStringAnnotation(tag = "PollBlue", facetType.number.toString(), start, end)
                         addStyle(
                             style = SpanStyle(MaterialTheme.colorScheme.tertiary),
-                            start = min(facet.start, text.length-1),
-                            end = min(facet.end, text.length-1)
+                            start = start,
+                            end = end
                         )
                     }
 
                     is FacetType.Tag -> {
-                        addStringAnnotation(tag = "Tag", facetType.tag, min(facet.start, text.length-1), min(facet.end, text.length-1))
+                        addStringAnnotation(tag = "Tag", facetType.tag, start, end)
                         addStyle(
                             style = SpanStyle(MaterialTheme.colorScheme.tertiary),
-                            start = min(facet.start, text.length-1),
-                            end = min(facet.end, text.length-1)
+                            start = start,
+                            end = end
                         )
                     }
                     is FacetType.UserDidMention -> {
-                        addStringAnnotation(tag = "Mention", facetType.did.did, min(facet.start, text.length-1), min(facet.end, text.length-1))
+                        addStringAnnotation(tag = "Mention", facetType.did.did, start, end)
                         addStyle(
                             style = SpanStyle(MaterialTheme.colorScheme.tertiary),
-                            start = min(facet.start, text.length-1),
-                            end = min(facet.end, text.length-1)
+                            start = start,
+                            end = end
                         )
                     }
                     is FacetType.UserHandleMention -> {
-                        addStringAnnotation(tag = "Mention", facetType.handle.handle, min(facet.start, text.length-1), min(facet.end, text.length-1))
+                        addStringAnnotation(tag = "Mention", facetType.handle.handle, start, end)
                         addStyle(
                             style = SpanStyle(MaterialTheme.colorScheme.tertiary),
-                            start = min(facet.start, text.length-1),
-                            end = min(facet.end, text.length-1)
+                            start = start,
+                            end = end
                         )
                     }
                     is FacetType.Format -> {
@@ -97,13 +103,11 @@ fun RichTextElement(
                         }
                         addStyle(
                             style = style,
-                            start = min(facet.start, text.length-1),
-                            end = min(facet.end, text.length-1)
+                            start = start,
+                            end = end
                         )
                     }
                     is FacetType.BlueMoji -> {
-                        // TODO: Add BlueMoji support
-
                         appendInlineContent(facetType.image.url, facetType.name)
                         append(splitText.next())
                     }
