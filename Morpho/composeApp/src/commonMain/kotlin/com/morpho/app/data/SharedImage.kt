@@ -57,11 +57,8 @@ constructor(override val descriptor: SerialDescriptor = PrimitiveSerialDescripto
 suspend fun imageToBlob(image: SharedImage, api: Butterfly): Blob? {
     val byteArray = image.toByteArray() ?: return null
     val base64 = byteArray.encodeBase64().toByteArray()
-    val resp = api.api.uploadBlob(base64, image.mimeType).getOrNull() ?: return null
-    return when (val blob = Blob.serializer().deserialize(resp.blob)) {
-        is Blob.StandardBlob -> Blob.StandardBlob(blob.ref, image.mimeType, blob.size)
-        is Blob.LegacyBlob -> Blob.LegacyBlob(blob.cid, image.mimeType)
-    }
+    val resp = api.api.uploadBlob(byteArray, image.mimeType).getOrNull() ?: return null
+    return Blob.serializer().deserialize(resp.blob)
 }
 
 fun fileExtToMimeType(filename: String): String {
