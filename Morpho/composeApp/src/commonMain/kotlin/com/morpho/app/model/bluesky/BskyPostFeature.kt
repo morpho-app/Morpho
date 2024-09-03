@@ -75,6 +75,8 @@ data class EmbedImage(
     val aspectRatio: AspectRatio? = null,
 )
 
+
+
 @Serializable
 sealed interface EmbedRecord {
 
@@ -305,6 +307,9 @@ private fun RecordViewRecordUnion.toEmbedRecord(): EmbedRecord {
 
 public fun PostEmbedUnion.toFeature(): BskyPostFeature? {
     return when (this) {
+        is PostEmbedUnion.ImagesView -> {
+            this.toEmbedImagesFeature()
+        }
         is PostEmbedUnion.Images -> {
             this.toEmbedImagesFeature()
         }
@@ -337,12 +342,30 @@ private fun PostEmbedUnion.External.toEmbedExternalFeature(): BskyPostFeature.Ex
     )
 }
 
+private fun PostEmbedUnion.ImagesView.toEmbedImagesFeature(): BskyPostFeature.ImagesFeature {
+    return BskyPostFeature.ImagesFeature(
+        images = this.value.images.mapImmutable {
+
+            EmbedImage(
+                thumb = it.thumb,
+                fullsize = it.fullsize,
+                alt = it.alt,
+                aspectRatio = it.aspectRatio
+            )
+        }
+    )
+}
+
 private fun PostEmbedUnion.Images.toEmbedImagesFeature(): BskyPostFeature.ImagesFeature {
     return BskyPostFeature.ImagesFeature(
         images = this.value.images.mapImmutable {
+            val thumbLink = when(it.image) {
+                is Blob.StandardBlob -> (it.image as Blob.StandardBlob).ref.link
+                is Blob.LegacyBlob -> (it.image as Blob.LegacyBlob).cid
+            }
             EmbedImage(
-                thumb = it.image.toString(),
-                fullsize = it.image.toString(),
+                thumb = thumbLink,
+                fullsize = thumbLink,
                 alt = it.alt,
                 aspectRatio = it.aspectRatio
             )

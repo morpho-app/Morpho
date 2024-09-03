@@ -229,7 +229,7 @@ fun ColumnScope.EmbedPostFeature(
                 }
                 is BskyPostFeature.ImagesFeature -> {
                     if (embed.litePost.feature.images.isNotEmpty()
-                        && embed.litePost.feature.images.first().thumb.contains("{")
+                        && !embed.litePost.feature.images.first().thumb.startsWith("http")
                     ) {
                         val images = remember {
                             embed.litePost.feature.images.map {

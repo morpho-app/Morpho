@@ -5,14 +5,48 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.toComposeImageBitmap
 import app.bsky.embed.AspectRatio
 import io.github.vinceglb.filekit.core.PlatformFile
+import org.jetbrains.skia.EncodedImageFormat
 import org.jetbrains.skia.Image
+import kotlin.math.sqrt
 
 
 @Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING")
 actual class SharedImage(private val image: Image?, actual val mimeType: String) {
     actual fun toByteArray(): ByteArray? {
         return if (image != null) {
-            image.encodeToData()?.bytes
+            when(mimeType) {
+                "image/png" -> image.encodeToData()?.bytes
+                "image/jpeg" -> image.encodeToData(EncodedImageFormat.JPEG)?.bytes
+                "image/webp" -> image.encodeToData(EncodedImageFormat.WEBP)?.bytes
+                else -> {
+                    println("Unsupported mimeType: $mimeType")
+                    null
+                }
+            }
+        } else {
+            println("toByteArray null")
+            null
+        }
+    }
+    actual fun toByteArray(targetSize: Long): ByteArray? {
+        return if (image != null) {
+            val encoded = when(mimeType) {
+                "image/png" -> image.encodeToData(quality = 70)?.bytes
+                "image/jpeg" -> image.encodeToData(EncodedImageFormat.JPEG, 70)?.bytes
+                "image/webp" -> image.encodeToData(EncodedImageFormat.WEBP, 70)?.bytes
+                else -> image.encodeToData(quality = 70)?.bytes
+            }
+            if (encoded != null && encoded.size > targetSize) {
+                val scale = (sqrt(targetSize.toDouble() / encoded.size) * 40.0).toInt()
+                return when(mimeType) {
+                    "image/png" -> image.encodeToData(quality = scale)?.bytes
+                    "image/jpeg" -> image.encodeToData(EncodedImageFormat.JPEG, scale)?.bytes
+                    "image/webp" -> image.encodeToData(EncodedImageFormat.WEBP, scale)?.bytes
+                    else -> image.encodeToData(quality = scale)?.bytes
+                }
+            } else {
+                encoded
+            }
         } else {
             println("toByteArray null")
             null
@@ -20,7 +54,7 @@ actual class SharedImage(private val image: Image?, actual val mimeType: String)
     }
 
     actual fun toImageBitmap(): ImageBitmap? {
-        val byteArray = toByteArray()
+        val byteArray = this.toByteArray()
         return if (byteArray != null) {
             return Image.makeFromEncoded(byteArray).toComposeImageBitmap()
         } else {
