@@ -4,10 +4,12 @@ import app.bsky.embed.*
 import app.bsky.feed.Post
 import app.bsky.feed.PostEmbedUnion
 import app.bsky.feed.PostViewEmbedUnion
+import com.morpho.app.model.uidata.Moment
 import com.morpho.app.util.mapImmutable
 import com.morpho.butterfly.*
 import com.morpho.butterfly.model.Blob
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonElement
 
 @Serializable
 sealed interface BskyPostFeature {
@@ -141,6 +143,15 @@ sealed interface EmbedRecord {
     @Serializable
     data class UnknownEmbed(
         val value: String,
+    ) : EmbedRecord
+
+    data class StarterPack(
+        val uri: AtUri,
+        val cid: Cid,
+        val record: JsonElement,
+        val creator: Profile,
+        val indexedAt: Moment,
+        val labels: List<BskyLabel>,
     ) : EmbedRecord
 }
 
@@ -300,6 +311,27 @@ private fun RecordViewRecordUnion.toEmbedRecord(): EmbedRecord {
                 ),
                 alt = value.alt?:"",
                 aspectRatio = value.aspectRatio,
+            )
+        }
+
+        is RecordViewRecordUnion.StarterPackView -> {
+            EmbedRecord.StarterPack(
+                uri = value.uri,
+                cid = value.cid,
+                record = value.record,
+                creator = value.creator.toProfile(),
+                indexedAt = Moment(value.indexedAt),
+                labels = value.labels.mapImmutable { it.toLabel() },
+            )
+        }
+        is RecordViewRecordUnion.StarterPackViewBasic -> {
+            EmbedRecord.StarterPack(
+                uri = value.uri,
+                cid = value.cid,
+                record = value.record,
+                creator = value.creator.toProfile(),
+                indexedAt = Moment(value.indexedAt),
+                labels = value.labels.mapImmutable { it.toLabel() },
             )
         }
     }
