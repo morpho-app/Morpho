@@ -3,6 +3,7 @@ package com.morpho.app.model.uidata
 //import com.rickclephas.kmp.nativecoroutines.NativeCoroutines
 import androidx.compose.ui.util.fastFirstOrNull
 import app.bsky.actor.GetProfilesQuery
+import app.bsky.actor.ProfileViewBasic
 import app.bsky.feed.*
 import app.bsky.graph.GetFollowersQuery
 import app.bsky.graph.GetFollowsQuery
@@ -95,8 +96,9 @@ fun getReplyRefs(uri: AtUri, api: Butterfly = getKoin().get<Butterfly>()): Flow<
                                 .onSuccess { rootResponse ->
                                     val rootRef = rootResponse.cid?.let { StrongRef(rootResponse.uri, it) }
                                     val parentRef = parentResponse.cid?.let { StrongRef(parentResponse.uri, it) }
+                                    val grandParentAuthor = parentReply["grandparentAuthor"]?.jsonObject?.let { ProfileViewBasic.serializer().deserialize(it) }
                                     if(rootRef != null && parentRef != null) {
-                                        emit(Result.success(PostReplyRef(rootRef, parentRef)))
+                                        emit(Result.success(PostReplyRef(rootRef, parentRef, grandParentAuthor)))
                                     } else {
                                         emit(Result.failure(Error(
                                             "Failed to get reply refs:\nRoot: $rootResponse\nParent: $parentResponse")))
