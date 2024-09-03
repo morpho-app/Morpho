@@ -5,8 +5,7 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.toComposeImageBitmap
 import app.bsky.embed.AspectRatio
 import io.github.vinceglb.filekit.core.PlatformFile
-import org.jetbrains.skia.EncodedImageFormat
-import org.jetbrains.skia.Image
+import org.jetbrains.skia.*
 import kotlin.math.sqrt
 
 
@@ -30,19 +29,43 @@ actual class SharedImage(private val image: Image?, actual val mimeType: String)
     }
     actual fun toByteArray(targetSize: Long): ByteArray? {
         return if (image != null) {
+            val dimensions: Pair<Int, Int> = if (image.height > MAX_DIMENSION && image.width < MAX_DIMENSION) {
+                Pair(image.width, MAX_DIMENSION)
+            } else if (image.width > MAX_DIMENSION && image.height < MAX_DIMENSION) {
+                Pair(MAX_DIMENSION, image.height)
+            } else if (image.width > MAX_DIMENSION && image.height > MAX_DIMENSION) {
+                if (image.width > image.height) {
+                    Pair(MAX_DIMENSION, (MAX_DIMENSION * image.height / image.width).toInt())
+                } else {
+                    Pair((MAX_DIMENSION * image.width / image.height).toInt(), MAX_DIMENSION)
+                }
+            } else {
+                Pair(image.width, image.height)
+            }
+            val resized = if (dimensions.first > MAX_DIMENSION || dimensions.second > MAX_DIMENSION) {
+                val pixels = Pixmap.make(
+                    image.imageInfo.withWidthHeight(dimensions.first, dimensions.second),
+                    Data.makeUninitialized(dimensions.first * dimensions.second * image.bytesPerPixel),
+                    dimensions.first * image.bytesPerPixel
+                )
+                image.scalePixels(pixels, SamplingMode.CATMULL_ROM, true)
+                Image.makeFromPixmap(pixels)
+            } else {
+                image
+            }
             val encoded = when(mimeType) {
-                "image/png" -> image.encodeToData(quality = 70)?.bytes
-                "image/jpeg" -> image.encodeToData(EncodedImageFormat.JPEG, 70)?.bytes
-                "image/webp" -> image.encodeToData(EncodedImageFormat.WEBP, 70)?.bytes
-                else -> image.encodeToData(quality = 70)?.bytes
+                "image/png" -> resized.encodeToData(quality = 70)?.bytes
+                "image/jpeg" -> resized.encodeToData(EncodedImageFormat.JPEG, 70)?.bytes
+                "image/webp" -> resized.encodeToData(EncodedImageFormat.WEBP, 70)?.bytes
+                else -> resized.encodeToData(quality = 70)?.bytes
             }
             if (encoded != null && encoded.size > targetSize) {
                 val scale = (sqrt(targetSize.toDouble() / encoded.size) * 40.0).toInt()
                 return when(mimeType) {
-                    "image/png" -> image.encodeToData(quality = scale)?.bytes
-                    "image/jpeg" -> image.encodeToData(EncodedImageFormat.JPEG, scale)?.bytes
-                    "image/webp" -> image.encodeToData(EncodedImageFormat.WEBP, scale)?.bytes
-                    else -> image.encodeToData(quality = scale)?.bytes
+                    "image/png" -> resized.encodeToData(quality = scale)?.bytes
+                    "image/jpeg" -> resized.encodeToData(EncodedImageFormat.JPEG, scale)?.bytes
+                    "image/webp" -> resized.encodeToData(EncodedImageFormat.WEBP, scale)?.bytes
+                    else -> resized.encodeToData(quality = scale)?.bytes
                 }
             } else {
                 encoded
@@ -66,7 +89,20 @@ actual class SharedImage(private val image: Image?, actual val mimeType: String)
         val width = image?.width
         val height = image?.height
         return if (width != null && height != null) {
-            AspectRatio(width.toLong(), height.toLong())
+            val dimensions: Pair<Int, Int> = if (MAX_DIMENSION in (width + 1)..<height) {
+                Pair(width, MAX_DIMENSION)
+            } else if (MAX_DIMENSION in (height + 1)..<width) {
+                Pair(MAX_DIMENSION, height)
+            } else if (width > MAX_DIMENSION && height > MAX_DIMENSION) {
+                if (width > height) {
+                    Pair(MAX_DIMENSION, (MAX_DIMENSION * height / width))
+                } else {
+                    Pair((MAX_DIMENSION * width / height), MAX_DIMENSION)
+                }
+            } else {
+                Pair(width, height)
+            }
+            AspectRatio(dimensions.first.toLong(), dimensions.second.toLong())
         } else {
             null
         }

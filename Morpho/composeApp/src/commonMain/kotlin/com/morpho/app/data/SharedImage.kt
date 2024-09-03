@@ -16,6 +16,8 @@ import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import okio.ByteString.Companion.decodeBase64
 
+const val MAX_SIZE: Long = 976_560;
+const val MAX_DIMENSION: Int = 2000;
 
 @Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING")
 expect class SharedImage {
@@ -55,7 +57,7 @@ constructor(override val descriptor: SerialDescriptor = PrimitiveSerialDescripto
 }
 
 suspend fun imageToBlob(image: SharedImage, api: Butterfly): Blob? {
-    val byteArray = image.toByteArray(targetSize = 800_000) ?: return null
+    val byteArray = image.toByteArray(targetSize = MAX_SIZE) ?: return null
     val resp = api.api.uploadBlob(byteArray, image.mimeType).getOrNull() ?: return null
     return Blob.serializer().deserialize(resp.blob)
 }
