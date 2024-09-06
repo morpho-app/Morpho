@@ -47,7 +47,7 @@ sealed interface BskyPostFeature {
     @Serializable
     data class UnknownEmbed(
         val value: String,
-    ) : BskyPostFeature
+    ) : BskyPostFeature, TimelinePostMedia
 }
 
 @Serializable
@@ -153,6 +153,7 @@ sealed interface EmbedRecord {
         val indexedAt: Moment,
         val labels: List<BskyLabel>,
     ) : EmbedRecord
+
 }
 
 fun PostViewEmbedUnion.toFeature(): BskyPostFeature {
@@ -200,11 +201,21 @@ fun PostViewEmbedUnion.toFeature(): BskyPostFeature {
                 media = when (val media = value.media) {
                     is RecordWithMediaViewMediaUnion.ExternalView -> media.value.toExternalFeature()
                     is RecordWithMediaViewMediaUnion.ImagesView -> media.value.toImagesFeature()
+                    is RecordWithMediaViewMediaUnion.VideoView -> media.value.toEmbedVideoFeature()
+                    is RecordWithMediaViewMediaUnion.VideoViewVideo -> media.value.toEmbedVideoFeature()
+                    else -> BskyPostFeature.UnknownEmbed(
+                        value = media.toString(),
+                    )
                 },
             )
         }
+        else -> BskyPostFeature.UnknownEmbed(
+            value = this.toString(),
+        )
     }
 }
+
+
 
 private fun ImagesView.toImagesFeature(): BskyPostFeature.ImagesFeature {
     return BskyPostFeature.ImagesFeature(
@@ -334,6 +345,9 @@ private fun RecordViewRecordUnion.toEmbedRecord(): EmbedRecord {
                 labels = value.labels.mapImmutable { it.toLabel() },
             )
         }
+        else -> EmbedRecord.UnknownEmbed(
+            value = this.toString(),
+        )
     }
 }
 
@@ -362,6 +376,9 @@ public fun PostEmbedUnion.toFeature(): BskyPostFeature? {
         is PostEmbedUnion.VideoViewVideo -> {
             this.toEmbedVideoFeature()
         }
+        else -> BskyPostFeature.UnknownEmbed(
+            value = this.toString(),
+        )
     }
 }
 
@@ -430,5 +447,33 @@ private fun PostEmbedUnion.VideoViewVideo.toEmbedVideoFeature(): BskyPostFeature
         ),
         alt = this.value.alt?:"",
         aspectRatio = this.value.aspectRatio,
+    )
+}
+
+private fun VideoView.toEmbedVideoFeature(): BskyPostFeature.VideoFeature {
+    return BskyPostFeature.VideoFeature(
+        video = EmbedVideo(
+            blob = this.video,
+            captions = this.captions?.mapImmutable {
+                VideoCaption(
+                    lang = it.lang,
+                    file = it.file,
+                )
+            },
+        ),
+        alt = this.alt?:"",
+        aspectRatio = this.aspectRatio,
+    )
+}
+
+private fun VideoViewVideo.toEmbedVideoFeature(): BskyPostFeature.VideoFeature {
+    return BskyPostFeature.VideoFeature(
+        video = EmbedVideoView(
+            cid = this.cid,
+            playlist = this.playlist,
+            thumbnail = this.thumbnail,
+        ),
+        alt = this.alt?:"",
+        aspectRatio = this.aspectRatio,
     )
 }

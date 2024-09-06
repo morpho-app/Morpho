@@ -48,7 +48,7 @@ fun RichTextElement(
         pushStyle(SpanStyle(MaterialTheme.colorScheme.onSurface))
         append(splitText.next())
         facets.fastForEach { facet ->
-            val bounds = utf16FacetIndex(text, utf8Text, facet.start, facet.end)
+            val bounds = text.utf16FacetIndex(utf8Text, facet.start, facet.end)
             val start = bounds.first
             val end = bounds.second
             facet.facetType.fastForEach { facetType ->
