@@ -21,6 +21,7 @@ import com.morpho.app.data.toSharedImage
 import com.morpho.app.model.bluesky.BskyPost
 import com.morpho.app.model.bluesky.DraftImage
 import com.morpho.app.model.bluesky.DraftPost
+import com.morpho.app.model.bluesky.toProfileViewBasic
 import com.morpho.app.model.uidata.getReplyRefs
 import com.morpho.app.ui.post.ComposerPostFragment
 import io.github.vinceglb.filekit.compose.rememberFilePickerLauncher
@@ -109,30 +110,23 @@ fun PostComposer(
     var postText by rememberSaveable { mutableStateOf(draft.text) }
     val localReplyRef = remember {
         if(role == ComposerRole.Reply) {
-            val root: StrongRef? = if(initialContent != null) {
-                if (initialContent.reply?.root != null) {
+            if (initialContent != null) {
+                val root: StrongRef = if (initialContent.reply?.root != null) {
                     StrongRef(initialContent.reply.root.uri,initialContent.reply.root.cid)
                 } else if (initialContent.reply?.parent != null) {
                     StrongRef(initialContent.reply.parent.uri, initialContent.reply.parent.cid)
                 } else {
                     StrongRef(initialContent.uri,initialContent.cid)
                 }
-            } else {
-                if (draft.reply?.reply?.root != null) {
-                    StrongRef(draft.reply.reply.root.uri,draft.reply.reply.root.cid)
-                } else if (draft.reply?.reply?.parent != null) {
-                    StrongRef(draft.reply.reply.parent.uri, draft.reply.reply.parent.cid)
-                } else null
-            }
-            val parent: StrongRef? = if(initialContent != null) {
-                StrongRef(initialContent.uri,initialContent.cid)
-            } else if (draft.reply?.reply?.root != null) {
-                StrongRef(draft.reply.reply.root.uri,draft.reply.reply.root.cid)
-            } else if (draft.reply?.reply?.parent != null){
-                StrongRef(draft.reply.reply.parent.uri, draft.reply.reply.parent.cid)
-            } else null
-            if(root != null && parent != null ) {
-                PostReplyRef(root, parent)
+                val parent: StrongRef = StrongRef(initialContent.uri, initialContent.cid)
+                val grandParentAuthor = (if (initialContent.reply?.parent != null) {
+                    initialContent.reply.grandparentAuthor
+                } else {
+                    initialContent.author
+                })?.toProfileViewBasic()
+                PostReplyRef(root, parent, grandParentAuthor)
+            } else if (draft.reply != null) {
+                StrongRef(draft.reply.uri, draft.reply.cid)
             } else null
         } else null
     }
@@ -140,19 +134,12 @@ fun PostComposer(
     // TODO: Probably put this somewhere saner, but for now this works
     LaunchedEffect(localReplyRef) {
         val uri = initialContent?.uri ?: draft.reply?.uri
-        if (localReplyRef == null && uri != null) {
+        if (role == ComposerRole.Reply && localReplyRef == null && uri != null) {
             getReplyRefs(uri).singleOrNull()?.getOrNull()?.let {
                 replyRef = it
             }
         }
     }
-    val quoteRef = remember { if(role == ComposerRole.QuotePost) {
-        if(initialContent != null) {
-            StrongRef(initialContent.uri,initialContent.cid)
-        } else if(draft.quote != null){
-            StrongRef(draft.quote.uri,draft.quote.cid)
-        } else null
-    } else null}
     val submitText = rememberSaveable {
         when(role) {
             ComposerRole.StandalonePost -> "Post"
@@ -193,7 +180,7 @@ fun PostComposer(
             DraftPost(
                 text = postText,
                 reply = if (replyRef != null && role == ComposerRole.Reply) initialContent else null,
-                quote = if (quoteRef != null && role == ComposerRole.QuotePost) initialContent else null,
+                quote = if (role == ComposerRole.QuotePost) initialContent else null,
                 images = postImages
             )
         )
@@ -256,7 +243,7 @@ fun PostComposer(
                     onValueChange = {
                         postText = it
                                     },
-                    supportingText = if (quoteRef != null && initialContent != null) {
+                    supportingText = if (role == ComposerRole.QuotePost && initialContent != null) {
                         { ComposerPostFragment(post = initialContent) } } else null,
                     keyboardOptions = KeyboardOptions(
                         autoCorrect = true,

@@ -450,11 +450,11 @@ class ContentLabelService: KoinComponent {
 
     init {
         serviceScope.launch {
-            while(api.id == null) {
+            while(!api.isLoggedIn()) {
                 delay(100)
             }
-            if (api.id != null) {
-                preferences.userPrefs(api.id!!).map { prefs ->
+            if (api.isLoggedIn()) {
+                preferences.userPrefs(api.atpUser!!.id).map { prefs ->
                     _labelPrefs.update { prefs?.preferences?.contentLabelPrefs ?: emptyList() }
                     _mutedWords.update { prefs?.preferences?.mutedWords ?: emptyList() }
                     _hiddenPosts.update { prefs?.preferences?.hiddenPosts ?: emptyList() }

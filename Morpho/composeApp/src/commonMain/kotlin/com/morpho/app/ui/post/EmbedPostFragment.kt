@@ -229,7 +229,7 @@ fun ColumnScope.EmbedPostFeature(
                 }
                 is BskyPostFeature.ImagesFeature -> {
                     if (embed.litePost.feature.images.isNotEmpty()
-                        && embed.litePost.feature.images.first().thumb.contains("{")
+                        && !embed.litePost.feature.images.first().thumb.startsWith("http")
                     ) {
                         val images = remember {
                             embed.litePost.feature.images.map {
@@ -247,7 +247,6 @@ fun ColumnScope.EmbedPostFeature(
                     }
                 }
                 is BskyPostFeature.MediaRecordFeature -> {
-                    @Suppress("REDUNDANT_ELSE_IN_WHEN")
                     when(embed.litePost.feature.media) {
                         is BskyPostFeature.ExternalFeature -> {
                             if (embed.litePost.feature.media.thumb?.contains("{") == true) {
@@ -293,7 +292,6 @@ fun ColumnScope.EmbedPostFeature(
 
                         else -> {}
                     }
-                    @Suppress("REDUNDANT_ELSE_IN_WHEN")
                     when (embed.litePost.feature.record) {
                         is EmbedRecord.BlockedEmbedPost -> EmbedBlockedPostFragment(uri = embed.litePost.feature.record.uri)
                         is EmbedRecord.InvisibleEmbedPost -> EmbedNotFoundPostFragment(uri = embed.litePost.feature.record.uri)
@@ -314,7 +312,6 @@ fun ColumnScope.EmbedPostFeature(
                     }
                 }
                 is BskyPostFeature.RecordFeature -> {
-                    @Suppress("REDUNDANT_ELSE_IN_WHEN")
                     when (embed.litePost.feature.record) {
                         is EmbedRecord.BlockedEmbedPost -> EmbedBlockedPostFragment(uri = embed.litePost.feature.record.uri)
                         is EmbedRecord.InvisibleEmbedPost -> EmbedNotFoundPostFragment(uri = embed.litePost.feature.record.uri)

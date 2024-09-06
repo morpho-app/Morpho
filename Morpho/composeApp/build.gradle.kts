@@ -21,6 +21,10 @@ kotlin {
                 jvmTarget = "11"
 
             }
+            //move from the deprecated above to this
+//            compileJavaTaskProvider.configure {
+//                jvm
+//            }
 
         }
 
@@ -68,6 +72,8 @@ kotlin {
 
             // Image loading
             implementation(libs.ktor.client.android)
+
+            implementation(libs.kotlin.jwt)
         }
 
         commonMain.dependencies {
@@ -109,6 +115,8 @@ kotlin {
             implementation(libs.kotlinx.immutable)
             implementation(libs.kotlinx.serialization.cbor)
             implementation(libs.kotlinx.serialization.json)
+
+
 
 
             implementation(kotlin("reflect"))
@@ -162,6 +170,9 @@ kotlin {
             //implementation(libs.slf4j.simple)
 
         }
+        nativeMain.dependencies {
+
+        }
         desktopMain.dependencies {
             implementation(compose.desktop.currentOs)
             implementation(libs.appdirs)
@@ -170,6 +181,7 @@ kotlin {
             implementation(libs.logback.core)
             implementation(libs.logback.classic)
             implementation(libs.nativeparameterstoreaccess)
+            implementation(libs.kotlin.jwt)
         }
 
         commonTest.dependencies {
@@ -208,7 +220,15 @@ android {
     }
     buildTypes {
         getByName("release") {
+            isMinifyEnabled = true
+            proguardFiles(getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro")
+
+        }
+
+        getByName("debug") {
             isMinifyEnabled = false
+            isDebuggable = true
+            applicationIdSuffix = ".debug"
         }
     }
     compileOptions {

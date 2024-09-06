@@ -7,14 +7,17 @@ pluginManagement {
         mavenCentral()
         google()
         gradlePluginPortal()
+        maven("https://jitpack.io")
 
         maven("https://plugins.gradle.org/m2/")
     }
 }
 
 dependencyResolutionManagement {
+    @Suppress("UnstableApiUsage")
     repositories {
         mavenLocal()
+        maven("https://jitpack.io")
 
         mavenCentral()
         google()

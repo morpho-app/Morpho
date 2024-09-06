@@ -67,8 +67,9 @@ fun main() = application {
     cachePath.toNioPath().createDirectories()
     koin.get<SessionRepository> { parametersOf(storageDir) }
     koin.get<UserRepository> { parametersOf(storageDir) }
-    val prefs = koin.get<PreferencesRepository> { parametersOf(storageDir) }
     val api = koin.get<Butterfly>()
+    val prefs = koin.get<PreferencesRepository> { parametersOf(storageDir) }
+
 
     val morphoPrefs = runBlocking {
         prefs.prefs.firstOrNull()?.firstOrNull()?.morphoPrefs

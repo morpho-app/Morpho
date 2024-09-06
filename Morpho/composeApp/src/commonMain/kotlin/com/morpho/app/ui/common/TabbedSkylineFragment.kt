@@ -98,6 +98,7 @@ fun <T: MainScreenModel, I: MorphoDataItem, S: ContentCardState<I>> TabbedSkylin
                 },
                 onRepost = {
                     repostClicked = false
+                    composerRole = ComposerRole.QuotePost
                     initialContent?.let { post ->
                         RecordUnion.Repost(
                             StrongRef(post.uri, post.cid)

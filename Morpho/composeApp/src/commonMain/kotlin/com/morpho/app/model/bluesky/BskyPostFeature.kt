@@ -4,10 +4,12 @@ import app.bsky.embed.*
 import app.bsky.feed.Post
 import app.bsky.feed.PostEmbedUnion
 import app.bsky.feed.PostViewEmbedUnion
+import com.morpho.app.model.uidata.Moment
 import com.morpho.app.util.mapImmutable
 import com.morpho.butterfly.*
 import com.morpho.butterfly.model.Blob
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonElement
 
 @Serializable
 sealed interface BskyPostFeature {
@@ -45,7 +47,7 @@ sealed interface BskyPostFeature {
     @Serializable
     data class UnknownEmbed(
         val value: String,
-    ) : BskyPostFeature
+    ) : BskyPostFeature, TimelinePostMedia
 }
 
 @Serializable
@@ -74,6 +76,8 @@ data class EmbedImage(
     val alt: String,
     val aspectRatio: AspectRatio? = null,
 )
+
+
 
 @Serializable
 sealed interface EmbedRecord {
@@ -140,6 +144,16 @@ sealed interface EmbedRecord {
     data class UnknownEmbed(
         val value: String,
     ) : EmbedRecord
+
+    data class StarterPack(
+        val uri: AtUri,
+        val cid: Cid,
+        val record: JsonElement,
+        val creator: Profile,
+        val indexedAt: Moment,
+        val labels: List<BskyLabel>,
+    ) : EmbedRecord
+
 }
 
 fun PostViewEmbedUnion.toFeature(): BskyPostFeature {
@@ -187,11 +201,21 @@ fun PostViewEmbedUnion.toFeature(): BskyPostFeature {
                 media = when (val media = value.media) {
                     is RecordWithMediaViewMediaUnion.ExternalView -> media.value.toExternalFeature()
                     is RecordWithMediaViewMediaUnion.ImagesView -> media.value.toImagesFeature()
+                    is RecordWithMediaViewMediaUnion.VideoView -> media.value.toEmbedVideoFeature()
+                    is RecordWithMediaViewMediaUnion.VideoViewVideo -> media.value.toEmbedVideoFeature()
+                    else -> BskyPostFeature.UnknownEmbed(
+                        value = media.toString(),
+                    )
                 },
             )
         }
+        else -> BskyPostFeature.UnknownEmbed(
+            value = this.toString(),
+        )
     }
 }
+
+
 
 private fun ImagesView.toImagesFeature(): BskyPostFeature.ImagesFeature {
     return BskyPostFeature.ImagesFeature(
@@ -300,11 +324,38 @@ private fun RecordViewRecordUnion.toEmbedRecord(): EmbedRecord {
                 aspectRatio = value.aspectRatio,
             )
         }
+
+        is RecordViewRecordUnion.StarterPackView -> {
+            EmbedRecord.StarterPack(
+                uri = value.uri,
+                cid = value.cid,
+                record = value.record,
+                creator = value.creator.toProfile(),
+                indexedAt = Moment(value.indexedAt),
+                labels = value.labels.mapImmutable { it.toLabel() },
+            )
+        }
+        is RecordViewRecordUnion.StarterPackViewBasic -> {
+            EmbedRecord.StarterPack(
+                uri = value.uri,
+                cid = value.cid,
+                record = value.record,
+                creator = value.creator.toProfile(),
+                indexedAt = Moment(value.indexedAt),
+                labels = value.labels.mapImmutable { it.toLabel() },
+            )
+        }
+        else -> EmbedRecord.UnknownEmbed(
+            value = this.toString(),
+        )
     }
 }
 
 public fun PostEmbedUnion.toFeature(): BskyPostFeature? {
     return when (this) {
+        is PostEmbedUnion.ImagesView -> {
+            this.toEmbedImagesFeature()
+        }
         is PostEmbedUnion.Images -> {
             this.toEmbedImagesFeature()
         }
@@ -325,6 +376,9 @@ public fun PostEmbedUnion.toFeature(): BskyPostFeature? {
         is PostEmbedUnion.VideoViewVideo -> {
             this.toEmbedVideoFeature()
         }
+        else -> BskyPostFeature.UnknownEmbed(
+            value = this.toString(),
+        )
     }
 }
 
@@ -337,12 +391,30 @@ private fun PostEmbedUnion.External.toEmbedExternalFeature(): BskyPostFeature.Ex
     )
 }
 
+private fun PostEmbedUnion.ImagesView.toEmbedImagesFeature(): BskyPostFeature.ImagesFeature {
+    return BskyPostFeature.ImagesFeature(
+        images = this.value.images.mapImmutable {
+
+            EmbedImage(
+                thumb = it.thumb,
+                fullsize = it.fullsize,
+                alt = it.alt,
+                aspectRatio = it.aspectRatio
+            )
+        }
+    )
+}
+
 private fun PostEmbedUnion.Images.toEmbedImagesFeature(): BskyPostFeature.ImagesFeature {
     return BskyPostFeature.ImagesFeature(
         images = this.value.images.mapImmutable {
+            val thumbLink = when(it.image) {
+                is Blob.StandardBlob -> (it.image as Blob.StandardBlob).ref.link
+                is Blob.LegacyBlob -> (it.image as Blob.LegacyBlob).cid
+            }
             EmbedImage(
-                thumb = it.image.toString(),
-                fullsize = it.image.toString(),
+                thumb = thumbLink,
+                fullsize = thumbLink,
                 alt = it.alt,
                 aspectRatio = it.aspectRatio
             )
@@ -375,5 +447,33 @@ private fun PostEmbedUnion.VideoViewVideo.toEmbedVideoFeature(): BskyPostFeature
         ),
         alt = this.value.alt?:"",
         aspectRatio = this.value.aspectRatio,
+    )
+}
+
+private fun VideoView.toEmbedVideoFeature(): BskyPostFeature.VideoFeature {
+    return BskyPostFeature.VideoFeature(
+        video = EmbedVideo(
+            blob = this.video,
+            captions = this.captions?.mapImmutable {
+                VideoCaption(
+                    lang = it.lang,
+                    file = it.file,
+                )
+            },
+        ),
+        alt = this.alt?:"",
+        aspectRatio = this.aspectRatio,
+    )
+}
+
+private fun VideoViewVideo.toEmbedVideoFeature(): BskyPostFeature.VideoFeature {
+    return BskyPostFeature.VideoFeature(
+        video = EmbedVideoView(
+            cid = this.cid,
+            playlist = this.playlist,
+            thumbnail = this.thumbnail,
+        ),
+        alt = this.alt?:"",
+        aspectRatio = this.aspectRatio,
     )
 }

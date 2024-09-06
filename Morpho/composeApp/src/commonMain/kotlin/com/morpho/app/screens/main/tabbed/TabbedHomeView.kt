@@ -38,11 +38,13 @@ import com.morpho.app.ui.common.TabbedSkylineFragment
 import com.morpho.app.ui.elements.AvatarShape
 import com.morpho.app.ui.elements.OutlinedAvatar
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.serialization.Serializable
 import org.jetbrains.compose.resources.ExperimentalResourceApi
 import kotlin.math.max
 import kotlin.math.min
 import cafe.adriel.voyager.navigator.tab.Tab as NavTab
 
+@Suppress("UNCHECKED_CAST")
 @OptIn(ExperimentalAnimationApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun TabScreen.TabbedHomeView() {
@@ -191,7 +193,7 @@ fun HomeTabRow(
 }
 
 
-
+@Serializable
 data class HomeSkylineTab(
     val index: UShort,
     val screenModel: TabbedMainScreenModel,

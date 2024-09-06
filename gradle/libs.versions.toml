@@ -19,8 +19,11 @@ datastorePreferencesCore = "1.1.1"
 filekit = "0.8.2"
 imageLoader = "1.7.8"
 junit = "4.13.2"
+jwt = "1.2.6"
+kjwt = "0.9.0"
 kmmViewmodelCore = "1.0.0-ALPHA-20"
 kotlin = "2.0.10"
+kotlinJwt = "1.3.1"
 ksp-version = "2.0.10-1.0.24"
 koin-bom = "3.5.3"
 koin-ksp = "1.3.1"
@@ -73,7 +76,9 @@ filekit-core = { module = "io.github.vinceglb:filekit-core", version.ref = "file
 image-loader = { module = "io.github.qdsfdhvh:image-loader", version.ref = "imageLoader" }
 image-loader-extension-imageio = { module = "io.github.qdsfdhvh:image-loader-extension-imageio", version.ref = "imageLoader" }
 image-loader-extension-moko-resources = { module = "io.github.qdsfdhvh:image-loader-extension-moko-resources", version.ref = "imageLoader" }
+jwt = { module = "com.github.PhilJay:JWT", version.ref = "jwt" }
 kmm-viewmodel-core = { module = "com.rickclephas.kmm:kmm-viewmodel-core", version.ref = "kmmViewmodelCore" }
+kotlin-jwt = { module = "com.brendangoldberg:kotlin-jwt", version.ref = "kotlinJwt" }
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
 kotlin-stdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib", version.ref = "kotlin" }
 kotlin-test-junit = { module = "org.jetbrains.kotlin:kotlin-test-junit", version.ref = "kotlin" }
@@ -86,6 +91,7 @@ kmpalette-extensions-libres = { module = "com.kmpalette:extensions-libres", vers
 kmpalette-extensions-network = { module = "com.kmpalette:extensions-network", version.ref = "kmpalette" }
 kmpalette-extensions-file = { module = "com.kmpalette:extensions-file", version.ref = "kmpalette" }
 
+kjwt = { module = "io.github.nefilim.kjwt:kjwt-core", version.ref = "kjwt" }
 
 coil = { module = "io.coil-kt.coil3:coil", version.ref = "coil" }
 coil-compose = { module = "io.coil-kt.coil3:coil-compose", version.ref = "coil" }

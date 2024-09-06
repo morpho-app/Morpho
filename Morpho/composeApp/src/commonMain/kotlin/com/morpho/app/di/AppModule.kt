@@ -1,5 +1,6 @@
 package com.morpho.app.di
 
+import com.morpho.app.data.PollBlueService
 import com.morpho.app.data.PreferencesRepository
 import com.morpho.app.model.uidata.BskyDataService
 import com.morpho.app.model.uidata.BskyNotificationService
@@ -45,6 +46,7 @@ val dataModule = module {
     single<BskyDataService> { BskyDataService() }
     single<BskyNotificationService> { BskyNotificationService() }
     single<ContentLabelService> { ContentLabelService() }
+    single<PollBlueService> { PollBlueService() }
 }
 
 @Suppress("MemberVisibilityCanBePrivate")

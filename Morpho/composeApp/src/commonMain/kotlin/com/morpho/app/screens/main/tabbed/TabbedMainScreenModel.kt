@@ -22,10 +22,12 @@ import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import kotlinx.serialization.Serializable
 import org.lighthousegames.logging.logging
 
-class
-TabbedMainScreenModel : MainScreenModel() {
+@Suppress("UNCHECKED_CAST")
+@Serializable
+class TabbedMainScreenModel : MainScreenModel() {
 
 
     var uiState: TabbedScreenState by mutableStateOf(TabbedScreenState(loadingState = UiLoadingState.Loading))

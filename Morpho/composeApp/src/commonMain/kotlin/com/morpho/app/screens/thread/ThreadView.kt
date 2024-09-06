@@ -103,7 +103,6 @@ fun ThreadView(
                    onUnClicked = {type, uri ->  deleteRecord(type, uri)},
                    onRepostClicked = {
                        initialContent = it
-                       composerRole = ComposerRole.QuotePost
                        repostClicked = true
                    },
                    onReplyClicked = {
@@ -122,6 +121,7 @@ fun ThreadView(
             },
             onRepost = {
                 repostClicked = false
+                composerRole = ComposerRole.QuotePost
                 initialContent?.let { post ->
                     RecordUnion.Repost(
                         StrongRef(post.uri,post.cid)

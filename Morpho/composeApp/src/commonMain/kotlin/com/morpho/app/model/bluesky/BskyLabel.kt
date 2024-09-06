@@ -19,10 +19,10 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.cbor.ByteString
 
-
+@OptIn(ExperimentalSerializationApi::class)
 @Serializable
 @Immutable
-data class BskyLabel @OptIn(ExperimentalSerializationApi::class) constructor(
+data class BskyLabel(
     val version: Long?,
     val creator: Did,
     val uri: AtUri,
@@ -31,6 +31,7 @@ data class BskyLabel @OptIn(ExperimentalSerializationApi::class) constructor(
     val overwritesPrevious: Boolean?,
     val createdTimestamp: Moment,
     val expirationTimestamp: Moment?,
+    @OptIn(kotlinx.serialization.ExperimentalSerializationApi::class)
     @ByteString
     val signature: ByteArray?,
 ) {

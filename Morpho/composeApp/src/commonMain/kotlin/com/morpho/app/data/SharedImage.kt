@@ -7,7 +7,6 @@ import com.morpho.butterfly.Butterfly
 import com.morpho.butterfly.model.Blob
 import io.github.vinceglb.filekit.core.PlatformFile
 import io.ktor.util.encodeBase64
-import io.ktor.utils.io.core.toByteArray
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.descriptors.PrimitiveKind
@@ -17,6 +16,8 @@ import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import okio.ByteString.Companion.decodeBase64
 
+const val MAX_SIZE: Long = 976_560;
+const val MAX_DIMENSION: Int = 2000;
 
 @Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING")
 expect class SharedImage {
@@ -25,6 +26,7 @@ expect class SharedImage {
         fun fromByteArray(byteArray: ByteArray): SharedImage
     }
     fun toByteArray(): ByteArray?
+    fun toByteArray(targetSize: Long): ByteArray?
     fun toImageBitmap(): ImageBitmap?
     fun getAspectRatio(): AspectRatio?
 }
@@ -55,8 +57,7 @@ constructor(override val descriptor: SerialDescriptor = PrimitiveSerialDescripto
 }
 
 suspend fun imageToBlob(image: SharedImage, api: Butterfly): Blob? {
-    val byteArray = image.toByteArray() ?: return null
-    val base64 = byteArray.encodeBase64().toByteArray()
+    val byteArray = image.toByteArray(targetSize = MAX_SIZE) ?: return null
     val resp = api.api.uploadBlob(byteArray, image.mimeType).getOrNull() ?: return null
     return Blob.serializer().deserialize(resp.blob)
 }

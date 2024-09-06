@@ -22,6 +22,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.util.fastAny
 import androidx.compose.ui.util.fastForEach
 import com.atproto.repo.StrongRef
 import com.morpho.app.model.bluesky.*
@@ -255,36 +256,45 @@ fun PostFragment(
                                 ReplyIndicator(post.reply.parent)
                             }
 
-                            RichTextElement(
-                                text = post.text,
-                                facets = post.facets,
-                                onClick = { facetTypes ->
-                                    if (facetTypes.isEmpty()) {
-                                        onItemClicked(post.uri)
-                                        return@RichTextElement
-                                    }
-                                    facetTypes.fastForEach {
-                                        when(it) {
-                                            is FacetType.ExternalLink -> {
-                                                openBrowser(it.uri.uri)
-                                            }
-                                            is FacetType.Format -> {onItemClicked(post.uri)}
-                                            is FacetType.PollBlueOption -> {
-
-                                            }
-                                            is FacetType.Tag -> {onItemClicked(post.uri)}
-                                            is FacetType.UserDidMention -> {
-                                                onProfileClicked(post.author.did)
-                                            }
-                                            is FacetType.UserHandleMention -> {
-                                                onProfileClicked(it.handle)
-                                            }
-
-                                            else -> {}
+                            if (post.facets.fastAny {
+                                    it.facetType.first() is FacetType.PollBlueOption
+                                }) {
+                                PollBluePost(
+                                    text = post.text,
+                                    facets = post.facets,
+                                    //modifier = Modifier.padding(bottom = 2.dp).padding(start = 0.dp, end = 6.dp),
+                                    onItemClicked = { onItemClicked(post.uri) },
+                                    onProfileClicked = onProfileClicked,
+                                    getContentHandling = getContentHandling
+                                )
+                            } else {
+                                RichTextElement(
+                                    text = post.text,
+                                    facets = post.facets,
+                                    onClick = { facetTypes ->
+                                        if (facetTypes.isEmpty()) {
+                                            onItemClicked(post.uri)
+                                            return@RichTextElement
                                         }
-                                    }
-                                },
-                            )
+                                        facetTypes.fastForEach {
+                                            when(it) {
+                                                is FacetType.ExternalLink -> {
+                                                    openBrowser(it.uri.uri)
+                                                }
+                                                is FacetType.Tag -> {onItemClicked(post.uri)}
+                                                is FacetType.UserDidMention -> {
+                                                    onProfileClicked(it.did)
+                                                }
+                                                is FacetType.UserHandleMention -> {
+                                                    onProfileClicked(it.handle)
+                                                }
+
+                                                else -> {}
+                                            }
+                                        }
+                                    },
+                                )
+                            }
                             PostFeatureElement(
                                 post.feature, onItemClicked, contentHandling = contentHandling
                             )

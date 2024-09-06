@@ -24,7 +24,7 @@ typealias TunerFunction = (List<BskyPost>) -> List<BskyPost>
 
 
 
-@Suppress("unused")
+@Suppress("unused", "UNCHECKED_CAST")
 @Serializable
 data class MorphoDataFeed<T: MorphoDataItem> (
     private var _items: MutableList<T> = mutableListOf(),
