@@ -19,12 +19,15 @@ datastorePreferencesCore = "1.1.1"
 imageLoader = "1.7.8"
 filekit = "0.8.2"
 junit = "4.13.2"
+jwt = "1.2.6"
+kjwt = "0.9.0"
 kmmViewmodelCore = "1.0.0-ALPHA-20"
 kotlin = "2.0.10"
 ksp-version = "2.0.10-1.0.24"
 koin-bom = "3.5.3"
 koin-ksp = "1.3.1"
 koin-compose = "1.1.2"
+kotlinJwt = "1.3.1"
 kotlin-reflect = "2.0.10"
 kotlin-gradle-plugin = "1.9.0"
 kotlinx-serialization = "1.6.3"
@@ -97,6 +100,10 @@ kotlinx-immutable = { module = "org.jetbrains.kotlinx:kotlinx-collections-immuta
 kotlinx-serialization-cbor = { module = "org.jetbrains.kotlinx:kotlinx-serialization-cbor", version.ref = "kotlinx-serialization" }
 kotlinx-serialization-core = { module = "org.jetbrains.kotlinx:kotlinx-serialization-core", version.ref = "kotlinx-serialization" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
+
+jwt = { module = "com.github.PhilJay:JWT", version.ref = "jwt" }
+kotlin-jwt = { module = "com.brendangoldberg:kotlin-jwt", version.ref = "kotlinJwt" }
+kjwt = { module = "io.github.nefilim.kjwt:kjwt-core", version.ref = "kjwt" }
 
 koin-bom = {module = "io.insert-koin:koin-bom", version.ref = "koin-bom" }
 koin-annotations = { module = "io.insert-koin:koin-annotations", version.ref = "koin-ksp" }

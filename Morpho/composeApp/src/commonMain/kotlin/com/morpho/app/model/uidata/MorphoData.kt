@@ -162,7 +162,7 @@ fun MorphoDataFeed<MorphoDataItem>.toMorphoData(
 
 fun AtUri.id(api:Butterfly): AtIdentifier {
     val idString = atUri.substringAfter("at://").split("/")[0]
-    return if (idString == "me") api.id!! else {
+    return if (idString == "me") api.atpUser!!.id else {
         // TODO: make this resolve a handle to a DID
         if (idString.contains("did:")) Did(idString) else Handle(idString)
     }

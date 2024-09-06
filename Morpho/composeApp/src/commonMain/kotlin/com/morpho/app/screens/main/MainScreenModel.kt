@@ -68,7 +68,7 @@ open class MainScreenModel: BaseScreenModel() {
     suspend fun init(populateFeeds: Boolean = true) = runBlocking {
         if(initialized) return@runBlocking
         initialized = true
-        userId = api.id
+        userId = api.atpUser?.id
         if(userId != null){
             if(preferences.prefs.firstOrNull().isNullOrEmpty()){
                 val prefs = userId?.let {

@@ -39,7 +39,7 @@ class TabbedProfileViewModel(
 
     private val tabs = mutableListOf<ContentCardMapEntry>()
 
-    val _tabFlow = MutableStateFlow(tabs.toList())
+    private val _tabFlow = MutableStateFlow(tabs.toList())
     val tabFlow: StateFlow<List<ContentCardMapEntry>>
         get() = _tabFlow.asStateFlow()
 
@@ -57,9 +57,9 @@ class TabbedProfileViewModel(
         init(false)
         if(id != null) {
             profileId = id
-            myProfile = api.id == id
+            myProfile = api.atpUser?.id == id
         } else {
-            profileId = api.id
+            profileId = api.atpUser?.id
             myProfile = true
         }
         log.d { "Profile of: $profileId"}

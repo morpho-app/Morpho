@@ -169,7 +169,7 @@ data class ProfileTab(
     @Composable
     override fun Content() {
         val screenModel = rememberScreenModel { TabbedProfileViewModel(id) }
-        val ownProfile = remember { screenModel.api.id == id }
+        val ownProfile = remember { screenModel.api.atpUser?.id == id }
         TabbedProfileContent(ownProfile, screenModel)
 
     }
