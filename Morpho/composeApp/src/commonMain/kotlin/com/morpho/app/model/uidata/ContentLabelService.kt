@@ -4,19 +4,13 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.runtime.Immutable
-import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.util.fastAny
 import androidx.compose.ui.util.fastFilter
 import androidx.compose.ui.util.fastForEach
-import app.bsky.actor.ContentLabelPref
-import app.bsky.actor.MutedWord
 import app.bsky.actor.Visibility
-import app.bsky.labeler.GetServicesQuery
-import app.bsky.labeler.GetServicesResponseViewUnion
 import com.atproto.label.LabelValue
 import com.atproto.label.Severity
-import com.morpho.app.data.PreferencesRepository
 import com.morpho.app.model.bluesky.*
 import com.morpho.butterfly.AtUri
 import com.morpho.butterfly.Butterfly
@@ -24,7 +18,9 @@ import com.morpho.butterfly.Language
 import com.morpho.butterfly.model.ReadOnlyList
 import kotlinx.collections.immutable.*
 import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
 import org.koin.core.component.KoinComponent
@@ -421,27 +417,21 @@ data object GraphicMedia: InterpretedLabelDefinition(
 
 class ContentLabelService: KoinComponent {
     val api:Butterfly by inject()
-    val preferences: PreferencesRepository by inject()
+    val settings: SettingsService by inject()
 
-    private val _labelPrefs: MutableStateFlow<List<ContentLabelPref>> = MutableStateFlow(listOf())
-    private val _labelers: MutableStateFlow<List<BskyLabelService>> = MutableStateFlow(listOf())
-    private val _mutedWords: MutableStateFlow<List<MutedWord>> = MutableStateFlow(listOf())
-    private val _hiddenPosts: MutableStateFlow<List<AtUri>> = MutableStateFlow(listOf())
-    private val _showAdultContent: MutableStateFlow<Boolean> = MutableStateFlow(false)
-    private val _feedPrefs: MutableStateFlow<Map<String, BskyFeedPref>> = MutableStateFlow(mapOf())
-
-    val labelers = _labelers.asStateFlow()
-    val labelPrefs = _labelPrefs.asStateFlow()
-    val mutedWords = _mutedWords.asStateFlow()
-    val hiddenPosts = _hiddenPosts.asStateFlow()
-    val showAdultContent = _showAdultContent.asStateFlow()
-    val feedPrefs = _feedPrefs.asStateFlow()
+    val labelers = settings.labelers.stateIn(serviceScope, SharingStarted.Lazily, persistentListOf())
+    val labelPrefs = settings.contentLabelPrefs.stateIn(serviceScope, SharingStarted.Lazily, persistentListOf())
+    val mutedUsers = settings.mutedUsers.stateIn(serviceScope, SharingStarted.Lazily, persistentListOf())
+    val mutedWords = settings.mutedWords.stateIn(serviceScope, SharingStarted.Lazily, persistentListOf())
+    val hiddenPosts = settings.hiddenPosts.stateIn(serviceScope, SharingStarted.Lazily, persistentListOf())
+    val showAdultContent = settings.showAdultContent.stateIn(serviceScope, SharingStarted.Lazily, false)
+    val feedPrefs = settings.feedViewPrefs.stateIn(serviceScope, SharingStarted.Lazily, mapOf())
     val labelsToHide = labelPrefs.map { contentLabelPrefs ->
         contentLabelPrefs.fastFilter { it.visibility == Visibility.HIDE }
     }.stateIn(serviceScope, SharingStarted.Eagerly, persistentListOf())
 
-    private val handlingCache = mutableStateMapOf<AtUri, ReadOnlyList<ContentHandling>>()
-    private val definitionCache = mutableStateMapOf<String, InterpretedLabelDefinition>()
+    private val handlingCache = mutableMapOf<AtUri, ReadOnlyList<ContentHandling>>()
+    private val definitionCache = mutableMapOf<String, InterpretedLabelDefinition>()
 
     companion object {
         val log = logging()
@@ -454,28 +444,6 @@ class ContentLabelService: KoinComponent {
                 delay(100)
             }
             if (api.isLoggedIn()) {
-                preferences.userPrefs(api.atpUser!!.id).map { prefs ->
-                    _labelPrefs.update { prefs?.preferences?.contentLabelPrefs ?: emptyList() }
-                    _mutedWords.update { prefs?.preferences?.mutedWords ?: emptyList() }
-                    _hiddenPosts.update { prefs?.preferences?.hiddenPosts ?: emptyList() }
-                    _showAdultContent.update { prefs?.preferences?.adultContent?.enabled ?: false }
-                    _feedPrefs.update { prefs?.preferences?.feedViewPrefs ?: emptyMap() }
-                    val labelerProfiles = prefs?.preferences?.labelers?.toImmutableList()
-                        ?.let { GetServicesQuery(it) }?.let {
-                            api.api.getServices(it)
-                                .map { resp ->
-                                    resp.views.map { service ->
-                                        when(service) {
-                                            is GetServicesResponseViewUnion.LabelerView ->
-                                                service.value.toLabelService()
-                                            is GetServicesResponseViewUnion.LabelerViewDetailed ->
-                                                service.value.toLabelService()
-                                        }
-                                    }
-                                }.getOrNull()
-                        } ?: emptyList()
-                    _labelers.update { labelerProfiles }
-                }
                 initDefinitionCache()
             }
 

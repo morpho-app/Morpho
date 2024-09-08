@@ -27,12 +27,21 @@ data class BskyUserPreferences(
     val morphoPrefs: MorphoPreferences,
 )
 
+@Serializable
+data class AccessibilityPreferences(
+    val requireAltText: Boolean = false,
+    val displayLargerAltBadge: Boolean = false,
+    val reduceMotion: Boolean = false,
+    val disableAutoplay: Boolean = false,
+    val disableHaptics: Boolean = false,
+)
 
 @Serializable
 data class MorphoPreferences(
     val tabbed: Boolean = true,
     val undecorated: Boolean = true,
     val notificationsFilter: NotificationsFilterState = NotificationsFilterState(),
+    val accessibility: AccessibilityPreferences = AccessibilityPreferences(),
 )
 
 class PreferencesRepository(storageDir: String): KoinComponent {

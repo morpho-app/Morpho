@@ -94,6 +94,7 @@ fun TabScreen.TabbedHomeView() {
                 topContent = {
                     HomeTabRow(
                         tabs = tabs,
+                        modifier = Modifier.statusBarsPadding(),
                         tabIndex = selectedTabIndex,
                         onChanged = { index ->
                             if (index == selectedTabIndex) return@HomeTabRow

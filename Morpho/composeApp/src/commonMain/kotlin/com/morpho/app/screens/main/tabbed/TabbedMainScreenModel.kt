@@ -3,13 +3,12 @@ package com.morpho.app.screens.main.tabbed
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.util.fastForEach
+import app.bsky.actor.SavedFeed
 import app.bsky.feed.GetFeedGeneratorsQuery
 import cafe.adriel.voyager.core.model.screenModelScope
 import com.morpho.app.model.bluesky.FeedGenerator
 import com.morpho.app.model.bluesky.MorphoDataItem
 import com.morpho.app.model.bluesky.Profile
-import com.morpho.app.model.bluesky.toFeedGenerator
 import com.morpho.app.model.uidata.AtCursor
 import com.morpho.app.model.uidata.ContentCardMapEntry
 import com.morpho.app.model.uidata.MorphoData
@@ -20,6 +19,7 @@ import com.morpho.app.screens.main.MainScreenModel
 import com.morpho.butterfly.AtUri
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
@@ -51,7 +51,7 @@ class TabbedMainScreenModel : MainScreenModel() {
         init(false)
         initialized = true
         val home = initHomeTab()
-        val savedFeedsPref = userPrefs.value?.preferences?.savedFeeds
+
         tabs.clear()
         val newFeeds = mutableListOf<StateFlow<ContentCardState<MorphoDataItem>>>()
         if(home.isSuccess) {
@@ -71,27 +71,26 @@ class TabbedMainScreenModel : MainScreenModel() {
                 }
             }
         }
-        if (savedFeedsPref != null) {
-            log.d { "Pinned feeds: ${savedFeedsPref.pinned}" }
-            api.api.getFeedGenerators(GetFeedGeneratorsQuery(savedFeedsPref.pinned))
-                .map { resp ->
-                    _pinnedFeeds.addAll(resp.feeds.map { it.toFeedGenerator() })
-                    _pinnedFeeds.associateBy { _pinnedFeeds.indexOf(it) }.mapValues { feedGen ->
-                        initFeedTab(feedGen.value)
-                    }
-                }.getOrNull()?.forEach { (index, pair) ->
-                    val feed = pair.getOrNull()
-                    if (feed != null) {
-                        feedStates.firstOrNull {
-                            it.value.uri == feed.first.uri
-                        }?.let { state ->
-                            tabs.add(feed.first)
-                            newFeeds.add(state as StateFlow<ContentCardState<MorphoDataItem>>)
-                        }
-                    } else {
-                        log.e { "Failed to initialize feed tab at index $index" }
+        while(pinnedFeeds.value.isEmpty()) {
+            delay(10)
+        }
+
+        if (pinnedFeeds.value.isNotEmpty()) {
+            log.d { "Pinned feeds: ${pinnedFeeds.value}" }
+            pinnedFeeds.value.forEach { feed ->
+                if(feed.feed == null) return@forEach
+                val result = initFeedTab(feed.feed)
+                if (result.isFailure) {
+                    MainScreenModel.log.e { "Failed to initialize feed: ${feed.title}" }
+                } else {
+                    feedStates.firstOrNull {
+                        it.value.uri == result.getOrNull()?.first?.uri
+                    }?.let { state ->
+                        tabs.add(result.getOrNull()?.first!!)
+                        newFeeds.add(state as StateFlow<ContentCardState<MorphoDataItem>>)
                     }
                 }
+            }
         } else if(false) { // Temporarily disabled
             // Init some default feeds
             api.api.getFeedGenerators(GetFeedGeneratorsQuery(
@@ -102,11 +101,21 @@ class TabbedMainScreenModel : MainScreenModel() {
                     AtUri("at://did:plc:tenurhgjptubkk5zf5qhi3og/app.bsky.feed.generator/feed-of-feeds"),
                 )
             )).onSuccess { resp ->
-                _pinnedFeeds.addAll(resp.feeds.map{ it.toFeedGenerator() })
-                _pinnedFeeds.associateBy { _pinnedFeeds.indexOf(it) }.mapValues { feedGen ->
-                    val result = initFeedTab(feedGen.value)
-                    if (result.isFailure) { MainScreenModel.log.e { "Failed to initialize feed: ${feedGen.value.displayName}" } }
-                    else {
+                resp.feeds.forEach { feed ->
+                    settings.addSavedFeed(
+                        SavedFeed(
+                            feed.uri.atUri,
+                            pinned = true,
+                            type = app.bsky.actor.FeedType.FEED,
+                            value = feed.uri.atUri
+                        ))
+
+                }
+                pinnedFeeds.value.associateBy {  pinnedFeeds.value.indexOf(it) }.mapValues { feedGen ->
+                    val result = initFeedTab(feedGen.value.feed!!)
+                    if (result.isFailure) {
+                        MainScreenModel.log.e { "Failed to initialize feed: ${feedGen.value.title}" }
+                    } else {
                         feedStates.firstOrNull {
                             it.value.uri == result.getOrNull()?.first?.uri
                         }?.let { state ->
@@ -115,19 +124,15 @@ class TabbedMainScreenModel : MainScreenModel() {
                         }
                     }
                 }
-
             }
         } else {
-            log.d { "Saved Feeds: $savedFeedsPref" }
+            log.d { "Saved Feeds: ${savedFeeds.value}" }
             log.d {
                 "Prefs ${preferences.prefs.firstOrNull()}"
             }
         }
         _tabFlow.value = tabs.toImmutableList()
         uiState = uiState.copy(loadingState = UiLoadingState.Idle, tabs = tabFlow, tabStates = newFeeds.toImmutableList())
-        uiState.tabStates.fastForEach {
-
-        }
     }
 
     fun refreshTab(index: Int, cursor: AtCursor = null) :Boolean {

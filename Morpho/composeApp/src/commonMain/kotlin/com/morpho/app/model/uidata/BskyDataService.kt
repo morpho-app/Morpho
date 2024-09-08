@@ -1,7 +1,6 @@
 package com.morpho.app.model.uidata
 
 //import com.rickclephas.kmp.nativecoroutines.NativeCoroutines
-import androidx.compose.ui.util.fastFirstOrNull
 import app.bsky.actor.GetProfilesQuery
 import app.bsky.actor.ProfileViewBasic
 import app.bsky.feed.*
@@ -136,15 +135,9 @@ class BskyDataService: KoinComponent {
         { posts -> filterbyLanguage(posts, languages.value) },
     )
     private val contentLabelService by inject<ContentLabelService>()
-    private val languages: StateFlow<List<Language>> = contentLabelService.preferences.prefs
-        .distinctUntilChanged().map { preferencesList ->
-        preferencesList?.fastFirstOrNull {
-            it.user.userDid == api.atpUser?.id?.toString()
-        }?.preferences?.languages?: persistentListOf(Language("en"))   } .stateIn(
-        serviceScope,
-        SharingStarted.WhileSubscribed(100),
-        persistentListOf(Language("en"))
-    )
+    private val settings: SettingsService by inject<SettingsService>()
+    private val languages: StateFlow<List<Language>> = settings.languages
+        .stateIn(serviceScope, SharingStarted.Lazily, persistentListOf())
 
 
     // Secondary way to make sure you have the most recent stuff, in case you lose the original reference
@@ -155,8 +148,6 @@ class BskyDataService: KoinComponent {
         val log = logging()
         val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     }
-
-
 
     suspend fun refresh(
         uri: AtUri,
@@ -592,6 +583,7 @@ class BskyDataService: KoinComponent {
             }
         }
     }.distinctUntilChanged().flowOn(dispatcher + CoroutineName("Followers of $id"))
+
     suspend fun authorFeed(
         id: AtIdentifier,
         type: FeedType,
@@ -692,6 +684,7 @@ class BskyDataService: KoinComponent {
             }
         }
     }.distinctUntilChanged().flowOn(dispatcher + CoroutineName("${type.name} feed for $id"))
+
     suspend fun profileTabContent(
         id: AtIdentifier,
         type: FeedType,
@@ -756,6 +749,7 @@ class BskyDataService: KoinComponent {
             }
         }
     }.distinctUntilChanged().flowOn(dispatcher + CoroutineName("Lists made by $id"))
+
     suspend fun profileFeedsList(
         id: AtIdentifier,
         cursor: SharedFlow<AtCursor>,
@@ -788,6 +782,7 @@ class BskyDataService: KoinComponent {
             }
         }
     }.distinctUntilChanged().flowOn(dispatcher + CoroutineName("Feeds made by $id"))
+
     suspend fun profileServiceView(
         did: Did,
         update: SharedFlow<Unit>,

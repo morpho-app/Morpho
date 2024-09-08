@@ -20,13 +20,13 @@ public data class BskyPreferences(
     public var adultContent: AdultContentPref? = null,
     public val feedViewPrefs: MutableMap<String, BskyFeedPref> = mutableMapOf(),
     public var skyFeedBuilderFeeds: SkyFeedBuilderFeedsPref? = null,
-    public var savedFeeds: SavedFeedsPref? = null,
+    public var savedFeeds: SavedFeedsPrefV2? = null,
     public val contentLabelPrefs: MutableList<ContentLabelPref> = mutableListOf(),
     public var threadViewPrefs: ThreadViewPref? = null,
     // Get system languages and allow customization of this
     public var languages: List<Language> = persistentListOf(),
     public var mergeFeeds: Boolean = false,
-    public val mutes: MutableList<BasicProfile> = mutableListOf(),
+    public val mutes: List<BasicProfile> = persistentListOf(),
     public val listsMuted: MutableMap<AtUri, BskyList> = mutableMapOf(),
     public var mutedWords: List<MutedWord> = persistentListOf(),
     public var hiddenPosts: List<AtUri> = persistentListOf(),
@@ -36,7 +36,7 @@ public data class BskyPreferences(
         val prefs = persistentListOf<PreferencesUnion>()
         if (this.adultContent != null) prefs.add(PreferencesUnion.AdultContentPref(this.adultContent!!))
         if (this.personalDetails != null) prefs.add(PreferencesUnion.PersonalDetailsPref(this.personalDetails!!))
-        if (this.savedFeeds != null) prefs.add(PreferencesUnion.SavedFeedsPref(this.savedFeeds!!))
+        if (this.savedFeeds != null) prefs.add(PreferencesUnion.SavedFeedsPrefV2(this.savedFeeds!!))
         if (this.skyFeedBuilderFeeds != null) prefs.add(
             PreferencesUnion.SkyFeedBuilderFeedsPref(this.skyFeedBuilderFeeds!!))
         if (this.threadViewPrefs != null) prefs.add(PreferencesUnion.ThreadViewPref(this.threadViewPrefs!!))
@@ -58,10 +58,6 @@ public data class BskyPreferences(
             PreferencesUnion.LabelersPref(
                 LabelersPref(this.labelers.toImmutableList().mapImmutable { LabelerPrefItem(it) })))
         return prefs.toImmutableList()
-    }
-
-    fun labelsToHide(feed: String): List<ContentLabelPref> {
-        return feedViewPrefs[feed]?.labelsToHide ?: contentLabelPrefs.filter { it.visibility == Visibility.HIDE }
     }
 }
 
@@ -142,7 +138,7 @@ fun GetPreferencesResponse.toPreferences(prefs: BskyPreferences) : BskyPreferenc
         if(!languages.isNullOrEmpty()) prefs.feedViewPrefs[pref.value.feed]?.languages = languages else persistentListOf<Language>()
       }
       is PreferencesUnion.PersonalDetailsPref -> prefs.personalDetails = pref.value
-      is PreferencesUnion.SavedFeedsPref -> prefs.savedFeeds = pref.value
+      is PreferencesUnion.SavedFeedsPrefV2 -> prefs.savedFeeds = pref.value
       is PreferencesUnion.SkyFeedBuilderFeedsPref -> prefs.skyFeedBuilderFeeds = pref.value
       is PreferencesUnion.ThreadViewPref -> prefs.threadViewPrefs = pref.value
       is PreferencesUnion.HiddenPostsPref -> prefs.hiddenPosts = pref.value.items.toPersistentList()

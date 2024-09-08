@@ -3,6 +3,7 @@ package com.morpho.app.ui.post
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.MaterialTheme
@@ -20,10 +21,12 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
 import com.morpho.app.model.bluesky.*
+import com.morpho.app.ui.elements.MorphoHighlightIndication
 import com.morpho.app.ui.elements.OutlinedAvatar
 import com.morpho.app.ui.elements.RichTextElement
 import com.morpho.app.ui.elements.WrappedColumn
 import com.morpho.app.ui.lists.FeedListEntryFragment
+import com.morpho.app.ui.lists.UserListEntryFragment
 import com.morpho.app.util.getFormattedDateTimeSince
 import com.morpho.app.util.openBrowser
 import com.morpho.app.util.parseImageFullRef
@@ -42,10 +45,12 @@ fun EmbedPostFragment(
     val delta = remember { getFormattedDateTimeSince(post.litePost.createdAt) }
     var hidePost by rememberSaveable { mutableStateOf(post.author.mutedByMe) }
     val muted = rememberSaveable { post.author.mutedByMe }
+    val interactionSource = remember { MutableInteractionSource() }
+    val indication = remember { MorphoHighlightIndication() }
     WrappedColumn(
         modifier
             .fillMaxWidth()
-            .padding(2.dp)
+            .padding(top = 6.dp)
     ) {
         Surface (
             tonalElevation = 4.dp,
@@ -55,23 +60,27 @@ fun EmbedPostFragment(
             modifier = Modifier
                 .fillMaxWidth()
                 .align(Alignment.End)
+                .clickable(
+                    interactionSource = interactionSource,
+                    indication = indication,
+                    enabled = true,
+                    onClick = { onItemClicked(post.uri) }
+                )
 
         ) {
             Column(
-                Modifier.clickable { onItemClicked(post.uri) }
-                    .padding(bottom = 6.dp, end = 2.dp)
-                    .fillMaxWidth(),
+                Modifier.fillMaxWidth(),
             ) {
                 Row(
                     modifier = Modifier
-                        .padding(end = 4.dp),
+                        .padding(end = 6.dp),
                     horizontalArrangement = Arrangement.End
 
                 ) {
                     OutlinedAvatar(
                         url = post.author.avatar.orEmpty(),
                         contentDescription = "Avatar for ${post.author.handle}",
-                        size = 20.dp,
+                        size = 25.dp,
                         //outlineColor = MaterialTheme.colorScheme.background,
                         onClicked = {
                             onProfileClicked(post.author.did)
@@ -107,7 +116,12 @@ fun EmbedPostFragment(
                             .padding(top = 4.dp, start = 4.dp)
                             .weight(10.0F)
                             .alignByBaseline()
-                            .clickable { onProfileClicked(post.author.did) },
+                            .clickable(
+                                interactionSource = interactionSource,
+                                indication = indication,
+                                enabled = true,
+                                onClick = { onProfileClicked(post.author.did) }
+                            ),
                     )
                     Spacer(
                         modifier = Modifier
@@ -160,7 +174,7 @@ fun EmbedPostFragment(
                             }
                         }
                     },
-                    modifier = Modifier.padding(horizontal = 4.dp)
+                    modifier = Modifier.padding(horizontal = 6.dp)
                 )
                 EmbedPostFeature(embed = post, onItemClicked, onLinkClicked = {
                     openBrowser(it)
@@ -195,10 +209,15 @@ fun ColumnScope.EmbedPostFeature(
             )
         }
         is EmbedRecord.EmbedLabelService -> {
-
+            Text(text = "Label Service")
         }
         is EmbedRecord.EmbedList -> {
+            UserListEntryFragment(
+                list = embed.list,
+                onListClicked = {
 
+                }
+            )
         }
         is EmbedRecord.InvisibleEmbedPost -> {
             EmbedNotFoundPostFragment(uri = embed.uri)
@@ -320,7 +339,12 @@ fun ColumnScope.EmbedPostFeature(
                             onItemClicked = onItemClicked,
                             modifier = Modifier.align(Alignment.CenterHorizontally)
                         )
-                        is EmbedRecord.EmbedList -> {}
+                        is EmbedRecord.EmbedList -> {
+                            UserListEntryFragment(
+                                list = embed.litePost.feature.record.list,
+                                onListClicked = {  }
+                            )
+                        }
                         is EmbedRecord.EmbedFeed -> {
                             FeedListEntryFragment(
                                 embed.litePost.feature.record.feed,
@@ -342,8 +366,8 @@ fun ColumnScope.EmbedPostFeature(
                 alt = embed.alt,
                 aspectRatio = embed.aspectRatio,
                 modifier = Modifier
-                    .padding(vertical = 6.dp)
-                    .heightIn(10.dp, 700.dp)
+                    .padding(top = 6.dp)
+                    .heightIn(100.dp, 600.dp)
                     .fillMaxWidth(),
             )
         }

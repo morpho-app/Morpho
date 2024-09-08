@@ -70,7 +70,6 @@ fun main() = application {
     val api = koin.get<Butterfly>()
     val prefs = koin.get<PreferencesRepository> { parametersOf(storageDir) }
 
-
     val morphoPrefs = runBlocking {
         prefs.prefs.firstOrNull()?.firstOrNull()?.morphoPrefs
     }

@@ -70,8 +70,9 @@ fun <T: MainScreenModel, I: MorphoDataItem, S: ContentCardState<I>> TabbedSkylin
         }
     }
     val content = state?.collectAsState()
+    val clipboard = getKoin().get<ClipboardManager>()
     if(content?.value != null) {
-        val clipboard = getKoin().get<ClipboardManager>()
+
         SkylineFragment(
             content = state,
             onProfileClicked = {
@@ -98,7 +99,6 @@ fun <T: MainScreenModel, I: MorphoDataItem, S: ContentCardState<I>> TabbedSkylin
                 },
                 onRepost = {
                     repostClicked = false
-                    composerRole = ComposerRole.QuotePost
                     initialContent?.let { post ->
                         RecordUnion.Repost(
                             StrongRef(post.uri, post.cid)
@@ -106,6 +106,7 @@ fun <T: MainScreenModel, I: MorphoDataItem, S: ContentCardState<I>> TabbedSkylin
                     }?.let { sm.api.createRecord(it) }
                 },
                 onQuotePost = {
+                    composerRole = ComposerRole.QuotePost
                     showComposer = true
                     repostClicked = false
                 }

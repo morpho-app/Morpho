@@ -6,13 +6,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import app.bsky.actor.GetProfileQuery
+import app.bsky.actor.SavedFeed
 import app.bsky.feed.GetFeedGeneratorsQuery
 import app.bsky.feed.GetPostThreadQuery
 import app.bsky.feed.GetPostThreadResponseThreadUnion
 import app.bsky.feed.GetPostsQuery
 import cafe.adriel.voyager.core.model.screenModelScope
 import cafe.adriel.voyager.core.stack.mutableStateStackOf
-import com.morpho.app.data.BskyUserPreferences
 import com.morpho.app.model.bluesky.*
 import com.morpho.app.model.uidata.*
 import com.morpho.app.model.uistate.ContentCardState
@@ -24,8 +24,10 @@ import com.morpho.butterfly.AtUri
 import kotlinx.collections.immutable.ImmutableMap
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableMap
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.koin.core.component.inject
 import org.lighthousegames.logging.logging
@@ -36,8 +38,7 @@ import org.lighthousegames.logging.logging
 open class MainScreenModel: BaseScreenModel() {
     protected val dataService: BskyDataService by inject()
 
-    protected val _pinnedFeeds = mutableListOf<FeedGenerator>()
-    protected val _savedFeeds = mutableListOf<FeedGenerator>()
+
 
     protected val _feedStates = mutableListOf<StateFlow<ContentCardState.Skyline<MorphoDataItem.FeedItem>>>()
     val feedStates: List<StateFlow<ContentCardState.Skyline<MorphoDataItem.FeedItem>>>
@@ -48,7 +49,10 @@ open class MainScreenModel: BaseScreenModel() {
 
 
     val history = mutableStateStackOf<ContentCardMapEntry>()
-    val userPrefs = MutableStateFlow<BskyUserPreferences?>(null)
+    val settings: SettingsService by inject()
+
+    protected val pinnedFeeds = MutableStateFlow(emptyList<UISavedFeed>())
+    protected val savedFeeds = MutableStateFlow(emptyList<UISavedFeed>())
 
     protected val _cursors = mutableMapOf<AtUri, MutableSharedFlow<AtCursor>>()
     public  val cursors: ImmutableMap<AtUri, MutableSharedFlow<AtCursor>>
@@ -69,6 +73,16 @@ open class MainScreenModel: BaseScreenModel() {
         if(initialized) return@runBlocking
         initialized = true
         userId = api.atpUser?.id
+        screenModelScope.launch(Dispatchers.Default) {
+            settings.pinnedFeeds.collect { feeds ->
+                log.d { "Pinned Feeds: $feeds" }
+                pinnedFeeds.value = feeds
+            }
+            settings.savedFeeds.collect { feeds ->
+                log.d { "Saved Feeds: $feeds" }
+                savedFeeds.value = feeds
+            }
+        }
         if(userId != null){
             if(preferences.prefs.firstOrNull().isNullOrEmpty()){
                 val prefs = userId?.let {
@@ -76,8 +90,7 @@ open class MainScreenModel: BaseScreenModel() {
                 }?.getOrNull()
                 log.d { "Preferences: $prefs" }
                 if(prefs != null) {
-                    userPrefs.value = preferences.getFullPrefsLocal(userId!!).getOrNull()
-                    currentUser = userPrefs.value?.user?.getProfile()
+                    currentUser = settings.currentUser.value?.getProfile()
                 } else {
                     log.e { "Failed to get preferences" }
                 }
@@ -96,34 +109,55 @@ open class MainScreenModel: BaseScreenModel() {
             } else {
                 log.d { "Preferences already set maybe?" }
             }
-            currentUser = userPrefs.value?.user?.getProfile()
-            if(userPrefs.value == null) {
-                userPrefs.value = preferences.getFullPrefs(userId!!).getOrNull()
-            }
+            currentUser = settings.currentUser.value?.getProfile()
+
             if(currentUser == null) {
                 currentUser = userId?.let { GetProfileQuery(it) }?.let {
                     api.api.getProfile(it).getOrNull()?.toProfile()
                 }
+
             }
-            preferences.userPrefs(userId!!).collect { userPrefs.value = it }
         }
         if(populateFeeds) initFeeds()
     }
 
     fun getFeedInfo(uri: AtUri) : FeedInfo? {
         when {
-            uri == AtUri.HOME_URI -> return FeedInfo(uri, "Home", "Your home feed", icon = Icons.Default.Home)
+            uri == AtUri.HOME_URI -> return FeedInfo(
+                uri,
+                "Home",
+                "Your home feed",
+                icon = Icons.Default.Home
+            )
+
             else -> {
-                _pinnedFeeds.firstOrNull { it.uri == uri }?.let {
-                    return FeedInfo(uri, it.displayName, it.description, it.avatar, feed = it)
+                if(savedFeeds.value.isNotEmpty()) {
+                    savedFeeds.value.firstOrNull {
+                        when (it.type) {
+                            is UIFeedType.Feed -> it.type.uri == uri
+                            is UIFeedType.List -> it.type.uri == uri
+                            is UIFeedType.Timeline -> return FeedInfo(
+                                uri,
+                                "Home",
+                                "Your home feed",
+                                icon = Icons.Default.Home
+                            )
+                        }
+                    }?.let {
+                        if (it.type is UIFeedType.Feed) {
+                            return FeedInfo(uri, it.title, it.description, it.avatar, feed = it.feed)
+                        } else if (it.type is UIFeedType.List) {
+                            return FeedInfo(uri, it.title, it.description, it.avatar, list = it.list)
+                        }
+                        // TODO: Get the feed info from the data service
+                        return null
+                    }
                 }
-                _savedFeeds.firstOrNull { it.uri == uri }?.let {
-                    return FeedInfo(uri, it.displayName, it.description, it.avatar, feed = it)
-                }
-                // TODO: Get the feed info from the data service
-                return null
+
             }
         }
+        log.e { "Failed to get feed info for $uri" }
+        return null
     }
 
     protected open suspend fun initFeeds() {
@@ -136,22 +170,14 @@ open class MainScreenModel: BaseScreenModel() {
             // Init some default feeds
         }
 
-        val savedFeedsPref = userPrefs.value?.preferences?.savedFeeds
-        if (savedFeedsPref != null) {
-            api.api.getFeedGenerators(GetFeedGeneratorsQuery(savedFeedsPref.pinned)).onSuccess { resp ->
-                _pinnedFeeds.addAll(resp.feeds.map{ it.toFeedGenerator() })
-                _pinnedFeeds.forEach { feedGen ->
+        if (settings.pinnedFeeds.last().isNotEmpty()) {
+            settings.pinnedFeeds.collectLatest { feeds ->
+                feeds.forEach { feed ->
                     val flow =
-                        initFeed(feedGen, initAtCursor(), force = true, start = true).first()
-                    if (flow == null) { log.e { "Failed to initialize feed: ${feedGen.displayName}" } }
-                }
-            }
-            api.api.getFeedGenerators(GetFeedGeneratorsQuery(savedFeedsPref.saved)).onSuccess { resp ->
-                _savedFeeds.addAll(resp.feeds.map{ it.toFeedGenerator() })
-                _savedFeeds.forEach { feedGen ->
-                    val flow =
-                        initFeed(feedGen, initAtCursor(), force = true, start = false).first()
-                    if (flow == null) { log.e { "Failed to initialize feed: ${feedGen.displayName}" } }
+                        initFeed(feed.feed!!, initAtCursor(), force = true, start = true).first()
+                    if (flow == null) {
+                        log.e { "Failed to initialize feed: ${feed.title}" }
+                    }
                 }
             }
         } else {
@@ -164,12 +190,24 @@ open class MainScreenModel: BaseScreenModel() {
                     AtUri("at://did:plc:tenurhgjptubkk5zf5qhi3og/app.bsky.feed.generator/feed-of-feeds"),
                 )
             )).onSuccess { resp ->
-                _pinnedFeeds.addAll(resp.feeds.map{ it.toFeedGenerator() })
-                _pinnedFeeds.forEach { feedGen ->
-                    val flow =
-                        initFeed(feedGen, initAtCursor(), force = true, start = true).first()
-                    if (flow == null) { log.e { "Failed to initialize feed: ${feedGen.displayName}" } }
+                settings.addSavedFeeds(resp.feeds.map { feed ->
+                    SavedFeed(
+                        feed.uri.atUri,
+                        pinned = true,
+                        type = app.bsky.actor.FeedType.FEED,
+                        value = feed.uri.atUri,
+                    )
+                })
+                settings.savedFeeds.collectLatest { feeds ->
+                    feeds.forEach { feed ->
+                        val flow =
+                            initFeed(feed.feed!!, initAtCursor(), force = true, start = false).first()
+                        if (flow == null) {
+                            log.e { "Failed to initialize feed: ${feed.title}" }
+                        }
+                    }
                 }
+
             }
         }
     }
@@ -206,6 +244,7 @@ open class MainScreenModel: BaseScreenModel() {
                 ?: return null
         return loadThread(ContentCardState.PostThread(post, MutableStateFlow(null).asStateFlow(), ContentLoadingState.Loading))
     }
+
     @OptIn(ExperimentalCoroutinesApi::class)
     suspend fun loadThread(state: ContentCardState.PostThread): StateFlow<ContentCardState.PostThread> = flow {
         val r = api.api.getPostThread(GetPostThreadQuery(state.uri, 15, 200)).map { response ->
@@ -324,8 +363,8 @@ open class MainScreenModel: BaseScreenModel() {
             MutableStateFlow(BskyFeedPref())
         } else {
             log.d { "Preferences found"}
-            userPrefs.map {
-                it?.preferences?.feedViewPrefs?.get("home") ?: BskyFeedPref()
+            settings.feedViewPrefs.map {
+                it["home"] ?: BskyFeedPref()
             }.stateIn(screenModelScope, SharingStarted.Lazily, BskyFeedPref())
         }
         val feedService = dataService.dataFlows[timeline.uri]
@@ -356,8 +395,8 @@ open class MainScreenModel: BaseScreenModel() {
         force: Boolean = false,
     ): Flow<ContentCardState.Skyline<MorphoDataItem.FeedItem>?> = flow {
         val uri = AtUri.HOME_URI
-        val prefs = userPrefs.map {
-            it?.preferences?.feedViewPrefs?.get("home") ?: BskyFeedPref()
+        val prefs = settings.feedViewPrefs.map {
+            it["home"] ?: BskyFeedPref()
         }.filterNotNull().stateIn(screenModelScope)
         val feedService = dataService.dataFlows[uri]
 

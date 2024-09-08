@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.text.InlineTextContent
 import androidx.compose.foundation.text.appendInlineContent
-import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
@@ -160,30 +159,28 @@ fun RichTextElement(
         }.flatten().filter { it.first.isNotEmpty() }.toMap()
 
     }
-    SelectionContainer(
-        modifier = Modifier.padding(vertical = 6.dp, horizontal = 2.dp)
-    ) {
-        val layoutResult = remember { mutableStateOf<TextLayoutResult?>(null) }
-        val pressIndicator = Modifier.pointerInput(onClick) {
-            detectTapGestures { pos ->
-                layoutResult.value?.let { layoutResult ->
-                    val offset = layoutResult.getOffsetForPosition(pos)
-                    facets.forEach {
-                        if (it.start <= offset && offset <= it.end) {
-                            return@detectTapGestures onClick(it.facetType)
-                        }
+
+    val layoutResult = remember { mutableStateOf<TextLayoutResult?>(null) }
+    val pressIndicator = Modifier.pointerInput(onClick) {
+        detectTapGestures { pos ->
+            layoutResult.value?.let { layoutResult ->
+                val offset = layoutResult.getOffsetForPosition(pos)
+                facets.forEach {
+                    if (it.start <= offset && offset <= it.end) {
+                        return@detectTapGestures onClick(it.facetType)
                     }
-                    onClick(listOf())
                 }
+                onClick(listOf())
             }
         }
-        BasicText(
-            text = formattedText,
-            inlineContent = inlineContentMap,
-            maxLines = maxLines, // Sorry @retr0.id, no more 200 line posts.
-            overflow = TextOverflow.Ellipsis,
-            modifier = modifier.then(pressIndicator),
-        )
     }
+    BasicText(
+        text = formattedText,
+        inlineContent = inlineContentMap,
+        maxLines = maxLines, // Sorry @retr0.id, no more 200 line posts.
+        overflow = TextOverflow.Ellipsis,
+        modifier = modifier.padding(vertical = 6.dp, horizontal = 2.dp).then(pressIndicator),
+    )
+
 
 }

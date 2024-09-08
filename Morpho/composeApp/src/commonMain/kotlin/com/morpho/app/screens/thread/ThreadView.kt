@@ -121,7 +121,6 @@ fun ThreadView(
             },
             onRepost = {
                 repostClicked = false
-                composerRole = ComposerRole.QuotePost
                 initialContent?.let { post ->
                     RecordUnion.Repost(
                         StrongRef(post.uri,post.cid)
@@ -129,6 +128,7 @@ fun ThreadView(
                 }?.let { createRecord(it) }
             },
             onQuotePost = {
+                composerRole = ComposerRole.QuotePost
                 showComposer = true
                 repostClicked = false
             }

@@ -2,12 +2,15 @@ package com.morpho.app.model.bluesky
 
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.util.fastMap
+import app.bsky.actor.FeedType
+import app.bsky.actor.SavedFeed
 import app.bsky.feed.GeneratorView
 import com.morpho.app.model.uidata.Moment
 import com.morpho.app.util.mapImmutable
 import com.morpho.butterfly.AtUri
 import com.morpho.butterfly.Cid
 import com.morpho.butterfly.Did
+import com.morpho.butterfly.model.TID
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -47,4 +50,13 @@ fun GeneratorView.toFeedGenerator() : FeedGenerator {
 
 fun List<GeneratorView>.toFeedGenList(): List<FeedGenerator> {
     return this.fastMap { it.toFeedGenerator() }
+}
+
+fun FeedGenerator.toSavedFeed(pinned: Boolean = false): SavedFeed {
+    return SavedFeed(
+        id = TID.next().toString(),
+        type = FeedType.FEED,
+        value = this.uri.atUri,
+        pinned = pinned,
+    )
 }
