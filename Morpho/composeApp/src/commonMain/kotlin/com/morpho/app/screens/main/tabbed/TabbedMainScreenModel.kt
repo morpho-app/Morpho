@@ -3,9 +3,9 @@ package com.morpho.app.screens.main.tabbed
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.lifecycle.viewModelScope
 import app.bsky.actor.SavedFeed
 import app.bsky.feed.GetFeedGeneratorsQuery
-import cafe.adriel.voyager.core.model.screenModelScope
 import com.morpho.app.model.bluesky.FeedGenerator
 import com.morpho.app.model.bluesky.MorphoDataItem
 import com.morpho.app.model.bluesky.Profile
@@ -19,9 +19,11 @@ import com.morpho.app.screens.main.MainScreenModel
 import com.morpho.butterfly.AtUri
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
 import org.lighthousegames.logging.logging
 
@@ -29,15 +31,19 @@ import org.lighthousegames.logging.logging
 @Serializable
 class TabbedMainScreenModel : MainScreenModel() {
 
+    @Contextual private val tabs = mutableListOf<ContentCardMapEntry>()
 
-    var uiState: TabbedScreenState by mutableStateOf(TabbedScreenState(loadingState = UiLoadingState.Loading))
+    private val _tabFlow = MutableStateFlow(tabs.toList())
+    @Contextual val tabFlow: StateFlow<List<ContentCardMapEntry>>
+        get() = _tabFlow.asStateFlow()
+
+    var uiState: TabbedScreenState by mutableStateOf(
+        TabbedScreenState(
+            loadingState = UiLoadingState.Loading,
+            tabs = tabFlow
+        ))
         private set
 
-    private val tabs = mutableListOf<ContentCardMapEntry>()
-
-    val _tabFlow = MutableStateFlow(tabs.toList())
-    val tabFlow: StateFlow<List<ContentCardMapEntry>>
-        get() = _tabFlow.asStateFlow()
     companion object {
         val log = logging()
     }
@@ -46,9 +52,19 @@ class TabbedMainScreenModel : MainScreenModel() {
         return tabs[index].uri
     }
 
-    fun initTabs() = screenModelScope.launch {
+    fun initTabs() = viewModelScope.launch {
         if (initialized) return@launch
         init(false)
+        viewModelScope.launch(Dispatchers.Default) {
+            settings.pinnedFeeds.collect { feeds ->
+                MainScreenModel.log.d { "Pinned Feeds: $feeds" }
+                pinnedFeeds.value = feeds
+            }
+            settings.savedFeeds.collect { feeds ->
+                MainScreenModel.log.d { "Saved Feeds: $feeds" }
+                savedFeeds.value = feeds
+            }
+        }
         initialized = true
         val home = initHomeTab()
 

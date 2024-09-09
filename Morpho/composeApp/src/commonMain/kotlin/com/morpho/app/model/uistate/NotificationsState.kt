@@ -13,6 +13,7 @@ import kotlinx.serialization.Serializable
 import org.koin.core.component.KoinComponent
 
 
+
 @Serializable
 data class NotificationsUIState(
     private val notificationsList: StateFlow<NotificationsList> = MutableStateFlow(NotificationsList()),

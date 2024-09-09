@@ -1,5 +1,7 @@
 package com.morpho.app.screens.main.tabbed
 
+
+
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.core.FiniteAnimationSpec
 import androidx.compose.animation.core.Spring
@@ -17,12 +19,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
-import cafe.adriel.voyager.core.lifecycle.LifecycleEffect
+import cafe.adriel.voyager.core.annotation.ExperimentalVoyagerApi
+import cafe.adriel.voyager.core.lifecycle.LifecycleEffectOnce
 import cafe.adriel.voyager.core.screen.ScreenKey
+import cafe.adriel.voyager.core.screen.uniqueScreenKey
 import cafe.adriel.voyager.core.stack.StackEvent
-import cafe.adriel.voyager.koin.getNavigatorScreenModel
+import cafe.adriel.voyager.jetpack.ProvideNavigatorLifecycleKMPSupport
+import cafe.adriel.voyager.jetpack.navigatorViewModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.Navigator
+import cafe.adriel.voyager.navigator.NavigatorDisposeBehavior
 import cafe.adriel.voyager.navigator.currentOrThrow
 import cafe.adriel.voyager.navigator.tab.TabOptions
 import cafe.adriel.voyager.transitions.ScreenTransition
@@ -37,6 +43,7 @@ import com.morpho.app.ui.common.TabbedScreenScaffold
 import com.morpho.app.ui.common.TabbedSkylineFragment
 import com.morpho.app.ui.elements.AvatarShape
 import com.morpho.app.ui.elements.OutlinedAvatar
+import com.morpho.app.util.JavaSerializable
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.serialization.Serializable
 import org.jetbrains.compose.resources.ExperimentalResourceApi
@@ -44,96 +51,134 @@ import kotlin.math.max
 import kotlin.math.min
 import cafe.adriel.voyager.navigator.tab.Tab as NavTab
 
-@Suppress("UNCHECKED_CAST")
-@OptIn(ExperimentalAnimationApi::class, ExperimentalMaterial3Api::class)
 @Composable
-fun TabScreen.TabbedHomeView() {
-
+public fun CurrentSkylineScreen(
+    sm: TabbedMainScreenModel,
+    paddingValues: PaddingValues,
+    state: StateFlow<ContentCardState.Skyline<MorphoDataItem.FeedItem>>?,
+    modifier: Modifier
+) {
     val navigator = LocalNavigator.currentOrThrow
-    val sm = navigator.getNavigatorScreenModel<TabbedMainScreenModel>()
+    val currentScreen = navigator.lastItem as SkylineTab
 
-    var selectedTabIndex by rememberSaveable { mutableIntStateOf(0) }
-    var insets = WindowInsets.navigationBars.asPaddingValues()
-
-    LifecycleEffect(
-        onStarted = {
-            sm.initTabs()
-        },
-        onDisposed = {},
-    )
-    val tabs = rememberSaveable(
-        sm.tabFlow.value, sm.uiState.loadingState, sm.uiState.tabs.value.size
-    ) {
-        List(sm.uiState.tabs.value.size) { index ->
-            HomeSkylineTab(
-                index = index.toUShort(),
-                screenModel = sm,
-                state = sm.uiState.tabStates[index]
-                        as StateFlow<ContentCardState.Skyline<MorphoDataItem.FeedItem>>,
-                paddingValues = insets,
-                icon = {
-                    if(sm.uiState.tabs.value[index].avatar != null) {
-                        OutlinedAvatar(
-                            url = sm.uiState.tabs.value[index].avatar!!,
-                            size = 20.dp,
-                            avatarShape = AvatarShape.Rounded,
-                            modifier = Modifier.padding(end = 8.dp),
-                        )
-                    }
-                }
-            )
-        }
+    navigator.saveableState("currentScreen") {
+        currentScreen.Content(
+            sm = sm,
+            paddingValues = paddingValues,
+            state = state,
+            modifier = modifier
+        )
     }
-    val tabsCreated = remember(tabs.size, sm.uiState.loadingState) {
-        tabs.isNotEmpty() && sm.uiState.loadingState == UiLoadingState.Idle
-    }
-    if (tabsCreated) {
-        Navigator(tabs.first()) { nav ->
-            TabbedScreenScaffold(
-                navBar = { navBar(navigator) },
-                topContent = {
-                    HomeTabRow(
-                        tabs = tabs,
-                        modifier = Modifier.statusBarsPadding(),
-                        tabIndex = selectedTabIndex,
-                        onChanged = { index ->
-                            if (index == selectedTabIndex) return@HomeTabRow
-                            if(index < selectedTabIndex) {
-                                if (nav.items.contains(tabs[index])) {
-                                    nav.popUntil {it == tabs[index] }
-                                } else nav.replace(tabs[index])
-                            } else if(index > selectedTabIndex) nav.push(tabs[index])
-                            selectedTabIndex = index
-                        }
-
-                    )
-                },
-                content = {
-                    insets = it
-
-                    SlideTabTransition(nav)
-                }
-            )
-        }
-    } else LoadingCircle()
-
 }
 
+
+abstract class SkylineTab: NavTab {
+
+    @Composable
+    abstract fun Content(
+        sm: TabbedMainScreenModel,
+        paddingValues: PaddingValues,
+        state: StateFlow<ContentCardState.Skyline<MorphoDataItem.FeedItem>>?,
+        modifier: Modifier
+    )
+
+    @OptIn(ExperimentalVoyagerApi::class)
+    @Composable
+    final override fun Content() = Content(TabbedMainScreenModel(),PaddingValues(0.dp),null,Modifier)
+}
+
+
+@Suppress("UNCHECKED_CAST")
+@OptIn(ExperimentalAnimationApi::class, ExperimentalMaterial3Api::class,
+       ExperimentalVoyagerApi::class
+)
 @Composable
-fun SlideTabTransition(
+fun TabScreen.TabbedHomeView(
+    sm: TabbedMainScreenModel = navigatorViewModel { TabbedMainScreenModel() }
+) {
+    ProvideNavigatorLifecycleKMPSupport {
+        val navigator = LocalNavigator.currentOrThrow
+
+
+        var selectedTabIndex by rememberSaveable { mutableIntStateOf(0) }
+        var insets = WindowInsets.navigationBars.asPaddingValues()
+
+        LifecycleEffectOnce {
+            sm.initTabs()
+        }
+        val tabs = remember(
+            sm.tabFlow.value, sm.uiState.loadingState, sm.uiState.tabs.value.size
+        ) {
+            List(sm.uiState.tabs.value.size) { index ->
+                HomeSkylineTab(
+                    index = index.toUShort(),
+                    title = sm.uiState.tabs.value[index].title,
+                    avatar = sm.uiState.tabs.value[index].avatar,
+                )
+            }
+        }
+        val tabsCreated = remember(tabs.size, sm.uiState.loadingState) {
+            tabs.isNotEmpty() && sm.uiState.loadingState == UiLoadingState.Idle
+        }
+        if (tabsCreated) {
+            Navigator(
+                tabs.first(),
+                disposeBehavior = NavigatorDisposeBehavior(
+                    disposeNestedNavigators = false,
+                )
+            ) { nav ->
+                TabbedScreenScaffold(
+                    navBar = { navBar(navigator) },
+                    topContent = {
+                        HomeTabRow(
+                            tabs = tabs,
+                            modifier = Modifier.statusBarsPadding(),
+                            tabIndex = selectedTabIndex,
+                            onChanged = { index ->
+                                if (index == selectedTabIndex) return@HomeTabRow
+                                if(index < selectedTabIndex) {
+                                    if (nav.items.contains(tabs[index])) {
+                                        nav.popUntil {it == tabs[index] }
+                                    } else nav.replace(tabs[index])
+                                } else if(index > selectedTabIndex) nav.push(tabs[index])
+                                selectedTabIndex = index
+                            }
+
+                        )
+                    },
+                    content = { insets, state ->
+                        SkylineTabTransition(nav, sm, insets, state)
+                    },
+                    modifier = Modifier,
+                    state = sm.uiState.tabStates.getOrNull(selectedTabIndex) as StateFlow<ContentCardState.Skyline<MorphoDataItem.FeedItem>>?
+                )
+            }
+
+        } else LoadingCircle()
+    }
+}
+
+@OptIn(ExperimentalVoyagerApi::class)
+@Composable
+fun SkylineTabTransition(
     navigator: Navigator,
+    sm: TabbedMainScreenModel,
+    insets: PaddingValues = PaddingValues(0.dp),
+    state: StateFlow<ContentCardState.Skyline<MorphoDataItem.FeedItem>>?,
     modifier: Modifier = Modifier,
     animationSpec: FiniteAnimationSpec<IntOffset> = spring(
         stiffness = Spring.StiffnessMediumLow,
         visibilityThreshold = IntOffset.VisibilityThreshold
     ),
-    content:  ScreenTransitionContent = { it.Content() }
+    content: ScreenTransitionContent = {
+        CurrentSkylineScreen(sm, insets, state, Modifier)
+    }
 ) {
-
     ScreenTransition(
         navigator = navigator,
         modifier = modifier,
         content = content,
+        disposeScreenAfterTransitionEnd = true,
         transition = {
             val (initialOffset, targetOffset) = when (navigator.lastEvent) {
                 StackEvent.Pop -> ({ size: Int -> -size }) to ({ size: Int -> size })
@@ -182,9 +227,16 @@ fun HomeTabRow(
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                     ){
-                        tab.icon()
+                        if(tab.avatar != null) {
+                            OutlinedAvatar(
+                                url = tab.avatar,
+                                size = 20.dp,
+                                avatarShape = AvatarShape.Rounded,
+                                modifier = Modifier.padding(end = 8.dp),
+                            )
+                        }
                         Text(
-                            text = tab.state.value.feed.title,
+                            text = tab.title,
                             //style = MaterialTheme.typography.titleSmall,
                         )
                     } }
@@ -194,52 +246,41 @@ fun HomeTabRow(
 }
 
 
+
 @Serializable
-data class HomeSkylineTab(
+data class HomeSkylineTab @OptIn(ExperimentalVoyagerApi::class) constructor(
     val index: UShort,
-    val screenModel: TabbedMainScreenModel,
-    val state: StateFlow<ContentCardState.Skyline<MorphoDataItem.FeedItem>>,
-    val paddingValues: PaddingValues = PaddingValues(0.dp),
-    val icon: @Composable () -> Unit = {},
-): NavTab {
-    @OptIn(ExperimentalMaterial3Api::class)
+    val title: String,
+    val avatar: String? = null,
+): SkylineTab(), JavaSerializable {
+
+    @OptIn(ExperimentalMaterial3Api::class, ExperimentalVoyagerApi::class)
     @Composable
-    override fun Content() {
+    override fun Content(
+        sm: TabbedMainScreenModel,
+        paddingValues: PaddingValues,
+        state: StateFlow<ContentCardState.Skyline<MorphoDataItem.FeedItem>>?,
+        modifier: Modifier
+    ) {
+
         TabbedSkylineFragment(
-            screenModel, state, paddingValues,
+            sm, state, paddingValues,
             refresh = { cursor ->
-                screenModel.refreshTab(index.toInt(), cursor)
+                sm.refreshTab(index.toInt(), cursor)
             },
         )
     }
 
-    override val key: ScreenKey = "${state.value.uri.atUri}${hashCode()}"
+    override val key: ScreenKey
+        get() = "${title}$uniqueScreenKey"
 
     @OptIn(ExperimentalResourceApi::class, ExperimentalCoilApi::class)
     override val options: TabOptions
         @Composable
         get() {
-            /*val (avatar, icon) = screenModel
-                .getFeedInfo(screenModel.uriForTab(index = index.toInt()))
-                ?.let { feedInfo ->
-                    feedInfo.avatar to feedInfo.icon
-                } ?: (null to null)
-            val tabIcon = if(avatar != null) rememberAsyncImagePainter(
-                model = ImageRequest.Builder(LocalPlatformContext.current)
-                    .data(avatar)
-                    .crossfade(true)
-                    .build(),
-            ) else if(icon != null) rememberAsyncImagePainter(
-                model = ImageRequest.Builder(LocalPlatformContext.current)
-                    .data(icon)
-                    .crossfade(true)
-                    .build(),
-                )
-            else null*/
-
             return TabOptions(
                 index = index,
-                title = state.value.feed.title,
+                title = title,
                 //icon = tabIcon,
             )
         }

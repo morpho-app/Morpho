@@ -3,9 +3,10 @@ package com.morpho.app.screens.profile
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.lifecycle.viewModelScope
 import app.bsky.actor.GetProfileQuery
-import cafe.adriel.voyager.core.model.screenModelScope
 import com.morpho.app.model.bluesky.*
+import com.morpho.app.model.uidata.AtCursor
 import com.morpho.app.model.uidata.ContentCardMapEntry
 import com.morpho.app.model.uidata.MorphoData
 import com.morpho.app.model.uistate.ContentCardState
@@ -19,8 +20,10 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.serialization.Serializable
 import org.lighthousegames.logging.logging
 
+@Serializable
 @Suppress("UNCHECKED_CAST")
 // TODO: Revisit these casts if we can, but they should be safe
 class TabbedProfileViewModel(
@@ -31,7 +34,10 @@ class TabbedProfileViewModel(
         val log = logging()
     }
     var profileUiState: TabbedProfileScreenState by mutableStateOf(
-        TabbedProfileScreenState(loadingState = UiLoadingState.Loading))
+        TabbedProfileScreenState(
+            loadingState = UiLoadingState.Loading,
+            tabs = tabFlow
+        ))
         private set
 
     var profileState: ContentCardState.FullProfile<Profile>? by mutableStateOf(null)
@@ -52,7 +58,7 @@ class TabbedProfileViewModel(
 
 
 
-    fun initProfile() = screenModelScope.launch {
+    fun initProfile() = viewModelScope.launch {
         if(initialized) return@launch
         init(false)
         if(id != null) {
@@ -224,6 +230,11 @@ class TabbedProfileViewModel(
                 }
         }
 
+    }
+
+    fun refreshTab(index: Int, cursor: AtCursor = null) :Boolean {
+        return if(index < 0 || index > tabs.lastIndex) false
+        else updateFeed(tabs[index], cursor)
     }
 
     suspend fun loadProfile(profile: DetailedProfile): ContentCardState.FullProfile<Profile>? {

@@ -12,6 +12,7 @@ import app.bsky.actor.Visibility
 import com.atproto.label.LabelValue
 import com.atproto.label.Severity
 import com.morpho.app.model.bluesky.*
+import com.morpho.app.util.JavaSerializable
 import com.morpho.butterfly.AtUri
 import com.morpho.butterfly.Butterfly
 import com.morpho.butterfly.Language
@@ -27,31 +28,41 @@ import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import org.lighthousegames.logging.logging
 
-@Immutable
-@Serializable
+
 data class ContentHandling(
     val scope: LabelScope,
     val action: LabelAction,
     val source: LabelDescription,
     val id: String,
-    @Contextual
-    val icon: ImageVector,
-)
 
-sealed interface LabelDescription {
+    val icon: ImageVector,
+): JavaSerializable
+
+
+@Immutable
+@Serializable
+sealed interface LabelDescription: JavaSerializable {
     val name: String
     val description: String
 
+    @Immutable
+    @Serializable
     sealed interface Block: LabelDescription
+    @Immutable
+    @Serializable
     data object Blocking: Block {
         override val name: String = "User Blocked"
         override val description: String = "You have blocked this user. You cannot view their content"
 
     }
+    @Immutable
+    @Serializable
     data object BlockedBy: Block {
         override val name: String = "User Blocking You"
         override val description: String = "This user has blocked you. You cannot view their content."
     }
+    @Immutable
+    @Serializable
     data class BlockList(
         val listName: String,
         val listUri: AtUri,
@@ -59,12 +70,18 @@ sealed interface LabelDescription {
         override val name: String = "User Blocked by $listName"
         override val description: String = "This user is on a block list you subscribe to. You cannot view their content."
     }
+    @Immutable
+    @Serializable
     data object OtherBlocked: Block {
         override val name: String = "Content Not Available"
         override val description: String = "This content is not available because one of the users involved has blocked the other."
     }
 
+    @Immutable
+    @Serializable
     sealed interface Muted: LabelDescription
+    @Immutable
+    @Serializable
     data class MuteList(
         val listName: String,
         val listUri: AtUri,
@@ -72,20 +89,28 @@ sealed interface LabelDescription {
         override val name: String = "User Muted by $listName"
         override val description: String = "This user is on a mute list you subscribe to."
     }
+    @Immutable
+    @Serializable
     data object YouMuted: Muted {
         override val name: String = "Account Muted"
         override val description: String = "You have muted this user."
     }
+    @Immutable
+    @Serializable
     data class MutedWord(val word: String): Muted {
         override val name: String = "Post Hidden by Muted Word"
         override val description: String = "This post contains the word or tag \"$word\". You've chosen to hide it."
     }
 
+    @Immutable
+    @Serializable
     data class HiddenPost(val uri: AtUri): LabelDescription {
         override val name: String = "Post Hidden by You"
         override val description: String = "You have hidden this post."
     }
 
+    @Immutable
+    @Serializable
     data class Label(
         override val name: String,
         override val description: String,
@@ -93,26 +118,40 @@ sealed interface LabelDescription {
     ): LabelDescription
 }
 
-sealed interface LabelSource {
+@Immutable
+@Serializable
+sealed interface LabelSource: JavaSerializable {
+    @Immutable
+    @Serializable
     data object User: LabelSource
+    @Immutable
+    @Serializable
     data class List(
         val list: BskyList,
     ): LabelSource
+    @Immutable
+    @Serializable
     data class Labeler(
         val labeler: BskyLabelService,
     ): LabelSource
 }
 
-sealed interface LabelCause {
+@Immutable
+@Serializable
+sealed interface LabelCause: JavaSerializable {
     val downgraded: Boolean
     val priority: Int
     val source: LabelSource
+    @Immutable
+    @Serializable
     data class Blocking(
         override val source: LabelSource,
         override val downgraded: Boolean,
     ): LabelCause {
         override val priority: Int = 3
     }
+    @Immutable
+    @Serializable
     data class BlockedBy(
         override val source: LabelSource,
         override val downgraded: Boolean,
@@ -120,6 +159,8 @@ sealed interface LabelCause {
         override val priority: Int = 4
     }
 
+    @Immutable
+    @Serializable
     data class BlockOther(
         override val source: LabelSource,
         override val downgraded: Boolean,
@@ -127,6 +168,8 @@ sealed interface LabelCause {
         override val priority: Int = 4
     }
 
+    @Immutable
+    @Serializable
     data class Label(
         override val source: LabelSource,
         val label: BskyLabel,
@@ -146,6 +189,8 @@ sealed interface LabelCause {
         }
     }
 
+    @Immutable
+    @Serializable
     data class Muted(
         override val source: LabelSource,
         override val downgraded: Boolean,
@@ -153,6 +198,8 @@ sealed interface LabelCause {
         override val priority: Int = 6
     }
 
+    @Immutable
+    @Serializable
     data class MutedWord(
         override val source: LabelSource,
         override val downgraded: Boolean,
@@ -160,6 +207,8 @@ sealed interface LabelCause {
         override val priority: Int = 6
     }
 
+    @Immutable
+    @Serializable
     data class Hidden(
         override val source: LabelSource,
         override val downgraded: Boolean,
@@ -186,7 +235,7 @@ open class InterpretedLabelDefinition(
     val localizedDescription: String = "",
     @Contextual
     val allDescriptions: ImmutableMap<Language, LocalizedLabelDescription> = persistentMapOf(),
-) {
+): JavaSerializable {
     companion object {
 
     }
@@ -225,6 +274,8 @@ val LABELS: PersistentMap<LabelValue, InterpretedLabelDefinition> = persistentMa
     LabelValue.NUDITY to Nudity,
     LabelValue.GRAPHIC_MEDIA to GraphicMedia,
 )
+@Immutable
+@Serializable
 data object Hide: InterpretedLabelDefinition(
     "!hide",
     false,
@@ -256,6 +307,8 @@ data object Hide: InterpretedLabelDefinition(
     localizedDescription = "Hide",
 )
 
+@Immutable
+@Serializable
 data object Warn: InterpretedLabelDefinition(
     "!warn",
     false,
@@ -287,6 +340,8 @@ data object Warn: InterpretedLabelDefinition(
     localizedDescription = "Warn",
 )
 
+@Immutable
+@Serializable
 data object NoUnauthed: InterpretedLabelDefinition(
     "!no-unauthenticated",
     false,
@@ -318,6 +373,8 @@ data object NoUnauthed: InterpretedLabelDefinition(
     localizedDescription = "Do not show to unauthenticated users",
 )
 
+@Immutable
+@Serializable
 data object Porn: InterpretedLabelDefinition(
     "porn",
     true,
@@ -342,6 +399,8 @@ data object Porn: InterpretedLabelDefinition(
     localizedDescription = "This content is sexually explicit",
 )
 
+@Immutable
+@Serializable
 data object Sexual: InterpretedLabelDefinition(
     "sexual",
     true,
@@ -366,6 +425,8 @@ data object Sexual: InterpretedLabelDefinition(
     localizedDescription = "This content may be suggestive or sexual in nature",
 )
 
+@Immutable
+@Serializable
 data object Nudity: InterpretedLabelDefinition(
     "nudity",
     true,
@@ -390,6 +451,8 @@ data object Nudity: InterpretedLabelDefinition(
     localizedDescription = "This content contains nudity, artistic or otherwise",
 )
 
+@Immutable
+@Serializable
 data object GraphicMedia: InterpretedLabelDefinition(
     "graphic-media",
     true,

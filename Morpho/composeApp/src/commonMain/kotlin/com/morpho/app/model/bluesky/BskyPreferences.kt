@@ -24,13 +24,13 @@ public data class BskyPreferences(
     public val contentLabelPrefs: MutableList<ContentLabelPref> = mutableListOf(),
     public var threadViewPrefs: ThreadViewPref? = null,
     // Get system languages and allow customization of this
-    public var languages: List<Language> = persistentListOf(),
+    public var languages: List<Language> = listOf(),
     public var mergeFeeds: Boolean = false,
-    public val mutes: List<BasicProfile> = persistentListOf(),
+    public val mutes: List<BasicProfile> = listOf(),
     public val listsMuted: MutableMap<AtUri, BskyList> = mutableMapOf(),
-    public var mutedWords: List<MutedWord> = persistentListOf(),
-    public var hiddenPosts: List<AtUri> = persistentListOf(),
-    public var labelers: List<Did> = persistentListOf(),
+    public var mutedWords: List<MutedWord> = listOf(),
+    public var hiddenPosts: List<AtUri> = listOf(),
+    public var labelers: List<Did> = listOf(),
 ) {
     fun toRemotePrefs(): ReadOnlyList<PreferencesUnion> {
         val prefs = persistentListOf<PreferencesUnion>()

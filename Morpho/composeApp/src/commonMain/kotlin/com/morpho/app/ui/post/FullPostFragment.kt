@@ -15,6 +15,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -70,6 +71,7 @@ fun FullPostFragment(
             getContentHandling(post)
         }.toImmutableList()
     }
+    val uriHandler = LocalUriHandler.current
 
 
     WrappedColumn(
@@ -177,7 +179,7 @@ fun FullPostFragment(
                         facetTypes.fastForEach {
                             when(it) {
                                 is FacetType.ExternalLink -> {
-                                    openBrowser(it.uri.uri)
+                                    openBrowser(it.uri.uri, uriHandler)
                                 }
                                 is FacetType.Tag -> {onItemClicked(post.uri)}
                                 is FacetType.UserDidMention -> {

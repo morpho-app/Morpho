@@ -1,12 +1,13 @@
 package com.morpho.app.model.uidata
 
 //import com.rickclephas.kmp.nativecoroutines.NativeCoroutines
+import androidx.compose.runtime.Immutable
 import androidx.compose.ui.util.fastAny
 import com.morpho.app.model.bluesky.MorphoDataFeed
 import com.morpho.app.model.bluesky.MorphoDataItem
 import com.morpho.app.model.uistate.FeedType
+import com.morpho.app.util.JavaSerializable
 import com.morpho.butterfly.*
-import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toPersistentList
 import kotlinx.datetime.Instant
 import kotlinx.serialization.Serializable
@@ -15,15 +16,26 @@ import kotlinx.serialization.json.JsonObject
 
 typealias AtCursor = String?
 
+@Immutable
 @Serializable
 data class MorphoData<T: MorphoDataItem>(
     val title: String = "Home",
     val uri: AtUri = AtUri.HOME_URI,
     val cursor: AtCursor = null,
-    val items: List<T> = persistentListOf(),
+    val items: List<T> = listOf(),
     val query: JsonElement = JsonObject(emptyMap()),
-) {
+): JavaSerializable {
     companion object {
+
+        fun <T : MorphoDataItem> EMPTY(): MorphoData<T> {
+            return MorphoData(
+                title = "Home",
+                uri = AtUri.HOME_URI,
+                cursor = null,
+                items = listOf(),
+                query = JsonObject(emptyMap()),
+            )
+        }
 
 
         fun <T : MorphoDataItem> concat(

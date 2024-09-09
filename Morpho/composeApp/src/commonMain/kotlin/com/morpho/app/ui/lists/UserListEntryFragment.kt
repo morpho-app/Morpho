@@ -12,6 +12,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -43,6 +44,7 @@ fun UserListEntryFragment(
     var pinned by remember { mutableStateOf(hasListPinned) }
     var muted by remember { mutableStateOf(list.viewerMuted) }
     var blocked by remember { mutableStateOf(list.viewerBlocked != null)}
+    val uriHandler = LocalUriHandler.current
     Surface (
         shadowElevation = 1.dp,
         tonalElevation =  4.dp,
@@ -193,7 +195,9 @@ fun UserListEntryFragment(
                     }
                     facetTypes.fastForEach { facetType ->
                         when (facetType) {
-                            is FacetType.ExternalLink -> { openBrowser(facetType.uri.uri) }
+                            is FacetType.ExternalLink -> {
+                                openBrowser(facetType.uri.uri, uriHandler)
+                            }
                             is FacetType.Format -> {  }
                             is FacetType.PollBlueOption -> {}
                             is FacetType.Tag -> { }

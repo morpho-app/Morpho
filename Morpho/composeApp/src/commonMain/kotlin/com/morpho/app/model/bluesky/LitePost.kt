@@ -1,11 +1,13 @@
 package com.morpho.app.model.bluesky
 
+import androidx.compose.runtime.Immutable
 import app.bsky.feed.Post
 import com.morpho.app.model.uidata.Moment
 import com.morpho.app.util.mapImmutable
 import com.morpho.butterfly.Language
 import kotlinx.serialization.Serializable
 
+@Immutable
 @Serializable
 data class LitePost(
     val text: String,

@@ -16,6 +16,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -23,7 +24,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastAny
-import androidx.compose.ui.util.fastForEach
 import com.atproto.repo.StrongRef
 import com.morpho.app.model.bluesky.*
 import com.morpho.app.model.uidata.ContentHandling
@@ -71,6 +71,7 @@ fun PostFragment(
         PostFragmentRole.ThreadRootUnfocused -> Modifier.padding(2.dp)
         PostFragmentRole.ThreadEnd -> Modifier.padding(start = 2.dp, top = 0.dp, end = 2.dp, bottom = 0.dp)
     }}
+    val uriHandler = LocalUriHandler.current
     WrappedColumn(modifier = padding.fillMaxWidth()) {
         val delta = remember { getFormattedDateTimeSince(post.createdAt) }
         val indent = remember { when(role) {
@@ -140,12 +141,12 @@ fun PostFragment(
                 .fillMaxWidth(indentLevel(indent))
                 .align(Alignment.End)
                 .background(bgColor, shape)
-                .clickable(
-                    interactionSource = interactionSource,
-                    indication = indication,
-                    enabled = true,
-                    onClick = { onItemClicked(post.uri) }
-                )
+//                .clickable(
+//                    interactionSource = interactionSource,
+//                    indication = indication,
+//                    enabled = true,
+//                    onClick = { onItemClicked(post.uri) }
+//                )
 
         ) {
             ContentHider(
@@ -290,10 +291,10 @@ fun PostFragment(
                                         onItemClicked(post.uri)
                                         return@RichTextElement
                                     }
-                                    facetTypes.fastForEach {
+                                    facetTypes.forEach {
                                         when(it) {
                                             is FacetType.ExternalLink -> {
-                                                openBrowser(it.uri.uri)
+                                                openBrowser(it.uri.uri, uriHandler)
                                             }
                                             is FacetType.Tag -> {onItemClicked(post.uri)}
                                             is FacetType.UserDidMention -> {
@@ -366,12 +367,17 @@ inline fun ColumnScope.PostFeatureElement(
     crossinline onUnClicked: (type: RecordType, uri: AtUri) -> Unit = { _, _ -> },
     contentHandling: List<ContentHandling> = listOf()
 ) {
+
     @Suppress("REDUNDANT_ELSE_IN_WHEN")
     when (feature) {
-        is BskyPostFeature.ExternalFeature -> PostLinkEmbed(linkData = feature,
-            linkPress = { openBrowser(it) },
-            modifier = Modifier.padding(end = 2.dp)
-                .align(Alignment.CenterHorizontally))
+        is BskyPostFeature.ExternalFeature -> {
+            val uriHandler = LocalUriHandler.current
+            PostLinkEmbed(
+                linkData = feature,
+                linkPress = { openBrowser(it, uriHandler) },
+                modifier = Modifier.padding(end = 2.dp)
+                    .align(Alignment.CenterHorizontally)
+            ) }
         is BskyPostFeature.ImagesFeature -> {
             ContentHider(
                 reasons = contentHandling,
@@ -445,7 +451,9 @@ inline fun ColumnScope.RecordFeature(
     contentHandling: List<ContentHandling> = listOf(),
     getContentHandling: (EmbedRecord) -> List<ContentHandling> = { listOf() }
 ) {
+
     if(media != null) {
+
         ContentHider(
             reasons = contentHandling,
             scope = LabelScope.Media,
@@ -455,9 +463,10 @@ inline fun ColumnScope.RecordFeature(
         ) {
             when(media) {
                 is BskyPostFeature.ExternalFeature -> {
+                    val uriHandler = LocalUriHandler.current
                     PostLinkEmbed(
                         linkData = media,
-                        linkPress = { openBrowser(it) },
+                        linkPress = { openBrowser(it, uriHandler) },
                         modifier = Modifier.padding(end = 2.dp)
                             .align(Alignment.CenterHorizontally)
                     )

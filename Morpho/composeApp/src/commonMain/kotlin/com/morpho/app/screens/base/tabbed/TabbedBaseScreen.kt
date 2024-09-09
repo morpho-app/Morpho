@@ -1,6 +1,7 @@
 package com.morpho.app.screens.base.tabbed
 
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -12,34 +13,43 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import cafe.adriel.voyager.core.annotation.ExperimentalVoyagerApi
 import cafe.adriel.voyager.core.screen.ScreenKey
+import cafe.adriel.voyager.jetpack.ProvideNavigatorLifecycleKMPSupport
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.Navigator
+import cafe.adriel.voyager.navigator.NavigatorDisposeBehavior
 import cafe.adriel.voyager.navigator.currentOrThrow
 import cafe.adriel.voyager.navigator.tab.Tab
 import cafe.adriel.voyager.navigator.tab.TabNavigator
 import cafe.adriel.voyager.navigator.tab.TabOptions
 import com.morpho.app.model.uidata.BskyDataService
 import com.morpho.app.model.uidata.BskyNotificationService
-import com.morpho.app.screens.main.tabbed.SlideTabTransition
+import com.morpho.app.ui.common.SlideTabTransition
 import com.morpho.app.ui.theme.roundedTopR
 import io.ktor.util.reflect.instanceOf
+import kotlinx.serialization.Serializable
 import org.koin.compose.koinInject
 import kotlin.math.min
 
-
+@Serializable
 data object TabbedBaseScreen: Tab {
 
     override val key: ScreenKey = "TabbedBaseScreen_${hashCode()}"
 
-    @OptIn(ExperimentalMaterial3Api::class)
+    @OptIn(ExperimentalMaterial3Api::class, ExperimentalVoyagerApi::class)
     @Composable
     override fun Content() {
-        Navigator(
-            HomeTab("startHome"),
-        ) { navigator ->
-            /*LaunchedEffect(Unit) { navigator.replaceAll(HomeTab("startHome2")) }*/
-            SlideTabTransition(navigator)
+        ProvideNavigatorLifecycleKMPSupport {
+            Navigator(
+                HomeTab("startHome"),
+                disposeBehavior = NavigatorDisposeBehavior(
+                    disposeNestedNavigators = false,
+                )
+            ) { navigator ->
+                /*LaunchedEffect(Unit) { navigator.replaceAll(HomeTab("startHome2")) }*/
+                SlideTabTransition(navigator)
+            }
         }
 
     }
@@ -72,6 +82,7 @@ fun TabNavigationItem(
             when {
                 nav.lastItem.key == tab.key -> return@Tab
                 newIndex == 0 -> nav.replaceAll(tab)
+                nav.items.contains(tab) -> nav.popUntil { it == tab }
                 else -> nav.push(tab)
             }
         },
@@ -133,7 +144,7 @@ fun TabbedNavBar(
         selectedTabIndex = min(selectedTab, 4),
         modifier = Modifier.clip(
             roundedTopR.medium
-        ),
+        ).systemBarsPadding(),
         indicator = {
             if (selectedTab <= 4) {
                 TabRowDefaults.PrimaryIndicator(

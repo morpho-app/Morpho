@@ -14,10 +14,12 @@ import androidx.compose.material.pullrefresh.rememberPullRefreshState
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.unit.Dp
 import androidx.constraintlayout.compose.ConstraintLayout
-import cafe.adriel.voyager.core.model.screenModelScope
-import cafe.adriel.voyager.koin.getNavigatorScreenModel
+import androidx.lifecycle.viewModelScope
+import cafe.adriel.voyager.core.annotation.ExperimentalVoyagerApi
+import cafe.adriel.voyager.jetpack.navigatorViewModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.currentOrThrow
@@ -44,17 +46,21 @@ import kotlinx.coroutines.launch
 import org.koin.compose.getKoin
 
 
-@OptIn(ExperimentalMaterialApi::class, ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterialApi::class, ExperimentalMaterial3Api::class,
+       ExperimentalVoyagerApi::class
+)
 @Composable
 fun TabScreen.NotificationViewContent(
     navigator: Navigator = LocalNavigator.currentOrThrow,
-    sm: TabbedNotificationScreenModel = navigator.getNavigatorScreenModel<TabbedNotificationScreenModel>()
+
 ) {
+    val sm = navigatorViewModel { TabbedNotificationScreenModel() }
     val numberUnread by sm.uiState.value.numberUnread.collectAsState(0)
     var showSettings by remember { mutableStateOf(false) }
     val hasUnread = remember(numberUnread) { numberUnread > 0 }
     val listState = rememberLazyListState()
     val scope = rememberCoroutineScope()
+    val uriHandler = LocalUriHandler.current
     TabbedScreenScaffold(
         navBar = { navBar(navigator) },
         topContent = {
@@ -71,7 +77,9 @@ fun TabScreen.NotificationViewContent(
                 markAsRead = { sm.markAllRead() }
             )
         },
-        content = { insets ->
+        state = sm.uiState,
+        modifier = Modifier,
+        content = { insets, state ->
 
             val refreshing by remember { mutableStateOf(false)}
             val refreshState = rememberPullRefreshState(
@@ -144,43 +152,49 @@ fun TabScreen.NotificationViewContent(
                     }
                     items(
                         count = notifications.size,
-                        key = { index -> notifications[index].hashCode() },
+                        //key = { index -> notifications[index].hashCode() },
                         contentType = {
                             NotificationsListItem
                         }
                     ) { index ->
-                        NotificationsElement(
-                            item = notifications[index],
-                            showPost = sm.uiState.value.showPosts,
-                            getPost = { getPost(it, sm.api)},
-                            onUnClicked = { type, rkey ->
-                                sm.api.deleteRecord(type, rkey)
-                            },
-                            onAvatarClicked = {
-                                navigator.push(ProfileTab(it))
-                            },
-                            onRepostClicked = {
-                                initialContent = it
-                                repostClicked = true
-                            },
-                            onReplyClicked = {
-                                initialContent = it
-                                composerRole = ComposerRole.Reply
-                                showComposer = true
-                            },
-                            onMenuClicked = { option, post -> doMenuOperation(option, post, clipboardManager = clipboardManager ) },
-                            onLikeClicked = {
-                                sm.api.createRecord(RecordUnion.Like(it))
-                            },
-                            onPostClicked = {
-                                navigator.push(ThreadTab(it))
-                            },
-                            // If someone hides their read notifications,
-                            // we don't want to just mark them as read unprompted.
-                            // Might cause them to disappear unexpectedly.
-                            readOnLoad = !sm.uiState.value.filterState.value.showAlreadyRead,
-                            markRead = { sm.markAsRead(it) }
-                        )
+                        if (state != null) {
+                            NotificationsElement(
+                                item = notifications[index],
+                                showPost = state.value.showPosts,
+                                getPost = { getPost(it, sm.api)},
+                                onUnClicked = { type, rkey ->
+                                    sm.api.deleteRecord(type, rkey)
+                                },
+                                onAvatarClicked = {
+                                    navigator.push(ProfileTab(it))
+                                },
+                                onRepostClicked = {
+                                    initialContent = it
+                                    repostClicked = true
+                                },
+                                onReplyClicked = {
+                                    initialContent = it
+                                    composerRole = ComposerRole.Reply
+                                    showComposer = true
+                                },
+                                onMenuClicked = { option, post ->
+                                    doMenuOperation(option, post,
+                                                    clipboardManager = clipboardManager,
+                                                    uriHandler = uriHandler
+                                    ) },
+                                onLikeClicked = {
+                                    sm.api.createRecord(RecordUnion.Like(it))
+                                },
+                                onPostClicked = {
+                                    navigator.push(ThreadTab(it))
+                                },
+                                // If someone hides their read notifications,
+                                // we don't want to just mark them as read unprompted.
+                                // Might cause them to disappear unexpectedly.
+                                readOnLoad = !state.value.filterState.value.showAlreadyRead,
+                                markRead = { sm.markAsRead(it) }
+                            )
+                        }
                     }
                     item {
                         TextButton(
@@ -205,7 +219,7 @@ fun TabScreen.NotificationViewContent(
                             draft = DraftPost()
                         },
                         onSend = { finishedDraft ->
-                            sm.screenModelScope.launch(Dispatchers.IO) {
+                            sm.viewModelScope.launch(Dispatchers.IO) {
                                 val post = finishedDraft.createPost(sm.api)
                                 sm.api.createRecord(RecordUnion.MakePost(post))
                             }

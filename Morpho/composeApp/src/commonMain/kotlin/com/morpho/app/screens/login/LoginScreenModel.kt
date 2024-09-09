@@ -3,7 +3,7 @@ package com.morpho.app.screens.login
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import cafe.adriel.voyager.core.model.screenModelScope
+import androidx.lifecycle.viewModelScope
 import com.morpho.app.model.uistate.AuthState
 import com.morpho.app.model.uistate.LoginState
 import com.morpho.app.model.uistate.UiLoadingState
@@ -38,7 +38,7 @@ class LoginScreenModel: BaseScreenModel() {
             // If the url is fucked up, just try Bluesky
             if(checkValidUrl(service) != null) Server.CustomServer(service) else Server.BlueskySocial
         }
-        screenModelScope.launch {
+        viewModelScope.launch {
             api.makeLoginRequest(credentials, server).onSuccess {
                 loginState = loginState.copy(
                     loadingState = UiLoadingState.Idle,

@@ -1,6 +1,9 @@
 package com.morpho.app.model.uistate
 
-interface PostThreadContentState {
+import com.morpho.app.util.JavaSerializable
+
+
+interface PostThreadContentState: JavaSerializable {
     val hasNewPosts: Boolean
     val loadingState: ContentLoadingState
     val isLoading: Boolean

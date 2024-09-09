@@ -1,7 +1,7 @@
 package com.morpho.app.screens.base
 
-import cafe.adriel.voyager.core.model.ScreenModel
-import cafe.adriel.voyager.core.model.screenModelScope
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.morpho.app.data.PreferencesRepository
 import com.morpho.app.model.bluesky.BskyPost
 import com.morpho.app.model.uidata.BskyNotificationService
@@ -18,7 +18,7 @@ import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import org.lighthousegames.logging.logging
 
-open class BaseScreenModel : ScreenModel, KoinComponent {
+open class BaseScreenModel : ViewModel(), KoinComponent {
     val api: Butterfly by inject()
     val preferences: PreferencesRepository by inject()
     val notifService: BskyNotificationService by inject()
@@ -31,11 +31,11 @@ open class BaseScreenModel : ScreenModel, KoinComponent {
         val log = logging()
     }
 
-    fun createRecord(record: RecordUnion) = screenModelScope.launch(Dispatchers.IO) {
+    fun createRecord(record: RecordUnion) = viewModelScope.launch(Dispatchers.IO) {
         api.createRecord(record)
     }
 
-    fun deleteRecord(type: RecordType, rkey: AtUri) = screenModelScope.launch(Dispatchers.IO) {
+    fun deleteRecord(type: RecordType, rkey: AtUri) = viewModelScope.launch(Dispatchers.IO) {
         api.deleteRecord(type, rkey)
     }
 

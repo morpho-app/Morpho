@@ -28,6 +28,7 @@ import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.decodeFromJsonElement
 import kotlinx.serialization.json.encodeToJsonElement
@@ -124,6 +125,7 @@ suspend fun getPosts(posts: List<AtUri>, api: Butterfly = getKoin().get<Butterfl
 
 @Suppress("unused", "MemberVisibilityCanBePrivate", "UNCHECKED_CAST")
 // TODO: Revisit these casts if we can, but they should be safe
+@Serializable
 class BskyDataService: KoinComponent {
     val api: Butterfly by inject()
 

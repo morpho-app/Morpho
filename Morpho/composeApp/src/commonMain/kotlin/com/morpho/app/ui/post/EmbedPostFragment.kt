@@ -13,6 +13,7 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -47,6 +48,7 @@ fun EmbedPostFragment(
     val muted = rememberSaveable { post.author.mutedByMe }
     val interactionSource = remember { MutableInteractionSource() }
     val indication = remember { MorphoHighlightIndication() }
+    val uriHandler = LocalUriHandler.current
     WrappedColumn(
         modifier
             .fillMaxWidth()
@@ -156,7 +158,7 @@ fun EmbedPostFragment(
                         facetTypes.fastForEach {
                             when(it) {
                                 is FacetType.ExternalLink -> {
-                                    openBrowser(it.uri.uri)
+                                    openBrowser(it.uri.uri, uriHandler)
                                 }
                                 is FacetType.Format -> {}
                                 is FacetType.PollBlueOption -> {
@@ -177,7 +179,7 @@ fun EmbedPostFragment(
                     modifier = Modifier.padding(horizontal = 6.dp)
                 )
                 EmbedPostFeature(embed = post, onItemClicked, onLinkClicked = {
-                    openBrowser(it)
+                    openBrowser(it, uriHandler)
                 })
 
             }

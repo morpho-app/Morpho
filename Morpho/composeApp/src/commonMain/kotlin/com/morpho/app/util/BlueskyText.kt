@@ -10,7 +10,7 @@ import com.morpho.app.model.bluesky.RichTextFormat
 import com.morpho.butterfly.Butterfly
 import kotlinx.serialization.Serializable
 
-
+@Serializable
 data class BlueskyText(
     val text: String,
     val facets: List<BskyFacet>

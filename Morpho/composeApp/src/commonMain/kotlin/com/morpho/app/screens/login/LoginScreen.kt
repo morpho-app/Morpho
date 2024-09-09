@@ -13,18 +13,24 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
-import cafe.adriel.voyager.core.model.screenModelScope
+import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewmodel.compose.viewModel
 import cafe.adriel.voyager.core.screen.ScreenKey
-import cafe.adriel.voyager.koin.getScreenModel
 import cafe.adriel.voyager.navigator.tab.LocalTabNavigator
 import cafe.adriel.voyager.navigator.tab.Tab
 import cafe.adriel.voyager.navigator.tab.TabOptions
+import com.morpho.app.CommonParcelable
+import com.morpho.app.CommonParcelize
 import com.morpho.app.model.uistate.AuthState
 import com.morpho.app.screens.base.tabbed.TabbedBaseScreen
 import com.morpho.app.ui.common.LoadingCircle
 import kotlinx.coroutines.launch
+import kotlinx.serialization.Serializable
 
-data object LoginScreen: Tab {
+@CommonParcelize
+@Serializable
+data object LoginScreen: Tab, CommonParcelable {
+
 
     override val key: ScreenKey = hashCode().toString() + "TabbedLoginScreen"
     @Composable
@@ -34,7 +40,7 @@ data object LoginScreen: Tab {
         val focusManager = LocalFocusManager.current
         val snackbarHostState = remember { SnackbarHostState() }
         val tabNavigator = LocalTabNavigator.current
-        val screenModel = getScreenModel<LoginScreenModel>()
+        val screenModel = viewModel { LoginScreenModel() }
 
         if(screenModel.isLoggedIn) {
             tabNavigator.current = TabbedBaseScreen
@@ -142,7 +148,7 @@ fun SignupView(
 
     Button(onClick = {
         if(screenModel.handle.isNotBlank() && screenModel.password.isNotBlank() && !isAppPassword(screenModel.password) && !appPWOverride) {
-            screenModel.screenModelScope.launch {
+            screenModel.viewModelScope.launch {
                 val result = snackbarHostState.showSnackbar(
                     message = "Please Use an App Password",
                     actionLabel = "Security Sucks",
@@ -164,7 +170,7 @@ fun SignupView(
             screenModel.onLoginClicked(screenModel.handle)
             focusManager.clearFocus()
         } else {
-            screenModel.screenModelScope.launch {
+            screenModel.viewModelScope.launch {
                 snackbarHostState.showSnackbar(
                     message = "Handle/Email or Password missing",
                     withDismissAction = true
@@ -226,7 +232,7 @@ fun LoginView(
 
     Button(onClick = {
         if(screenModel.handle.isNotBlank() && screenModel.password.isNotBlank() && !isAppPassword(screenModel.password) && !appPWOverride) {
-            screenModel.screenModelScope.launch {
+            screenModel.viewModelScope.launch {
                 val result = snackbarHostState.showSnackbar(
                     message = "Please Use an App Password",
                     actionLabel = "Security Sucks",
@@ -248,7 +254,7 @@ fun LoginView(
             screenModel.onLoginClicked(screenModel.handle)
             focusManager.clearFocus()
         } else {
-            screenModel.screenModelScope.launch {
+            screenModel.viewModelScope.launch {
                 snackbarHostState.showSnackbar(
                     message = "Handle/Email or Password missing",
                     withDismissAction = true

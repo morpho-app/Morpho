@@ -1,6 +1,7 @@
 package com.morpho.app.util
 
 
+import androidx.compose.ui.platform.UriHandler
 import cafe.adriel.voyager.navigator.Navigator
 import com.morpho.app.screens.base.tabbed.ProfileTab
 import com.morpho.butterfly.AtUri
@@ -8,7 +9,8 @@ import com.morpho.butterfly.Cid
 import com.morpho.butterfly.Did
 import com.morpho.butterfly.Handle
 
-fun linkVisit(string: String, navigator: Navigator) {
+
+fun linkVisit(string: String, navigator: Navigator, uriHandler: UriHandler) {
     if(string.startsWith("@")) {
         if(string.startsWith("@did")) {
             navigator.push(ProfileTab(Did(string.removePrefix("@"))))
@@ -22,11 +24,12 @@ fun linkVisit(string: String, navigator: Navigator) {
             string.replace("/post/", "/app.bsky.feed.post/")
         }
     } else if (string.startsWith("http")){
-        checkValidUrl(string)?.let { openBrowser(it) }
+        checkValidUrl(string)?.let { openBrowser(it, uriHandler) }
     }
 }
 
-expect fun openBrowser(url: String)
+
+expect fun openBrowser(url: String, uriHandler: UriHandler)
 
 fun didCidToImageLink(did: Did, cid: Cid, avatar: Boolean, type: String = "jpeg"): String {
     val collection = if (avatar) {

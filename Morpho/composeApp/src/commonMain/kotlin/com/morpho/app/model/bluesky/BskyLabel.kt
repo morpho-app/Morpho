@@ -104,6 +104,7 @@ fun Blurs.toScope(): LabelScope {
     }
 }
 
+@Immutable
 @Serializable
 enum class LabelAction {
     Blur,
@@ -112,6 +113,7 @@ enum class LabelAction {
     None
 }
 
+@Immutable
 @Serializable
 enum class LabelTarget {
     Account,
@@ -119,6 +121,7 @@ enum class LabelTarget {
     Content
 }
 
+@Immutable
 @Serializable
 open class ModBehaviour(
     val profileList: LabelAction = LabelAction.None,
@@ -169,6 +172,7 @@ open class ModBehaviour(
     }
 }
 
+@Immutable
 @Serializable
 data class ModBehaviours(
     val account: ModBehaviour = ModBehaviour(),
@@ -216,6 +220,7 @@ open class DescribedBehaviours(
 }
 
 
+@Immutable
 @Serializable
 data object BlockBehaviour: ModBehaviour(
     profileList = LabelAction.Blur,
@@ -226,6 +231,8 @@ data object BlockBehaviour: ModBehaviour(
     contentView = LabelAction.Blur,
 )
 
+@Immutable
+@Serializable
 data object MuteBehaviour: ModBehaviour(
     profileList = LabelAction.Inform,
     profileView = LabelAction.Alert,
@@ -233,32 +240,46 @@ data object MuteBehaviour: ModBehaviour(
     contentView = LabelAction.Inform,
 )
 
+@Immutable
+@Serializable
 data object MuteWordBehaviour: ModBehaviour(
     contentList = LabelAction.Blur,
     contentView = LabelAction.Blur,
 )
 
+@Immutable
+@Serializable
 data object HideBehaviour: ModBehaviour(
     contentList = LabelAction.Blur,
     contentView = LabelAction.Blur,
 )
 
+@Immutable
+@Serializable
 data object InappropriateMediaBehaviour: ModBehaviour(
     contentMedia = LabelAction.Blur,
 )
 
+@Immutable
+@Serializable
 data object InappropriateAvatarBehaviour: ModBehaviour(
     avatar = LabelAction.Blur,
 )
 
+@Immutable
+@Serializable
 data object InappropriateBannerBehaviour: ModBehaviour(
     banner = LabelAction.Blur,
 )
 
+@Immutable
+@Serializable
 data object InappropriateDisplayNameBehaviour: ModBehaviour(
     displayName = LabelAction.Blur,
 )
 
+
+@Serializable
 val BlurAllMedia = ModBehaviours(
     content = InappropriateMediaBehaviour,
     profile = ModBehaviour(
@@ -274,9 +295,11 @@ val BlurAllMedia = ModBehaviours(
 )
 
 
-
+@Immutable
+@Serializable
 data object NoopBehaviour: ModBehaviour()
 
+@Immutable
 @Serializable
 enum class LabelValueDefFlag {
     NoOverride,
@@ -285,6 +308,7 @@ enum class LabelValueDefFlag {
     NoSelf,
 }
 
+@Immutable
 @Serializable
 enum class LabelSetting {
     @SerialName("ignore")

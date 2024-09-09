@@ -4,8 +4,9 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.*
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.unit.dp
-import cafe.adriel.voyager.core.model.screenModelScope
+import androidx.lifecycle.viewModelScope
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import cafe.adriel.voyager.navigator.tab.TabNavigator
@@ -45,6 +46,7 @@ fun <T: MainScreenModel, I: MorphoDataItem, S: ContentCardState<I>> TabbedSkylin
     var showComposer by remember { mutableStateOf(false) }
     var composerRole by remember { mutableStateOf(ComposerRole.StandalonePost) }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val uriHandler = LocalUriHandler.current
     // Probably pull this farther up,
     //      but this means if you don't explicitly cancel you don't lose the post
     var draft by remember { mutableStateOf(DraftPost()) }
@@ -75,15 +77,16 @@ fun <T: MainScreenModel, I: MorphoDataItem, S: ContentCardState<I>> TabbedSkylin
 
         SkylineFragment(
             content = state,
-            onProfileClicked = {
-                actor -> //if (isProfileFeed) navigator.popUntilRoot()
-                navigator.push(ProfileTab(actor))
-                               },
+            onProfileClicked = { actor -> navigator.push(ProfileTab(actor)) },
             onItemClicked = { uri -> navigator.push(ThreadTab(uri)) },
             refresh = { cursor -> refresh(cursor)},
             onUnClicked = { type, rkey -> sm.deleteRecord(type, rkey) },
             onRepostClicked = { onRepostClicked(it) },
-            onMenuClicked = { option, post -> doMenuOperation(option, post, clipboardManager = clipboard) },
+            onMenuClicked = { option, post ->
+                doMenuOperation(option, post,
+                                clipboardManager = clipboard,
+                                uriHandler = uriHandler
+                ) },
             onReplyClicked = { onReplyClicked(it) },
             onLikeClicked = { uri -> sm.createRecord(RecordUnion.Like(uri)) },
             onPostButtonClicked = { onPostButtonClicked() },
@@ -125,7 +128,7 @@ fun <T: MainScreenModel, I: MorphoDataItem, S: ContentCardState<I>> TabbedSkylin
                     draft = DraftPost()
                 },
                 onSend = { finishedDraft ->
-                    sm.screenModelScope.launch(Dispatchers.IO) {
+                    sm.viewModelScope.launch(Dispatchers.IO) {
                         val post = finishedDraft.createPost(sm.api)
                         sm.api.createRecord(RecordUnion.MakePost(post))
                     }

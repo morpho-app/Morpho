@@ -44,53 +44,53 @@ class SettingsService: KoinComponent {
 
     val languages: Flow<List<Language>> = currentUserPrefs.transform {
         if(it != null) emit(it.preferences.languages)
-    }
+    }.distinctUntilChanged()
 
     val notificationsFilter: Flow<NotificationsFilterState> = currentUserPrefs.transform {
         if(it?.morphoPrefs?.notificationsFilter != null) emit(it.morphoPrefs.notificationsFilter)
-    }
+    }.distinctUntilChanged()
 
     val threadViewPrefs: Flow<ThreadViewPref> = currentUserPrefs.transform {
         if(it?.preferences?.threadViewPrefs != null) emit(it.preferences.threadViewPrefs!!)
-    }
+    }.distinctUntilChanged()
 
     val feedViewPrefs: Flow<Map<String, BskyFeedPref>> = currentUserPrefs.transform {
         if(it?.preferences?.feedViewPrefs != null) emit(it.preferences.feedViewPrefs)
-    }
+    }.distinctUntilChanged()
 
     val mergeFeeds: Flow<Boolean> = currentUserPrefs.transform {
         if(it?.preferences?.mergeFeeds != null) emit(it.preferences.mergeFeeds)
-    }
+    }.distinctUntilChanged()
 
     val contentLabelPrefs: Flow<List<ContentLabelPref>> = currentUserPrefs.transform {
         if(it?.preferences?.contentLabelPrefs != null) emit(it.preferences.contentLabelPrefs)
-    }
+    }.distinctUntilChanged()
 
     val mutedWords: Flow<List<MutedWord>> = currentUserPrefs.transform {
         if(it?.preferences?.mutedWords != null) emit(it.preferences.mutedWords)
-    }
+    }.distinctUntilChanged()
 
     val mutedUsers: Flow<List<BasicProfile>> = currentUserPrefs.transform {
         if(it?.preferences?.mutes != null) emit(it.preferences.mutes)
-    }
+    }.distinctUntilChanged()
 
     val hiddenPosts: Flow<List<AtUri>> = currentUserPrefs.transform {
         if(it?.preferences?.hiddenPosts != null) emit(it.preferences.hiddenPosts)
-    }
+    }.distinctUntilChanged()
 
     val showAdultContent: Flow<Boolean> = currentUserPrefs.transform {
         if(it?.preferences?.adultContent?.enabled != null) emit(it.preferences.adultContent?.enabled ?: false)
-    }
+    }.distinctUntilChanged()
 
     val savedFeeds: Flow<List<UISavedFeed>> = currentUserPrefs.transform { preferences ->
         if(preferences?.preferences?.savedFeeds != null) emit(preferences.preferences.savedFeeds!!.items.map { it.toUISavedFeed(api) })
-    }
+    }.distinctUntilChanged()
     val pinnedFeeds: Flow<List<UISavedFeed>> = currentUserPrefs.transform { preferences ->
         if(preferences?.preferences?.savedFeeds != null)
             emit(preferences.preferences.savedFeeds!!.items.filter { it.pinned }.map {
                 it.toUISavedFeed(api)
             })
-    }
+    }.distinctUntilChanged()
 
     val labelers: Flow<List<BskyLabelService>> = currentUserPrefs.transformLatest { preferences ->
         if (preferences?.preferences?.labelers?.isNotEmpty() == true)
@@ -108,7 +108,7 @@ class SettingsService: KoinComponent {
                             }
                         }.getOrNull()
                 } ?: emptyList())
-    }
+    }.distinctUntilChanged()
 
 
     init {

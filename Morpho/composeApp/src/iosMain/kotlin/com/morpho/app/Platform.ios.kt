@@ -1,3 +1,4 @@
+package com.morpho.app
 import platform.UIKit.UIDevice
 
 class IOSPlatform: Platform {

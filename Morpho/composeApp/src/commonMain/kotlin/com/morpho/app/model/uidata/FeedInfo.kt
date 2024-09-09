@@ -6,15 +6,19 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.morpho.app.model.bluesky.FeedGenerator
 import com.morpho.app.model.bluesky.UserList
+import com.morpho.app.util.JavaSerializable
 import com.morpho.butterfly.AtUri
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 
 @Immutable
+@Serializable
 data class FeedInfo(
     val uri: AtUri,
     val name: String,
     val description: String? = null,
     val avatar: String? = null,
-    val icon: ImageVector = Icons.Default.RssFeed,
+    @Transient val icon: ImageVector = Icons.Default.RssFeed,
     val feed: FeedGenerator? = null,
     val list: UserList? = null,
-)
+): JavaSerializable

@@ -12,6 +12,7 @@ import kotlinx.collections.immutable.persistentListOf
 import kotlinx.datetime.Clock
 import kotlinx.serialization.Serializable
 
+@Immutable
 @Serializable
 enum class PostType {
     BlockedThread,

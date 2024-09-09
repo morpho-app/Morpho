@@ -1,22 +1,28 @@
 package com.morpho.app.screens.profile
 
 import androidx.compose.animation.ExperimentalAnimationApi
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.unit.dp
-import cafe.adriel.voyager.core.lifecycle.LifecycleEffect
+import cafe.adriel.voyager.core.annotation.ExperimentalVoyagerApi
+import cafe.adriel.voyager.core.lifecycle.LifecycleEffectOnce
 import cafe.adriel.voyager.core.screen.ScreenKey
-import cafe.adriel.voyager.koin.getNavigatorScreenModel
+import cafe.adriel.voyager.core.screen.uniqueScreenKey
+import cafe.adriel.voyager.jetpack.ProvideNavigatorLifecycleKMPSupport
+import cafe.adriel.voyager.jetpack.navigatorViewModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
-import cafe.adriel.voyager.navigator.tab.*
+import cafe.adriel.voyager.navigator.tab.LocalTabNavigator
+import cafe.adriel.voyager.navigator.tab.TabDisposable
+import cafe.adriel.voyager.navigator.tab.TabNavigator
+import cafe.adriel.voyager.navigator.tab.TabOptions
 import coil3.annotation.ExperimentalCoilApi
 import com.morpho.app.model.bluesky.BskyLabelService
 import com.morpho.app.model.bluesky.DetailedProfile
@@ -29,8 +35,11 @@ import com.morpho.app.ui.common.LoadingCircle
 import com.morpho.app.ui.common.TabbedProfileScreenScaffold
 import com.morpho.app.ui.common.TabbedSkylineFragment
 import com.morpho.app.ui.profile.DetailedProfileFragment
+import com.morpho.app.util.JavaSerializable
+import com.morpho.butterfly.AtIdentifier
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.serialization.Serializable
 import org.jetbrains.compose.resources.ExperimentalResourceApi
 import cafe.adriel.voyager.navigator.tab.Tab as NavTab
 
@@ -42,6 +51,7 @@ fun TabbedProfileTopBar(
     scrollBehavior: TopAppBarScrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(
         rememberTopAppBarState()),
     tabs: List<ProfileSkylineTab>,
+    onTabChanged: (Int) -> Unit = {},
     onBackClicked: () -> Unit,
     tabIndex: Int = 0,
 ) {
@@ -73,7 +83,10 @@ fun TabbedProfileTopBar(
                     tabs.forEachIndexed { index, tab ->
                         ProfileTabItem(
                             tab, index.toUShort()
-                        ) { selectedTabIndex = index }
+                        ) {
+                            selectedTabIndex = index
+                            onTabChanged(selectedTabIndex)
+                        }
                     }
                 }
             }
@@ -92,9 +105,7 @@ fun ProfileTabItem(
     onClick: () -> Unit = {},
 ) {
     val navigator = LocalTabNavigator.current
-    val title = rememberSaveable {
-        tab.state?.value?.feed?.title.orEmpty()
-    }
+
     val tabModifier = Modifier
         .padding(
             bottom = 12.dp,
@@ -110,28 +121,26 @@ fun ProfileTabItem(
         },
     ) {
         Text(
-            text = title,
+            text = tab.title,
             modifier = tabModifier
         )
     }
 }
 
-@OptIn(ExperimentalAnimationApi::class, ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalAnimationApi::class, ExperimentalMaterial3Api::class,
+       ExperimentalVoyagerApi::class
+)
 @Composable
 fun TabScreen.TabbedProfileContent(
-    ownProfile: Boolean,
-    sm: TabbedProfileViewModel = LocalNavigator.currentOrThrow.getNavigatorScreenModel<TabbedProfileViewModel>(),
+    id: AtIdentifier? = null,
+    sm: TabbedProfileViewModel = navigatorViewModel { TabbedProfileViewModel(id) }
 ) {
+    ProvideNavigatorLifecycleKMPSupport {
+        val navigator = LocalNavigator.currentOrThrow
 
-    val navigator = LocalNavigator.currentOrThrow
 
-    LifecycleEffect(
-        onStarted = {
-            sm.initProfile()
-        },
-        onDisposed = {},
-    )
-    /*val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(
+        LifecycleEffectOnce { sm.initProfile() }
+        /*val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(
         state = rememberTopAppBarState(),
         snapAnimationSpec = spring(
             stiffness = Spring.StiffnessMediumLow,
@@ -139,119 +148,146 @@ fun TabScreen.TabbedProfileContent(
         ),
         //flingAnimationSpec = exponentialDecay()
     )*/
-    val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior(rememberTopAppBarState())
-    var insets = WindowInsets.navigationBars.asPaddingValues()
-    val tabs = rememberSaveable(
-        sm.tabFlow.value,
-        sm.profileUiState.loadingState,
-        sm.profileUiState.tabs.value.size
-    ) {
-        List(sm.profileUiState.tabs.value.size) { index ->
-            ProfileSkylineTab(
-                index = index.toUShort(),
-                screenModel = sm,
-                state = sm.profileUiState.tabStates[index] as StateFlow<ContentCardState.ProfileTimeline<MorphoDataItem>>?,
-                paddingValues = insets,
-                ownProfile = ownProfile,
-            )
-        }
-    }
-    val tabsCreated = rememberSaveable(tabs.size, sm.profileUiState.loadingState) {
-        tabs.isNotEmpty() && sm.profileUiState.loadingState == UiLoadingState.Idle
-    }
-    if (tabsCreated) {
-        TabNavigator(
-            tab = tabs.first(),
-            tabDisposable = { TabDisposable(navigator = it, tabs = tabs) }
+        var selectedTabIndex by rememberSaveable { mutableIntStateOf(0) }
+        val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior(rememberTopAppBarState())
+        val ownProfile = remember { sm.api.atpUser?.id == id }
+        val tabs = rememberSaveable(
+            sm.tabFlow,
+            sm.profileUiState.loadingState,
         ) {
+            List(sm.tabFlow.value.size) { index ->
+                ProfileSkylineTab(
+                    index = index.toUShort(),
+                    ownProfile = ownProfile,
+                    title = sm.tabFlow.value[index].title,
+                )
+            }
+        }
+        val tabsCreated = rememberSaveable(tabs.size, sm.profileUiState.loadingState) {
+            tabs.isNotEmpty() && sm.profileUiState.loadingState == UiLoadingState.Idle
+        }
+        if (tabsCreated) {
+            TabNavigator(
+                tab = tabs.first(),
+                disposeNestedNavigators = false,
+                tabDisposable = { TabDisposable(navigator = it, tabs = tabs) }
+            ) {
+
+                TabbedProfileScreenScaffold(
+                    navBar = { navBar(navigator) },
+                    modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+                    topContent = {
+                        TabbedProfileTopBar(
+                            sm.profileState?.profile,
+                            ownProfile, scrollBehavior, tabs.toImmutableList(),
+                            onBackClicked = { navigator.pop() },
+                            onTabChanged = { selectedTabIndex = it },
+                            tabIndex = selectedTabIndex,
+                        )
+                    },
+                    content = { insets, state ->
+                        CurrentProfileScreen(sm, insets, state, Modifier)
+                    },
+                    state = sm.profileUiState.tabStates.getOrNull(selectedTabIndex),
+                    scrollBehavior = scrollBehavior,
+                )
+            }
+        } else {
             TabbedProfileScreenScaffold(
                 navBar = { navBar(navigator) },
                 modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
                 topContent = {
-                    TabbedProfileTopBar(
-                        sm.profileState?.profile, true, scrollBehavior, tabs.toImmutableList(),
-                        onBackClicked = { navigator.pop() }
-                    )
+                    if (sm.profileState?.profile != null) {
+                        DetailedProfileFragment(
+                            profile = sm.profileState?.profile!! as DetailedProfile,
+                            myProfile = ownProfile,
+                            isTopLevel = true,
+                            scrollBehavior = scrollBehavior,
+                            onBackClicked = { navigator.pop() }
+                        )
+                    } else {
+                        TopAppBar(
+                            title = { Text("Loading...") }
+                        )
+                    }
                 },
-                content = {
-                    insets = it
-                    CurrentTab()
+                content = { _, _ ->
+                    LoadingCircle()
                 },
                 scrollBehavior = scrollBehavior,
+                state = sm.profileUiState.tabStates.getOrNull(selectedTabIndex),
             )
         }
-    } else {
-        TabbedProfileScreenScaffold(
-            navBar = { navBar(navigator) },
-            modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
-            topContent = {
-                if (sm.profileState?.profile != null) {
-                    DetailedProfileFragment(
-                        profile = sm.profileState?.profile!! as DetailedProfile,
-                        myProfile = ownProfile,
-                        isTopLevel = true,
-                        scrollBehavior = scrollBehavior,
-                        onBackClicked = { navigator.pop() }
-                    )
-                } else {
-                    TopAppBar(
-                        title = { Text("Loading...") }
-                    )
-                }
-            },
-            content = {
-                LoadingCircle()
-            },
-            scrollBehavior = scrollBehavior,
+    }
+}
+
+@Composable
+public fun CurrentProfileScreen(
+    sm: TabbedProfileViewModel,
+    paddingValues: PaddingValues,
+    state: StateFlow<ContentCardState.ProfileTimeline<MorphoDataItem>>?,
+    modifier: Modifier
+) {
+    val navigator = LocalNavigator.currentOrThrow
+    val currentScreen = navigator.lastItem as ProfileTabScreen
+
+    navigator.saveableState("currentScreen") {
+        currentScreen.Content(
+            sm = sm,
+            paddingValues = paddingValues,
+            state = state,
+            modifier = modifier
         )
     }
-
 }
 
 
-data class ProfileSkylineTab(
-    val index: UShort,
-    val screenModel: TabbedProfileViewModel,
-    val state: StateFlow<ContentCardState.ProfileTimeline<MorphoDataItem>>?,
-    val paddingValues: PaddingValues = PaddingValues(0.dp),
-    val ownProfile: Boolean = false,
-): NavTab {
-    @OptIn(ExperimentalMaterial3Api::class)
+abstract class ProfileTabScreen: NavTab {
+
     @Composable
-    override fun Content() {
-        TabbedSkylineFragment(screenModel, state, paddingValues, refresh = {
-            state?.value?.uri?.let { it1 -> screenModel.updateFeed(it1, it) }
+    abstract fun Content(
+        sm: TabbedProfileViewModel,
+        paddingValues: PaddingValues,
+        state: StateFlow<ContentCardState.ProfileTimeline<MorphoDataItem>>?,
+        modifier: Modifier
+    )
+
+    @OptIn(ExperimentalVoyagerApi::class)
+    @Composable
+    final override fun Content() = Content(TabbedProfileViewModel(),PaddingValues(0.dp),null,Modifier)
+}
+
+@Serializable
+data class ProfileSkylineTab(
+    val index:  UShort,
+    val ownProfile: Boolean = false,
+    val title: String,
+): ProfileTabScreen(), JavaSerializable {
+
+    @OptIn(ExperimentalMaterial3Api::class, ExperimentalVoyagerApi::class)
+    @Composable
+    override fun Content(
+        sm: TabbedProfileViewModel,
+        paddingValues: PaddingValues,
+        state: StateFlow<ContentCardState.ProfileTimeline<MorphoDataItem>>?,
+        modifier: Modifier
+    ) {
+        TabbedSkylineFragment(sm, state, paddingValues, refresh = { cursor ->
+            sm.refreshTab(index.toInt(), cursor)
         }, isProfileFeed = true)
     }
 
     override val key: ScreenKey
-        get() = "${state?.value?.uri?.atUri.orEmpty()}${hashCode()}"
+        get() = "${title}$uniqueScreenKey"
 
 
     @OptIn(ExperimentalResourceApi::class, ExperimentalCoilApi::class)
     override val options: TabOptions
         @Composable
         get() {
-            /* Curious if this works for tab icons
-            val icon = rememberAsyncImagePainter(
-                model = ImageRequest.Builder(LocalPlatformContext.current)
-                    .fallback(ImageRequest.Builder(LocalPlatformContext.current)
-                        .data(imageResource(Res.drawable.placeholder_pfp).asSkiaBitmap())
-                        .build().fallbackFactory)
-                    .data(state.profile.avatar)
-                    .crossfade(true)
-                    .build(),
-            )
-            */
-
-            val name = rememberSaveable {
-                if (state?.value?.profile?.displayName != null && state.value.profile.displayName!!.isNotEmpty()) {
-                    state.value.profile.displayName!!
-                } else { state?.value?.profile?.handle?.handle.orEmpty() }
-            }
             return TabOptions(
                 index = index,
-                title = name,
+                title = title,
                 //icon = icon,
             )
         }

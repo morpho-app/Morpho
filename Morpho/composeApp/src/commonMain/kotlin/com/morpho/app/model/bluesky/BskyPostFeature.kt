@@ -1,5 +1,6 @@
 package com.morpho.app.model.bluesky
 
+import androidx.compose.runtime.Immutable
 import app.bsky.embed.*
 import app.bsky.feed.Post
 import app.bsky.feed.PostEmbedUnion
@@ -11,13 +12,16 @@ import com.morpho.butterfly.model.Blob
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonElement
 
+@Immutable
 @Serializable
 sealed interface BskyPostFeature {
+    @Immutable
     @Serializable
     data class ImagesFeature(
         val images: List<EmbedImage>,
     ) : BskyPostFeature, TimelinePostMedia
 
+    @Immutable
     @Serializable
     data class VideoFeature(
         val video: VideoEmbed,
@@ -25,6 +29,7 @@ sealed interface BskyPostFeature {
         val aspectRatio: AspectRatio?,
     ) : BskyPostFeature, TimelinePostMedia
 
+    @Immutable
     @Serializable
     data class ExternalFeature(
         val uri: Uri,
@@ -33,29 +38,35 @@ sealed interface BskyPostFeature {
         val thumb: String?,
     ) : BskyPostFeature, TimelinePostMedia
 
+    @Immutable
     @Serializable
     data class RecordFeature(
         val record: EmbedRecord,
     ) : BskyPostFeature
 
+    @Immutable
     @Serializable
     data class MediaRecordFeature(
         val record: EmbedRecord,
         val media: TimelinePostMedia,
     ) : BskyPostFeature
 
+    @Immutable
     @Serializable
     data class UnknownEmbed(
         val value: String,
     ) : BskyPostFeature, TimelinePostMedia
 }
 
+@Immutable
 @Serializable
 sealed interface TimelinePostMedia
 
+@Immutable
 @Serializable
 sealed interface VideoEmbed
 
+@Immutable
 @Serializable
 data class EmbedVideoView(
     val cid: Cid,
@@ -63,12 +74,14 @@ data class EmbedVideoView(
     val thumbnail: AtUri,
 ): VideoEmbed
 
+@Immutable
 @Serializable
 data class EmbedVideo(
     val blob: Blob,
     val captions: List<VideoCaption>?,
 ): VideoEmbed
 
+@Immutable
 @Serializable
 data class EmbedImage(
     val thumb: String,
@@ -79,9 +92,11 @@ data class EmbedImage(
 
 
 
+@Immutable
 @Serializable
 sealed interface EmbedRecord {
 
+    @Immutable
     @Serializable
     data class VisibleEmbedPost(
         val uri: AtUri,
@@ -92,6 +107,7 @@ sealed interface EmbedRecord {
         val reference: Reference = Reference(uri, cid)
     }
 
+    @Immutable
     @Serializable
     data class EmbedFeed(
         val uri: AtUri,
@@ -101,6 +117,7 @@ sealed interface EmbedRecord {
         val feed: FeedGenerator,
     ) : EmbedRecord
 
+    @Immutable
     @Serializable
     data class EmbedList(
         val uri: AtUri,
@@ -109,6 +126,7 @@ sealed interface EmbedRecord {
         val list: BskyList,
     ) : EmbedRecord
 
+    @Immutable
     @Serializable
     data class EmbedLabelService(
         val uri: AtUri,
@@ -118,21 +136,25 @@ sealed interface EmbedRecord {
     ) : EmbedRecord
 
 
+    @Immutable
     @Serializable
     data class InvisibleEmbedPost(
         val uri: AtUri,
     ) : EmbedRecord
 
+    @Immutable
     @Serializable
     data class BlockedEmbedPost(
         val uri: AtUri,
     ) : EmbedRecord
 
+    @Immutable
     @Serializable
     data class DetachedQuotePost(
         val uri: AtUri,
     ) : EmbedRecord
 
+    @Immutable
     @Serializable
     data class EmbedVideo(
         val video: VideoEmbed,
@@ -140,11 +162,14 @@ sealed interface EmbedRecord {
         val aspectRatio: AspectRatio?,
     ) : EmbedRecord
 
+    @Immutable
     @Serializable
     data class UnknownEmbed(
         val value: String,
     ) : EmbedRecord
 
+    @Immutable
+    @Serializable
     data class StarterPack(
         val uri: AtUri,
         val cid: Cid,

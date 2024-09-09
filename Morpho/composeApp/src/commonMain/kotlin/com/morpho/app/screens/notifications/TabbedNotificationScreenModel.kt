@@ -3,7 +3,7 @@ package com.morpho.app.screens.notifications
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import cafe.adriel.voyager.core.model.screenModelScope
+import androidx.lifecycle.viewModelScope
 import com.morpho.app.model.uidata.AtCursor
 import com.morpho.app.model.uidata.initAtCursor
 import com.morpho.app.model.uistate.NotificationsUIState
@@ -29,7 +29,7 @@ class TabbedNotificationScreenModel: BaseScreenModel() {
         )
 
     init {
-        screenModelScope.launch {
+        viewModelScope.launch {
             val f = notifService.notifications(cursorFlow).map { it.getOrNull() }
             cursorFlow.emit(null)
             f.collect {

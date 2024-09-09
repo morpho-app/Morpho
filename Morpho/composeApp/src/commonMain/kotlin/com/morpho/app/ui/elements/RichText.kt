@@ -39,8 +39,8 @@ fun RichTextElement(
     facets: List<BskyFacet> = persistentListOf(),
     onClick: (List<FacetType>) -> Unit = {},
     maxLines: Int = 20,
-
-    ) {
+) {
+    val layoutResult = remember { mutableStateOf<TextLayoutResult?>(null) }
     val utf8Text = text.encodeUtf8()
     val splitText = text.split("◌").listIterator() // special BlueMoji character
     val formattedText = buildAnnotatedString {
@@ -160,17 +160,20 @@ fun RichTextElement(
 
     }
 
-    val layoutResult = remember { mutableStateOf<TextLayoutResult?>(null) }
+
     val pressIndicator = Modifier.pointerInput(onClick) {
         detectTapGestures { pos ->
             layoutResult.value?.let { layoutResult ->
                 val offset = layoutResult.getOffsetForPosition(pos)
                 facets.forEach {
-                    if (it.start <= offset && offset <= it.end) {
+                    val extents = formattedText.text.utf16FacetIndex(it.start, it.end)
+                    val start = extents.first
+                    val end = extents.second
+                    if (offset in start..end) {
                         return@detectTapGestures onClick(it.facetType)
                     }
                 }
-                onClick(listOf())
+                //onClick(listOf())
             }
         }
     }
@@ -179,7 +182,9 @@ fun RichTextElement(
         inlineContent = inlineContentMap,
         maxLines = maxLines, // Sorry @retr0.id, no more 200 line posts.
         overflow = TextOverflow.Ellipsis,
-        modifier = modifier.padding(vertical = 6.dp, horizontal = 2.dp).then(pressIndicator),
+        onTextLayout = { layoutResult.value = it },
+        modifier = modifier.then(pressIndicator)
+            .padding(vertical = 6.dp, horizontal = 2.dp),
     )
 
 

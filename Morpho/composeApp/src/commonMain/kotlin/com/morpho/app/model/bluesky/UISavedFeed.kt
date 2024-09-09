@@ -20,10 +20,14 @@ data class UISavedFeed(
     val list: UserList? = null,
 )
 
+@Immutable
+@Serializable
 sealed interface  UIFeedType {
     val type: FeedType
     val value: String
 
+    @Immutable
+    @Serializable
     data class Feed(
         val uri: AtUri
     ): UIFeedType {
@@ -31,6 +35,8 @@ sealed interface  UIFeedType {
         override val value: String = uri.atUri
     }
 
+    @Immutable
+    @Serializable
     data class List(
         val uri: AtUri
     ): UIFeedType {
@@ -38,6 +44,8 @@ sealed interface  UIFeedType {
         override val value: String = uri.atUri
     }
 
+    @Immutable
+    @Serializable
     data object Timeline: UIFeedType {
         override val type: FeedType = FeedType.TIMELINE
         override val value: String = "following"

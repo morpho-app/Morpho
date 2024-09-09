@@ -1,6 +1,10 @@
 package com.morpho.app.model.bluesky
 
 import androidx.compose.runtime.Immutable
+import com.morpho.app.CommonParcelable
+import com.morpho.app.CommonParcelize
+import com.morpho.app.CommonRawValue
+import com.morpho.app.util.JavaSerializable
 import kotlinx.serialization.Serializable
 
 /**
@@ -12,53 +16,64 @@ import kotlinx.serialization.Serializable
  */
 @Immutable
 @Serializable
-sealed interface MorphoDataItem {
+@CommonParcelize
+sealed interface MorphoDataItem: CommonParcelable, JavaSerializable {
 
+    @Immutable
+    @Serializable
+    @CommonParcelize
     sealed interface FeedItem: MorphoDataItem
 
     @Immutable
     @Serializable
+    @CommonParcelize
     data class Post(
-        val post: BskyPost,
-        val reason: BskyPostReason? = null,
+        val post: @CommonRawValue BskyPost,
+        val reason: @CommonRawValue BskyPostReason? = null,
     ): FeedItem
 
     @Immutable
     @Serializable
+    @CommonParcelize
     data class Thread(
-        val thread: BskyPostThread,
-        val reason: BskyPostReason? = null,
+        val thread: @CommonRawValue BskyPostThread,
+        val reason: @CommonRawValue BskyPostReason? = null,
     ): FeedItem
 
     @Immutable
     @Serializable
+    @CommonParcelize
     data class FeedInfo(
-        val feed: FeedGenerator,
+        val feed: @CommonRawValue FeedGenerator,
     ): MorphoDataItem
 
     @Immutable
     @Serializable
+    @CommonParcelize
     data class ProfileItem(
-        val profile: Profile,
+        val profile: @CommonRawValue Profile,
     ): MorphoDataItem
 
     @Immutable
     @Serializable
+    @CommonParcelize
     data class ListInfo(
-        val list: BskyList,
+        val list: @CommonRawValue BskyList,
     ): MorphoDataItem
 
 
     @Immutable
     @Serializable
+    @CommonParcelize
     data class ModLabel(
-        val label: BskyLabelDefinition,
+        val label: @CommonRawValue BskyLabelDefinition,
     ): MorphoDataItem
 
     @Immutable
     @Serializable
+    @CommonParcelize
     data class LabelService(
-        val service: BskyLabelService,
+        val service: @CommonRawValue BskyLabelService,
     ): MorphoDataItem
 
 }

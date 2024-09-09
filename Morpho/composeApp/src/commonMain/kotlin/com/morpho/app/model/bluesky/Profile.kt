@@ -4,6 +4,7 @@ package com.morpho.app.model.bluesky
 import androidx.compose.runtime.Immutable
 import app.bsky.actor.*
 import com.morpho.app.model.uidata.Moment
+import com.morpho.app.util.JavaSerializable
 import com.morpho.app.util.mapImmutable
 import com.morpho.butterfly.AtUri
 import com.morpho.butterfly.Did
@@ -11,7 +12,8 @@ import com.morpho.butterfly.Handle
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.serialization.Serializable
 
-
+@Immutable
+@Serializable
 enum class ProfileType {
     Basic,
     Detailed,
@@ -20,7 +22,7 @@ enum class ProfileType {
 
 @Immutable
 @Serializable
-sealed interface Profile {
+sealed interface Profile: JavaSerializable {
     val did: Did
     val handle: Handle
     val displayName: String?

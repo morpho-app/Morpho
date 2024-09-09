@@ -6,12 +6,14 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.*
-import cafe.adriel.voyager.core.lifecycle.LifecycleEffect
-import cafe.adriel.voyager.core.model.rememberScreenModel
-import cafe.adriel.voyager.core.model.screenModelScope
+import androidx.compose.ui.Modifier
+import androidx.lifecycle.viewModelScope
+import cafe.adriel.voyager.core.annotation.ExperimentalVoyagerApi
+import cafe.adriel.voyager.core.lifecycle.LifecycleEffectOnce
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.core.screen.ScreenKey
-import cafe.adriel.voyager.koin.getNavigatorScreenModel
+import cafe.adriel.voyager.core.screen.uniqueScreenKey
+import cafe.adriel.voyager.jetpack.navigatorViewModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.currentOrThrow
@@ -19,26 +21,31 @@ import com.morpho.app.model.uistate.ContentCardState
 import com.morpho.app.screens.main.tabbed.TabbedHomeView
 import com.morpho.app.screens.main.tabbed.TabbedMainScreenModel
 import com.morpho.app.screens.notifications.NotificationViewContent
-import com.morpho.app.screens.notifications.TabbedNotificationScreenModel
 import com.morpho.app.screens.profile.TabbedProfileContent
-import com.morpho.app.screens.profile.TabbedProfileViewModel
 import com.morpho.app.screens.thread.ThreadTopBar
 import com.morpho.app.screens.thread.ThreadViewContent
 import com.morpho.app.ui.common.LoadingCircle
 import com.morpho.app.ui.common.TabbedScreenScaffold
+import com.morpho.app.util.JavaSerializable
 import com.morpho.butterfly.AtIdentifier
 import com.morpho.butterfly.AtUri
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import kotlinx.serialization.Contextual
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 
 
+@Immutable
+@Serializable
 data class TabScreenOptions(
     val index: Int,
     val icon: @Composable () -> Unit,
     val title: String,
 )
 
-interface TabScreen: Screen {
+
+interface TabScreen: Screen, JavaSerializable {
 
     val navBar: @Composable (Navigator) -> Unit
 
@@ -50,18 +57,23 @@ interface TabScreen: Screen {
 
 }
 
+@Immutable
+@Serializable
 data class HomeTab(
     val k: ScreenKey = "HomeTab"
 ): TabScreen {
-    override val navBar: @Composable (Navigator) -> Unit = { n ->
+    @kotlin.jvm.Transient @Transient override val navBar: @Composable (@Contextual Navigator) -> Unit = { n ->
         TabbedNavBar(options.index, n)
     }
 
-    override val key: ScreenKey  = "${k}_${hashCode()}"
+    override val key: ScreenKey
+        get() = "${k}_${hashCode()}${uniqueScreenKey}"
 
+    @OptIn(ExperimentalVoyagerApi::class)
     @Composable
     override fun Content() {
-        TabbedHomeView()
+        val sm = navigatorViewModel { TabbedMainScreenModel() }
+        TabbedHomeView(sm)
     }
 
     override val options: TabScreenOptions
@@ -77,11 +89,14 @@ data class HomeTab(
 
 }
 
+@Immutable
+@Serializable
 data object SearchTab: TabScreen {
 
-    override val key: ScreenKey = "searchTab"
+    override val key: ScreenKey
+        get() = "searchTab${uniqueScreenKey}"
 
-    override val navBar: @Composable (Navigator) -> Unit = { n ->
+    @kotlin.jvm.Transient @Transient override val navBar: @Composable (@Contextual Navigator) -> Unit = { n ->
         TabbedNavBar(options.index, n)
     }
     @Composable
@@ -102,11 +117,14 @@ data object SearchTab: TabScreen {
 
 }
 
+@Immutable
+@Serializable
 data object FeedsTab: TabScreen {
 
-    override val key: ScreenKey = "feedsTab"
+    override val key: ScreenKey
+        get() = "feedsTab${uniqueScreenKey}"
 
-    override val navBar: @Composable (Navigator) -> Unit = { n ->
+    @kotlin.jvm.Transient @Transient override val navBar: @Composable (@Contextual Navigator) -> Unit = { n ->
         TabbedNavBar(options.index, n)
     }
     @Composable
@@ -126,20 +144,23 @@ data object FeedsTab: TabScreen {
 
 }
 
+@Immutable
+@Serializable
 data object NotificationsTab: TabScreen {
 
-    override val key: ScreenKey = "notificationsTab"
+    override val key: ScreenKey
+        get() = "notificationsTab${uniqueScreenKey}"
 
 
-    override val navBar: @Composable (Navigator) -> Unit = { n ->
+    @kotlin.jvm.Transient @Transient override val navBar: @Composable (@Contextual Navigator) -> Unit = { n ->
         TabbedNavBar(options.index, n)
     }
+    @OptIn(ExperimentalVoyagerApi::class)
     @Composable
     override fun Content() {
         val navigator = LocalNavigator.currentOrThrow
         NotificationViewContent(
             navigator,
-            navigator.getNavigatorScreenModel<TabbedNotificationScreenModel>()
         )
     }
 
@@ -158,20 +179,17 @@ data object NotificationsTab: TabScreen {
 
 data class ProfileTab(
     val id: AtIdentifier,
-    ): TabScreen {
+): TabScreen {
 
     override val key: ScreenKey = "profileTab_${id}_${hashCode()}"
 
-    override val navBar: @Composable (Navigator) -> Unit = { n ->
+    @kotlin.jvm.Transient @Transient override val navBar: @Composable (@Contextual Navigator) -> Unit = { n ->
         TabbedNavBar(options.index, n)
     }
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     override fun Content() {
-        val screenModel = rememberScreenModel { TabbedProfileViewModel(id) }
-        val ownProfile = remember { screenModel.api.atpUser?.id == id }
-        TabbedProfileContent(ownProfile, screenModel)
-
+        TabbedProfileContent(id)
     }
 
 
@@ -188,60 +206,66 @@ data class ProfileTab(
 
 }
 
+@Immutable
+@Serializable
 data class ThreadTab(
     val uri: AtUri,
 ): TabScreen {
 
-        override val key: ScreenKey = "threadTab_${uri}_${hashCode()}"
+    override val key: ScreenKey
+        get() = "threadTab_${uri}_$uniqueScreenKey}"
 
-        override val navBar: @Composable (Navigator) -> Unit = { n ->
-            TabbedNavBar(options.index, n)
+    @kotlin.jvm.Transient @Transient override val navBar: @Composable (@Contextual Navigator) -> Unit = { n ->
+        TabbedNavBar(options.index, n)
+    }
+    @OptIn(ExperimentalVoyagerApi::class)
+    @Composable
+    override fun Content() {
+        val navigator = LocalNavigator.currentOrThrow
+        val sm = navigatorViewModel { TabbedMainScreenModel() }
+        var threadState: StateFlow<ContentCardState.PostThread>? by remember { mutableStateOf(null)}
+        LifecycleEffectOnce {
+            sm.viewModelScope.launch { threadState = sm.loadThread(uri) }
         }
-        @Composable
-        override fun Content() {
-            val navigator = LocalNavigator.currentOrThrow
-            val sm = navigator.getNavigatorScreenModel<TabbedMainScreenModel>()
-            var threadState: StateFlow<ContentCardState.PostThread>? by remember { mutableStateOf(null)}
-            LifecycleEffect(
-                onStarted = {
-                    sm.screenModelScope.launch { threadState = sm.loadThread(uri) }
-                }
-            )
-            if(threadState != null) {
-                ThreadViewContent(threadState!!, navigator, sm)
-            } else {
-                TabbedScreenScaffold(
+        if(threadState != null) {
+            ThreadViewContent(threadState!!, navigator)
+        } else {
+            TabbedScreenScaffold(
                 navBar = { navBar(navigator) },
                 topContent = { ThreadTopBar(navigator = navigator) },
-                content = { _ -> LoadingCircle() }
-                )
-            }
+                content = { _, _ -> LoadingCircle() },
+                state = threadState,
+                modifier = Modifier
+            )
         }
+    }
 
-        override val options: TabScreenOptions
-            @Composable get() {
-                return TabScreenOptions(
-                    index = 6,
-                    icon = { Icon(Icons.Default.NotificationsNone, contentDescription = "Thread",
-                                  tint = MaterialTheme.colorScheme.onBackground) },
-                    title = "Thread"
-                )
-            }
+    override val options: TabScreenOptions
+        @Composable get() {
+            return TabScreenOptions(
+                index = 6,
+                icon = { Icon(Icons.Default.NotificationsNone, contentDescription = "Thread",
+                              tint = MaterialTheme.colorScheme.onBackground) },
+                title = "Thread"
+            )
+        }
 }
 
-
+@Immutable
+@Serializable
 data object MyProfileTab: TabScreen {
 
-    override val key: ScreenKey = "myProfileTab"
+    override val key: ScreenKey
+        get() = "myProfileTab${uniqueScreenKey}"
 
 
-    override val navBar: @Composable (Navigator) -> Unit = { n ->
+    override val navBar: @Composable (@Contextual Navigator) -> Unit = { n ->
         TabbedNavBar(options.index, n)
     }
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     override fun Content() {
-        TabbedProfileContent(true)
+        TabbedProfileContent()
     }
 
 
