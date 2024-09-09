@@ -2,6 +2,7 @@ package com.morpho.app.model.bluesky
 
 import androidx.compose.runtime.Immutable
 import app.bsky.actor.ProfileViewBasic
+import app.bsky.feed.PostReplyRef
 import app.bsky.feed.ReplyRef
 import app.bsky.feed.ReplyRefParentUnion
 import app.bsky.feed.ReplyRefRootUnion
@@ -10,9 +11,10 @@ import kotlinx.serialization.Serializable
 @Immutable
 @Serializable
 data class BskyPostReply(
-    val root: BskyPost?,
-    val parent: BskyPost?,
-    val grandparentAuthor: Profile?
+    val root: BskyPost? = null,
+    val parent: BskyPost? = null,
+    val grandParentAuthor: Profile? = null,
+    val replyRef: PostReplyRef? = null
 )
 
 fun ReplyRef.toReply(): BskyPostReply {
@@ -27,9 +29,16 @@ fun ReplyRef.toReply(): BskyPostReply {
             is ReplyRefParentUnion.NotFoundPost -> null
             is ReplyRefParentUnion.PostView -> parent.value.toPost()
         },
-        grandparentAuthor = when (val grandparentAuthor = grandparentAuthor) {
+        grandParentAuthor = when (val grandparentAuthor = grandparentAuthor) {
             is ProfileViewBasic -> grandparentAuthor.toProfile()
             else -> null
         }
+    )
+}
+
+fun PostReplyRef.toReply(): BskyPostReply {
+    return BskyPostReply(
+        replyRef = this,
+        grandParentAuthor = this.grandParentAuthor?.toProfile()
     )
 }

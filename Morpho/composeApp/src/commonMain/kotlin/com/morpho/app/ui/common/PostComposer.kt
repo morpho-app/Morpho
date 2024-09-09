@@ -15,14 +15,10 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import app.bsky.feed.PostReplyRef
-import com.atproto.repo.StrongRef
 import com.morpho.app.data.toSharedImage
 import com.morpho.app.model.bluesky.BskyPost
 import com.morpho.app.model.bluesky.DraftImage
 import com.morpho.app.model.bluesky.DraftPost
-import com.morpho.app.model.bluesky.toProfileViewBasic
-import com.morpho.app.model.uidata.getReplyRefs
 import com.morpho.app.ui.post.ComposerPostFragment
 import io.github.vinceglb.filekit.compose.rememberFilePickerLauncher
 import io.github.vinceglb.filekit.core.PickerMode
@@ -30,7 +26,6 @@ import io.github.vinceglb.filekit.core.PickerType
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
-import kotlinx.coroutines.flow.singleOrNull
 import kotlinx.coroutines.launch
 
 
@@ -108,38 +103,6 @@ fun PostComposer(
 ) {
     val focusManager = LocalFocusManager.current
     var postText by rememberSaveable { mutableStateOf(draft.text) }
-    val localReplyRef = remember {
-        if(role == ComposerRole.Reply) {
-            if (initialContent != null) {
-                val root: StrongRef = if (initialContent.reply?.root != null) {
-                    StrongRef(initialContent.reply.root.uri,initialContent.reply.root.cid)
-                } else if (initialContent.reply?.parent != null) {
-                    StrongRef(initialContent.reply.parent.uri, initialContent.reply.parent.cid)
-                } else {
-                    StrongRef(initialContent.uri,initialContent.cid)
-                }
-                val parent: StrongRef = StrongRef(initialContent.uri, initialContent.cid)
-                val grandParentAuthor = (if (initialContent.reply?.parent != null) {
-                    initialContent.reply.grandparentAuthor
-                } else {
-                    initialContent.author
-                })?.toProfileViewBasic()
-                PostReplyRef(root, parent, grandParentAuthor)
-            } else if (draft.reply != null) {
-                StrongRef(draft.reply.uri, draft.reply.cid)
-            } else null
-        } else null
-    }
-    var replyRef by remember { mutableStateOf(localReplyRef) }
-    // TODO: Probably put this somewhere saner, but for now this works
-    LaunchedEffect(localReplyRef) {
-        val uri = initialContent?.uri ?: draft.reply?.uri
-        if (role == ComposerRole.Reply && localReplyRef == null && uri != null) {
-            getReplyRefs(uri).singleOrNull()?.getOrNull()?.let {
-                replyRef = it
-            }
-        }
-    }
     val submitText = rememberSaveable {
         when(role) {
             ComposerRole.StandalonePost -> "Post"
@@ -179,7 +142,7 @@ fun PostComposer(
         onUpdate(
             DraftPost(
                 text = postText,
-                reply = if (replyRef != null && role == ComposerRole.Reply) initialContent else null,
+                reply = if (role == ComposerRole.Reply) initialContent else null,
                 quote = if (role == ComposerRole.QuotePost) initialContent else null,
                 images = postImages
             )
@@ -224,7 +187,7 @@ fun PostComposer(
                     .imePadding(),
                 verticalArrangement = Arrangement.Top
             ) {
-                if (replyRef != null && initialContent != null) {
+                if (role == ComposerRole.Reply && initialContent != null) {
                     ComposerPostFragment(
                         post = initialContent,
                         modifier = Modifier

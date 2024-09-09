@@ -181,7 +181,8 @@ data class ProfileTab(
     val id: AtIdentifier,
 ): TabScreen {
 
-    override val key: ScreenKey = "profileTab_${id}_${hashCode()}"
+    override val key: ScreenKey
+        get() = "profileTab_${id}_${uniqueScreenKey}"
 
     @kotlin.jvm.Transient @Transient override val navBar: @Composable (@Contextual Navigator) -> Unit = { n ->
         TabbedNavBar(options.index, n)

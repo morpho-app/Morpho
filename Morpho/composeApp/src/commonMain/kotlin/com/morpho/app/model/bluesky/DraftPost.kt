@@ -40,21 +40,10 @@ data class DraftPost(
     suspend fun createPost(api: Butterfly): Post {
         val text = makeBlueskyText(text)
         val blueskyText = resolveBlueskyText(text, api).getOrDefault(text)
-        val replyRef = if (reply != null) {
-            val root = if (reply.reply?.root != null) {
-                StrongRef(reply.reply.root.uri, reply.reply.root.cid)
-            } else if (reply.reply?.parent != null) {
-                StrongRef(reply.reply.parent.uri, reply.reply.parent.cid)
-            } else {
-                StrongRef(reply.uri, reply.cid)
-            }
+        val replyRef = if (reply != null && reply.reply?.replyRef != null) {
+            val root = reply.reply.replyRef.root
             val parent = StrongRef(reply.uri, reply.cid)
-            val grandParentAuthor = (if (reply.reply?.parent != null) {
-                reply.reply.grandparentAuthor
-            } else {
-                reply.author
-            })?.toProfileViewBasic()
-            PostReplyRef(root, parent, grandParentAuthor)
+            PostReplyRef(root, parent)
         } else null
         val quoteRef = quote?.let {
             StrongRef(it.uri, it.cid)

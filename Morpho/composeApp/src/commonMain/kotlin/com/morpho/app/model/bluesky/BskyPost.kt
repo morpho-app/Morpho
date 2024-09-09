@@ -12,14 +12,6 @@ import kotlinx.collections.immutable.persistentListOf
 import kotlinx.datetime.Clock
 import kotlinx.serialization.Serializable
 
-@Immutable
-@Serializable
-enum class PostType {
-    BlockedThread,
-    NotFoundThread,
-    VisibleThread,
-    BskyPost,
-}
 
 @Serializable
 @Immutable
@@ -117,17 +109,7 @@ fun PostView.toPost(): BskyPost {
 }
 
 fun ThreadViewPost.toPost() : BskyPost {
-    val replyRef = when (parent) {
-        is ThreadViewPostParentUnion.BlockedPost -> null
-        is ThreadViewPostParentUnion.NotFoundPost -> null
-        is ThreadViewPostParentUnion.ThreadViewPost -> {
-            val parentPost = (parent as ThreadViewPostParentUnion.ThreadViewPost).value.toPost()
-            val rootPost = findRootPost()?.toPost() ?: parentPost
-            BskyPostReply(root = rootPost, parent = parentPost, grandparentAuthor = parentPost.reply?.parent?.author)
-        }
-        null -> null
-    }
-    return post.toPost(reply = replyRef, reason = null)
+    return post.toPost()
 }
 
 fun ThreadViewPost.findRootPost(): ThreadViewPost? {
@@ -157,6 +139,7 @@ fun PostView.toPost(
         Post.serializer().deserialize(record)
     } catch (e: Exception) {
         Post(
+
             text = "Error deserializing post: $e\n" +
                     "Record: $record",
             facets = persistentListOf(),
@@ -165,6 +148,8 @@ fun PostView.toPost(
             langs = persistentListOf(),
         )
     }
+    // copy in the replyRef if it's not already there
+    val replyRef = reply?.copy(replyRef = postRecord.reply) ?: postRecord.reply?.toReply()
 
     return BskyPost(
         uri = uri,
@@ -185,7 +170,7 @@ fun PostView.toPost(
         likeUri = viewer?.like,
         labels = labels.mapImmutable { it.toLabel() },
         langs = postRecord.langs.mapImmutable { it },
-        reply = reply,
+        reply = replyRef,
         reason = reason,
     )
 }

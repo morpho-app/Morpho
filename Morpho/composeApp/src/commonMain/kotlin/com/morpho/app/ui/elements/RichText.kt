@@ -10,6 +10,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.PointerIcon
+import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.*
 import androidx.compose.ui.text.font.FontStyle
@@ -150,7 +152,7 @@ fun RichTextElement(
 
                     else -> {
                         Pair("", InlineTextContent(
-                            Placeholder(1.sp, 1.sp, PlaceholderVerticalAlign.TextCenter)
+                            Placeholder(0.sp, 0.sp, PlaceholderVerticalAlign.TextCenter)
                         ){})
                     }
                 }
@@ -161,8 +163,15 @@ fun RichTextElement(
     }
 
 
-    val pressIndicator = Modifier.pointerInput(onClick) {
-        detectTapGestures { pos ->
+    val pressIndicator = Modifier
+        .pointerHoverIcon(PointerIcon.Hand)
+        .pointerInput(onClick) {
+
+        detectTapGestures(
+            onLongPress ={
+
+            }
+        ) { pos ->
             layoutResult.value?.let { layoutResult ->
                 val offset = layoutResult.getOffsetForPosition(pos)
                 facets.forEach {
@@ -173,7 +182,7 @@ fun RichTextElement(
                         return@detectTapGestures onClick(it.facetType)
                     }
                 }
-                //onClick(listOf())
+                onClick(listOf())
             }
         }
     }

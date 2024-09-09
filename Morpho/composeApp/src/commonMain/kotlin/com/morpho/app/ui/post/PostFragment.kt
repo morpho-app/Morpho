@@ -16,6 +16,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.PointerIcon
+import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -141,12 +143,12 @@ fun PostFragment(
                 .fillMaxWidth(indentLevel(indent))
                 .align(Alignment.End)
                 .background(bgColor, shape)
-//                .clickable(
-//                    interactionSource = interactionSource,
-//                    indication = indication,
-//                    enabled = true,
-//                    onClick = { onItemClicked(post.uri) }
-//                )
+                .clickable(
+                    interactionSource = interactionSource,
+                    indication = indication,
+                    enabled = true,
+                    onClick = { onItemClicked(post.uri) }
+                )
 
         ) {
             ContentHider(
@@ -242,6 +244,7 @@ fun PostFragment(
                                     .wrapContentWidth(Alignment.Start)
                                     .weight(10.0F)
                                     .alignByBaseline()
+                                    .pointerHoverIcon(PointerIcon.Hand)
                                     .clickable(
                                         interactionSource = interactionSource,
                                         indication = indication,
