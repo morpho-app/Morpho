@@ -22,7 +22,7 @@ class BskyPostTest {
                             is ThreadPost.ViewablePost -> {
                                 assertEquals(
                                     (thread.parents.first() as ThreadPost.ViewablePost).post.uri,
-                                    p.post.reply?.root?.uri,
+                                    p.post.reply?.rootPost?.uri,
                                     "Root post uri should match first(highest) parent uri"
                                 )
 
@@ -50,7 +50,7 @@ class BskyPostTest {
                             is ThreadPost.ViewablePost -> {
                                 assertEquals(
                                     (thread.parents.first() as ThreadPost.ViewablePost).post.uri,
-                                    p.post.reply?.root?.uri,
+                                    p.post.reply?.rootPost?.uri,
                                     "Root post uri should match first(highest) parent uri"
                                 )
                             }

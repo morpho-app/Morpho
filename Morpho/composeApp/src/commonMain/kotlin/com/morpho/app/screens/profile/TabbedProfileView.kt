@@ -5,6 +5,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -172,6 +174,10 @@ fun TabScreen.TabbedProfileContent(
                 disposeNestedNavigators = false,
                 tabDisposable = { TabDisposable(navigator = it, tabs = tabs) }
             ) {
+                val listState = rememberLazyListState(
+                    initialFirstVisibleItemIndex =
+                    sm.profileUiState.tabStates[selectedTabIndex].value.feed.cursor.scroll
+                )
 
                 TabbedProfileScreenScaffold(
                     navBar = { navBar(navigator) },
@@ -181,12 +187,20 @@ fun TabScreen.TabbedProfileContent(
                             sm.profileState?.profile,
                             ownProfile, scrollBehavior, tabs.toImmutableList(),
                             onBackClicked = { navigator.pop() },
-                            onTabChanged = { selectedTabIndex = it },
+                            onTabChanged = { index ->
+                                selectedTabIndex = index
+                                sm.refreshTab(
+                                    index,
+                                    sm.profileUiState.tabStates[index].value.feed.cursor
+                                        .copy(scroll = listState.firstVisibleItemIndex)
+                                )
+                                           },
                             tabIndex = selectedTabIndex,
                         )
                     },
                     content = { insets, state ->
-                        CurrentProfileScreen(sm, insets, state, Modifier)
+
+                        CurrentProfileScreen(sm, insets, state, listState, Modifier)
                     },
                     state = sm.profileUiState.tabStates.getOrNull(selectedTabIndex),
                     scrollBehavior = scrollBehavior,
@@ -226,6 +240,9 @@ public fun CurrentProfileScreen(
     sm: TabbedProfileViewModel,
     paddingValues: PaddingValues,
     state: StateFlow<ContentCardState.ProfileTimeline<MorphoDataItem>>?,
+    listState: LazyListState = rememberLazyListState(
+        initialFirstVisibleItemIndex = state?.value?.feed?.cursor?.scroll ?: 0
+    ),
     modifier: Modifier
 ) {
     val navigator = LocalNavigator.currentOrThrow
@@ -236,6 +253,7 @@ public fun CurrentProfileScreen(
             sm = sm,
             paddingValues = paddingValues,
             state = state,
+            listState = listState,
             modifier = modifier
         )
     }
@@ -249,12 +267,13 @@ abstract class ProfileTabScreen: NavTab {
         sm: TabbedProfileViewModel,
         paddingValues: PaddingValues,
         state: StateFlow<ContentCardState.ProfileTimeline<MorphoDataItem>>?,
+        listState: LazyListState,
         modifier: Modifier
     )
 
     @OptIn(ExperimentalVoyagerApi::class)
     @Composable
-    final override fun Content() = Content(TabbedProfileViewModel(),PaddingValues(0.dp),null,Modifier)
+    final override fun Content() = Content(TabbedProfileViewModel(),PaddingValues(0.dp),null, rememberLazyListState(), Modifier)
 }
 
 @Serializable
@@ -270,11 +289,12 @@ data class ProfileSkylineTab(
         sm: TabbedProfileViewModel,
         paddingValues: PaddingValues,
         state: StateFlow<ContentCardState.ProfileTimeline<MorphoDataItem>>?,
+        listState: LazyListState,
         modifier: Modifier
     ) {
         TabbedSkylineFragment(sm, state, paddingValues, refresh = { cursor ->
             sm.refreshTab(index.toInt(), cursor)
-        }, isProfileFeed = true)
+        }, isProfileFeed = true, listState = listState)
     }
 
     override val key: ScreenKey

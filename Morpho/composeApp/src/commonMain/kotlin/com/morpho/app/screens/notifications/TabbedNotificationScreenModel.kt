@@ -31,7 +31,7 @@ class TabbedNotificationScreenModel: BaseScreenModel() {
     init {
         viewModelScope.launch {
             val f = notifService.notifications(cursorFlow).map { it.getOrNull() }
-            cursorFlow.emit(null)
+            cursorFlow.emit(AtCursor.EMPTY)
             f.collect {
                 if(it != null) {
                     _uiState.update {

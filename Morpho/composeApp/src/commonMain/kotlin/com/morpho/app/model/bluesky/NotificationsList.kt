@@ -19,7 +19,7 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class NotificationsList(
     private val notifications: List<BskyNotification> = persistentListOf(),
-    val cursor: AtCursor = null,
+    val cursor: AtCursor = AtCursor.EMPTY,
 ) {
     private var _notificationsList: MutableList<MutableNotificationsListItem> = mutableListOf()
     val notificationsList: List<NotificationsListItem>

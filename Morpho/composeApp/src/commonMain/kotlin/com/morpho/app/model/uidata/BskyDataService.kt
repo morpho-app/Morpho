@@ -13,9 +13,6 @@ import com.atproto.repo.GetRecordQuery
 import com.atproto.repo.StrongRef
 import com.morpho.app.di.UpdateTick
 import com.morpho.app.model.bluesky.*
-import com.morpho.app.model.bluesky.MorphoDataFeed.Companion.filterByContentLabel
-import com.morpho.app.model.bluesky.MorphoDataFeed.Companion.filterByPrefs
-import com.morpho.app.model.bluesky.MorphoDataFeed.Companion.filterbyLanguage
 import com.morpho.app.model.uistate.ContentCardState
 import com.morpho.app.model.uistate.ContentLoadingState
 import com.morpho.app.model.uistate.FeedType
@@ -76,7 +73,7 @@ suspend fun <T: MorphoDataItem> Flow<Result<MorphoData<T>>>.handleToState(
 suspend fun getPost(uri: AtUri, api: Butterfly = getKoin().get<Butterfly>()): Flow<BskyPost?> = flow {
     val query = GetPostsQuery(persistentListOf(uri))
     api.api.getPosts(query).onSuccess { response ->
-        emit(response.posts.first().toPost())
+        emit(response.posts.firstOrNull()?.toPost())
     }.onFailure {
         BskyDataService.log.e { "Failed to get post at $uri.\nError: $it" }
         emit(null)
@@ -130,12 +127,10 @@ class BskyDataService: KoinComponent {
     val api: Butterfly by inject()
 
     private val _dataFlows = mutableMapOf<AtUri, MutableStateFlow<MorphoData<MorphoDataItem>>>()
-
+    val useFeedTuners: (MorphoData<MorphoDataItem.FeedItem>) -> List<FeedTuner> = { feed ->
+        settings.currentUserPrefs.value?.let { FeedTuner.useFeedTuners(it, feed) } ?: listOf(FeedTuner())
+    }
     private val mutex = Mutex()
-    private var timelineTuners = persistentListOf<TunerFunction>(
-        { posts -> filterByContentLabel(posts, contentLabelService.labelsToHide.value) },
-        { posts -> filterbyLanguage(posts, languages.value) },
-    )
     private val contentLabelService by inject<ContentLabelService>()
     private val settings: SettingsService by inject<SettingsService>()
     private val languages: StateFlow<List<Language>> = settings.languages
@@ -153,30 +148,31 @@ class BskyDataService: KoinComponent {
 
     suspend fun refresh(
         uri: AtUri,
-        cursor: AtCursor = null,
+        cursor: AtCursor = AtCursor.EMPTY,
     ): Result<StateFlow<MorphoData<MorphoDataItem>>> {
         val flow = dataFlows[uri] ?: return Result.failure(Exception("No feed to refresh."))
         val data = flow.value
         when(data.feedType) {
             FeedType.HOME -> {
                 try {
-                    val query = json.decodeFromJsonElement<GetTimelineQuery>(data.query).copy(cursor = cursor)
+                    val query = json.decodeFromJsonElement<GetTimelineQuery>(data.query).copy(cursor = cursor.cursor)
                     api.api.getTimeline(query).onSuccess { response ->
-
-                        val newPosts = MorphoDataFeed
-                            .collectThreads(api, response.cursor, response.feed.toBskyPostList().tune(timelineTuners)).last()
-                        val feed = if (cursor != null && data.items.isNotEmpty()) {
-                            MorphoDataFeed.concat(data, newPosts)
-                        } else if (cursor == null && data.items.isNotEmpty()) {
-                            MorphoDataFeed.concat(newPosts, data)
-                        } else {
-                            newPosts
+                        if (response.cursor == cursor.cursor && cursor != AtCursor.EMPTY) {
+                            return@onSuccess
                         }
-                        val newData = feed.toMorphoData("Home")
-                            .copy(query = json.encodeToJsonElement(query))
-
+                        val new = MorphoData.concatFeed(
+                            query = json.encodeToJsonElement(query),
+                            responseCursor = response.cursor,
+                            oldCursor = cursor,
+                            feed = response.feed,
+                            data = data as MorphoData<MorphoDataItem.FeedItem>,
+                        ).collectThreads(api = api).single()
+                        var tunedFeed = new
+                        useFeedTuners(tunedFeed).forEach { tuner ->
+                            tunedFeed = tuner.tune(tunedFeed)
+                        }
                         mutex.withLock {
-                            _dataFlows[uri]?.update { newData }
+                            _dataFlows[uri]?.update { tunedFeed as MorphoData<MorphoDataItem> }
                         }
                         return Result.success(flow)
                     }
@@ -187,21 +183,24 @@ class BskyDataService: KoinComponent {
             }
             FeedType.PROFILE_POSTS -> {
                 try {
-                    val query = json.decodeFromJsonElement<GetAuthorFeedQuery>(data.query).copy(cursor = cursor)
+                    val query = json.decodeFromJsonElement<GetAuthorFeedQuery>(data.query).copy(cursor = cursor.cursor)
                     api.api.getAuthorFeed(query).onSuccess { response ->
-                        val newPosts = MorphoDataFeed
-                            .collectThreads(api, response.cursor, response.feed.toBskyPostList()).last()
-                        val feed = if (cursor != null && data.items.isNotEmpty()) {
-                            MorphoDataFeed.concat(data, newPosts)
-                        } else if (cursor == null && data.items.isNotEmpty()) {
-                            MorphoDataFeed.concat(newPosts, data)
-                        } else {
-                            newPosts
+                        if (response.cursor == cursor.cursor && cursor != AtCursor.EMPTY) {
+                            return@onSuccess
                         }
-                        val newData = feed.toMorphoData("Posts")
-                            .copy(query = json.encodeToJsonElement(query))
+                        var tunedFeed = MorphoData.concatFeed(
+                            query = json.encodeToJsonElement(query),
+                            responseCursor = response.cursor,
+                            oldCursor = cursor,
+                            feed = response.feed,
+                            data = data as MorphoData<MorphoDataItem.FeedItem>,
+                            title = "Posts",
+                        ).collectThreads(api = api).single()
+                        useFeedTuners(tunedFeed).forEach { tuner ->
+                            tunedFeed = tuner.tune(tunedFeed)
+                        }
                         mutex.withLock {
-                            _dataFlows[uri]?.update { newData }
+                            _dataFlows[uri]?.update { tunedFeed as MorphoData<MorphoDataItem> }
                         }
                         return Result.success(flow)
                     }
@@ -212,21 +211,24 @@ class BskyDataService: KoinComponent {
             }
             FeedType.PROFILE_REPLIES -> {
                 try {
-                    val query = Json.decodeFromJsonElement<GetAuthorFeedQuery>(data.query).copy(cursor = cursor)
+                    val query = Json.decodeFromJsonElement<GetAuthorFeedQuery>(data.query).copy(cursor = cursor.cursor)
                     api.api.getAuthorFeed(query).onSuccess { response ->
-                        val newPosts = MorphoDataFeed
-                            .collectThreads(api, response.cursor, response.feed.toBskyPostList()).last()
-                        val feed = if (cursor != null && data.items.isNotEmpty()) {
-                            MorphoDataFeed.concat(data, newPosts)
-                        } else if (cursor == null && data.items.isNotEmpty()) {
-                            MorphoDataFeed.concat(newPosts, data)
-                        } else {
-                            newPosts
+                        if (response.cursor == cursor.cursor && cursor != AtCursor.EMPTY) {
+                            return@onSuccess
                         }
-                        val newData = feed.toMorphoData("Replies")
-                            .copy(query = json.encodeToJsonElement(query))
+                        var tunedFeed = MorphoData.concatFeed(
+                            query = json.encodeToJsonElement(query),
+                            responseCursor = response.cursor,
+                            oldCursor = cursor,
+                            feed = response.feed,
+                            data = data as MorphoData<MorphoDataItem.FeedItem>,
+                            title = "Replies",
+                        ).collectThreads(api = api).single()
+                        useFeedTuners(tunedFeed).forEach { tuner ->
+                            tunedFeed = tuner.tune(tunedFeed)
+                        }
                         mutex.withLock {
-                            _dataFlows[uri]?.update { newData }
+                            _dataFlows[uri]?.update { tunedFeed as MorphoData<MorphoDataItem> }
                         }
                         return Result.success(flow)
                     }
@@ -237,21 +239,24 @@ class BskyDataService: KoinComponent {
             }
             FeedType.PROFILE_MEDIA -> {
                 try {
-                    val query = json.decodeFromJsonElement<GetAuthorFeedQuery>(data.query).copy(cursor = cursor)
+                    val query = json.decodeFromJsonElement<GetAuthorFeedQuery>(data.query).copy(cursor = cursor.cursor)
                     api.api.getAuthorFeed(query).onSuccess { response ->
-                        val newPosts = MorphoDataFeed
-                            .collectThreads(api, response.cursor, response.feed.toBskyPostList()).last()
-                        val feed = if (cursor != null && data.items.isNotEmpty()) {
-                            MorphoDataFeed.concat(data, newPosts)
-                        } else if (cursor == null && data.items.isNotEmpty()) {
-                            MorphoDataFeed.concat(newPosts, data)
-                        } else {
-                            newPosts
+                        if (response.cursor == cursor.cursor && cursor != AtCursor.EMPTY) {
+                            return@onSuccess
                         }
-                        val newData = feed.toMorphoData("Media")
-                            .copy(query = json.encodeToJsonElement(query))
+                        var tunedFeed = MorphoData.concatFeed(
+                            query = json.encodeToJsonElement(query),
+                            responseCursor = response.cursor,
+                            oldCursor = cursor,
+                            feed = response.feed,
+                            data = data as MorphoData<MorphoDataItem.FeedItem>,
+                            title = "Media",
+                        )
+                        useFeedTuners(tunedFeed).forEach { tuner ->
+                            tunedFeed = tuner.tune(tunedFeed)
+                        }
                         mutex.withLock {
-                            _dataFlows[uri]?.update { newData }
+                            _dataFlows[uri]?.update { tunedFeed as MorphoData<MorphoDataItem> }
                         }
                         return Result.success(flow)
                     }
@@ -262,21 +267,24 @@ class BskyDataService: KoinComponent {
             }
             FeedType.PROFILE_LIKES -> {
                 try {
-                    val query = json.decodeFromJsonElement<GetActorLikesQuery>(data.query).copy(cursor = cursor)
+                    val query = json.decodeFromJsonElement<GetActorLikesQuery>(data.query).copy(cursor = cursor.cursor)
                     api.api.getActorLikes(query).onSuccess { response ->
-                        val newPosts = MorphoDataFeed
-                            .collectThreads(api, response.cursor, response.feed.toBskyPostList()).last()
-                        val feed = if (cursor != null && data.items.isNotEmpty()) {
-                            MorphoDataFeed.concat(data, newPosts)
-                        } else if (cursor == null && data.items.isNotEmpty()) {
-                            MorphoDataFeed.concat(newPosts, data)
-                        } else {
-                            newPosts
+                        if (response.cursor == cursor.cursor && cursor != AtCursor.EMPTY) {
+                            return@onSuccess
                         }
-                        val newData = feed.toMorphoData("Likes")
-                            .copy(query = json.encodeToJsonElement(query))
+                        var tunedFeed = MorphoData.concatFeed(
+                            query = json.encodeToJsonElement(query),
+                            responseCursor = response.cursor,
+                            oldCursor = cursor,
+                            feed = response.feed,
+                            data = data as MorphoData<MorphoDataItem.FeedItem>,
+                            title = "Likes",
+                        )
+                        useFeedTuners(tunedFeed).forEach { tuner ->
+                            tunedFeed = tuner.tune(tunedFeed)
+                        }
                         mutex.withLock {
-                            _dataFlows[uri]?.update { newData }
+                            _dataFlows[uri]?.update { tunedFeed as MorphoData<MorphoDataItem> }
                         }
                         return Result.success(flow)
                     }
@@ -287,14 +295,17 @@ class BskyDataService: KoinComponent {
             }
             FeedType.PROFILE_USER_LISTS -> {
                 try {
-                    val query = json.decodeFromJsonElement<GetListsQuery>(data.query).copy(cursor = cursor)
+                    val query = json.decodeFromJsonElement<GetListsQuery>(data.query).copy(cursor = cursor.cursor)
                     api.api.getLists(query).onSuccess { response ->
-                        val newData = if (cursor != null && data.items.isNotEmpty()) {
+                        if (response.cursor == cursor.cursor && cursor != AtCursor.EMPTY) {
+                            return@onSuccess
+                        }
+                        val newData = if (cursor != AtCursor.EMPTY && data.items.isNotEmpty()) {
                             MorphoData.concat(data, response.lists.mapImmutable { MorphoDataItem.ListInfo(it.toList()) })
-                        } else if (cursor == null && data.items.isNotEmpty()) {
+                        } else if (cursor == AtCursor.EMPTY && data.items.isNotEmpty()) {
                             MorphoData.concat(response.lists.mapImmutable { MorphoDataItem.ListInfo(it.toList()) }, data)
                         } else {
-                            MorphoData("Lists", uri, response.cursor,
+                            MorphoData("Lists", uri, AtCursor(response.cursor, cursor.scroll),
                                        response.lists.mapImmutable { MorphoDataItem.ListInfo(it.toList()) })
                         }.copy(query = json.encodeToJsonElement(query))
                         mutex.withLock {
@@ -311,7 +322,8 @@ class BskyDataService: KoinComponent {
                 try {
                     val query = json.decodeFromJsonElement<GetServicesQuery>(data.query)
                     api.api.getServices(query).onSuccess { response ->
-                        val newData = if (cursor != null && data.items.isNotEmpty()) {
+
+                        val newData = if (cursor != AtCursor.EMPTY && data.items.isNotEmpty()) {
                             MorphoData.concat(data, response.views.mapImmutable {
                                 when(it) {
                                     is GetServicesResponseViewUnion.LabelerViewDetailed ->
@@ -320,7 +332,7 @@ class BskyDataService: KoinComponent {
                                         MorphoDataItem.LabelService(it.value.toLabelService())
                                 }
                             })
-                        } else if (cursor == null && data.items.isNotEmpty()) {
+                        } else if (cursor == AtCursor.EMPTY && data.items.isNotEmpty()) {
                             MorphoData.concat(response.views.mapImmutable {
                                 when(it) {
                                     is GetServicesResponseViewUnion.LabelerViewDetailed ->
@@ -330,7 +342,7 @@ class BskyDataService: KoinComponent {
                                 }
                             }, data)
                         } else {
-                            MorphoData("Services", uri, null,
+                            MorphoData("Services", uri, AtCursor.EMPTY,
                                        response.views.mapImmutable {
                                            when(it) {
                                                is GetServicesResponseViewUnion.LabelerViewDetailed ->
@@ -352,14 +364,17 @@ class BskyDataService: KoinComponent {
             }
             FeedType.PROFILE_FEEDS_LIST -> {
                 try {
-                    val query = json.decodeFromJsonElement<GetActorFeedsQuery>(data.query).copy(cursor = cursor)
+                    val query = json.decodeFromJsonElement<GetActorFeedsQuery>(data.query).copy(cursor = cursor.cursor)
                     api.api.getActorFeeds(query).onSuccess { response ->
-                        val newData = if (cursor != null && data.items.isNotEmpty()) {
+                        if (response.cursor == cursor.cursor && cursor != AtCursor.EMPTY) {
+                            return@onSuccess
+                        }
+                        val newData = if (cursor != AtCursor.EMPTY && data.items.isNotEmpty()) {
                             MorphoData.concat(data, response.feeds.mapImmutable { MorphoDataItem.FeedInfo(it.toFeedGenerator()) })
-                        } else if (cursor == null && data.items.isNotEmpty()) {
+                        } else if (cursor == AtCursor.EMPTY && data.items.isNotEmpty()) {
                             MorphoData.concat(response.feeds.mapImmutable { MorphoDataItem.FeedInfo(it.toFeedGenerator()) }, data)
                         } else {
-                            MorphoData("Feeds", uri, response.cursor,
+                            MorphoData("Feeds", uri, AtCursor(response.cursor, cursor.scroll),
                                        response.feeds.mapImmutable { MorphoDataItem.FeedInfo(it.toFeedGenerator()) })
                         }.copy(query = json.encodeToJsonElement(query))
                         mutex.withLock {
@@ -374,23 +389,50 @@ class BskyDataService: KoinComponent {
             }
             FeedType.OTHER -> {
                 try {
-                    val query = json.decodeFromJsonElement<GetFeedQuery>(data.query).copy(cursor = cursor)
+                    val query = json.decodeFromJsonElement<GetFeedQuery>(data.query).copy(cursor = cursor.cursor)
                     api.api.getFeed(query).onSuccess { response ->
-                        val tuners = persistentListOf<TunerFunction>()
-
-                        val newPosts = MorphoDataFeed
-                            .collectThreads(api, response.cursor, response.feed.toBskyPostList().tune(tuners)).last()
-                        val feed = if (cursor != null && data.items.isNotEmpty()) {
-                            MorphoDataFeed.concat(data, newPosts)
-                        } else if (cursor == null && data.items.isNotEmpty()) {
-                            MorphoDataFeed.concat(newPosts, data)
-                        } else {
-                            newPosts
+                        if (response.cursor == cursor.cursor && cursor != AtCursor.EMPTY) {
+                            return@onSuccess
                         }
-                        val newData = feed.toMorphoData(data.title)
-                            .copy(query = json.encodeToJsonElement(query))
+                        var tunedFeed = MorphoData.concatFeed(
+                            query = json.encodeToJsonElement(query),
+                            responseCursor = response.cursor,
+                            oldCursor = cursor,
+                            feed = response.feed,
+                            data = data as MorphoData<MorphoDataItem.FeedItem>,
+                        ).collectThreads(api = api).single()
+                        useFeedTuners(tunedFeed).forEach { tuner ->
+                            tunedFeed = tuner.tune(tunedFeed)
+                        }
                         mutex.withLock {
-                            _dataFlows[uri]?.update { newData }
+                            _dataFlows[uri]?.update { tunedFeed as MorphoData<MorphoDataItem> }
+                        }
+                        return Result.success(flow)
+                    }
+                } catch (e: Exception) {
+                    log.e { "Failed to refresh feed at $uri.\nError: $e" }
+                    return Result.failure(e)
+                }
+            }
+            FeedType.LIST_FOLLOWING -> {
+                try {
+                    val query = json.decodeFromJsonElement<GetListFeedQuery>(data.query).copy(cursor = cursor.cursor)
+                    api.api.getListFeed(query).onSuccess { response ->
+                        if (response.cursor == cursor.cursor && cursor != AtCursor.EMPTY) {
+                            return@onSuccess
+                        }
+                        var tunedFeed = MorphoData.concatFeed(
+                            query = json.encodeToJsonElement(query),
+                            responseCursor = response.cursor,
+                            oldCursor = cursor,
+                            feed = response.feed,
+                            data = data as MorphoData<MorphoDataItem.FeedItem>,
+                        ).collectThreads(api = api).single()
+                        useFeedTuners(tunedFeed).forEach { tuner ->
+                            tunedFeed = tuner.tune(tunedFeed)
+                        }
+                        mutex.withLock {
+                            _dataFlows[uri]?.update { tunedFeed as MorphoData<MorphoDataItem> }
                         }
                         return Result.success(flow)
                     }
@@ -414,31 +456,31 @@ class BskyDataService: KoinComponent {
                 //log.d { "Timeline flow tick." }
                 val (cur, pref) = flows
                 val prev = dataFlows[AtUri.HOME_URI]?.value
-                val query = GetTimelineQuery(limit = limit, cursor = cur)
+                val query = GetTimelineQuery(limit = limit, cursor = cur.cursor)
                 api.api.getTimeline(query).onSuccess { response ->
-                    val tuners = persistentListOf<TunerFunction>()
-                    tuners.add { posts -> filterByPrefs(posts, pref) }
-
-                    val newPosts = MorphoDataFeed
-                        .collectThreads(api, response.cursor, response.feed.toBskyPostList().tune(tuners)).last()
-                    val feed = if (cur != null && prev != null && prev.items.isNotEmpty()) {
-                        MorphoDataFeed.concat(prev, newPosts)
-                    } else if (cur == null && prev != null && prev.items.isNotEmpty()) {
-                        MorphoDataFeed.concat(newPosts, prev)
-                    } else {
-                        newPosts
+                    if (response.cursor == cur.cursor && cur != AtCursor.EMPTY) {
+                        return@collect
                     }
-                    val data = feed.toMorphoData("Home")
-                        .copy(query = json.encodeToJsonElement(query))
-
-                    emit(Result.success(data as MorphoData<MorphoDataItem.FeedItem>))
+                    var tunedFeed = MorphoData.concatFeed(
+                        query = json.encodeToJsonElement(query),
+                        responseCursor = response.cursor,
+                        oldCursor = cur,
+                        feed = response.feed,
+                        data = (prev ?: MorphoData.EMPTY()) as MorphoData<MorphoDataItem.FeedItem>,
+                        title = "Home",
+                        uri = AtUri.HOME_URI,
+                    ).collectThreads(api = api).single()
+                    useFeedTuners(tunedFeed).forEach { tuner ->
+                        tunedFeed = tuner.tune(tunedFeed)
+                    }
+                    emit(Result.success(tunedFeed))
                     log.d{
                         "Timeline " +
                         "Old cursor: $cur " +
                         "New cursor: ${response.cursor}"
                     }
                     log.v {
-                        "${data.items.map {
+                        "${tunedFeed.items.map {
                             when(it) {
                                 is MorphoDataItem.Post -> "${it.post.uri}\n"
                                 is MorphoDataItem.Thread -> "${it.thread.post.uri}\n"
@@ -446,8 +488,8 @@ class BskyDataService: KoinComponent {
                         }}"
                     }
                     mutex.withLock {
-                        if(prev == null) _dataFlows[AtUri.HOME_URI] = MutableStateFlow(data)
-                        else _dataFlows[AtUri.HOME_URI]?.update { data }
+                        if(prev == null) _dataFlows[AtUri.HOME_URI] = MutableStateFlow(tunedFeed as MorphoData<MorphoDataItem>)
+                        else _dataFlows[AtUri.HOME_URI]?.update { tunedFeed as MorphoData<MorphoDataItem> }
                     }
                 }.onFailure {
                     emit(Result.failure(it))
@@ -474,36 +516,31 @@ class BskyDataService: KoinComponent {
                 val cur = flows.first
                 val pref = flows.second
                 val prev = dataFlows[feedInfo.uri]?.value
-                val query = GetFeedQuery(feedInfo.uri, limit, cur)
+                val query = GetFeedQuery(feedInfo.uri, limit, cur.cursor)
                 api.api.getFeed(query).onSuccess { response ->
-                    val tuners = persistentListOf<TunerFunction>()
-                    if (pref != null) tuners.add { posts -> filterByPrefs(posts, pref) }
-
-                    val newPosts = MorphoDataFeed
-                        .collectThreads(
-                            api,
-                            response.cursor,
-                            response.feed.toBskyPostList().tune(tuners),
-                            feedInfo.uri
-                        ).last()
-                    val feed = if (cur != null && prev != null && prev.items.isNotEmpty()) {
-                        MorphoDataFeed.concat(prev, newPosts)
-                    } else if (cur == null && prev != null && prev.items.isNotEmpty()) {
-                        MorphoDataFeed.concat(newPosts, prev)
-                    } else {
-                        newPosts
+                    if (response.cursor == cur.cursor) {
+                        return@collect
                     }
-                    val data = feed.toMorphoData(feedInfo.name)
-                        .copy(query = json.encodeToJsonElement(query))
-
-                    emit(Result.success(data as MorphoData<MorphoDataItem.FeedItem>))
+                    var tunedFeed = MorphoData.concatFeed(
+                        query = json.encodeToJsonElement(query),
+                        responseCursor = response.cursor,
+                        oldCursor = cur,
+                        feed = response.feed,
+                        data = (prev ?: MorphoData.EMPTY()) as MorphoData<MorphoDataItem.FeedItem>,
+                        title = feedInfo.name,
+                        uri = feedInfo.uri,
+                    ).collectThreads(api = api).single()
+                    useFeedTuners(tunedFeed).forEach { tuner ->
+                        tunedFeed = tuner.tune(tunedFeed)
+                    }
+                    emit(Result.success(tunedFeed))
                     log.d{
                         "Feed: ${feedInfo.name} " +
                         "Old cursor: $cur " +
                         "New cursor: ${response.cursor}"
                     }
                     log.v {
-                        "${data.items.map {
+                        "${tunedFeed.items.map {
                             when(it) {
                                 is MorphoDataItem.Post -> it.post.uri
                                 is MorphoDataItem.Thread -> it.thread.post.uri
@@ -511,8 +548,8 @@ class BskyDataService: KoinComponent {
                         }}"
                     }
                     mutex.withLock {
-                        if(prev == null) _dataFlows[feedInfo.uri] = MutableStateFlow(data)
-                        else _dataFlows[feedInfo.uri]?.update { data }
+                        if(prev == null) _dataFlows[feedInfo.uri] = MutableStateFlow(tunedFeed as MorphoData<MorphoDataItem>)
+                        else _dataFlows[feedInfo.uri]?.update { tunedFeed as MorphoData<MorphoDataItem> }
                     }
                 }.onFailure {
                     emit(Result.failure(it))
@@ -531,14 +568,17 @@ class BskyDataService: KoinComponent {
         val uri = AtUri.followsUri(id)
         cursor.collect { cur ->
             val prev = dataFlows[uri]?.value
-            val query = GetFollowsQuery(id, limit, cur)
+            val query = GetFollowsQuery(id, limit, cur.cursor)
             api.api.getFollows(query).onSuccess { response ->
-                val data = if (cur != null && prev != null && prev.items.isNotEmpty()) {
+                if (response.cursor == cur.cursor) {
+                    return@collect
+                }
+                val data = if (cur != AtCursor.EMPTY && prev != null && prev.items.isNotEmpty()) {
                     MorphoData.concat(prev, response.follows.mapImmutable { MorphoDataItem.ProfileItem(it.toProfile()) })
-                } else if (cur == null && prev != null && prev.items.isNotEmpty()) {
+                } else if (cur == AtCursor.EMPTY && prev != null && prev.items.isNotEmpty()) {
                     MorphoData.concat(response.follows.mapImmutable { MorphoDataItem.ProfileItem(it.toProfile()) }, prev)
                 } else {
-                    MorphoData("Following", uri, response.cursor,
+                    MorphoData("Following", uri, AtCursor(response.cursor, cur.scroll),
                                response.follows.mapImmutable { MorphoDataItem.ProfileItem(it.toProfile()) })
                 }.copy(query = json.encodeToJsonElement(query))
                 emit(Result.success(data as MorphoData<MorphoDataItem.ProfileItem>))
@@ -563,14 +603,17 @@ class BskyDataService: KoinComponent {
         val uri = AtUri.followersUri(id)
         cursor.collect { cur ->
             val prev = dataFlows[uri]?.value
-            val query = GetFollowersQuery(id, limit, cur)
+            val query = GetFollowersQuery(id, limit, cur.cursor)
             api.api.getFollowers(query).onSuccess { response ->
-                val data = if (cur != null && prev != null && prev.items.isNotEmpty()) {
+                if (response.cursor == cur.cursor) {
+                    return@collect
+                }
+                val data = if (cur != AtCursor.EMPTY && prev != null && prev.items.isNotEmpty()) {
                     MorphoData.concat(prev, response.followers.mapImmutable { MorphoDataItem.ProfileItem(it.toProfile()) })
-                } else if (cur == null && prev != null && prev.items.isNotEmpty()) {
+                } else if (cur == AtCursor.EMPTY && prev != null && prev.items.isNotEmpty()) {
                     MorphoData.concat(response.followers.mapImmutable { MorphoDataItem.ProfileItem(it.toProfile()) }, prev)
                 } else {
-                    MorphoData("Following", uri, response.cursor,
+                    MorphoData("Following", uri, AtCursor(response.cursor, cur.scroll),
                                response.followers.mapImmutable { MorphoDataItem.ProfileItem(it.toProfile()) })
                 }.copy(query = json.encodeToJsonElement(query))
                 emit(Result.success(data as MorphoData<MorphoDataItem.ProfileItem>))
@@ -598,23 +641,26 @@ class BskyDataService: KoinComponent {
                 val uri = AtUri.profilePostsUri(id)
                 cursor.collect { cur ->
                         val prev = dataFlows[uri]?.value
-                        val query = GetAuthorFeedQuery(id, limit, cur, GetAuthorFeedFilter.POSTS_NO_REPLIES)
+                        val query = GetAuthorFeedQuery(id, limit, cur.cursor, GetAuthorFeedFilter.POSTS_NO_REPLIES)
                         api.api.getAuthorFeed(query).onSuccess { response ->
-                            val newPosts = MorphoDataFeed
-                                .collectThreads(api, response.cursor, response.feed.toBskyPostList()).last()
-                            val feed = if (cur != null && prev != null && prev.items.isNotEmpty()) {
-                                MorphoDataFeed.concat(prev, newPosts)
-                            } else if (cur == null && prev != null && prev.items.isNotEmpty()) {
-                                MorphoDataFeed.concat(newPosts, prev)
-                            } else {
-                                newPosts
+                            if (response.cursor == cur.cursor) {
+                                return@collect
                             }
-                            val data = feed.toMorphoData("Posts", uri)
-                                .copy(query = json.encodeToJsonElement(query))
-                            emit(Result.success(data as MorphoData<MorphoDataItem.FeedItem>))
+                            var tunedFeed = MorphoData.concatFeed(
+                                query = json.encodeToJsonElement(query),
+                                responseCursor = response.cursor,
+                                oldCursor = cur,
+                                feed = response.feed,
+                                data = (prev ?: MorphoData.EMPTY()) as MorphoData<MorphoDataItem.FeedItem>,
+                                title = "Posts",
+                            ).collectThreads(api = api).single()
+                            useFeedTuners(tunedFeed).forEach { tuner ->
+                                tunedFeed = tuner.tune(tunedFeed)
+                            }
+                            emit(Result.success(tunedFeed))
                             mutex.withLock {
-                                if(prev == null) _dataFlows[uri] = MutableStateFlow(data)
-                                else _dataFlows[uri]?.update { data }
+                                if(prev == null) _dataFlows[uri] = MutableStateFlow(tunedFeed as MorphoData<MorphoDataItem>)
+                                else _dataFlows[uri]?.update { tunedFeed as MorphoData<MorphoDataItem> }
                             }
                         }.onFailure {
                             emit(Result.failure(it))
@@ -627,23 +673,26 @@ class BskyDataService: KoinComponent {
                 val uri = AtUri.profileRepliesUri(id)
                 cursor.collect { cur ->
                     val prev = dataFlows[uri]?.value
-                    val query = GetAuthorFeedQuery(id, limit, cur, GetAuthorFeedFilter.POSTS_WITH_REPLIES)
+                    val query = GetAuthorFeedQuery(id, limit, cur.cursor, GetAuthorFeedFilter.POSTS_WITH_REPLIES)
                     api.api.getAuthorFeed(query).onSuccess { response ->
-                        val newPosts = MorphoDataFeed
-                            .collectThreads(api, response.cursor, response.feed.toBskyPostList()).last()
-                        val feed = if (cur != null && prev != null && prev.items.isNotEmpty()) {
-                            MorphoDataFeed.concat(prev, newPosts)
-                        } else if (cur == null && prev != null && prev.items.isNotEmpty()) {
-                            MorphoDataFeed.concat(newPosts, prev)
-                        } else {
-                            newPosts
+                        if (response.cursor == cur.cursor) {
+                            return@collect
                         }
-                        val data = feed.toMorphoData("Replies", uri)
-                            .copy(query = json.encodeToJsonElement(query))
-                        emit(Result.success(data as MorphoData<MorphoDataItem.FeedItem>))
+                        var tunedFeed = MorphoData.concatFeed(
+                            query = json.encodeToJsonElement(query),
+                            responseCursor = response.cursor,
+                            oldCursor = cur,
+                            feed = response.feed,
+                            data = (prev ?: MorphoData.EMPTY()) as MorphoData<MorphoDataItem.FeedItem>,
+                            title = "Replies",
+                        ).collectThreads(api = api).single()
+                        useFeedTuners(tunedFeed).forEach { tuner ->
+                            tunedFeed = tuner.tune(tunedFeed)
+                        }
+                        emit(Result.success(tunedFeed))
                         mutex.withLock {
-                            if(prev == null) _dataFlows[uri] = MutableStateFlow(data)
-                            else _dataFlows[uri]?.update { data }
+                            if(prev == null) _dataFlows[uri] = MutableStateFlow(tunedFeed as MorphoData<MorphoDataItem>)
+                            else _dataFlows[uri]?.update { tunedFeed as MorphoData<MorphoDataItem> }
                         }
                     }.onFailure {
                         emit(Result.failure(it))
@@ -656,23 +705,26 @@ class BskyDataService: KoinComponent {
                 val uri = AtUri.profileMediaUri(id)
                 cursor.collect { cur ->
                     val prev = dataFlows[uri]?.value
-                    val query = GetAuthorFeedQuery(id, limit, cur, GetAuthorFeedFilter.POSTS_WITH_MEDIA)
+                    val query = GetAuthorFeedQuery(id, limit, cur.cursor, GetAuthorFeedFilter.POSTS_WITH_MEDIA)
                     api.api.getAuthorFeed(query).onSuccess { response ->
-                        val newPosts = MorphoDataFeed
-                            .collectThreads(api, response.cursor, response.feed.toBskyPostList()).last()
-                        val feed = if (cur != null && prev != null && prev.items.isNotEmpty()) {
-                            MorphoDataFeed.concat(prev, newPosts)
-                        } else if (cur == null && prev != null && prev.items.isNotEmpty()) {
-                            MorphoDataFeed.concat(newPosts, prev)
-                        } else {
-                            newPosts
+                        if (response.cursor == cur.cursor) {
+                            return@collect
                         }
-                        val data = feed.toMorphoData("Media", uri)
-                            .copy(query = json.encodeToJsonElement(query))
-                        emit(Result.success(data as MorphoData<MorphoDataItem.FeedItem>))
+                        var tunedFeed = MorphoData.concatFeed(
+                            query = json.encodeToJsonElement(query),
+                            responseCursor = response.cursor,
+                            oldCursor = cur,
+                            feed = response.feed,
+                            data = (prev ?: MorphoData.EMPTY()) as MorphoData<MorphoDataItem.FeedItem>,
+                            title = "Media",
+                        )
+                        useFeedTuners(tunedFeed).forEach { tuner ->
+                            tunedFeed = tuner.tune(tunedFeed)
+                        }
+                        emit(Result.success(tunedFeed))
                         mutex.withLock {
-                            if(prev == null) _dataFlows[uri] = MutableStateFlow(data)
-                            else _dataFlows[uri]?.update { data }
+                            if(prev == null) _dataFlows[uri] = MutableStateFlow(tunedFeed as MorphoData<MorphoDataItem>)
+                            else _dataFlows[uri]?.update { tunedFeed as MorphoData<MorphoDataItem> }
                         }
                     }.onFailure {
                         emit(Result.failure(it))
@@ -728,14 +780,14 @@ class BskyDataService: KoinComponent {
         val uri = AtUri.profileUserListsUri(id)
         cursor.collect { cur ->
             val prev = dataFlows[uri]?.value
-            val query = GetListsQuery(id, limit, cur)
+            val query = GetListsQuery(id, limit, cur.cursor)
             api.api.getLists(query).onSuccess { response ->
-                val data = if (cur != null && prev != null && prev.items.isNotEmpty()) {
+                val data = if (cur != AtCursor.EMPTY && prev != null && prev.items.isNotEmpty()) {
                     MorphoData.concat(prev, response.lists.mapImmutable { MorphoDataItem.ListInfo(it.toList()) })
-                } else if (cur == null && prev != null && prev.items.isNotEmpty()) {
+                } else if (cur == AtCursor.EMPTY && prev != null && prev.items.isNotEmpty()) {
                     MorphoData.concat(response.lists.mapImmutable { MorphoDataItem.ListInfo(it.toList()) }, prev)
                 } else {
-                    MorphoData("Lists", uri, response.cursor,
+                    MorphoData("Lists", uri, AtCursor(response.cursor, cur.scroll),
                                response.lists.mapImmutable { MorphoDataItem.ListInfo(it.toList()) })
                 }.copy(query = json.encodeToJsonElement(query))
 
@@ -761,14 +813,14 @@ class BskyDataService: KoinComponent {
         val uri = AtUri.profileFeedsListUri(id)
         cursor.onEach { cur ->
             val prev = dataFlows[uri]?.value
-            val query = GetActorFeedsQuery(id, limit, cur)
+            val query = GetActorFeedsQuery(id, limit, cur.cursor)
             api.api.getActorFeeds(query).onSuccess { response ->
-                val data = if (cur != null && prev != null && prev.items.isNotEmpty()) {
+                val data = if (cur != AtCursor.EMPTY && prev != null && prev.items.isNotEmpty()) {
                     MorphoData.concat(prev, response.feeds.mapImmutable { MorphoDataItem.FeedInfo(it.toFeedGenerator()) })
-                } else if (cur == null && prev != null && prev.items.isNotEmpty()) {
+                } else if (cur == AtCursor.EMPTY && prev != null && prev.items.isNotEmpty()) {
                     MorphoData.concat(response.feeds.mapImmutable { MorphoDataItem.FeedInfo(it.toFeedGenerator()) }, prev)
                 } else {
-                    MorphoData("Feeds", uri, response.cursor,
+                    MorphoData("Feeds", uri, AtCursor(response.cursor, cur.scroll),
                                response.feeds.mapImmutable { MorphoDataItem.FeedInfo(it.toFeedGenerator()) })
                 }.copy(query = json.encodeToJsonElement(query))
 
@@ -794,7 +846,7 @@ class BskyDataService: KoinComponent {
         update.collect {
             val query = GetServicesQuery(listOf(did).toImmutableList(), true)
             api.api.getServices(query).onSuccess { response ->
-                val data = MorphoData("Labels", uri, null,
+                val data = MorphoData("Labels", uri, AtCursor.EMPTY,
                       response.views.mapImmutable {
                           when(it) {
                               is GetServicesResponseViewUnion.LabelerViewDetailed ->
@@ -827,23 +879,23 @@ class BskyDataService: KoinComponent {
         cursor.collect { cur ->
             val prev = dataFlows[uri]?.value
 
-            val query = GetActorLikesQuery(id, limit, cur)
+            val query = GetActorLikesQuery(id, limit, cur.cursor)
             api.api.getActorLikes(query) .onSuccess { response ->
-                val newPosts = MorphoDataFeed
-                    .collectThreads(api, response.cursor, response.feed.toBskyPostList()).last()
-                val feed = if (cur != null && prev != null && prev.items.isNotEmpty()) {
-                    MorphoDataFeed.concat(prev, newPosts)
-                } else if (cur == null && prev != null && prev.items.isNotEmpty()) {
-                    MorphoDataFeed.concat(newPosts, prev)
-                } else {
-                    newPosts
+                var tunedFeed = MorphoData.concatFeed(
+                    query = json.encodeToJsonElement(query),
+                    responseCursor = response.cursor,
+                    oldCursor = cur,
+                    feed = response.feed,
+                    data = (prev ?: MorphoData.EMPTY()) as MorphoData<MorphoDataItem.FeedItem>,
+                    title = "Likes",
+                )
+                useFeedTuners(tunedFeed).forEach { tuner ->
+                    tunedFeed = tuner.tune(tunedFeed)
                 }
-                val data = feed.toMorphoData("Likes").copy(query = json.encodeToJsonElement(query))
-
-                emit(Result.success(data as MorphoData<MorphoDataItem.FeedItem>))
+                emit(Result.success(tunedFeed))
                 mutex.withLock {
-                    if(prev == null) _dataFlows[uri] = MutableStateFlow(data)
-                    else _dataFlows[uri]?.update { data }
+                    if(prev == null) _dataFlows[uri] = MutableStateFlow(tunedFeed as MorphoData<MorphoDataItem>)
+                    else _dataFlows[uri]?.update { tunedFeed as MorphoData<MorphoDataItem> }
                 }
             }.onFailure {
                 emit(Result.failure(it))
@@ -865,7 +917,7 @@ class BskyDataService: KoinComponent {
             val query = GetProfilesQuery(profiles.toPersistentList())
             api.api.getProfiles(query).onSuccess { response ->
 
-                val data = MorphoData("Profiles", uri, null,
+                val data = MorphoData("Profiles", uri, AtCursor.EMPTY,
                                       response.profiles.mapImmutable { MorphoDataItem.ProfileItem(it.toProfile()) },
                                               json.encodeToJsonElement(query))
 
@@ -1030,6 +1082,21 @@ class BskyDataService: KoinComponent {
                                 }
                             }
                         }.onFailure { emit(null) }
+                }
+                FeedType.LIST_FOLLOWING -> {
+                    val query = GetListFeedQuery(feed.uri, 1)
+                    api.api.getListFeed(query).onSuccess { response ->
+                            if (response.feed.isNotEmpty()) {
+                                val cid = response.feed.first().post.cid
+                                if (!feed.contains(cid)) {
+                                    emit(MorphoDataItem.Post(response.feed.first().toPost()))
+                                } else {
+                                    emit(null)
+                                }
+                            }
+                        }.onFailure {
+                            emit(null)
+                        }
                 }
             }
         }

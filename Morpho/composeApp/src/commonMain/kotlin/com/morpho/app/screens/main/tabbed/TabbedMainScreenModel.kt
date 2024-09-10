@@ -151,7 +151,7 @@ class TabbedMainScreenModel : MainScreenModel() {
         uiState = uiState.copy(loadingState = UiLoadingState.Idle, tabs = tabFlow, tabStates = newFeeds.toImmutableList())
     }
 
-    fun refreshTab(index: Int, cursor: AtCursor = null) :Boolean {
+    fun refreshTab(index: Int, cursor: AtCursor = AtCursor.EMPTY) :Boolean {
         return if(index < 0 || index > tabs.lastIndex) false
         else updateFeed(tabs[index], cursor)
     }

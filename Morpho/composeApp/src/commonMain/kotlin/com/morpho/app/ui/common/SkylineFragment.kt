@@ -1,6 +1,7 @@
 package com.morpho.app.ui.common
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
@@ -13,7 +14,9 @@ import androidx.compose.material.pullrefresh.pullRefresh
 import androidx.compose.material.pullrefresh.rememberPullRefreshState
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
 import com.atproto.repo.StrongRef
@@ -22,6 +25,7 @@ import com.morpho.app.model.bluesky.MorphoDataItem
 import com.morpho.app.model.uidata.AtCursor
 import com.morpho.app.model.uidata.ContentHandling
 import com.morpho.app.model.uistate.ContentCardState
+import com.morpho.app.model.uistate.ContentLoadingState
 import com.morpho.app.ui.elements.MenuOptions
 import com.morpho.app.ui.elements.WrappedLazyColumn
 import com.morpho.app.ui.post.PostFragment
@@ -42,7 +46,7 @@ fun <T: MorphoDataItem> SkylineFragment (
     onItemClicked: OnPostClicked,
     onProfileClicked: (AtIdentifier) -> Unit = {},
     onPostButtonClicked: () -> Unit = {},
-    refresh: (AtCursor) -> Unit = {},
+    refresh: (AtCursor) -> Unit = { },
     onReplyClicked: (BskyPost) -> Unit = { },
     onRepostClicked: (BskyPost) -> Unit = { },
     onLikeClicked: (StrongRef) -> Unit = { },
@@ -51,6 +55,10 @@ fun <T: MorphoDataItem> SkylineFragment (
     getContentHandling: (BskyPost) -> List<ContentHandling> = { listOf() },
     contentPadding: PaddingValues = PaddingValues(0.dp),
     isProfileFeed: Boolean = false,
+    listState: LazyListState = rememberLazyListState(
+        initialFirstVisibleItemIndex = content.value.feed.cursor.scroll
+    ),
+    debuggable: Boolean = true,
 ) {
     val currentRefresh by rememberUpdatedState(refresh)
 
@@ -59,12 +67,11 @@ fun <T: MorphoDataItem> SkylineFragment (
     val loading = state.value.loadingState
     val cursor by rememberUpdatedState(state.value.feed.cursor)
 
+
     val scope = rememberCoroutineScope()
     var refreshing by remember { mutableStateOf(false) }
 
-    val listState: LazyListState = rememberLazyListState()
-
-    val data = remember(loading, state, cursor, refreshing) {
+    val data = rememberSaveable(loading, state, cursor, refreshing) {
         state.value.feed
     }
     val scrolledDownSome by remember {
@@ -73,28 +80,35 @@ fun <T: MorphoDataItem> SkylineFragment (
         }
     }
 
+    val scrollCursor by rememberSaveable { derivedStateOf {
+        listState.firstVisibleItemIndex
+    } }
+
     val scrolledDownLots by remember {
         derivedStateOf {
             listState.firstVisibleItemIndex > 20
         }
     }
 
+
     fun refreshPull() = scope.launch {
         refreshing = true
-        launch { currentRefresh(null) }
+        launch { currentRefresh(AtCursor.EMPTY) }
             .invokeOnCompletion { refreshing = false }
 
     }
 
-//    LaunchedEffect(
-//        data.items.isNotEmpty() &&
-//            loading == ContentLoadingState.Idle &&
-//            !listState.canScrollForward &&
-//            !refreshing &&
-//            scrolledDownSome
-//    ) {
-//        currentRefresh(cursor)
-//    }
+
+
+    LaunchedEffect(
+        data.items.isNotEmpty() &&
+            loading == ContentLoadingState.Idle &&
+            !listState.canScrollForward &&
+            !refreshing &&
+            scrolledDownSome
+    ) {
+        currentRefresh(cursor.copy(scroll = scrollCursor))
+    }
 
 
     val refreshState = rememberPullRefreshState(refreshing, ::refreshPull)
@@ -207,7 +221,7 @@ fun <T: MorphoDataItem> SkylineFragment (
                     is MorphoDataItem.Thread -> {
                         SkylineThreadFragment(
                             thread = item.thread,
-                            modifier = Modifier
+                            modifier = if(debuggable) Modifier.border(1.dp, Color.White) else Modifier
                                 .fillMaxWidth()
                                 .padding(vertical = 2.dp, horizontal = 4.dp),
                             onItemClicked = onItemClicked,
@@ -218,11 +232,12 @@ fun <T: MorphoDataItem> SkylineFragment (
                             onMenuClicked = onMenuClicked,
                             onLikeClicked = onLikeClicked,
                             getContentHandling = getContentHandling,
+                            debuggable = debuggable,
                         )
                     }
                     is MorphoDataItem.Post -> {
                         PostFragment(
-                            modifier = Modifier
+                            modifier = if(debuggable) Modifier.border(1.dp, Color.Blue) else Modifier
                                 .fillMaxWidth()
                                 .padding(vertical = 2.dp, horizontal = 4.dp),
                             post = item.post,
@@ -244,7 +259,7 @@ fun <T: MorphoDataItem> SkylineFragment (
             item {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
                     TextButton(
-                        onClick = { currentRefresh(cursor) },
+                        onClick = { currentRefresh(cursor.copy(scroll = data.items.size - 1)) },
                         modifier = Modifier.padding(6.dp)
                     ) {
                         Text("Load more...")

@@ -111,13 +111,13 @@ class BskyNotificationService: KoinComponent {
         dispatcher: CoroutineDispatcher = Dispatchers.IO,
     ): Flow<Result<NotificationsList>> = flow {
         cursor.debounce(300).collect { cursor ->
-            val query = ListNotificationsQuery(limit, cursor)
+            val query = ListNotificationsQuery(limit, cursor.cursor)
             val result = api.api.listNotifications(query).map { response ->
                 if(notifications.value.notificationsList.isNotEmpty()) {
-                    if (cursor == null) {
+                    if (cursor == AtCursor.EMPTY) {
                         NotificationsList(
                             response.notifications.mapImmutable { it.toBskyNotification() },
-                            response.cursor
+                            AtCursor(response.cursor, cursor.scroll)
                         ).concat(notifications.value)
                     } else {
                         notifications.value.concat(response.notifications)
@@ -125,7 +125,7 @@ class BskyNotificationService: KoinComponent {
                 } else {
                     NotificationsList(
                         response.notifications.mapImmutable { it.toBskyNotification() },
-                        response.cursor
+                        AtCursor(response.cursor, cursor.scroll)
                     )
                 }
             }

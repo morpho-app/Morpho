@@ -26,6 +26,7 @@ import cafe.adriel.voyager.navigator.currentOrThrow
 import com.morpho.app.model.bluesky.BskyPost
 import com.morpho.app.model.bluesky.DraftPost
 import com.morpho.app.model.bluesky.NotificationsListItem
+import com.morpho.app.model.uidata.AtCursor
 import com.morpho.app.model.uidata.getPost
 import com.morpho.app.screens.base.tabbed.ProfileTab
 import com.morpho.app.screens.base.tabbed.TabScreen
@@ -86,7 +87,7 @@ fun TabScreen.NotificationViewContent(
                 refreshing,
                 {
                     sm.notifService.updateNotificationsSeen()
-                    sm.refreshNotifications(null)
+                    sm.refreshNotifications(AtCursor.EMPTY)
                 }
             )
             val notifications by sm.uiState.value.notifications.collectAsState(persistentListOf())

@@ -73,7 +73,7 @@ data class BskyPost (
             is Cid -> other == cid
             is AtUri -> other == uri
             is BskyPost -> other.cid == cid
-            else -> reply?.parent?.contains(other) == true
+            else -> reply?.parentPost?.contains(other) == true
         }
     }
 
@@ -149,7 +149,11 @@ fun PostView.toPost(
         )
     }
     // copy in the replyRef if it's not already there
-    val replyRef = reply?.copy(replyRef = postRecord.reply) ?: postRecord.reply?.toReply()
+    val replyRef = reply?.copy(
+        replyRef = postRecord.reply,
+        grandParentAuthor = reply.grandParentAuthor ?:
+            postRecord.reply?.grandParentAuthor?.toProfile()
+    ) ?: postRecord.reply?.toReply()
 
     return BskyPost(
         uri = uri,

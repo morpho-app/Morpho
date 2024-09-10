@@ -35,7 +35,8 @@ inline fun ThreadItem(
         is ThreadPost.ViewablePost -> {
             if (role == PostFragmentRole.PrimaryThreadRoot) {
                 FullPostFragment(
-                    post = item.post.copy(reason = reason),
+                    post = item.post.copy(reason = reason, reply = item.post.reply?.copy(parentPost = null)),
+                    modifier = modifier,
                     onItemClicked = {onItemClicked(it) },
                     onProfileClicked = { onProfileClicked(it) },
                     onUnClicked =  { type,uri-> onUnClicked(type,uri) },
@@ -47,8 +48,9 @@ inline fun ThreadItem(
                 )
             } else {
                 PostFragment(
-                    post = item.post.copy(reason = reason),
+                    post = item.post.copy(reason = reason, reply = item.post.reply?.copy(parentPost = null)),
                     role = role,
+                    modifier = modifier,
                     indentLevel = indentLevel,
                     elevate = elevate,
                     onItemClicked = {onItemClicked(it) },
@@ -64,6 +66,7 @@ inline fun ThreadItem(
         }
         is ThreadPost.BlockedPost -> {
             BlockedPostFragment(
+                modifier = modifier,
                 post = item.uri,
                 role = role,
                 indentLevel = indentLevel,
@@ -71,6 +74,7 @@ inline fun ThreadItem(
         }
         is ThreadPost.NotFoundPost -> {
             NotFoundPostFragment(
+                modifier = modifier,
                 post = item.uri,
                 role = role,
                 indentLevel = indentLevel,

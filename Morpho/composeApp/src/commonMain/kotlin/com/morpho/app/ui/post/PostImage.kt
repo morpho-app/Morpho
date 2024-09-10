@@ -100,11 +100,11 @@ fun PostImageThumb(
             if (ratio > 1) {
                 height /= ratio
                 height = height.roundToInt().toFloat()
-                width = (height / ratio).roundToInt().toFloat()
+                width = width.roundToInt().toFloat()
             } else {
                 width /= ratio
                 width = width.roundToInt().toFloat()
-                height = (width / ratio).roundToInt().toFloat()
+                height = height.roundToInt().toFloat()
             }
             AsyncImage(
                 model = ImageRequest.Builder(LocalPlatformContext.current)

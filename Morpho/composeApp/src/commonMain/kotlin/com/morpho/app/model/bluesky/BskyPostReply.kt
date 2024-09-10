@@ -2,35 +2,34 @@ package com.morpho.app.model.bluesky
 
 import androidx.compose.runtime.Immutable
 import app.bsky.actor.ProfileViewBasic
-import app.bsky.feed.PostReplyRef
-import app.bsky.feed.ReplyRef
-import app.bsky.feed.ReplyRefParentUnion
-import app.bsky.feed.ReplyRefRootUnion
+import app.bsky.feed.*
+import com.morpho.butterfly.Butterfly
+import kotlinx.collections.immutable.persistentListOf
 import kotlinx.serialization.Serializable
 
 @Immutable
 @Serializable
 data class BskyPostReply(
-    val root: BskyPost? = null,
-    val parent: BskyPost? = null,
+    val rootPost: BskyPost? = null,
+    val parentPost: BskyPost? = null,
     val grandParentAuthor: Profile? = null,
     val replyRef: PostReplyRef? = null
 )
 
 fun ReplyRef.toReply(): BskyPostReply {
     return BskyPostReply(
-        root = when (val root = root) {
+        rootPost = when (val root = root) {
             is ReplyRefRootUnion.BlockedPost -> null
             is ReplyRefRootUnion.NotFoundPost -> null
             is ReplyRefRootUnion.PostView -> root.value.toPost()
         },
-        parent = when (val parent = parent) {
+        parentPost = when (val parent = parent) {
             is ReplyRefParentUnion.BlockedPost -> null
             is ReplyRefParentUnion.NotFoundPost -> null
             is ReplyRefParentUnion.PostView -> parent.value.toPost()
         },
-        grandParentAuthor = when (val grandparentAuthor = grandparentAuthor) {
-            is ProfileViewBasic -> grandparentAuthor.toProfile()
+        grandParentAuthor = when (val grandParentAuthor = this.grandparentAuthor) {
+            is ProfileViewBasic -> grandParentAuthor.toProfile()
             else -> null
         }
     )
@@ -40,5 +39,18 @@ fun PostReplyRef.toReply(): BskyPostReply {
     return BskyPostReply(
         replyRef = this,
         grandParentAuthor = this.grandParentAuthor?.toProfile()
+    )
+}
+
+suspend fun PostReplyRef.hydratedReply(api: Butterfly): BskyPostReply {
+    val parents = api.api.getPosts(GetPostsQuery(persistentListOf(this.parent.uri, this.root.uri)))
+        .getOrNull()?.posts?.map { it.toPost() } ?: persistentListOf()
+    val grandparent = if (parents.first().reply?.replyRef?.parent?.uri != null) {
+        api.api.getPosts(GetPostsQuery(persistentListOf(parents.first().reply?.replyRef?.parent?.uri!!))).getOrNull()?.posts?.firstOrNull()
+    } else null
+    return BskyPostReply(
+        rootPost = parents.firstOrNull { it.cid == this.root.cid },
+        parentPost = parents.firstOrNull { it.cid == this.parent.cid },
+        grandParentAuthor = this.grandParentAuthor?.toProfile() ?: grandparent?.author?.toProfile(),
     )
 }

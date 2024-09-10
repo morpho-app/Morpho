@@ -215,16 +215,32 @@ open class MainScreenModel: BaseScreenModel() {
         }
     }
 
-    fun updateFeed(uri: AtUri, newCursor: AtCursor = null): Boolean {
+    fun updateFeed(uri: AtUri, newCursor: AtCursor = AtCursor.EMPTY): Boolean {
         val cursor = _cursors[uri] ?: return false
+        if(newCursor.cursor == null && newCursor.scroll > 0) {
+            val state = _feedStates.firstOrNull { it.value.uri == uri }
+            val index = _feedStates.indexOfFirst { it.value.uri == uri }
+            if(state != null) {
+                val newState = state.value.copy(feed = state.value.feed.copy(cursor = newCursor))
+                _feedStates[index] = MutableStateFlow(newState).asStateFlow()
+                return true
+            }
+            val profileFeedState = _profileFeeds.firstOrNull { it.value.uri == uri }
+            val profileFeedIndex = _profileFeeds.indexOfFirst { it.value.uri == uri }
+            if(profileFeedState != null) {
+                val newState = profileFeedState.value.copy(feed = profileFeedState.value.feed.copy(cursor = newCursor))
+                _profileFeeds[profileFeedIndex] = MutableStateFlow(newState).asStateFlow()
+                return true
+            }
+        }
         return cursor.tryEmit(newCursor)
     }
 
-    fun updateFeed(feed: FeedGenerator, newCursor: AtCursor = null): Boolean {
+    fun updateFeed(feed: FeedGenerator, newCursor: AtCursor = AtCursor.EMPTY): Boolean {
         return updateFeed(feed.uri, newCursor)
     }
 
-    fun updateFeed(entry: ContentCardMapEntry, newCursor: AtCursor = null): Boolean {
+    fun updateFeed(entry: ContentCardMapEntry, newCursor: AtCursor = AtCursor.EMPTY): Boolean {
         return updateFeed(entry.uri, newCursor)
     }
 
@@ -305,13 +321,13 @@ open class MainScreenModel: BaseScreenModel() {
         // Delete the feed if it's already there, initializing from scratch
         if(force && feedService != null) dataService.removeFeed(feed.uri)
         _cursors[feed.uri] = feed.cursorFlow
-        if(start) feed.cursorFlow.emit(null)
+        if(start) feed.cursorFlow.emit(AtCursor.EMPTY)
 
         val feedState = _feedStates
             .firstOrNull { it.value.uri == feed.uri }
         val newFeed = dataService
             .feed(info, feed.cursorFlow, limit)
-            .handleToState(MorphoData(info.name, feed.uri, feed.cursorFlow.replayCache.lastOrNull()))
+            .handleToState(MorphoData(info.name, feed.uri, feed.cursorFlow.replayCache.lastOrNull() ?: AtCursor.EMPTY))
 
         if (feedState == null) {
             _feedStates.add(newFeed)
@@ -336,13 +352,13 @@ open class MainScreenModel: BaseScreenModel() {
         // Delete the feed if it's already there, initializing from scratch
         if(force && feedService != null) dataService.removeFeed(feed.uri)
         _cursors[feed.uri] = cursor
-        if(start) cursor.emit(null)
+        if(start) cursor.emit(AtCursor.EMPTY)
 
         val feedState = _feedStates
             .firstOrNull { it.value.uri == feed.uri }
         val newFeed = dataService
             .feed(info, cursor, limit)
-            .handleToState(MorphoData(feed.displayName, feed.uri, cursor.replayCache.lastOrNull()))
+            .handleToState(MorphoData(feed.displayName, feed.uri, cursor.replayCache.lastOrNull() ?: AtCursor.EMPTY))
 
         if (feedState == null) {
             _feedStates.add(newFeed)
@@ -375,13 +391,13 @@ open class MainScreenModel: BaseScreenModel() {
         // Delete the feed if it's already there, initializing from scratch
         if(force && feedService != null) dataService.removeFeed(timeline.uri)
         _cursors[timeline.uri] = timeline.cursorFlow
-        timeline.cursorFlow.emit(null)
+        timeline.cursorFlow.emit(AtCursor.EMPTY)
         val feedState = _feedStates
             .firstOrNull { it.value.uri == timeline.uri }
         log.d { "Timeline state: $feedState"}
         val newFeed = dataService
             .timeline(timeline.cursorFlow, 100, prefs)
-            .handleToState(MorphoData(cursor = timeline.cursorFlow.replayCache.lastOrNull()))
+            .handleToState(MorphoData(cursor = timeline.cursorFlow.replayCache.lastOrNull() ?: AtCursor.EMPTY))
 
         if (feedState == null) {
             _feedStates.add(newFeed)
@@ -406,12 +422,12 @@ open class MainScreenModel: BaseScreenModel() {
         // Delete the feed if it's already there, initializing from scratch
         if(force && feedService != null) dataService.removeFeed(uri)
         _cursors[uri] = cursor
-        cursor.emit(null)
+        cursor.emit(AtCursor.EMPTY)
         val feedState = _feedStates
             .firstOrNull { it.value.uri == uri }
         val newFeed = dataService
             .timeline(cursor, 100, prefs)
-            .handleToState(MorphoData(cursor = cursor.replayCache.lastOrNull()))
+            .handleToState(MorphoData(cursor = cursor.replayCache.lastOrNull() ?: AtCursor.EMPTY))
 
         if (feedState == null) {
             _feedStates.add(newFeed)
@@ -447,7 +463,7 @@ open class MainScreenModel: BaseScreenModel() {
         if (profile == null) { emit(null); return@flow }
         val newFeed = dataService
             .profileTabContent(id, feed.feedType, feed.cursorFlow, limit)
-            .handleToState(profile, MorphoData(feed.title, feed.uri, feed.cursorFlow.replayCache.lastOrNull()))
+            .handleToState(profile, MorphoData(feed.title, feed.uri, feed.cursorFlow.replayCache.lastOrNull() ?: AtCursor.EMPTY))
         if (feedState == null) {
             _profileFeeds.add(newFeed)
             emit(_profileFeeds.last().value)
@@ -456,7 +472,7 @@ open class MainScreenModel: BaseScreenModel() {
             _profileFeeds[i] = newFeed
             emit(_profileFeeds[i].value)
         }
-        feed.cursorFlow.emit(null)
+        feed.cursorFlow.emit(AtCursor.EMPTY)
     }
 
     suspend fun initProfileContent(
@@ -478,37 +494,43 @@ open class MainScreenModel: BaseScreenModel() {
             _cursors[AtUri.profilePostsUri(p.did)] = postsCursor
             val posts = dataService
                 .authorFeed(p.did, FeedType.PROFILE_POSTS, postsCursor.asSharedFlow(), 50)
-                .handleToState(p, MorphoData("Posts", AtUri.profilePostsUri(p.did), postsCursor.replayCache.lastOrNull()))
+                .handleToState(p, MorphoData("Posts", AtUri.profilePostsUri(p.did),
+                                             postsCursor.replayCache.lastOrNull() ?: AtCursor.EMPTY))
 
             val repliesCursor: MutableSharedFlow<AtCursor> = initAtCursor()
             _cursors[AtUri.profileRepliesUri(p.did)] = repliesCursor
             val replies = dataService
                 .authorFeed(p.did, FeedType.PROFILE_REPLIES, repliesCursor.asSharedFlow(), 50)
-                .handleToState(p, MorphoData("Replies", AtUri.profileRepliesUri(p.did), repliesCursor.replayCache.lastOrNull()))
+                .handleToState(p, MorphoData("Replies", AtUri.profileRepliesUri(p.did),
+                                             repliesCursor.replayCache.lastOrNull() ?: AtCursor.EMPTY))
 
             val mediaCursor: MutableSharedFlow<AtCursor> = initAtCursor()
             _cursors[AtUri.profileMediaUri(p.did)] = mediaCursor
             val media = dataService
                 .authorFeed(p.did, FeedType.PROFILE_MEDIA, mediaCursor.asSharedFlow(), 50)
-                .handleToState(p, MorphoData("Media", AtUri.profileMediaUri(p.did), mediaCursor.replayCache.lastOrNull()))
+                .handleToState(p, MorphoData("Media", AtUri.profileMediaUri(p.did),
+                                             mediaCursor.replayCache.lastOrNull() ?: AtCursor.EMPTY))
 
             val likesCursor: MutableSharedFlow<AtCursor> = initAtCursor()
             _cursors[AtUri.profileLikesUri(p.did)] = likesCursor
             val likes = dataService
                 .profileLikes(p.did, likesCursor.asSharedFlow(), 50)
-                .handleToState(p, MorphoData("Likes", AtUri.profileLikesUri(p.did), likesCursor.replayCache.lastOrNull()))
+                .handleToState(p, MorphoData("Likes", AtUri.profileLikesUri(p.did),
+                                             likesCursor.replayCache.lastOrNull() ?: AtCursor.EMPTY))
 
             val listsCursor: MutableSharedFlow<AtCursor> = initAtCursor()
             _cursors[AtUri.profileUserListsUri(p.did)] = listsCursor
             val lists = dataService
                 .profileLists(p.did, listsCursor.asSharedFlow(), 50)
-                .handleToState(p, MorphoData("Lists", AtUri.profileUserListsUri(p.did), listsCursor.replayCache.lastOrNull()))
+                .handleToState(p, MorphoData("Lists", AtUri.profileUserListsUri(p.did),
+                                             listsCursor.replayCache.lastOrNull() ?: AtCursor.EMPTY))
 
             val feedsCursor: MutableSharedFlow<AtCursor> = initAtCursor()
             _cursors[AtUri.profileFeedsListUri(p.did)] = feedsCursor
             val feeds = dataService
                 .profileFeedsList(p.did, feedsCursor.asSharedFlow(), 50)
-                .handleToState(p, MorphoData("Feeds", AtUri.profileFeedsListUri(p.did), feedsCursor.replayCache.lastOrNull()))
+                .handleToState(p, MorphoData("Feeds", AtUri.profileFeedsListUri(p.did),
+                                             feedsCursor.replayCache.lastOrNull() ?: AtCursor.EMPTY))
 
             if (p is BskyLabelService) {
                 val servicesCursor: MutableSharedFlow<AtCursor> = initAtCursor()
@@ -516,8 +538,9 @@ open class MainScreenModel: BaseScreenModel() {
                 val services = dataService
                     .profileServiceView(p.did, servicesCursor.map { Unit }
                         .shareIn(viewModelScope, SharingStarted.Lazily)
-                    ).handleToState(p, MorphoData("Labels", AtUri.profileModServiceUri(p.did), servicesCursor.replayCache.lastOrNull()))
-                servicesCursor.emit(null)
+                    ).handleToState(p, MorphoData("Labels", AtUri.profileModServiceUri(p.did),
+                                                  servicesCursor.replayCache.lastOrNull() ?: AtCursor.EMPTY))
+                servicesCursor.emit(AtCursor.EMPTY)
                 ContentCardState.FullProfile(
                     p,
                     posts.stateIn(viewModelScope),
@@ -530,7 +553,7 @@ open class MainScreenModel: BaseScreenModel() {
                     ContentLoadingState.Idle
                 )
             } else {
-                postsCursor.emit(null)
+                postsCursor.emit(AtCursor.EMPTY)
                 ContentCardState.FullProfile(
                     p,
                     posts.stateIn(viewModelScope),

@@ -74,7 +74,7 @@ fun PostFragment(
         PostFragmentRole.ThreadEnd -> Modifier.padding(start = 2.dp, top = 0.dp, end = 2.dp, bottom = 0.dp)
     }}
     val uriHandler = LocalUriHandler.current
-    WrappedColumn(modifier = padding.fillMaxWidth()) {
+    WrappedColumn(modifier = modifier.then(padding.fillMaxWidth())) {
         val delta = remember { getFormattedDateTimeSince(post.createdAt) }
         val indent = remember { when(role) {
             PostFragmentRole.Solo -> indentLevel.toFloat()
@@ -155,7 +155,6 @@ fun PostFragment(
                 reasons = contentHandling,
                 scope = LabelScope.Content,
             ) {
-
                 Row(
                     modifier = Modifier.padding(bottom = 2.dp).padding(start = 0.dp, end = 6.dp)
                         .fillMaxWidth(indentLevel(indent))
@@ -269,8 +268,8 @@ fun PostFragment(
                             )
                         }
 
-                        if (post.reply?.parent != null) {
-                            ReplyIndicator(post.reply.parent)
+                        if (post.reply?.parentPost != null) {
+                            ReplyIndicator(post.reply.parentPost)
                         }
 
                         if (post.facets.fastAny {
@@ -329,11 +328,8 @@ fun PostFragment(
                 }
 
             }
-
-
         }
     }
-
 }
 
 @OptIn(ExperimentalResourceApi::class)

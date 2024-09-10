@@ -1,9 +1,6 @@
 package com.morpho.app.ui.elements
 
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.selection.DisableSelection
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Info
@@ -36,43 +33,45 @@ public fun ContentHider(
         )
     }
     val reason = toHide.firstOrNull()
-    if (toHide.isNotEmpty()) {
-        TextButton(
-            onClick = { hideContent = !hideContent },
-            modifier = Modifier.fillMaxWidth(),
-            shape = ButtonDefaults.textShape,
-            colors = ButtonDefaults.elevatedButtonColors(),
-            elevation = ButtonDefaults.filledTonalButtonElevation()
-        ) {
-            Icon(
-                imageVector = reason?.icon ?: Icons.Default.Info,
-                contentDescription = reason?.source?.description
-            )
-            DisableSelection {
-                Text(
-                    text = reason?.source?.name ?: "",
-                    modifier = Modifier.padding(horizontal = 4.dp)
+    Column {
+        if (toHide.isNotEmpty()) {
+            TextButton(
+                onClick = { hideContent = !hideContent },
+                modifier = Modifier.fillMaxWidth(),
+                shape = ButtonDefaults.textShape,
+                colors = ButtonDefaults.elevatedButtonColors(),
+                elevation = ButtonDefaults.filledTonalButtonElevation()
+            ) {
+                Icon(
+                    imageVector = reason?.icon ?: Icons.Default.Info,
+                    contentDescription = reason?.source?.description
                 )
-            }
+                DisableSelection {
+                    Text(
+                        text = reason?.source?.name ?: "",
+                        modifier = Modifier.padding(horizontal = 4.dp)
+                    )
+                }
 
-            Spacer(
-                modifier = Modifier
-                    .width(1.dp)
-                    .weight(0.3f)
-            )
-            DisableSelection {
-                Text(
-                    text = if (hideContent) {
-                        "Show"
-                    } else {
-                        "Hide"
-                    }
+                Spacer(
+                    modifier = Modifier
+                        .width(1.dp)
+                        .weight(0.3f)
                 )
-            }
+                DisableSelection {
+                    Text(
+                        text = if (hideContent) {
+                            "Show"
+                        } else {
+                            "Hide"
+                        }
+                    )
+                }
 
+            }
         }
-    }
-    if (!hideContent) {
-        content()
+        if (!hideContent) {
+            content()
+        }
     }
 }

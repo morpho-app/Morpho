@@ -1,6 +1,8 @@
 package com.morpho.app.ui.common
 
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.*
@@ -35,8 +37,11 @@ fun <T: MainScreenModel, I: MorphoDataItem, S: ContentCardState<I>> TabbedSkylin
     sm: T,
     state: StateFlow<S>?,
     paddingValues: PaddingValues = PaddingValues(0.dp),
-    refresh: (AtCursor) -> Unit = {  },
-    isProfileFeed: Boolean = false
+    refresh: (AtCursor) -> Unit = {},
+    isProfileFeed: Boolean = false,
+    listState: LazyListState = rememberLazyListState(
+        initialFirstVisibleItemIndex = state?.value?.feed?.cursor?.scroll ?: 0
+    ),
 ) {
     val navigator = if (LocalNavigator.current?.parent?.instanceOf(TabNavigator::class) == true) {
         LocalNavigator.currentOrThrow
@@ -93,6 +98,7 @@ fun <T: MainScreenModel, I: MorphoDataItem, S: ContentCardState<I>> TabbedSkylin
             getContentHandling = { post -> sm.labelService.getContentHandlingForPost(post)},
             contentPadding = paddingValues,
             isProfileFeed = isProfileFeed,
+            listState = listState,
         )
         if(repostClicked) {
             RepostQueryDialog(

@@ -20,7 +20,7 @@ import kotlin.time.Duration
 
 
 
-typealias TunerFunction = (List<BskyPost>) -> List<BskyPost>
+typealias TunerFunction = (List<MorphoDataItem.FeedItem>) -> List<MorphoDataItem.FeedItem>
 
 
 
@@ -29,7 +29,7 @@ typealias TunerFunction = (List<BskyPost>) -> List<BskyPost>
 @Serializable
 data class MorphoDataFeed<T: MorphoDataItem> (
     private var _items: MutableList<T> = mutableListOf(),
-    var cursor: AtCursor = null,
+    var cursor: AtCursor = AtCursor.EMPTY,
     val uri: AtUri = AtUri.HOME_URI,
     var hasNewPosts: Boolean = false,
 ) {
@@ -38,11 +38,11 @@ data class MorphoDataFeed<T: MorphoDataItem> (
 
         fun fromPosts(
             posts: List<BskyPost>,
-            cursor: AtCursor = null,
+            cursor: AtCursor = AtCursor.EMPTY,
         ): MorphoDataFeed<MorphoDataItem.FeedItem> {
             return MorphoDataFeed(
                 _items = posts.map { MorphoDataItem.Post(it) }.toMutableList(),
-                cursor = cursor, hasNewPosts = cursor == null
+                cursor = cursor, hasNewPosts = cursor == AtCursor.EMPTY
             )
         }
 
@@ -51,58 +51,60 @@ data class MorphoDataFeed<T: MorphoDataItem> (
         ): MorphoDataFeed<MorphoDataItem> {
             return MorphoDataFeed(
                 _items = data.items.toMutableList(),
-                cursor = data.cursor, hasNewPosts = data.cursor == null
+                cursor = data.cursor, hasNewPosts = data.cursor == AtCursor.EMPTY
             )
         }
 
 
+
+
         fun fromFeedGen(
             feeds: List<FeedGenerator>,
-            cursor: AtCursor = null,
+            cursor: AtCursor = AtCursor.EMPTY,
         ): MorphoDataFeed<MorphoDataItem.FeedInfo> {
             return MorphoDataFeed(
                 _items = feeds.map { MorphoDataItem.FeedInfo(it) }.toMutableList(),
-                cursor = cursor, hasNewPosts = cursor == null
+                cursor = cursor, hasNewPosts = cursor == AtCursor.EMPTY
             )
         }
 
         fun fromProfileList(
             list: List<Profile>,
-            cursor: AtCursor = null,
+            cursor: AtCursor = AtCursor.EMPTY,
         ): MorphoDataFeed<MorphoDataItem.ProfileItem> {
             return MorphoDataFeed(
                 _items = list.map { MorphoDataItem.ProfileItem(it) }.toMutableList(),
-                cursor = cursor, hasNewPosts = cursor == null
+                cursor = cursor, hasNewPosts = cursor == AtCursor.EMPTY
             )
         }
 
         fun fromBskyList(
             lists: List<BskyList>,
-            cursor: AtCursor = null,
+            cursor: AtCursor = AtCursor.EMPTY,
         ): MorphoDataFeed<MorphoDataItem.ListInfo> {
             return MorphoDataFeed(
                 _items = lists.map { MorphoDataItem.ListInfo(it) }.toMutableList(),
-                cursor = cursor, hasNewPosts = cursor == null
+                cursor = cursor, hasNewPosts = cursor == AtCursor.EMPTY
             )
         }
 
         fun fromModLabelDefs(
             labels: List<BskyLabelDefinition>,
-            cursor: AtCursor = null,
+            cursor: AtCursor = AtCursor.EMPTY,
         ): MorphoDataFeed<MorphoDataItem.ModLabel> {
             return MorphoDataFeed(
                 _items = labels.map { MorphoDataItem.ModLabel(it) }.toMutableList(),
-                cursor = cursor, hasNewPosts = cursor == null
+                cursor = cursor, hasNewPosts = cursor == AtCursor.EMPTY
             )
         }
 
         fun fromModServiceDefs(
             services: List<BskyLabelService>,
-            cursor: AtCursor = null,
+            cursor: AtCursor = AtCursor.EMPTY,
         ): MorphoDataFeed<MorphoDataItem.LabelService> {
             return MorphoDataFeed(
                 _items = services.map { MorphoDataItem.LabelService(it) }.toMutableList(),
-                cursor = cursor, hasNewPosts = cursor == null
+                cursor = cursor, hasNewPosts = cursor == AtCursor.EMPTY
             )
         }
 
@@ -116,7 +118,7 @@ data class MorphoDataFeed<T: MorphoDataItem> (
                 _items = (posts.mapImmutable { MorphoDataItem.Post(it.toPost()) } + feed._items).toList()
                     .toMutableList(),
 
-                cursor = cursor, hasNewPosts = cursor == null
+                cursor = cursor, hasNewPosts = cursor == AtCursor.EMPTY
             )
         }
         fun concat(
@@ -127,7 +129,7 @@ data class MorphoDataFeed<T: MorphoDataItem> (
             return MorphoDataFeed(
                 _items = (feed._items + posts.mapImmutable { MorphoDataItem.Post(it.toPost()) })
                     .toMutableList(),
-                cursor = cursor, hasNewPosts = cursor == null
+                cursor = cursor, hasNewPosts = cursor == AtCursor.EMPTY
             )
         }
 
@@ -138,7 +140,7 @@ data class MorphoDataFeed<T: MorphoDataItem> (
         ): MorphoDataFeed<MorphoDataItem> {
             return MorphoDataFeed(
                 _items = (first._items + last._items).toMutableList(),
-                cursor = cursor, hasNewPosts = cursor == null
+                cursor = cursor, hasNewPosts = cursor == AtCursor.EMPTY
             )
         }
 
@@ -149,7 +151,7 @@ data class MorphoDataFeed<T: MorphoDataItem> (
         ): MorphoDataFeed<T> {
             return MorphoDataFeed(
                 _items = (first.items + last.items).toMutableList(),
-                cursor = cursor, hasNewPosts = cursor == null
+                cursor = cursor, hasNewPosts = cursor == AtCursor.EMPTY
             )
         }
 
@@ -160,7 +162,7 @@ data class MorphoDataFeed<T: MorphoDataItem> (
         ): MorphoDataFeed<T> {
             return MorphoDataFeed(
                 _items = (first.items + last.items).toMutableList(),
-                cursor = cursor, hasNewPosts = cursor == null
+                cursor = cursor, hasNewPosts = cursor == AtCursor.EMPTY
             )
         }
 
@@ -169,9 +171,14 @@ data class MorphoDataFeed<T: MorphoDataItem> (
             list: List<FeedViewPost>,
             depth: Int = 3, height: Int = 10,
             timeRange: Delta = Delta(Duration.parse("4h")),
-            cursor: AtCursor = null,
+            cursor: AtCursor = AtCursor.EMPTY,
         ): Flow<MorphoDataFeed<MorphoDataItem.FeedItem>> = flow {
-            emit(collectThreads(fromPosts(list.toBskyPostList(), cursor), depth, height, timeRange)
+            emit(collectThreads(fromPosts(list.toBskyPostList().fastMap {
+                when(it) {
+                    is MorphoDataItem.Post -> it.post
+                    is MorphoDataItem.Thread -> it.thread.post
+                }
+            }, cursor), depth, height, timeRange)
                      .distinctUntilChanged().last()
             )
         }.flowOn(Dispatchers.Default)
@@ -190,8 +197,8 @@ data class MorphoDataFeed<T: MorphoDataItem> (
                     val post = item.post
                     if(post.reply != null) {
                         val itemCid = post.cid
-                        val parent = post.reply.parent
-                        val root = post.reply.root
+                        val parent = post.reply.parentPost
+                        val root = post.reply.rootPost
                         if(itemCid !in threadCandidates.keys) {
                             var found = false
                             threadCandidates.forEach { thread ->
@@ -205,8 +212,8 @@ data class MorphoDataFeed<T: MorphoDataItem> (
                                     found = true
                                     return@forEach
                                 } else if (parent != null && parent.cid in thread.value.keys) {
-                                    if(parent.reply?.parent != null) {
-                                        thread.value[parent.reply.parent.cid] = parent.reply.parent
+                                    if(parent.reply?.parentPost != null) {
+                                        thread.value[parent.reply.parentPost.cid] = parent.reply.parentPost
                                     }
                                 }
                             }
@@ -214,8 +221,8 @@ data class MorphoDataFeed<T: MorphoDataItem> (
                                 threadCandidates[itemCid] = mutableMapOf()
                                 if (parent != null) {
                                     threadCandidates[itemCid]?.set(parent.cid, parent )
-                                    if(parent.reply?.parent != null) {
-                                        threadCandidates[itemCid]?.set(parent.reply.parent.cid, parent.reply.parent)
+                                    if(parent.reply?.parentPost != null) {
+                                        threadCandidates[itemCid]?.set(parent.reply.parentPost.cid, parent.reply.parentPost)
                                     }
                                 }
                                 if (root != null && threadCandidates[itemCid]?.keys?.contains(root.cid) != true ) {
@@ -225,8 +232,8 @@ data class MorphoDataFeed<T: MorphoDataItem> (
                         } else {
                             if (parent != null && threadCandidates[itemCid]?.keys?.contains(parent.cid) != true ) {
                                 threadCandidates[itemCid]?.set(parent.cid, parent )
-                                if(parent.reply?.parent != null) {
-                                    threadCandidates[itemCid]?.set(parent.reply.parent.cid, parent.reply.parent)
+                                if(parent.reply?.parentPost != null) {
+                                    threadCandidates[itemCid]?.set(parent.reply.parentPost.cid, parent.reply.parentPost)
                                 }
                             }
                             if (root != null && threadCandidates[itemCid]?.keys?.contains(root.cid) != true ) {
@@ -252,8 +259,8 @@ data class MorphoDataFeed<T: MorphoDataItem> (
                             ?.sortedByDescending { it.createdAt }
                             .orEmpty()
                         val parents: Flow<ThreadPost> = flow {
-                            generateSequence(post.reply?.parent) {
-                                it.reply?.parent
+                            generateSequence(post.reply?.parentPost) {
+                                it.reply?.parentPost
                             }.toList().reversed().map { r->
                                 emit(ThreadPost.ViewablePost(
                                     r,
@@ -264,7 +271,7 @@ data class MorphoDataFeed<T: MorphoDataItem> (
                         }
                         val replies: Flow<ThreadPost> = flow {
                             threads[itemCid]?.filter {
-                                (it.reply?.parent?.cid ?: Cid("")) == itemCid
+                                (it.reply?.parentPost?.cid ?: Cid("")) == itemCid
                             }?.map { p ->
                                 emit(ThreadPost.ViewablePost(
                                     p,
@@ -296,7 +303,7 @@ data class MorphoDataFeed<T: MorphoDataItem> (
         private fun findReplies(level: Int, depth: Int, post: BskyPost, list: Flow<BskyPost>
         ): Flow<ThreadPost> =  flow {
             list.filter {
-                (it.reply?.parent?.cid ?: Cid("")) == post.cid
+                (it.reply?.parentPost?.cid ?: Cid("")) == post.cid
             }.map {
                 if (level < depth) {
                     val r = findReplies(level + 1, depth, it, list)
@@ -307,70 +314,130 @@ data class MorphoDataFeed<T: MorphoDataItem> (
                 }
             }
         }.flowOn(Dispatchers.Default)
+
         fun filterByPrefs(
-            posts: List<BskyPost>,
+            posts: List<MorphoDataItem.FeedItem>,
             prefs: BskyFeedPref,
             follows: List<Did> = persistentListOf(),
-        ): List<BskyPost> {
+        ): List<MorphoDataItem.FeedItem> {
             var feed = posts.fastFilter { post -> // A-B test perf with fast and normal filter
-                (!prefs.hideReposts && post.reason is BskyPostReason.BskyPostRepost)
-                        || (!prefs.hideQuotePosts && isQuotePost(post))
-                        || ((!prefs.hideReplies && (post.reply != null))
-                            && (isSelfReply(post) || isThreadRoot(post) || post.reposted
-                                || (post.likeCount <= prefs.hideRepliesByLikeCount) )
-                            && (!prefs.hideRepliesByUnfollowed && isFollowingAllAuthors(post, follows)) )
-                        || (post.reply == null && !isQuotePost(post) && post.reason == null)
+                if (post is MorphoDataItem.Post) {
+                    (!prefs.hideReposts && post.reason is BskyPostReason.BskyPostRepost)
+                            || (!prefs.hideQuotePosts && isQuotePost(post.post))
+                            || ((!prefs.hideReplies && (post.post.reply != null))
+                            && (isSelfReply(post.post) || isThreadRoot(post.post) || post.post.reposted
+                            || (post.post.likeCount <= prefs.hideRepliesByLikeCount) )
+                            && (!prefs.hideRepliesByUnfollowed && isFollowingAllAuthors(post.post, follows)) )
+                            || (post.post.reply == null && !isQuotePost(post.post) && post.reason == null)
+                } else if (post is MorphoDataItem.Thread) {
+                            (!prefs.hideQuotePosts && isQuotePost(post.thread.post))
+                            || ((!prefs.hideReplies && (post.thread.post.reply != null))
+                            && (isSelfReply(post.thread.post) || isThreadRoot(post.thread.post) || post.thread.post.reposted
+                            || (post.thread.post.likeCount <= prefs.hideRepliesByLikeCount) )
+                            && (!prefs.hideRepliesByUnfollowed && isFollowingAllAuthors(post.thread.post, follows)) )
+                            || (post.thread.post.reply == null && !isQuotePost(post.thread.post) && post.thread.post.reason == null)
+                } else false
             }
-            feed = filterbyLanguage(feed, prefs.languages)
+            feed = filterByLanguage(feed, prefs.languages)
             feed = filterByContentLabel(feed, prefs.labelsToHide)
             return feed
         }
 
 
 
-        fun filterbyLanguage(
-            posts: List<BskyPost>,
+        fun filterByLanguage(
+            posts: List<MorphoDataItem.FeedItem>,
             languages: List<Language>,
-        ): List<BskyPost> {
-            return posts.fastFilter { post -> post.langs.any { languages.contains(it) } }
+        ): List<MorphoDataItem.FeedItem> {
+            if (languages.isEmpty()) return posts
+            return posts.fastFilter { post ->
+                when(post) {
+                    is MorphoDataItem.Post -> post.post.langs.any { languages.contains(it) }
+                    is MorphoDataItem.Thread -> post.thread.post.langs.any { languages.contains(it) }
+                }
+            }
         }
 
         fun filterByContentLabel(
-            posts: List<BskyPost>,
+            posts: List<MorphoDataItem.FeedItem>,
             toHide: List<ContentLabelPref> = persistentListOf(),
-        ): List<BskyPost> {
-            return posts.fastFilter { post -> post.labels.none { label -> toHide.fastAny { it.label == label.value } } }
-        }
-
-        fun filterBy(did: Did, posts: List<BskyPost>): List<BskyPost> {
-            return posts.fastFilter { it.author.did != did }
-        }
-
-        fun filterBy(string: String, posts: List<BskyPost>) : List<BskyPost> {
-            return posts.fastFilter {
-                it.text.contains(string)
+        ): List<MorphoDataItem.FeedItem> {
+            return posts.fastFilter { post ->
+                when(post) {
+                    is MorphoDataItem.Post -> post.post.labels.none { label -> toHide.fastAny { it.label == label.value } }
+                    is MorphoDataItem.Thread -> post.thread.post.labels.none { label -> toHide.fastAny { it.label == label.value } }
+                }
             }
         }
 
-        fun filterByWord(string: String, posts: List<BskyPost>) : List<BskyPost> {
+        fun filterBy(did: Did, posts: List<MorphoDataItem.FeedItem>): List<MorphoDataItem.FeedItem> {
+            return posts.fastFilter {
+                when(it) {
+                    is MorphoDataItem.Post -> it.post.author.did != did
+                    is MorphoDataItem.Thread -> it.thread.post.author.did != did
+                }
+            }
+        }
+
+        fun filterBy(string: String, posts: List<MorphoDataItem.FeedItem>) : List<MorphoDataItem.FeedItem> {
+            return posts.fastFilter {
+                when(it) {
+                    is MorphoDataItem.Post -> it.post.text.contains(string)
+                    is MorphoDataItem.Thread -> {
+                        it.thread.post.text.contains(string) || it.thread.parents.any { parent ->
+                            if (parent is ThreadPost.ViewablePost) {
+                                parent.post.text.contains(string)
+                            } else false
+                        } || it.thread.replies.any { reply ->
+                            if (reply is ThreadPost.ViewablePost) {
+                                reply.post.text.contains(string)
+                            } else false
+                        }
+                    }
+                }
+            }
+        }
+
+        fun filterByWord(string: String, posts: List<MorphoDataItem.FeedItem>) : List<MorphoDataItem.FeedItem> {
             return filterBy(Regex("""\b$string\b"""), posts)
         }
 
-        fun filterBy(regex: Regex, posts: List<BskyPost>) : List<BskyPost> {
+        fun filterBy(regex: Regex, posts: List<MorphoDataItem.FeedItem>) : List<MorphoDataItem.FeedItem> {
             return posts.fastFilter {
-                it.text.contains(regex)
+                when(it) {
+                    is MorphoDataItem.Post -> it.post.text.contains(regex)
+                    is MorphoDataItem.Thread -> {
+                        it.thread.post.text.contains(regex) || it.thread.parents.any { parent ->
+                            if (parent is ThreadPost.ViewablePost) {
+                                parent.post.text.contains(regex)
+                            } else false
+                        } || it.thread.replies.any { reply ->
+                            if (reply is ThreadPost.ViewablePost) {
+                                reply.post.text.contains(regex)
+                            } else false
+                        }
+                    }
+                }
             }
         }
 
-        fun dedupPosts(posts: List<BskyPost>): List<BskyPost> {
+        fun dedupPosts(posts: List<MorphoDataItem>): List<MorphoDataItem> {
             return posts.fastDistinctBy { post-> // A-B test perf with fast and normal distinctBy
-                post.cid
+                when(post) {
+                    is MorphoDataItem.Post -> post.post.cid
+                    is MorphoDataItem.Thread -> post.thread.post.cid
+                    is MorphoDataItem.FeedInfo -> post.feed.cid
+                    is MorphoDataItem.ListInfo -> post.list.cid
+                    is MorphoDataItem.ModLabel -> post.label.identifier
+                    is MorphoDataItem.ProfileItem -> post.profile.did
+                    is MorphoDataItem.LabelService -> post.service.cid
+                }
             }
         }
 
         fun collectThreads(
             apiProvider: Butterfly,
-            cursor: AtCursor = null,
+            cursor: AtCursor = AtCursor.EMPTY,
             posts: List<BskyPost>,
             uri: AtUri = AtUri.HOME_URI,
             depth: Long = 1, height: Long = 10,
@@ -382,8 +449,8 @@ data class MorphoDataFeed<T: MorphoDataItem> (
                         .none { threads.keys.contains(it.uri) || threads.values.any { thread->
                             thread.contains(it.uri)
                         } }) {
-                    if (reply.author.did == post.reply?.root?.author?.did
-                        && post.author.did == post.reply.root.author.did
+                    if (reply.author.did == post.reply?.rootPost?.author?.did
+                        && post.author.did == post.reply.rootPost.author.did
                     ) {
                         apiProvider.api.getPostThread(
                             GetPostThreadQuery(
@@ -416,7 +483,7 @@ data class MorphoDataFeed<T: MorphoDataItem> (
                     item is MorphoDataItem.Post && it.value.contains(item.post.uri)
                 }
             }
-            emit(MorphoDataFeed(_items = morphoDataItems.toMutableList(), cursor, uri, hasNewPosts = cursor == null))
+            emit(MorphoDataFeed(_items = morphoDataItems.toMutableList(), cursor, uri, hasNewPosts = cursor == AtCursor.EMPTY))
         }.flowOn(Dispatchers.Default)
     }
 
@@ -428,7 +495,9 @@ data class MorphoDataFeed<T: MorphoDataItem> (
                             depth, height, timeRange).distinctUntilChanged().last())
     }.flowOn(Dispatchers.Default)
 
-
+    fun dedupPosts() {
+        _items = Companion.dedupPosts(_items.toList()).toMutableList() as MutableList<T>
+    }
 
     operator fun plus(feed: MorphoDataFeed<T>) {
         _items = (_items + feed._items).toMutableList()
@@ -453,25 +522,27 @@ data class MorphoDataFeed<T: MorphoDataItem> (
 
 
 }
-fun List<FeedViewPost>.toBskyPostList(): List<BskyPost> {
-    return this.fastMap { it.toPost() }
+fun List<FeedViewPost>.toBskyPostList(): List<MorphoDataItem.FeedItem> {
+    return this.fastMap { MorphoDataItem.Post(it.toPost()) }
 }
 
-fun List<BskyPost>.tune(
+@Suppress("UNCHECKED_CAST")
+fun List<MorphoDataItem.FeedItem>.tune(
     tuners: List<TunerFunction> = persistentListOf(),
-) : List<BskyPost> {
-    var feed = MorphoDataFeed.dedupPosts(this)
+) : List<MorphoDataItem.FeedItem> {
+    var feed = MorphoDataFeed.dedupPosts(this )
     tuners.fastForEach { tuner->
-        feed = tuner(feed)
+        feed = tuner(feed as List<MorphoDataItem.FeedItem>)
     }
-    return feed
+    return feed as List<MorphoDataItem.FeedItem>
 }
+
 
 fun isFollowingAllAuthors(post: BskyPost, follows: List<Did>): Boolean {
     return follows.fastAny {
         (post.author.did == it
-            || post.reply?.parent?.author?.did == it
-            || post.reply?.root?.author?.did == it)
+            || post.reply?.parentPost?.author?.did == it
+            || post.reply?.rootPost?.author?.did == it)
     }
 }
 
@@ -485,9 +556,9 @@ fun isQuotePost(post: BskyPost) : Boolean {
 
 fun isSelfReply(post: BskyPost) : Boolean {
     return if (post.reply != null) {
-        if(post.reply.parent?.author?.did == post.author.did) {
+        if(post.reply.parentPost?.author?.did == post.author.did) {
             true
-        } else post.reply.root?.author?.did == post.author.did
+        } else post.reply.rootPost?.author?.did == post.author.did
     } else {
          false
     }
@@ -495,10 +566,10 @@ fun isSelfReply(post: BskyPost) : Boolean {
 
 fun getIfSelfReply(post: BskyPost) : BskyPost? {
     return if (post.reply != null) {
-        if(post.reply.parent?.author?.did == post.author.did) {
-            post.reply.parent
-        } else if (post.reply.root?.author?.did == post.author.did) {
-            post.reply.root
+        if(post.reply.parentPost?.author?.did == post.author.did) {
+            post.reply.parentPost
+        } else if (post.reply.rootPost?.author?.did == post.author.did) {
+            post.reply.rootPost
         } else {
             null
         }
@@ -516,5 +587,5 @@ fun isThreadRoot(post: BskyPost) : Boolean {
 }
 
 fun isSecondInThread(post: BskyPost) : Boolean {
-    return (post.reply?.parent == post.reply?.root && post.replyCount > 0)
+    return (post.reply?.parentPost == post.reply?.rootPost && post.replyCount > 0)
 }

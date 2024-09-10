@@ -92,7 +92,7 @@ class TabbedProfileViewModel(
                                             profileState!!.postsState.value!!.uri,
                                             profileState!!.postsState.value!!.feed.title,
                                             cursors[profileState!!.postsState.value!!.uri]
-                                                ?: MutableStateFlow(null)
+                                                ?: MutableStateFlow(AtCursor.EMPTY)
                                         )
                                     )
                                     tabStates.add(profileState!!.postsState as StateFlow<ContentCardState.ProfileTimeline<MorphoDataItem>>)
@@ -103,7 +103,7 @@ class TabbedProfileViewModel(
                                             profileState!!.postRepliesState.value!!.uri,
                                             profileState!!.postRepliesState.value!!.feed.title,
                                             cursors[profileState!!.postRepliesState.value!!.uri]
-                                                ?: MutableStateFlow(null)
+                                                ?: MutableStateFlow(AtCursor.EMPTY)
                                         )
                                     )
                                     tabStates.add(profileState!!.postRepliesState as StateFlow<ContentCardState.ProfileTimeline<MorphoDataItem>>)
@@ -114,7 +114,7 @@ class TabbedProfileViewModel(
                                             profileState!!.mediaState.value!!.uri,
                                             profileState!!.mediaState.value!!.feed.title,
                                             cursors[profileState!!.mediaState.value!!.uri]
-                                                ?: MutableStateFlow(null)
+                                                ?: MutableStateFlow(AtCursor.EMPTY)
                                         )
                                     )
                                     tabStates.add(profileState!!.mediaState as StateFlow<ContentCardState.ProfileTimeline<MorphoDataItem>>)
@@ -125,7 +125,7 @@ class TabbedProfileViewModel(
                                             profileState!!.likesState.value!!.uri,
                                             profileState!!.likesState.value!!.feed.title,
                                             cursors[profileState!!.likesState.value!!.uri]
-                                                ?: MutableStateFlow(null)
+                                                ?: MutableStateFlow(AtCursor.EMPTY)
                                         )
                                     )
                                     tabStates.add(profileState!!.likesState as StateFlow<ContentCardState.ProfileTimeline<MorphoDataItem>>)
@@ -136,7 +136,7 @@ class TabbedProfileViewModel(
                                             profileState!!.feedsState.value!!.uri,
                                             profileState!!.feedsState.value!!.feed.title,
                                             cursors[profileState!!.feedsState.value!!.uri]
-                                                ?: MutableStateFlow(null)
+                                                ?: MutableStateFlow(AtCursor.EMPTY)
                                         )
                                     )
                                     tabStates.add(profileState!!.feedsState as StateFlow<ContentCardState.ProfileTimeline<MorphoDataItem>>)
@@ -147,7 +147,7 @@ class TabbedProfileViewModel(
                                             profileState!!.listsState.value!!.uri,
                                             profileState!!.listsState.value!!.feed.title,
                                             cursors[profileState!!.listsState.value!!.uri]
-                                                ?: MutableStateFlow(null)
+                                                ?: MutableStateFlow(AtCursor.EMPTY)
                                         )
                                     )
                                     tabStates.add(profileState!!.listsState as StateFlow<ContentCardState.ProfileTimeline<MorphoDataItem>>)
@@ -160,7 +160,7 @@ class TabbedProfileViewModel(
                                             profileState!!.modServiceState.value!!.uri,
                                             profileState!!.modServiceState.value!!.feed.title,
                                             cursors[profileState!!.modServiceState.value!!.uri]
-                                                ?: MutableStateFlow(null)
+                                                ?: MutableStateFlow(AtCursor.EMPTY)
                                         )
                                     )
                                     tabStates.add(profileState!!.modServiceState as StateFlow<ContentCardState.ProfileTimeline<MorphoDataItem>>)
@@ -171,7 +171,7 @@ class TabbedProfileViewModel(
                                             profileState!!.listsState.value!!.uri,
                                             profileState!!.listsState.value!!.feed.title,
                                             cursors[profileState!!.listsState.value!!.uri]
-                                                ?: MutableStateFlow(null)
+                                                ?: MutableStateFlow(AtCursor.EMPTY)
                                         )
                                     )
                                     tabStates.add(profileState!!.listsState as StateFlow<ContentCardState.ProfileTimeline<MorphoDataItem>>)
@@ -182,7 +182,7 @@ class TabbedProfileViewModel(
                                             profileState!!.postsState.value!!.uri,
                                             profileState!!.postsState.value!!.feed.title,
                                             cursors[profileState!!.postsState.value!!.uri]
-                                                ?: MutableStateFlow(null)
+                                                ?: MutableStateFlow(AtCursor.EMPTY)
                                         )
                                     )
                                     tabStates.add(profileState!!.postsState as StateFlow<ContentCardState.ProfileTimeline<MorphoDataItem>>)
@@ -193,7 +193,7 @@ class TabbedProfileViewModel(
                                             profileState!!.postRepliesState.value!!.uri,
                                             profileState!!.postRepliesState.value!!.feed.title,
                                             cursors[profileState!!.postRepliesState.value!!.uri]
-                                                ?: MutableStateFlow(null)
+                                                ?: MutableStateFlow(AtCursor.EMPTY)
                                         )
                                     )
                                     tabStates.add(profileState!!.postRepliesState as StateFlow<ContentCardState.ProfileTimeline<MorphoDataItem>>)
@@ -204,7 +204,7 @@ class TabbedProfileViewModel(
                                             profileState!!.feedsState.value!!.uri,
                                             profileState!!.feedsState.value!!.feed.title,
                                             cursors[profileState!!.feedsState.value!!.uri]
-                                                ?: MutableStateFlow(null)
+                                                ?: MutableStateFlow(AtCursor.EMPTY)
                                         )
                                     )
                                     tabStates.add(profileState!!.feedsState as StateFlow<ContentCardState.ProfileTimeline<MorphoDataItem>>)
@@ -232,7 +232,7 @@ class TabbedProfileViewModel(
 
     }
 
-    fun refreshTab(index: Int, cursor: AtCursor = null) :Boolean {
+    fun refreshTab(index: Int, cursor: AtCursor = AtCursor.EMPTY) :Boolean {
         return if(index < 0 || index > tabs.lastIndex) false
         else updateFeed(tabs[index], cursor)
     }

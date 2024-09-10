@@ -33,5 +33,6 @@ enum class FeedType {
     PROFILE_USER_LISTS,
     PROFILE_MOD_SERVICE,
     PROFILE_FEEDS_LIST,
+    LIST_FOLLOWING,
     OTHER,
 }
