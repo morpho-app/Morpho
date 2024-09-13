@@ -7,15 +7,13 @@ import app.bsky.feed.FeedViewPost
 import com.morpho.app.data.BskyUserPreferences
 import com.morpho.app.model.bluesky.*
 import com.morpho.app.model.uistate.FeedType
-import com.morpho.app.util.JavaSerializable
 import com.morpho.butterfly.*
+import dev.icerock.moko.parcelize.Parcelable
+import dev.icerock.moko.parcelize.Parcelize
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toPersistentList
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.firstOrNull
-import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.*
 import kotlinx.datetime.Instant
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonElement
@@ -25,13 +23,15 @@ import kotlin.time.Duration
 
 typealias TunerFunction = (List<MorphoDataItem.FeedItem>, FeedTuner) -> List<MorphoDataItem.FeedItem>
 
+@Parcelize
 @Immutable
 @Serializable
-data class AtCursor(val cursor: String?, val scroll: Int){
+data class AtCursor(val cursor: String?, val scroll: Int): Parcelable {
     companion object {
         val EMPTY: AtCursor = AtCursor(null, 0)
     }
 }
+
 
 @Immutable
 @Serializable
@@ -40,8 +40,9 @@ data class MorphoData<T: MorphoDataItem>(
     val uri: AtUri = AtUri.HOME_URI,
     val cursor: AtCursor = AtCursor.EMPTY,
     val items: List<T> = listOf(),
+    //@TypeParceler<JsonElement, JsonElementParceler>()
     val query: JsonElement = JsonObject(emptyMap()),
-): JavaSerializable {
+) {
     companion object {
 
         fun <T : MorphoDataItem> EMPTY(): MorphoData<T> {
@@ -97,19 +98,40 @@ data class MorphoData<T: MorphoDataItem>(
             data: MorphoData<MorphoDataItem.FeedItem>,
             uri: AtUri = data.uri,
             title: String = data.title,
-        ): MorphoData<MorphoDataItem.FeedItem> {
-            return if (oldCursor != AtCursor.EMPTY && data.items.isNotEmpty()) {
-                concat(feed.toList(), data,
-                                  AtCursor(responseCursor, oldCursor.scroll),
-                                  query = query)
+            api: Butterfly? = null,
+        ): Flow<MorphoData<MorphoDataItem.FeedItem>> = flow {
+            val newItems = fromFeed<MorphoDataItem.FeedItem>(
+                feed.toList(), AtCursor(responseCursor, 0),
+                uri = uri, title = title, query = query).collectThreads().single()
+            emit(if (oldCursor != AtCursor.EMPTY && data.items.isNotEmpty()) {
+                val newScroll = maxOf(data.items.size, oldCursor.scroll)
+                concat(data, newItems, AtCursor(responseCursor, newScroll), query = query)
             } else if (oldCursor == AtCursor.EMPTY && data.items.isNotEmpty()) {
-                concat(feed.toList(), data,
-                                  AtCursor(responseCursor, oldCursor.scroll),
-                                  query = query)
+                concat(newItems, data,AtCursor(responseCursor, 0), query = query)
             } else {
-                fromFeed<MorphoDataItem.FeedItem>(
-                    feed.toList(), AtCursor(responseCursor, oldCursor.scroll),
-                    uri = uri, title = title, query = query)
+                newItems
+            })
+        }
+
+        fun concatNonThreadedFeed(
+            query: JsonElement,
+            responseCursor: String?,
+            oldCursor: AtCursor,
+            feed: List<FeedViewPost>,
+            data: MorphoData<MorphoDataItem.FeedItem>,
+            uri: AtUri = data.uri,
+            title: String = data.title,
+        ): MorphoData<MorphoDataItem.FeedItem> {
+            val newItems = fromFeed<MorphoDataItem.FeedItem>(
+                feed.toList(), AtCursor(responseCursor, 0),
+                uri = uri, title = title, query = query)
+            return if (oldCursor != AtCursor.EMPTY && data.items.isNotEmpty()) {
+                val newScroll = if(oldCursor.scroll == 0) 0 else maxOf(data.items.size, oldCursor.scroll)
+                concat(data, newItems, AtCursor(responseCursor, newScroll), query = query)
+            } else if (oldCursor == AtCursor.EMPTY && data.items.isNotEmpty()) {
+                concat(newItems, data,AtCursor(responseCursor, 0), query = query)
+            } else {
+                newItems
             }
         }
 
@@ -121,21 +143,21 @@ data class MorphoData<T: MorphoDataItem>(
             query: JsonElement = JsonObject(emptyMap()),
         ): MorphoData<T> {
             return first.copy(
-                items = (first.items union last.items).toPersistentList()
-                    .sortedByDescending {
-                        when (it) {
-                            is MorphoDataItem.Post -> it.post.createdAt
-                            is MorphoDataItem.Thread -> it.thread.post.createdAt
-                            is MorphoDataItem.FeedInfo -> it.feed.indexedAt
-                            is MorphoDataItem.ListInfo -> it.list.indexedAt
-                            is MorphoDataItem.ModLabel -> Moment(Instant.DISTANT_PAST)
-                            is MorphoDataItem.ProfileItem -> Moment(Instant.DISTANT_PAST)
-                            is MorphoDataItem.LabelService -> it.service.indexedAt
-                            else -> {
-                                Moment(Instant.DISTANT_PAST)
-                            }
-                        }
-                    }.toList(),
+                items = (first.items + last.items).toPersistentList(),
+//                    .sortedByDescending {
+//                        when (it) {
+//                            is MorphoDataItem.Post -> it.post.createdAt
+//                            is MorphoDataItem.Thread -> it.thread.post.createdAt
+//                            is MorphoDataItem.FeedInfo -> it.feed.indexedAt
+//                            is MorphoDataItem.ListInfo -> it.list.indexedAt
+//                            is MorphoDataItem.ModLabel -> Moment(Instant.DISTANT_PAST)
+//                            is MorphoDataItem.ProfileItem -> Moment(Instant.DISTANT_PAST)
+//                            is MorphoDataItem.LabelService -> it.service.indexedAt
+//                            else -> {
+//                                Moment(Instant.DISTANT_PAST)
+//                            }
+//                        }
+//                    }.toList(),
                 cursor = cursor, title = first.title, uri = first.uri
             )
         }
@@ -147,21 +169,7 @@ data class MorphoData<T: MorphoDataItem>(
             query: JsonElement = JsonObject(emptyMap()),
         ): MorphoData<MorphoDataItem> {
             return first.copy(
-                items = (first.items union last).toPersistentList()
-                    .sortedByDescending {
-                        when (it) {
-                            is MorphoDataItem.Post -> it.post.createdAt
-                            is MorphoDataItem.Thread -> it.thread.post.createdAt
-                            is MorphoDataItem.FeedInfo -> it.feed.indexedAt
-                            is MorphoDataItem.ListInfo -> it.list.indexedAt
-                            is MorphoDataItem.ModLabel -> Moment(Instant.DISTANT_PAST)
-                            is MorphoDataItem.ProfileItem -> Moment(Instant.DISTANT_PAST)
-                            is MorphoDataItem.LabelService -> it.service.indexedAt
-                            else -> {
-                                Moment(Instant.DISTANT_PAST)
-                            }
-                        }
-                    }.toList(),
+                items = (first.items + last),
                 cursor = cursor, title = first.title, uri = first.uri
             )
         }
@@ -172,21 +180,7 @@ data class MorphoData<T: MorphoDataItem>(
             cursor: AtCursor = last.cursor,
         ): MorphoData<T> {
             return last.copy(
-                items = (first union last.items).toPersistentList()
-                    .sortedByDescending {
-                        when (it) {
-                            is MorphoDataItem.Post -> it.post.createdAt
-                            is MorphoDataItem.Thread -> it.thread.post.createdAt
-                            is MorphoDataItem.FeedInfo -> it.feed.indexedAt
-                            is MorphoDataItem.ListInfo -> it.list.indexedAt
-                            is MorphoDataItem.ModLabel -> Moment(Instant.DISTANT_PAST)
-                            is MorphoDataItem.ProfileItem -> Moment(Instant.DISTANT_PAST)
-                            is MorphoDataItem.LabelService -> it.service.indexedAt
-                            else -> {
-                                Moment(Instant.DISTANT_PAST)
-                            }
-                        }
-                    }.toList(),
+                items = (first + last.items),
                 cursor = cursor, title = last.title, uri = last.uri
             )
         }
@@ -389,33 +383,120 @@ data class MorphoData<T: MorphoDataItem>(
         }
         threadCandidates.fastForEachIndexed { index, thread ->
             if (thread == null) return@fastForEachIndexed
-            val inThreads = threads.indexOfFirst { t -> t?.containsUri(thread.thread.post.uri) ?: false }
-            if (inThreads == - 1) {
-                val threadToSplice = threads.getOrNull(index) ?: return@fastForEachIndexed
-                threads[index] = threadToSplice.addReply(ThreadPost.ViewablePost(thread.thread.post, thread.thread.replies))
-                threadCandidates[index] = null
+            val rootInThreads = threads.indexOfFirst { t -> t?.containsUri(thread.rootUri) ?: false }
+            if (rootInThreads == - 1) {
+                val threadToSplice = threads.getOrNull(rootInThreads) ?: return@fastForEachIndexed
+                if(
+                    thread.thread.parents.firstOrNull() is ThreadPost.ViewablePost
+                    && threadToSplice.thread.parents.firstOrNull() is ThreadPost.ViewablePost
+                    && thread.rootUri == threadToSplice.rootUri
+                ) {
+                    if(thread.thread.parents.size == 1 && threadToSplice.thread.parents.size == 1) {
+                        // Both threads have the same, viewable root post and are only one level deep in terms of parents
+                        val newEntry = thread.thread.parents.first() as ThreadPost.ViewablePost
+                        val oldEntry = threadToSplice.thread.parents.first() as ThreadPost.ViewablePost
+
+                        val newReplies = (newEntry.replies + oldEntry.replies).distinctBy { it.uri }.toMutableList()
+                        newReplies.add(ThreadPost.ViewablePost(thread.thread.post, thread.thread.replies))
+                        if( thread.getUri() != threadToSplice.getUri() )
+                            newReplies.add(ThreadPost.ViewablePost(threadToSplice.thread.post, threadToSplice.thread.replies))
+                        val newThread = BskyPostThread(
+                            post = newEntry.post,
+                            parents = listOf(),
+                            replies = newReplies.distinctBy { it.uri },
+                        )
+                        threads[rootInThreads] = threadToSplice.copy(thread = newThread, isIncompleteThread = false)
+                        threadCandidates[index] = null
+                    } else if(thread.thread.parents.size == 2 && threadToSplice.thread.parents.size == 2) {
+                        // Both threads have the same, viewable root post and parent chains are both length 2
+                        val newEntry = thread.thread.parents.first() as ThreadPost.ViewablePost
+
+                        val newReplies = mutableListOf<ThreadPost>()
+                        if(thread.thread.parents.lastOrNull() !is ThreadPost.ViewablePost) return@fastForEachIndexed
+                        if(threadToSplice.thread.parents.lastOrNull() !is ThreadPost.ViewablePost) return@fastForEachIndexed
+                        val newParent = thread.thread.parents.last() as ThreadPost.ViewablePost
+                        val oldParent = threadToSplice.thread.parents.last() as ThreadPost.ViewablePost
+                        val newReply = ThreadPost.ViewablePost(thread.thread.post, thread.thread.replies)
+                        val oldReply = ThreadPost.ViewablePost(threadToSplice.thread.post, threadToSplice.thread.replies)
+                        newParent.addReply(newReply)
+                        oldParent.addReply(oldReply)
+                        newReplies.add(newReply)
+                        newReplies.add(oldReply)
+                        val newThread = BskyPostThread(
+                            post = newEntry.post,
+                            parents = listOf(newParent),
+                            replies = newReplies.distinctBy { it.uri },
+                        )
+                        threads[rootInThreads] = threadToSplice.copy(thread = newThread, isIncompleteThread = false)
+                        threadCandidates[index] = null
+                    }
+
+                }
+            } else {
+                val inThreads = threads.indexOfFirst { t -> t?.containsUri(thread.thread.post.uri) ?: false }
+                if (inThreads == - 1) {
+                    val threadToSplice = threads.getOrNull(index) ?: return@fastForEachIndexed
+                    threads[index] = threadToSplice.addReply(ThreadPost.ViewablePost(thread.thread.post, thread.thread.replies))
+                    threadCandidates[index] = null
+                }
             }
         }
         threadCandidates.fastFilterNotNull()
         if (threadCandidates.isNotEmpty()) threads.addAll(threadCandidates)
-        val newFeed = posts.toList().fastFilterNotNull()
+        val newReplies = replies.filterNotNull()
             .distinctBy { it.getUri() }
-            .filterNot { post ->
+            .filterNot { reply ->
+                if(reply.isRepost) return@filterNot false
+                if(reply.isQuotePost) return@filterNot false
+                reply.getUris().any { uri -> threads.any { it?.containsUri(uri) ?: false } }
+            }.sortedByDescending { when(it.reason) {
+                is BskyPostReason.BskyPostRepost -> it.reason.indexedAt
+                else -> it.post.createdAt
+            } }.iterator()
+        var newPosts = posts.toList().filterNotNull()
+        newPosts = newPosts.distinctBy { it.getUri() }
+        newPosts = newPosts.filterNot { post ->
                 if(post.isRepost) return@filterNot false
                 if(post.isQuotePost) return@filterNot false
                 post.getUris().any { uri -> threads.any { it?.containsUri(uri) ?: false } }
-            } + threads.toList().fastFilterNotNull() + replies.toList().fastFilterNotNull()
-                    .distinctBy { it.getUri() }
-                    .filterNot { reply ->
-                        if(reply.isRepost) return@filterNot false
-                        if(reply.isQuotePost) return@filterNot false
-                        reply.getUris().any { uri -> threads.any { it?.containsUri(uri) ?: false } }
-                    }
-        val sortedFeed = newFeed.sortedByDescending {
+            }.sortedByDescending { when(it.reason) {
+                    is BskyPostReason.BskyPostRepost -> it.reason.indexedAt
+                    else -> it.post.createdAt
+                } }
+        val newPostsIter = newPosts.iterator()
+        var newThreads = threads.toList().filterNotNull()
+        newThreads = newThreads.sortedByDescending { if(!repliesBumpThreads) {
+            it.rootAccessiblePost.createdAt
+        } else {
+            maxOf(it.thread.post.createdAt,
+                  it.thread.replies.fold(it.thread.post.createdAt) { acc, post ->
+                      val postTime = when(post) {
+                          is ThreadPost.ViewablePost -> post.post.createdAt
+                          is ThreadPost.BlockedPost -> Moment(Instant.DISTANT_PAST)
+                          is ThreadPost.NotFoundPost -> Moment(Instant.DISTANT_PAST)
+                      }
+                      maxOf(acc, postTime)
+                  })
+        } }
+        newThreads = newThreads.distinctBy { it.getUri() }
+            .filterNot { thread ->
+                thread.getUris().filterNot { uri ->
+                        newThreads.fastAny { it.getUri() == uri } }.size > 1
+            }
+        val newThreadsIter = newThreads.iterator()
+        val newFeed = mutableListOf<MorphoDataItem.FeedItem>()
+        while(newPostsIter.hasNext() || newThreadsIter.hasNext() || newReplies.hasNext() ) {
+            if(newPostsIter.hasNext()) newFeed.add(newPostsIter.next())
+            if(newThreadsIter.hasNext()) newFeed.add(newThreadsIter.next())
+            if(newReplies.hasNext()) newFeed.add(newReplies.next())
+        }
+        val dedupedFeed = newFeed.distinctBy { it.getUri() }
+        //println("New feed:\n${newFeed.joinToString("\n")}")
+        val sortedFeed = dedupedFeed.sortedByDescending {
             when(it) {
                 is MorphoDataItem.Post -> when(it.reason) {
                     is BskyPostReason.BskyPostFeedPost -> it.post.createdAt
-                    is BskyPostReason.BskyPostRepost -> it.post.createdAt
+                    is BskyPostReason.BskyPostRepost -> it.reason.indexedAt
                     is BskyPostReason.SourceFeed -> it.post.createdAt
                     null -> it.post.createdAt
                 }
@@ -434,10 +515,9 @@ data class MorphoData<T: MorphoDataItem>(
                 }
             }
         }
-
-        @Suppress("UNCHECKED_CAST") val newData =
-            copy( items = sortedFeed.fastDistinctBy { it.getUri() } as List<T>)
-        emit(newData.dedup())
+        //println("sorted feed:\n${sortedFeed.joinToString("\n")}")
+        @Suppress("UNCHECKED_CAST") val newData = copy( items = sortedFeed as List<T>)
+        emit(newData)
     }.flowOn(Dispatchers.Default)
 
     fun dedup(): MorphoData<T> {

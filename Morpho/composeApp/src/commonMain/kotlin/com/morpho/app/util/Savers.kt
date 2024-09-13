@@ -13,10 +13,6 @@ import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 
-// commonMain - module core
-@Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING")
-expect interface JavaSerializable
-
 val atUriSaver: Saver<AtUri, *> = listSaver(
     save = { listOf(it.atUri)},
     restore = {

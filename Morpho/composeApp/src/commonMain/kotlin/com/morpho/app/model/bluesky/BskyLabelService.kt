@@ -1,19 +1,22 @@
 package com.morpho.app.model.bluesky
 
 import androidx.compose.runtime.Immutable
-import app.bsky.actor.ProfileAssociated
 import app.bsky.labeler.LabelerView
 import app.bsky.labeler.LabelerViewDetailed
 import com.morpho.app.model.uidata.Moment
+import com.morpho.app.model.uidata.MomentParceler
 import com.morpho.app.util.mapImmutable
 import com.morpho.butterfly.AtUri
 import com.morpho.butterfly.Cid
 import com.morpho.butterfly.Did
 import com.morpho.butterfly.Handle
+import dev.icerock.moko.parcelize.Parcelize
+import dev.icerock.moko.parcelize.TypeParceler
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.datetime.Clock
 import kotlinx.serialization.Serializable
 
+@Parcelize
 @Serializable
 @Immutable
 open class BskyLabelService(
@@ -23,6 +26,7 @@ open class BskyLabelService(
     val likeCount: Long?,
     val liked: Boolean,
     val likeUri: AtUri?,
+    @TypeParceler<Moment, MomentParceler>()
     override val indexedAt: Moment,
     val policies: List<BskyLabelDefinition>,
     override val labels: List<BskyLabel>,
@@ -53,7 +57,7 @@ open class BskyLabelService(
         get() = 0
     override val knownFollowers: List<Profile>
         get() = listOf()
-    override val associated: ProfileAssociated?
+    override val associated: BskyProfileAssociated?
         get() = null
     override val createdAt: Moment?
         get() = null

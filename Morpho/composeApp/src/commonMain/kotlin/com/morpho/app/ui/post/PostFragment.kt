@@ -2,14 +2,11 @@ package com.morpho.app.ui.post
 
 
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Reply
-import androidx.compose.material.icons.filled.MoreHoriz
 import androidx.compose.material.icons.filled.Repeat
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -30,6 +27,7 @@ import com.atproto.repo.StrongRef
 import com.morpho.app.model.bluesky.*
 import com.morpho.app.model.uidata.ContentHandling
 import com.morpho.app.model.uidata.LabelDescription
+import com.morpho.app.model.uidata.LabelIcon
 import com.morpho.app.ui.common.OnPostClicked
 import com.morpho.app.ui.elements.*
 import com.morpho.app.ui.lists.FeedListEntryFragment
@@ -65,13 +63,13 @@ fun PostFragment(
     getContentHandling: (BskyPost) -> List<ContentHandling> = { listOf() }
 ) {
     val padding = remember { when(role) {
-        PostFragmentRole.Solo -> Modifier.padding(2.dp)
+        PostFragmentRole.Solo -> if(indentLevel == 0) Modifier.padding(2.dp) else Modifier
         PostFragmentRole.PrimaryThreadRoot -> Modifier.padding(2.dp)
-        PostFragmentRole.ThreadBranchStart -> Modifier.padding(start = 2.dp, top = 0.dp, end = 2.dp, bottom = 0.dp)
-        PostFragmentRole.ThreadBranchMiddle -> Modifier.padding(start = 2.dp, top = 0.dp, end = 2.dp, bottom = 0.dp)
-        PostFragmentRole.ThreadBranchEnd -> Modifier.padding(start = 2.dp, top = 0.dp, end = 2.dp, bottom = 0.dp)
+        PostFragmentRole.ThreadBranchStart -> Modifier.padding(start = 0.dp, top = 0.dp, end = 2.dp, bottom = 2.dp)
+        PostFragmentRole.ThreadBranchMiddle -> Modifier.padding(start = 0.dp, top = 0.dp, end = 2.dp, bottom = 2.dp)
+        PostFragmentRole.ThreadBranchEnd -> Modifier.padding(start = 0.dp, top = 0.dp, end = 2.dp, bottom = 2.dp)
         PostFragmentRole.ThreadRootUnfocused -> Modifier.padding(2.dp)
-        PostFragmentRole.ThreadEnd -> Modifier.padding(start = 2.dp, top = 0.dp, end = 2.dp, bottom = 0.dp)
+        PostFragmentRole.ThreadEnd -> Modifier.padding(start = 2.dp, top = 0.dp, end = 2.dp, bottom = 2.dp)
     }}
     val uriHandler = LocalUriHandler.current
     WrappedColumn(modifier = modifier.then(padding.fillMaxWidth())) {
@@ -85,40 +83,14 @@ fun PostFragment(
             PostFragmentRole.ThreadRootUnfocused -> indentLevel.toFloat()
             PostFragmentRole.ThreadEnd -> 0.0f
         }}
-        val baseShape = MaterialTheme.shapes.small
-        val shape =  when(role) {
-            PostFragmentRole.Solo -> baseShape
-            PostFragmentRole.PrimaryThreadRoot -> baseShape
-            PostFragmentRole.ThreadBranchStart -> {
-                baseShape.copy(
-                    bottomEnd = CornerSize(0.dp),
-                    bottomStart = CornerSize(0.dp),
-                ) }
-            PostFragmentRole.ThreadBranchMiddle -> {
-                baseShape.copy(
-                    topEnd = CornerSize(0.dp),
-                    topStart = CornerSize(0.dp),
-                    bottomEnd = CornerSize(0.dp),
-                    bottomStart = CornerSize(0.dp),
-                ) }
-            PostFragmentRole.ThreadBranchEnd -> {
-                baseShape.copy(
-                    topEnd = CornerSize(0.dp),
-                    topStart = CornerSize(0.dp),
-                ) }
-            PostFragmentRole.ThreadRootUnfocused -> baseShape
-            PostFragmentRole.ThreadEnd -> {
-                baseShape.copy(
-                    topEnd = CornerSize(0.dp),
-                    topStart = CornerSize(0.dp),
-                ) }
-        }
+
         val interactionSource = remember { MutableInteractionSource() }
         val indication = remember { MorphoHighlightIndication() }
-        val bgColor = if (role == PostFragmentRole.ThreadEnd) {
+        val bgColor = if (role == PostFragmentRole.PrimaryThreadRoot) {
             MaterialTheme.colorScheme.background
         } else {
-            MaterialTheme.colorScheme.surfaceColorAtElevation(if (elevate || indentLevel > 0) 2.dp else 0.dp)
+            MaterialTheme.colorScheme.surfaceColorAtElevation(if (elevate ) 2.dp else
+            if (indentLevel > 0) (indentLevel*2).dp else 0.dp)
         }
 
         val contentHandling = remember {
@@ -126,7 +98,7 @@ fun PostFragment(
                 getContentHandling(post) + ContentHandling(
                     scope = LabelScope.Content,
                     id = "muted",
-                    icon = Icons.Default.MoreHoriz,
+                    icon = LabelIcon.EyeSlash(labelerAvatar = null),
                     action = LabelAction.Blur,
                     source = LabelDescription.YouMuted,
                 )
@@ -136,13 +108,14 @@ fun PostFragment(
         }
 
         Surface (
-            shadowElevation = if (elevate || indentLevel > 0) 1.dp else 0.dp,
-            tonalElevation = if ((elevate || indentLevel > 0) && role != PostFragmentRole.ThreadEnd) 2.dp else 0.dp,
-            shape = shape,
+            shadowElevation = if (elevate || indentLevel > 0) 2.dp else 0.dp,
+            tonalElevation = if (elevate && role != PostFragmentRole.ThreadEnd) 2.dp
+                else if (indentLevel > 0) (indentLevel*2).dp else 0.dp,
+            shape = MaterialTheme.shapes.small,
+            //color = bgColor,
             modifier = modifier
                 .fillMaxWidth(indentLevel(indent))
                 .align(Alignment.End)
-                .background(bgColor, shape)
                 .clickable(
                     interactionSource = interactionSource,
                     indication = indication,
@@ -156,8 +129,8 @@ fun PostFragment(
                 scope = LabelScope.Content,
             ) {
                 Row(
-                    modifier = Modifier.padding(bottom = 2.dp).padding(start = 0.dp, end = 6.dp)
-                        .fillMaxWidth(indentLevel(indent))
+                    modifier = Modifier.padding(end = 6.dp)
+                        .fillMaxWidth()//.fillMaxWidth(indentLevel(indent))
                 ) {
 
                     if (indent < 2) {
@@ -167,19 +140,19 @@ fun PostFragment(
                             size = 45.dp,
                             outlineColor = MaterialTheme.colorScheme.background,
                             onClicked = { onProfileClicked(post.author.did) },
-                            avatarShape = AvatarShape.Corner
+                            avatarShape = AvatarShape.Corner,
+                            modifier = Modifier.padding(end = 2.dp)
                         )
                     }
 
                     Column(
                         Modifier
-                            .padding(top = 2.dp)
-                            .padding(horizontal = 6.dp)
-                            .fillMaxWidth(indentLevel(indent)),
+                            .padding(top = 4.dp, start = 2.dp, end = 6.dp)
+                            .fillMaxWidth()//.fillMaxWidth(indentLevel(indent))
                     ) {
                         if (post.reason is BskyPostReason.BskyPostRepost) {
                             Row(
-                                modifier = Modifier,
+                                modifier = Modifier.padding(start = 2.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Icon(
@@ -190,7 +163,7 @@ fun PostFragment(
                                 )
                                 Text(
                                     text = "Reposted by ${post.reason.repostAuthor.displayName}",
-                                    style = MaterialTheme.typography.bodySmall,
+                                    style = MaterialTheme.typography.labelSmall,
                                     color = MaterialTheme.colorScheme.secondary,
                                     modifier = Modifier.padding(start = 5.dp)
                                 )
@@ -198,7 +171,7 @@ fun PostFragment(
                         }
 
                         Row(
-                            modifier = Modifier.padding(top = 4.dp).padding(horizontal = 4.dp),
+                            modifier = Modifier.padding(top = 2.dp, start = 2.dp, end = 4.dp),
                             horizontalArrangement = Arrangement.End
                         ) {
                             if (indent >= 2) {
@@ -216,9 +189,7 @@ fun PostFragment(
                                     withStyle(
                                         style = SpanStyle(
                                             color = MaterialTheme.colorScheme.onSurface,
-                                            fontSize = MaterialTheme.typography.labelLarge.fontSize.times(
-                                                1.2f
-                                            ),
+                                            fontSize = MaterialTheme.typography.labelLarge.fontSize,
                                             fontWeight = FontWeight.Medium
                                         )
                                     ) {
@@ -228,7 +199,7 @@ fun PostFragment(
                                         style = SpanStyle(
                                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                                             fontSize = MaterialTheme.typography.labelLarge.fontSize.times(
-                                                1.0f
+                                                0.8f
                                             )
                                         )
                                     ) {
@@ -351,7 +322,7 @@ internal inline fun ReplyIndicator(
         )
         Text(
             text = stringResource(Res.string.replyIndicator, parent.author.handle),
-            style = MaterialTheme.typography.bodySmall,
+            style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.secondary,
             modifier = Modifier.padding(start = 5.dp)
         )

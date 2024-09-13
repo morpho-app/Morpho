@@ -105,6 +105,7 @@ fun ThreadFragment(
                                     indentLevel = 1,
                                     reason = reason,
                                     elevate = true,
+                                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp),
                                     onItemClicked = onItemClicked,
                                     onProfileClicked = onProfileClicked,
                                     onUnClicked = onUnClicked,
@@ -119,6 +120,7 @@ fun ThreadFragment(
                         item {
                             ThreadItem(
                                 item = threadPost,
+                                indentLevel = 1,
                                 role = PostFragmentRole.PrimaryThreadRoot,
                                 reason = thread.post.reason,
                                 onItemClicked = onItemClicked,
@@ -159,7 +161,7 @@ fun ThreadFragment(
                     item = threadPost,
                     role = PostFragmentRole.PrimaryThreadRoot,
                     reason = thread.post.reason,
-                    modifier = Modifier.padding(vertical = 4.dp),
+                    modifier = Modifier.padding(vertical = 2.dp),
                     onItemClicked = onItemClicked,
                     onProfileClicked = onProfileClicked,
                     onUnClicked = onUnClicked,
@@ -173,39 +175,40 @@ fun ThreadFragment(
         }
         if (hasReplies){
             replies.fastForEach { reply ->
-                    if (reply.replies.isNotEmpty()) {
-                        item {
-                            ThreadTree(
-                                reply = reply, modifier = Modifier.padding(4.dp),
-                                indentLevel = 1,
-                                comparator = comparator,
-                                onItemClicked = {onItemClicked(it) },
-                                onProfileClicked = { onProfileClicked(it) },
-                                onUnClicked =  { type,uri-> onUnClicked(type,uri) },
-                                onRepostClicked = { onRepostClicked(it) },
-                                onReplyClicked = { onReplyClicked(it) },
-                                onMenuClicked = { option, post -> onMenuClicked(option, post) },
-                                onLikeClicked = { onLikeClicked(it) },
-                                getContentHandling = { getContentHandling(it) }
-                            )
-                        }
-                    } else {
-                        item {
-                            ThreadItem(
-                                item = reply, role = PostFragmentRole.Solo, indentLevel = 1,
-                                modifier = Modifier.padding(4.dp),
-                                onItemClicked = onItemClicked,
-                                onProfileClicked = onProfileClicked,
-                                onUnClicked = onUnClicked,
-                                onRepostClicked = onRepostClicked,
-                                onReplyClicked = onReplyClicked,
-                                onMenuClicked = onMenuClicked,
-                                onLikeClicked = onLikeClicked,
-                                getContentHandling = getContentHandling
-                            )
-                        }
+                if (reply.replies.isNotEmpty()) {
+                    item {
+                        ThreadTree(
+                            reply = reply,
+                            modifier = Modifier.padding(vertical = 1.dp, horizontal = 3.dp),
+                            indentLevel = 1,
+                            comparator = comparator,
+                            onItemClicked = {onItemClicked(it) },
+                            onProfileClicked = { onProfileClicked(it) },
+                            onUnClicked =  { type,uri-> onUnClicked(type,uri) },
+                            onRepostClicked = { onRepostClicked(it) },
+                            onReplyClicked = { onReplyClicked(it) },
+                            onMenuClicked = { option, post -> onMenuClicked(option, post) },
+                            onLikeClicked = { onLikeClicked(it) },
+                            getContentHandling = { getContentHandling(it) }
+                        )
                     }
-
+                } else {
+                    item {
+                        ThreadItem(
+                            item = reply, role = PostFragmentRole.Solo, indentLevel = 0,
+                            elevate = true,
+                            modifier = Modifier.padding(horizontal = 3.dp, vertical = 1.dp),
+                            onItemClicked = onItemClicked,
+                            onProfileClicked = onProfileClicked,
+                            onUnClicked = onUnClicked,
+                            onRepostClicked = onRepostClicked,
+                            onReplyClicked = onReplyClicked,
+                            onMenuClicked = onMenuClicked,
+                            onLikeClicked = onLikeClicked,
+                            getContentHandling = getContentHandling
+                        )
+                    }
+                }
             }
         }
     }

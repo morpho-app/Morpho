@@ -45,16 +45,16 @@ inline fun SkylineThreadFragment(
     val hasReplies = rememberSaveable { threadPost.replies.isNotEmpty() }
     var showReplies by remember { mutableStateOf(threadPost.replies.size <= 2)}
     var showFullThread by remember { mutableStateOf(thread.parents.size <= 3)}
+    val parents = remember { thread.parents.distinctBy { it.uri } }
 
     Surface(
         tonalElevation = if (hasReplies) 1.dp else 0.dp,
         shape = MaterialTheme.shapes.extraSmall,
         modifier = if (hasReplies) modifier.padding(2.dp) else modifier.fillMaxWidth()
     ) {
-        Column(
-        ) {
-            if (thread.parents.isNotEmpty()) {
-                when (val root = thread.parents[0]) {
+        Column {
+            if (parents.isNotEmpty()) {
+                when (val root = parents[0]) {
                     is ThreadPost.ViewablePost -> if (root.post.uri == thread.post.uri) {
                         Surface(
                             tonalElevation = 1.dp,
@@ -65,7 +65,7 @@ inline fun SkylineThreadFragment(
                         ) {
                             PostFragment(
                                 post = root.post,
-                                role = PostFragmentRole.ThreadBranchStart,
+                                role = PostFragmentRole.Solo,
                                 elevate = true,
                                 modifier = if(debuggable) Modifier.border(1.dp, Color.Cyan) else Modifier,
                                 onItemClicked = {onItemClicked(it) },
@@ -89,7 +89,7 @@ inline fun SkylineThreadFragment(
                                 modifier = Modifier
                                     .padding(4.dp),
                             ) {
-                                if(thread.parents.size > 3) {
+                                if(parents.size > 3) {
                                     ThreadItem(
                                         item = thread.parents[0],
                                         modifier = if(debuggable) Modifier.border(1.dp, Color.Green) else Modifier,
@@ -136,7 +136,7 @@ inline fun SkylineThreadFragment(
 
 
                                     if (showFullThread) {
-                                        thread.parents.fastForEachIndexed { index, post ->
+                                        parents.fastForEachIndexed { index, post ->
                                             val reason = remember {
                                                 when (post) {
                                                     is ThreadPost.BlockedPost -> null
@@ -148,12 +148,18 @@ inline fun SkylineThreadFragment(
                                             }
                                             val role = remember {
                                                 when (index) {
-                                                    thread.parents.lastIndex -> PostFragmentRole.ThreadBranchEnd
-                                                    0 -> PostFragmentRole.ThreadBranchStart
+                                                    0 -> PostFragmentRole.Solo
+                                                    1 -> PostFragmentRole.ThreadBranchStart
+                                                    parents.lastIndex -> PostFragmentRole.ThreadBranchEnd
                                                     else -> PostFragmentRole.ThreadBranchMiddle
                                                 }
                                             }
-                                            if (post is ThreadPost.ViewablePost && (index < thread.parents.lastIndex) && (index != 0)) {
+                                            if (
+                                                post is ThreadPost.ViewablePost
+                                                && post.uri != threadPost.uri
+                                                && (index > 0 || parents.lastIndex < 2)
+                                                && index < parents.lastIndex
+                                            ) {
                                                 ThreadItem(
                                                     item = post,
                                                     role = role,
@@ -173,23 +179,28 @@ inline fun SkylineThreadFragment(
                                             }
                                         }
                                     }
-                                    ThreadItem(
-                                        item = thread.parents[thread.parents.lastIndex],
-                                        role = PostFragmentRole.ThreadBranchEnd,
-                                        indentLevel = 1,
-                                        modifier = if(debuggable) Modifier.border(1.dp, Color.Yellow) else Modifier,
-                                        elevate = true,
-                                        onItemClicked = onItemClicked,
-                                        onProfileClicked = onProfileClicked,
-                                        onUnClicked = onUnClicked,
-                                        onRepostClicked = onRepostClicked,
-                                        onReplyClicked = onReplyClicked,
-                                        onLikeClicked = onLikeClicked,
-                                        onMenuClicked = onMenuClicked,
-                                        getContentHandling = getContentHandling
-                                    )
+                                    if (parents[parents.lastIndex] is ThreadPost.ViewablePost) {
+                                        ThreadItem(
+                                            item = parents[parents.lastIndex],
+                                            role = PostFragmentRole.ThreadBranchEnd,
+                                            indentLevel = 1,
+                                            modifier = if (debuggable) Modifier.border(
+                                                1.dp,
+                                                Color.Yellow
+                                            ) else Modifier,
+                                            elevate = true,
+                                            onItemClicked = onItemClicked,
+                                            onProfileClicked = onProfileClicked,
+                                            onUnClicked = onUnClicked,
+                                            onRepostClicked = onRepostClicked,
+                                            onReplyClicked = onReplyClicked,
+                                            onLikeClicked = onLikeClicked,
+                                            onMenuClicked = onMenuClicked,
+                                            getContentHandling = getContentHandling
+                                        )
+                                    }
                                 } else {
-                                    thread.parents.fastForEachIndexed { index, post ->
+                                    parents.fastForEachIndexed { index, post ->
                                         val reason = remember {
                                             when (post) {
                                                 is ThreadPost.BlockedPost -> null
@@ -201,12 +212,14 @@ inline fun SkylineThreadFragment(
                                         }
                                         val role = remember {
                                             when (index) {
-                                                thread.parents.lastIndex -> PostFragmentRole.ThreadBranchEnd
-                                                0 -> PostFragmentRole.ThreadBranchStart
+                                                0 -> PostFragmentRole.ThreadRootUnfocused
+                                                parents.lastIndex -> PostFragmentRole.ThreadBranchEnd
                                                 else -> PostFragmentRole.ThreadBranchMiddle
                                             }
                                         }
-                                        if (post is ThreadPost.ViewablePost && post.uri != threadPost.uri) {
+                                        if (post is ThreadPost.ViewablePost
+                                            && post.uri != threadPost.uri
+                                        ) {
                                             ThreadItem(
                                                 item = post,
                                                 role = role,
@@ -228,9 +241,9 @@ inline fun SkylineThreadFragment(
                                 }
 
                                 val role = remember {
-                                    when (thread.parents.size) {
+                                    when (parents.size) {
                                         0 -> PostFragmentRole.Solo
-                                        1 -> PostFragmentRole.ThreadEnd
+                                        1 -> PostFragmentRole.Solo
                                         else -> PostFragmentRole.Solo
                                     }
                                 }
@@ -239,8 +252,8 @@ inline fun SkylineThreadFragment(
                                     role = role,
                                     reason = null,
                                     elevate = true,
-                                    modifier = if(debuggable) Modifier.border(1.dp, Color.Magenta) else Modifier
-                                        .padding(4.dp),
+                                    modifier = if(debuggable) Modifier.border(1.dp, Color.Magenta) else Modifier,
+                                        //.padding(4.dp),
                                     onItemClicked = onItemClicked,
                                     onProfileClicked = onProfileClicked,
                                     onUnClicked = onUnClicked,
@@ -259,7 +272,7 @@ inline fun SkylineThreadFragment(
                 }
             } else {
                 val role = remember {
-                    when (thread.parents.size) {
+                    when (parents.size) {
                         0 -> PostFragmentRole.Solo
                         1 -> PostFragmentRole.ThreadEnd
                         else -> PostFragmentRole.Solo
@@ -268,7 +281,7 @@ inline fun SkylineThreadFragment(
                 ThreadItem(
                     item = threadPost,
                     role = role,
-                    reason = thread.post.reason,
+                    reason = null,
                     elevate = true,
                     modifier = if(debuggable) Modifier.border(1.dp, Color.Blue) else Modifier
                         .padding(4.dp),
@@ -323,7 +336,7 @@ inline fun SkylineThreadFragment(
                             val replies = remember {threadPost.replies.filterIsInstance<ThreadPost.ViewablePost>()}
                             replies.fastForEach { post: ThreadPost ->
                                 if (post is ThreadPost.ViewablePost) {
-                                    if (post.replies.isNotEmpty()) {
+                                    if (post.replies.isNotEmpty() && replies.size > 1) {
                                         ThreadTree(
                                             reply = post, indentLevel = 1,
                                             modifier = Modifier.padding(4.dp),
@@ -339,7 +352,7 @@ inline fun SkylineThreadFragment(
                                     } else {
                                         ThreadItem(
                                             item = post,
-                                            role = PostFragmentRole.ThreadRootUnfocused,
+                                            role = PostFragmentRole.ThreadEnd,
                                             indentLevel = 1,
                                             modifier = Modifier.padding(4.dp),
                                             onItemClicked = onItemClicked,

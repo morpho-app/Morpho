@@ -3,6 +3,7 @@ package com.morpho.app
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.DefaultLifecycleObserver
+import com.gu.toolargetool.TooLargeTool
 import com.morpho.app.data.PreferencesRepository
 import com.morpho.app.di.appModule
 import com.morpho.app.di.dataModule
@@ -32,7 +33,7 @@ class AndroidMainViewModel(app: Application): AndroidViewModel(app), DefaultLife
 
 class MorphoApplication : Application() {
     override fun onCreate() {
-
+        TooLargeTool.startLogging(this);
 
         val koin = startKoin {
             androidContext(this@MorphoApplication)

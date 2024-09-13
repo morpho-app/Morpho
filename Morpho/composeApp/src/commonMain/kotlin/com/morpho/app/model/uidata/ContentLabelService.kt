@@ -1,7 +1,9 @@
 package com.morpho.app.model.uidata
 
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.HideImage
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.StopCircle
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -12,11 +14,12 @@ import app.bsky.actor.Visibility
 import com.atproto.label.LabelValue
 import com.atproto.label.Severity
 import com.morpho.app.model.bluesky.*
-import com.morpho.app.util.JavaSerializable
 import com.morpho.butterfly.AtUri
 import com.morpho.butterfly.Butterfly
 import com.morpho.butterfly.Language
 import com.morpho.butterfly.model.ReadOnlyList
+import dev.icerock.moko.parcelize.Parcelable
+import dev.icerock.moko.parcelize.Parcelize
 import kotlinx.collections.immutable.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.SharingStarted
@@ -28,26 +31,72 @@ import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import org.lighthousegames.logging.logging
 
-
+@Parcelize
 data class ContentHandling(
     val scope: LabelScope,
     val action: LabelAction,
     val source: LabelDescription,
     val id: String,
+    val icon: LabelIcon,
+): Parcelable
 
-    val icon: ImageVector,
-): JavaSerializable
-
-
+@Parcelize
 @Immutable
 @Serializable
-sealed interface LabelDescription: JavaSerializable {
+sealed interface LabelIcon: Parcelable {
+    val labelerAvatar: String?
+    val icon: ImageVector
+
+    @Serializable
+    @Immutable
+    data class CircleBanSign(
+        override val labelerAvatar: String?
+    ): LabelIcon {
+        override val icon: ImageVector
+            get() = Icons.Default.StopCircle
+    }
+
+    @Serializable
+    @Immutable
+    data class Warning(
+        override val labelerAvatar: String?
+    ): LabelIcon {
+        override val icon: ImageVector
+            get() = Icons.Default.Warning
+    }
+
+    @Serializable
+    @Immutable
+    data class EyeSlash(
+        override val labelerAvatar: String?
+    ): LabelIcon {
+        override val icon: ImageVector
+            get() = Icons.Default.HideImage
+    }
+
+    @Serializable
+    @Immutable
+    data class CircleInfo(
+        override val labelerAvatar: String?
+    ): LabelIcon {
+        override val icon: ImageVector
+            get() = Icons.Default.Info
+    }
+
+}
+
+@Parcelize
+@Immutable
+@Serializable
+sealed interface LabelDescription: Parcelable {
     val name: String
     val description: String
 
+    @Parcelize
     @Immutable
     @Serializable
-    sealed interface Block: LabelDescription
+    sealed interface Block: LabelDescription, Parcelable
+    @Parcelize
     @Immutable
     @Serializable
     data object Blocking: Block {
@@ -55,12 +104,14 @@ sealed interface LabelDescription: JavaSerializable {
         override val description: String = "You have blocked this user. You cannot view their content"
 
     }
+    @Parcelize
     @Immutable
     @Serializable
     data object BlockedBy: Block {
         override val name: String = "User Blocking You"
         override val description: String = "This user has blocked you. You cannot view their content."
     }
+    @Parcelize
     @Immutable
     @Serializable
     data class BlockList(
@@ -70,6 +121,7 @@ sealed interface LabelDescription: JavaSerializable {
         override val name: String = "User Blocked by $listName"
         override val description: String = "This user is on a block list you subscribe to. You cannot view their content."
     }
+    @Parcelize
     @Immutable
     @Serializable
     data object OtherBlocked: Block {
@@ -77,9 +129,12 @@ sealed interface LabelDescription: JavaSerializable {
         override val description: String = "This content is not available because one of the users involved has blocked the other."
     }
 
+    @Parcelize
     @Immutable
     @Serializable
-    sealed interface Muted: LabelDescription
+    sealed interface Muted: LabelDescription, Parcelable
+
+    @Parcelize
     @Immutable
     @Serializable
     data class MuteList(
@@ -89,12 +144,14 @@ sealed interface LabelDescription: JavaSerializable {
         override val name: String = "User Muted by $listName"
         override val description: String = "This user is on a mute list you subscribe to."
     }
+    @Parcelize
     @Immutable
     @Serializable
     data object YouMuted: Muted {
         override val name: String = "Account Muted"
         override val description: String = "You have muted this user."
     }
+    @Parcelize
     @Immutable
     @Serializable
     data class MutedWord(val word: String): Muted {
@@ -102,6 +159,7 @@ sealed interface LabelDescription: JavaSerializable {
         override val description: String = "This post contains the word or tag \"$word\". You've chosen to hide it."
     }
 
+    @Parcelize
     @Immutable
     @Serializable
     data class HiddenPost(val uri: AtUri): LabelDescription {
@@ -109,6 +167,7 @@ sealed interface LabelDescription: JavaSerializable {
         override val description: String = "You have hidden this post."
     }
 
+    @Parcelize
     @Immutable
     @Serializable
     data class Label(
@@ -118,9 +177,10 @@ sealed interface LabelDescription: JavaSerializable {
     ): LabelDescription
 }
 
+@Parcelize
 @Immutable
 @Serializable
-sealed interface LabelSource: JavaSerializable {
+sealed interface LabelSource: Parcelable {
     @Immutable
     @Serializable
     data object User: LabelSource
@@ -136,9 +196,10 @@ sealed interface LabelSource: JavaSerializable {
     ): LabelSource
 }
 
+@Parcelize
 @Immutable
 @Serializable
-sealed interface LabelCause: JavaSerializable {
+sealed interface LabelCause: Parcelable {
     val downgraded: Boolean
     val priority: Int
     val source: LabelSource
@@ -219,7 +280,7 @@ sealed interface LabelCause: JavaSerializable {
 }
 
 
-
+@Parcelize
 @Serializable
 @Immutable
 open class InterpretedLabelDefinition(
@@ -235,12 +296,12 @@ open class InterpretedLabelDefinition(
     val localizedDescription: String = "",
     @Contextual
     val allDescriptions: ImmutableMap<Language, LocalizedLabelDescription> = persistentMapOf(),
-): JavaSerializable {
+): Parcelable {
     companion object {
 
     }
 
-    public fun toContentHandling(target: LabelTarget, icon: ImageVector? = null): ContentHandling {
+    public fun toContentHandling(target: LabelTarget, avatar: String? = null): ContentHandling {
         val action = behaviours.forScope(whatToHide, target).minOrNull() ?: when(defaultSetting) {
             LabelSetting.HIDE -> LabelAction.Blur
             LabelSetting.WARN -> LabelAction.Alert
@@ -256,10 +317,10 @@ open class InterpretedLabelDefinition(
                 description = localizedDescription,
                 severity = severity,
             ),
-            icon = icon ?: when(severity) {
-                Severity.ALERT -> Icons.Default.Warning
-                Severity.NONE -> Icons.Default.Info
-                Severity.INFORM -> Icons.Default.Info
+            icon = when(severity) {
+                Severity.ALERT -> LabelIcon.Warning(labelerAvatar = avatar)
+                Severity.NONE -> LabelIcon.CircleInfo(labelerAvatar = avatar)
+                Severity.INFORM -> LabelIcon.CircleInfo(labelerAvatar = avatar)
             }
         )
     }
@@ -274,6 +335,8 @@ val LABELS: PersistentMap<LabelValue, InterpretedLabelDefinition> = persistentMa
     LabelValue.NUDITY to Nudity,
     LabelValue.GRAPHIC_MEDIA to GraphicMedia,
 )
+
+@Parcelize
 @Immutable
 @Serializable
 data object Hide: InterpretedLabelDefinition(
@@ -340,6 +403,7 @@ data object Warn: InterpretedLabelDefinition(
     localizedDescription = "Warn",
 )
 
+@Parcelize
 @Immutable
 @Serializable
 data object NoUnauthed: InterpretedLabelDefinition(
@@ -873,7 +937,7 @@ class ContentLabelService: KoinComponent {
                         action = LabelAction.Blur,
                         source = LabelDescription.Blocking,
                         id = "blocking",
-                        icon = Icons.Default.Info,
+                        icon = LabelIcon.CircleInfo(labelerAvatar = null),
                     ))
                 }
                 is LabelCause.BlockedBy -> {
@@ -882,7 +946,7 @@ class ContentLabelService: KoinComponent {
                         action = LabelAction.Blur,
                         source = LabelDescription.BlockedBy,
                         id = "blocked-by",
-                        icon = Icons.Default.Info,
+                        icon = LabelIcon.CircleInfo(labelerAvatar = null),
                     ))
                 }
                 is LabelCause.BlockOther -> {
@@ -891,7 +955,7 @@ class ContentLabelService: KoinComponent {
                         action = LabelAction.Blur,
                         source = LabelDescription.OtherBlocked,
                         id = "blocked-other",
-                        icon = Icons.Default.Info,
+                        icon = LabelIcon.CircleInfo(labelerAvatar = null),
                     ))
                 }
                 is LabelCause.Muted -> {
@@ -901,7 +965,7 @@ class ContentLabelService: KoinComponent {
                         action = LabelAction.Blur,
                         source = LabelDescription.YouMuted,
                         id = "muted",
-                        icon = Icons.Default.Info,
+                        icon = LabelIcon.CircleInfo(labelerAvatar = null),
                     ))
                 }
                 is LabelCause.MutedWord -> {
@@ -911,7 +975,7 @@ class ContentLabelService: KoinComponent {
                             action = LabelAction.Blur,
                             source = LabelDescription.MutedWord("Some word"),
                             id = "muted-word",
-                            icon = Icons.Default.Info,
+                            icon = LabelIcon.CircleInfo(labelerAvatar = null),
                         )
                     )
                 }

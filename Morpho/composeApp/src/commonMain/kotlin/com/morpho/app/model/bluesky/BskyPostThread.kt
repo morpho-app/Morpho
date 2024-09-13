@@ -1,7 +1,6 @@
 @file:Suppress("MemberVisibilityCanBePrivate")
 
 package com.morpho.app.model.bluesky
-
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.util.fastForEachIndexed
 import app.bsky.feed.ThreadViewPost
@@ -11,18 +10,21 @@ import com.morpho.app.model.bluesky.ThreadPost.*
 import com.morpho.app.util.mapImmutable
 import com.morpho.butterfly.AtUri
 import com.morpho.butterfly.Cid
+import dev.icerock.moko.parcelize.Parcelable
+import dev.icerock.moko.parcelize.Parcelize
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.serialization.Serializable
 
 
+@Parcelize
 @Immutable
 @Serializable
 data class BskyPostThread(
     val post: BskyPost,
     val parents: List<ThreadPost>,
     val replies: List<ThreadPost>,
-) {
+):  Parcelable {
     operator fun contains(other: Any?) : Boolean {
         when(other) {
             null -> return false
@@ -156,9 +158,10 @@ fun List<ThreadPost>.inParentOrder(): List<ThreadPost> {
     return newList.distinctBy { it.uri }
 }
 
+@Parcelize
 @Immutable
 @Serializable
-sealed interface ThreadPost {
+sealed interface ThreadPost:Parcelable {
     val uri: AtUri?
 
     @Immutable
@@ -281,6 +284,13 @@ sealed interface ThreadPost {
             is ViewablePost -> ViewablePost(post, (replies + reply).distinctBy { it.uri })
             is BlockedPost -> BlockedPost(uri)
             is NotFoundPost -> NotFoundPost(uri)
+        }
+    }
+
+    fun hasReplies(): Boolean {
+        return when(this) {
+            is ViewablePost -> replies.isNotEmpty()
+            else -> false
         }
     }
 

@@ -4,16 +4,22 @@ import androidx.compose.runtime.Immutable
 import app.bsky.feed.FeedViewPostReasonUnion
 import app.bsky.feed.SkeletonFeedPostReasonUnion
 import com.morpho.app.model.uidata.Moment
+import com.morpho.app.model.uidata.MomentParceler
 import com.morpho.butterfly.AtUri
+import dev.icerock.moko.parcelize.Parcelable
+import dev.icerock.moko.parcelize.Parcelize
+import dev.icerock.moko.parcelize.TypeParceler
 import kotlinx.serialization.Serializable
 
+@Parcelize
 @Immutable
 @Serializable
-sealed interface BskyPostReason {
+sealed interface BskyPostReason: Parcelable {
     @Immutable
     @Serializable
     data class BskyPostRepost(
         val repostAuthor: Profile,
+        @TypeParceler<Moment, MomentParceler>()
         val indexedAt: Moment,
     ) : BskyPostReason
 

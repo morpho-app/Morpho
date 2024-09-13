@@ -2,12 +2,11 @@ package com.morpho.app.model.bluesky
 
 import androidx.compose.runtime.Immutable
 import app.bsky.feed.*
-import com.morpho.app.CommonParcelable
 import com.morpho.app.CommonParcelize
-import com.morpho.app.CommonRawValue
-import com.morpho.app.util.JavaSerializable
 import com.morpho.app.util.deserialize
 import com.morpho.butterfly.AtUri
+import dev.icerock.moko.parcelize.Parcelable
+import dev.icerock.moko.parcelize.Parcelize
 import kotlinx.serialization.Serializable
 
 
@@ -18,10 +17,11 @@ import kotlinx.serialization.Serializable
  * This would help keep "when" statements from scenario where we want
  *      e.g. PostItems and ThreadItems from needing to handle all possible subtypes.
  */
+@Parcelize
 @Immutable
 @Serializable
 @CommonParcelize
-sealed interface MorphoDataItem: CommonParcelable, JavaSerializable {
+sealed interface MorphoDataItem: Parcelable {
 
     @Immutable
     @Serializable
@@ -254,8 +254,8 @@ sealed interface MorphoDataItem: CommonParcelable, JavaSerializable {
     @Serializable
     @CommonParcelize
     data class Post(
-        val post: @CommonRawValue BskyPost,
-        val reason: @CommonRawValue BskyPostReason? = post.reason,
+        val post: BskyPost,
+        val reason: BskyPostReason? = post.reason,
         val isOrphan: Boolean = false,
     ): FeedItem
 
@@ -263,8 +263,8 @@ sealed interface MorphoDataItem: CommonParcelable, JavaSerializable {
     @Serializable
     @CommonParcelize
     data class Thread(
-        val thread: @CommonRawValue BskyPostThread,
-        val reason: @CommonRawValue BskyPostReason? = null,
+        val thread: BskyPostThread,
+        val reason: BskyPostReason? = null,
         val isIncompleteThread: Boolean = false,
     ): FeedItem {
         fun addReply(reply: BskyPost): Thread {
@@ -281,21 +281,21 @@ sealed interface MorphoDataItem: CommonParcelable, JavaSerializable {
     @Serializable
     @CommonParcelize
     data class FeedInfo(
-        val feed: @CommonRawValue FeedGenerator,
+        val feed: FeedGenerator,
     ): MorphoDataItem
 
     @Immutable
     @Serializable
     @CommonParcelize
     data class ProfileItem(
-        val profile: @CommonRawValue Profile,
+        val profile:Profile,
     ): MorphoDataItem
 
     @Immutable
     @Serializable
     @CommonParcelize
     data class ListInfo(
-        val list: @CommonRawValue BskyList,
+        val list: BskyList,
     ): MorphoDataItem
 
 
@@ -303,14 +303,14 @@ sealed interface MorphoDataItem: CommonParcelable, JavaSerializable {
     @Serializable
     @CommonParcelize
     data class ModLabel(
-        val label: @CommonRawValue BskyLabelDefinition,
+        val label: BskyLabelDefinition,
     ): MorphoDataItem
 
     @Immutable
     @Serializable
     @CommonParcelize
     data class LabelService(
-        val service: @CommonRawValue BskyLabelService,
+        val service: BskyLabelService,
     ): MorphoDataItem
 
     fun containsUri(uri: AtUri): Boolean {

@@ -3,16 +3,20 @@ package com.morpho.app.model.bluesky
 import androidx.compose.runtime.Immutable
 import app.bsky.feed.*
 import com.morpho.app.model.uidata.Moment
+import com.morpho.app.model.uidata.MomentParceler
 import com.morpho.app.util.deserialize
 import com.morpho.app.util.mapImmutable
 import com.morpho.butterfly.AtUri
 import com.morpho.butterfly.Cid
 import com.morpho.butterfly.Language
+import dev.icerock.moko.parcelize.Parcelable
+import dev.icerock.moko.parcelize.Parcelize
+import dev.icerock.moko.parcelize.TypeParceler
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.datetime.Clock
 import kotlinx.serialization.Serializable
 
-
+@Parcelize
 @Serializable
 @Immutable
 data class BskyPost (
@@ -24,12 +28,14 @@ data class BskyPost (
     val facets: List<BskyFacet> = listOf(),
     @Serializable
     val tags: List<String> = listOf(),
+    @TypeParceler<Moment, MomentParceler>()
     val createdAt: Moment,
     @Serializable
     val feature: BskyPostFeature? = null,
     val replyCount: Long,
     val repostCount: Long,
     val likeCount: Long,
+    @TypeParceler<Moment, MomentParceler>()
     val indexedAt: Moment,
     val reposted: Boolean,
     val repostUri: AtUri? = null,
@@ -41,8 +47,8 @@ data class BskyPost (
     val reason: BskyPostReason? = null,
     @Serializable
     val langs: List<Language> = listOf(),
-) {
-    override operator fun equals(other: Any?) : Boolean {
+): Parcelable {
+    override fun equals(other: Any?) : Boolean {
         return when(other) {
             null -> false
             is Cid -> other == cid
@@ -150,7 +156,7 @@ fun PostView.toPost(
     }
     // copy in the replyRef if it's not already there
     val replyRef = reply?.copy(
-        replyRef = postRecord.reply,
+        replyRef = postRecord.reply?.toReplyRef(),
         grandParentAuthor = reply.grandParentAuthor ?:
             postRecord.reply?.grandParentAuthor?.toProfile()
     ) ?: postRecord.reply?.toReply()

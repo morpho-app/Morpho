@@ -166,7 +166,8 @@ class BskyDataService: KoinComponent {
                             oldCursor = cursor,
                             feed = response.feed,
                             data = data as MorphoData<MorphoDataItem.FeedItem>,
-                        ).collectThreads(api = api).single()
+                            api = api,
+                        ).single()
                         var tunedFeed = new
                         useFeedTuners(tunedFeed).forEach { tuner ->
                             tunedFeed = tuner.tune(tunedFeed)
@@ -195,7 +196,8 @@ class BskyDataService: KoinComponent {
                             feed = response.feed,
                             data = data as MorphoData<MorphoDataItem.FeedItem>,
                             title = "Posts",
-                        ).collectThreads(api = api).single()
+                            api = api,
+                        ).single()
                         useFeedTuners(tunedFeed).forEach { tuner ->
                             tunedFeed = tuner.tune(tunedFeed)
                         }
@@ -223,7 +225,8 @@ class BskyDataService: KoinComponent {
                             feed = response.feed,
                             data = data as MorphoData<MorphoDataItem.FeedItem>,
                             title = "Replies",
-                        ).collectThreads(api = api).single()
+                            api = api,
+                        ).single()
                         useFeedTuners(tunedFeed).forEach { tuner ->
                             tunedFeed = tuner.tune(tunedFeed)
                         }
@@ -244,7 +247,7 @@ class BskyDataService: KoinComponent {
                         if (response.cursor == cursor.cursor && cursor != AtCursor.EMPTY) {
                             return@onSuccess
                         }
-                        var tunedFeed = MorphoData.concatFeed(
+                        var tunedFeed = MorphoData.concatNonThreadedFeed(
                             query = json.encodeToJsonElement(query),
                             responseCursor = response.cursor,
                             oldCursor = cursor,
@@ -272,7 +275,7 @@ class BskyDataService: KoinComponent {
                         if (response.cursor == cursor.cursor && cursor != AtCursor.EMPTY) {
                             return@onSuccess
                         }
-                        var tunedFeed = MorphoData.concatFeed(
+                        var tunedFeed = MorphoData.concatNonThreadedFeed(
                             query = json.encodeToJsonElement(query),
                             responseCursor = response.cursor,
                             oldCursor = cursor,
@@ -400,7 +403,8 @@ class BskyDataService: KoinComponent {
                             oldCursor = cursor,
                             feed = response.feed,
                             data = data as MorphoData<MorphoDataItem.FeedItem>,
-                        ).collectThreads(api = api).single()
+                            api = api,
+                        ).single()
                         useFeedTuners(tunedFeed).forEach { tuner ->
                             tunedFeed = tuner.tune(tunedFeed)
                         }
@@ -427,7 +431,8 @@ class BskyDataService: KoinComponent {
                             oldCursor = cursor,
                             feed = response.feed,
                             data = data as MorphoData<MorphoDataItem.FeedItem>,
-                        ).collectThreads(api = api).single()
+                            api = api,
+                        ).single()
                         useFeedTuners(tunedFeed).forEach { tuner ->
                             tunedFeed = tuner.tune(tunedFeed)
                         }
@@ -469,7 +474,8 @@ class BskyDataService: KoinComponent {
                         data = (prev ?: MorphoData.EMPTY()) as MorphoData<MorphoDataItem.FeedItem>,
                         title = "Home",
                         uri = AtUri.HOME_URI,
-                    ).collectThreads(api = api).single()
+                        api = api,
+                    ).single()
                     useFeedTuners(tunedFeed).forEach { tuner ->
                         tunedFeed = tuner.tune(tunedFeed)
                     }
@@ -529,7 +535,8 @@ class BskyDataService: KoinComponent {
                         data = (prev ?: MorphoData.EMPTY()) as MorphoData<MorphoDataItem.FeedItem>,
                         title = feedInfo.name,
                         uri = feedInfo.uri,
-                    ).collectThreads(api = api).single()
+                        api = api,
+                    ).single()
                     useFeedTuners(tunedFeed).forEach { tuner ->
                         tunedFeed = tuner.tune(tunedFeed)
                     }
@@ -653,7 +660,8 @@ class BskyDataService: KoinComponent {
                                 feed = response.feed,
                                 data = (prev ?: MorphoData.EMPTY()) as MorphoData<MorphoDataItem.FeedItem>,
                                 title = "Posts",
-                            ).collectThreads(api = api).single()
+                                api = api,
+                            ).single()
                             useFeedTuners(tunedFeed).forEach { tuner ->
                                 tunedFeed = tuner.tune(tunedFeed)
                             }
@@ -685,7 +693,8 @@ class BskyDataService: KoinComponent {
                             feed = response.feed,
                             data = (prev ?: MorphoData.EMPTY()) as MorphoData<MorphoDataItem.FeedItem>,
                             title = "Replies",
-                        ).collectThreads(api = api).single()
+                            api = api,
+                        ).single()
                         useFeedTuners(tunedFeed).forEach { tuner ->
                             tunedFeed = tuner.tune(tunedFeed)
                         }
@@ -710,7 +719,7 @@ class BskyDataService: KoinComponent {
                         if (response.cursor == cur.cursor) {
                             return@collect
                         }
-                        var tunedFeed = MorphoData.concatFeed(
+                        var tunedFeed = MorphoData.concatNonThreadedFeed(
                             query = json.encodeToJsonElement(query),
                             responseCursor = response.cursor,
                             oldCursor = cur,
@@ -881,7 +890,7 @@ class BskyDataService: KoinComponent {
 
             val query = GetActorLikesQuery(id, limit, cur.cursor)
             api.api.getActorLikes(query) .onSuccess { response ->
-                var tunedFeed = MorphoData.concatFeed(
+                var tunedFeed = MorphoData.concatNonThreadedFeed(
                     query = json.encodeToJsonElement(query),
                     responseCursor = response.cursor,
                     oldCursor = cur,

@@ -31,13 +31,13 @@ import com.morpho.app.model.bluesky.LabelAction
 import com.morpho.app.model.bluesky.LabelScope
 import com.morpho.app.model.uidata.ContentHandling
 import com.morpho.app.model.uidata.LabelDescription
+import com.morpho.app.model.uidata.LabelIcon
 import com.morpho.app.ui.elements.*
 import com.morpho.app.util.openBrowser
 import com.morpho.butterfly.AtIdentifier
 import com.morpho.butterfly.AtUri
 import com.morpho.butterfly.model.RecordType
 import kotlinx.collections.immutable.toImmutableList
-import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import org.jetbrains.compose.resources.ExperimentalResourceApi
@@ -57,13 +57,14 @@ fun FullPostFragment(
     getContentHandling: (BskyPost) -> List<ContentHandling> = { listOf() }
 ) {
     val postDate = remember { post.createdAt.instant.toLocalDateTime(TimeZone.currentSystemDefault()).date }
+    val postTime = remember { post.createdAt.instant.toLocalDateTime(TimeZone.currentSystemDefault()).time }
     var menuExpanded by remember { mutableStateOf(false) }
     val contentHandling = remember {
         if (post.author.mutedByMe) {
             getContentHandling(post) + ContentHandling(
                 scope = LabelScope.Content,
                 id = "muted",
-                icon = Icons.Default.MoreHoriz,
+                icon = LabelIcon.EyeSlash(labelerAvatar = null),
                 action = LabelAction.Blur,
                 source = LabelDescription.YouMuted,
             )
@@ -147,7 +148,7 @@ fun FullPostFragment(
                     Icon(
                         imageVector = Icons.Default.MoreHoriz,
                         contentDescription = "More",
-                        tint = MaterialTheme.colorScheme.onSurface
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
                 DisableSelection { PostMenu(menuExpanded, {
@@ -195,12 +196,18 @@ fun FullPostFragment(
                     },
                 )
             }
-            val postTimestamp = remember {
-                val seconds = post.createdAt.instant.epochSeconds % 60
-                Instant.fromEpochSeconds(post.createdAt.instant.epochSeconds - seconds)
-                    .toLocalDateTime(TimeZone.currentSystemDefault()).time
-            }
 
+            val postTimestamp = remember {
+                // attmepts to cleanly handle 12-hour time while stripping seconds and sub-seconds
+                val string = postTime.toString()
+                if(string.contains("AM") || string.contains("PM")) {
+                    val ampm = if(string.contains("AM")) "AM" else "PM"
+                    val components = string.split(":")
+                    "${components[0]}:${components[1]} $ampm"
+                } else {
+                    string.substringBeforeLast(":")
+                }
+            }
             PostFeatureElement(
                 post.feature, onItemClicked, contentHandling =  contentHandling
             )

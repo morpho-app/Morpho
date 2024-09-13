@@ -1,7 +1,5 @@
 package com.morpho.app.screens.main
 
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Home
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -129,8 +127,7 @@ open class MainScreenModel: BaseScreenModel() {
             uri == AtUri.HOME_URI -> return FeedInfo(
                 uri,
                 "Home",
-                "Your home feed",
-                icon = Icons.Default.Home
+                "Your home feed"
             )
 
             else -> {
@@ -142,8 +139,7 @@ open class MainScreenModel: BaseScreenModel() {
                             is UIFeedType.Timeline -> return FeedInfo(
                                 uri,
                                 "Home",
-                                "Your home feed",
-                                icon = Icons.Default.Home
+                                "Your home feed"
                             )
                         }
                     }?.let {

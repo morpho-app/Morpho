@@ -5,16 +5,20 @@ import app.bsky.embed.*
 import app.bsky.feed.Post
 import app.bsky.feed.PostEmbedUnion
 import app.bsky.feed.PostViewEmbedUnion
+import com.morpho.app.CommonRawValue
 import com.morpho.app.model.uidata.Moment
+import com.morpho.app.model.uidata.MomentParceler
 import com.morpho.app.util.mapImmutable
 import com.morpho.butterfly.*
 import com.morpho.butterfly.model.Blob
+import dev.icerock.moko.parcelize.*
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonElement
 
+@Parcelize
 @Immutable
 @Serializable
-sealed interface BskyPostFeature {
+sealed interface BskyPostFeature: Parcelable {
     @Immutable
     @Serializable
     data class ImagesFeature(
@@ -26,6 +30,7 @@ sealed interface BskyPostFeature {
     data class VideoFeature(
         val video: VideoEmbed,
         val alt: String,
+        @TypeParceler<AspectRatio?, MaybeAspectRatioParceler>()
         val aspectRatio: AspectRatio?,
     ) : BskyPostFeature, TimelinePostMedia
 
@@ -58,18 +63,20 @@ sealed interface BskyPostFeature {
     ) : BskyPostFeature, TimelinePostMedia
 }
 
+@Parcelize
 @Immutable
 @Serializable
-sealed interface TimelinePostMedia
+sealed interface TimelinePostMedia: Parcelable
 
+@Parcelize
 @Immutable
 @Serializable
-sealed interface VideoEmbed
+sealed interface VideoEmbed: Parcelable
 
 @Immutable
 @Serializable
 data class EmbedVideoView(
-    val cid: Cid,
+    val cid:  Cid,
     val playlist: AtUri,
     val thumbnail: AtUri,
 ): VideoEmbed
@@ -81,6 +88,7 @@ data class EmbedVideo(
     val captions: List<VideoCaption>?,
 ): VideoEmbed
 
+@Parcelize
 @Immutable
 @Serializable
 data class EmbedImage(
@@ -88,13 +96,14 @@ data class EmbedImage(
     val fullsize: String,
     val alt: String,
     val aspectRatio: AspectRatio? = null,
-)
+): Parcelable
 
 
 
+@Parcelize
 @Immutable
 @Serializable
-sealed interface EmbedRecord {
+sealed interface EmbedRecord: Parcelable {
 
     @Immutable
     @Serializable
@@ -173,8 +182,9 @@ sealed interface EmbedRecord {
     data class StarterPack(
         val uri: AtUri,
         val cid: Cid,
-        val record: JsonElement,
+        val record: @CommonRawValue JsonElement,
         val creator: Profile,
+        @TypeParceler<Moment, MomentParceler>()
         val indexedAt: Moment,
         val labels: List<BskyLabel>,
     ) : EmbedRecord
@@ -501,4 +511,22 @@ private fun VideoViewVideo.toEmbedVideoFeature(): BskyPostFeature.VideoFeature {
         alt = this.alt?:"",
         aspectRatio = this.aspectRatio,
     )
+}
+
+object MaybeAspectRatioParceler : Parceler<AspectRatio?> {
+    override fun create(parcel: Parcel): AspectRatio? {
+        val moment = parcel.readString()
+        val width = moment?.substringAfter("w:")?.substringBefore("h:")?.toLongOrNull()
+        val height = moment?.substringAfter("h:")?.substringBefore("w:")?.toLongOrNull()
+        return if(width != null && height != null) {
+            AspectRatio(width, height)
+        } else {
+            null
+        }
+    }
+
+    override fun AspectRatio?.write(parcel: Parcel, flags: Int) {
+        parcel.writeString("w:${this?.width}")
+        parcel.writeString("h:${this?.height}")
+    }
 }

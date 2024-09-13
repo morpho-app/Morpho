@@ -4,6 +4,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -37,7 +38,7 @@ fun PostLinkEmbed(
     Surface(
         shape = MaterialTheme.shapes.extraSmall,
         tonalElevation = 3.dp,
-        shadowElevation = 1.dp,
+        shadowElevation = 2.dp,
         modifier = modifier
         //border = BorderStroke(1.dp,MaterialTheme.colorScheme.secondary)
     ) {
@@ -55,7 +56,8 @@ fun PostLinkEmbed(
                 modifier = Modifier
                     .fillMaxWidth()
                     .align(Alignment.CenterHorizontally)
-                    .clip(MaterialTheme.shapes.extraSmall)
+                    .clip(MaterialTheme.shapes.extraSmall
+                        .copy(bottomEnd = CornerSize(0.dp), bottomStart = CornerSize(0.dp)))
                     .clickable { linkPress(linkData.uri.uri) }
             )
             WrappedColumn(
@@ -63,15 +65,17 @@ fun PostLinkEmbed(
             ) {
                 Text(
                     text = linkData.title,
-                    style = MaterialTheme.typography.titleMedium,
+                    style = MaterialTheme.typography.titleSmall,
                     modifier = Modifier.padding(8.dp)
                 )
-                val bskyTxt = remember { makeBlueskyText(linkData.description) }
-                RichTextElement(
-                    text = bskyTxt.text,
-                    facets = bskyTxt.facets,
-                    modifier = Modifier.padding(start = 8.dp, end = 8.dp, top = 4.dp, bottom = 8.dp)
-                )
+                if(linkData.description.isNotEmpty()) {
+                    val bskyTxt = remember { makeBlueskyText(linkData.description) }
+                    RichTextElement(
+                        text = bskyTxt.text,
+                        facets = bskyTxt.facets,
+                        modifier = Modifier.padding(start = 8.dp, end = 8.dp, top = 4.dp, bottom = 8.dp)
+                    )
+                }
             }
         }
 

@@ -10,6 +10,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.max
 import com.morpho.app.ui.elements.WrappedColumn
@@ -40,7 +41,7 @@ fun NotFoundPostFragment(
                 SelectionContainer {
                     Text(
                         text = "Post deleted or not found",
-                        style = MaterialTheme.typography.titleMedium,
+                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.ExtraLight),
                         modifier = Modifier
                             .padding(12.dp)
                             .align(Alignment.CenterHorizontally)

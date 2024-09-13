@@ -26,9 +26,10 @@ import com.morpho.app.screens.thread.ThreadTopBar
 import com.morpho.app.screens.thread.ThreadViewContent
 import com.morpho.app.ui.common.LoadingCircle
 import com.morpho.app.ui.common.TabbedScreenScaffold
-import com.morpho.app.util.JavaSerializable
 import com.morpho.butterfly.AtIdentifier
 import com.morpho.butterfly.AtUri
+import dev.icerock.moko.parcelize.Parcelable
+import dev.icerock.moko.parcelize.Parcelize
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Contextual
@@ -36,16 +37,17 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 
 
+@Parcelize
 @Immutable
 @Serializable
 data class TabScreenOptions(
     val index: Int,
     val icon: @Composable () -> Unit,
     val title: String,
-)
+): Parcelable
 
 
-interface TabScreen: Screen, JavaSerializable {
+interface TabScreen: Screen, Parcelable {
 
     val navBar: @Composable (Navigator) -> Unit
 
@@ -57,6 +59,7 @@ interface TabScreen: Screen, JavaSerializable {
 
 }
 
+@Parcelize
 @Immutable
 @Serializable
 data class HomeTab(
@@ -89,6 +92,7 @@ data class HomeTab(
 
 }
 
+@Parcelize
 @Immutable
 @Serializable
 data object SearchTab: TabScreen {
@@ -117,6 +121,7 @@ data object SearchTab: TabScreen {
 
 }
 
+@Parcelize
 @Immutable
 @Serializable
 data object FeedsTab: TabScreen {
@@ -144,6 +149,7 @@ data object FeedsTab: TabScreen {
 
 }
 
+@Parcelize
 @Immutable
 @Serializable
 data object NotificationsTab: TabScreen {
@@ -177,6 +183,9 @@ data object NotificationsTab: TabScreen {
 
 }
 
+@Parcelize
+@Serializable
+@Immutable
 data class ProfileTab(
     val id: AtIdentifier,
 ): TabScreen {
@@ -207,6 +216,7 @@ data class ProfileTab(
 
 }
 
+@Parcelize
 @Immutable
 @Serializable
 data class ThreadTab(
@@ -252,6 +262,7 @@ data class ThreadTab(
         }
 }
 
+@Parcelize
 @Immutable
 @Serializable
 data object MyProfileTab: TabScreen {

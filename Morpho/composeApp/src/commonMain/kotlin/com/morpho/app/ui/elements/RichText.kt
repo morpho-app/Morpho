@@ -47,6 +47,11 @@ fun RichTextElement(
     val splitText = text.split("◌").listIterator() // special BlueMoji character
     val formattedText = buildAnnotatedString {
         pushStyle(SpanStyle(MaterialTheme.colorScheme.onSurface))
+        pushStyle(SpanStyle(
+            fontStyle = MaterialTheme.typography.bodyMedium.fontStyle,
+            fontWeight = FontWeight(275),
+            fontSize = MaterialTheme.typography.bodyMedium.fontSize,
+        ))
         append(splitText.next())
         facets.fastForEach { facet ->
             val bounds = text.utf16FacetIndex(utf8Text, facet.start, facet.end)
@@ -57,7 +62,7 @@ fun RichTextElement(
                     is FacetType.ExternalLink -> {
                         addStringAnnotation(tag = "Link", facetType.uri.uri, start, end)
                         addStyle(
-                            style = SpanStyle(MaterialTheme.colorScheme.tertiary),
+                            style = SpanStyle(MaterialTheme.colorScheme.tertiary, fontWeight = FontWeight.Normal),
                             start = start,
                             end = end
                         )
@@ -65,7 +70,7 @@ fun RichTextElement(
                     is FacetType.PollBlueOption -> {
                         addStringAnnotation(tag = "PollBlue", facetType.number.toString(), start, end)
                         addStyle(
-                            style = SpanStyle(MaterialTheme.colorScheme.tertiary),
+                            style = SpanStyle(MaterialTheme.colorScheme.tertiary, fontWeight = FontWeight.Normal),
                             start = start,
                             end = end
                         )
@@ -74,7 +79,7 @@ fun RichTextElement(
                     is FacetType.Tag -> {
                         addStringAnnotation(tag = "Tag", facetType.tag, start, end)
                         addStyle(
-                            style = SpanStyle(MaterialTheme.colorScheme.tertiary),
+                            style = SpanStyle(MaterialTheme.colorScheme.tertiary, fontWeight = FontWeight.Normal),
                             start = start,
                             end = end
                         )
@@ -82,7 +87,7 @@ fun RichTextElement(
                     is FacetType.UserDidMention -> {
                         addStringAnnotation(tag = "Mention", facetType.did.did, start, end)
                         addStyle(
-                            style = SpanStyle(MaterialTheme.colorScheme.tertiary),
+                            style = SpanStyle(MaterialTheme.colorScheme.tertiary, fontWeight = FontWeight.Normal),
                             start = start,
                             end = end
                         )
@@ -90,7 +95,7 @@ fun RichTextElement(
                     is FacetType.UserHandleMention -> {
                         addStringAnnotation(tag = "Mention", facetType.handle.handle, start, end)
                         addStyle(
-                            style = SpanStyle(MaterialTheme.colorScheme.tertiary),
+                            style = SpanStyle(MaterialTheme.colorScheme.tertiary, fontWeight = FontWeight.Normal),
                             start = start,
                             end = end
                         )

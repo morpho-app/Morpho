@@ -15,8 +15,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun WrappedColumn(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
-    Column(modifier = modifier, content = content)
+fun WrappedColumn(
+    modifier: Modifier = Modifier,
+    horizontalAlignment: Alignment.Horizontal = Alignment.CenterHorizontally,
+    verticalArrangement: Arrangement.Vertical = Arrangement.SpaceEvenly,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    Column(
+        horizontalAlignment = horizontalAlignment,
+        verticalArrangement = verticalArrangement,
+        modifier = modifier,
+        content = content)
 }
 
 @Composable

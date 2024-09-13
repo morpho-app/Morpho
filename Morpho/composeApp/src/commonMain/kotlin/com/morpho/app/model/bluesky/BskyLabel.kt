@@ -6,11 +6,16 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.ui.text.intl.Locale
 import app.bsky.actor.Visibility
 import com.atproto.label.*
+import com.morpho.app.model.uidata.MaybeMomentParceler
 import com.morpho.app.model.uidata.Moment
+import com.morpho.app.model.uidata.MomentParceler
 import com.morpho.butterfly.AtUri
 import com.morpho.butterfly.Cid
 import com.morpho.butterfly.Did
 import com.morpho.butterfly.Language
+import dev.icerock.moko.parcelize.Parcelable
+import dev.icerock.moko.parcelize.Parcelize
+import dev.icerock.moko.parcelize.TypeParceler
 import kotlinx.collections.immutable.ImmutableMap
 import kotlinx.collections.immutable.toImmutableMap
 import kotlinx.datetime.Clock
@@ -20,6 +25,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.cbor.ByteString
 
 @OptIn(ExperimentalSerializationApi::class)
+@Parcelize
 @Serializable
 @Immutable
 data class BskyLabel(
@@ -29,12 +35,14 @@ data class BskyLabel(
     val cid: Cid?,
     val value: String,
     val overwritesPrevious: Boolean?,
+    @TypeParceler<Moment, MomentParceler>()
     val createdTimestamp: Moment,
+    @TypeParceler<Moment?, MaybeMomentParceler>()
     val expirationTimestamp: Moment?,
     @OptIn(kotlinx.serialization.ExperimentalSerializationApi::class)
     @ByteString
     val signature: ByteArray?,
-) {
+): Parcelable {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other == null || this::class != other::class) return false
@@ -121,6 +129,7 @@ enum class LabelTarget {
     Content
 }
 
+@Parcelize
 @Immutable
 @Serializable
 open class ModBehaviour(
@@ -132,7 +141,7 @@ open class ModBehaviour(
     val contentList: LabelAction = LabelAction.None,
     val contentView: LabelAction = LabelAction.None,
     val contentMedia: LabelAction = LabelAction.None,
-) {
+): Parcelable {
     init {
         require(avatar != LabelAction.Inform)
         require(banner != LabelAction.Inform && banner != LabelAction.Alert)
@@ -172,13 +181,14 @@ open class ModBehaviour(
     }
 }
 
+@Parcelize
 @Immutable
 @Serializable
 data class ModBehaviours(
     val account: ModBehaviour = ModBehaviour(),
     val profile: ModBehaviour = ModBehaviour(),
     val content: ModBehaviour = ModBehaviour(),
-) {
+): Parcelable {
     fun forScope(scope: LabelScope, target: LabelTarget): List<LabelAction> {
         return when (target) {
             LabelTarget.Account -> when (scope) {
@@ -338,6 +348,7 @@ fun Visibility.toLabelSetting(): LabelSetting {
 
 }
 
+@Parcelize
 @Serializable
 @Immutable
 data class BskyLabelDefinition(
@@ -349,7 +360,7 @@ data class BskyLabelDefinition(
     val localizedName: String,
     val localizedDescription: String,
     val allDescriptions: ImmutableMap<Language, LocalizedLabelDescription>
-) {
+): Parcelable {
     fun getVisibility(): Visibility {
         return when(defaultSetting)  {
             LabelSetting.IGNORE -> Visibility.SHOW
@@ -384,12 +395,13 @@ fun LabelValueDefinition.toModLabelDef() :BskyLabelDefinition {
 }
 
 
+@Parcelize
 @Serializable
 @Immutable
 data class LocalizedLabelDescription(
     val localizedName: String,
     val localizedDescription: String,
-)
+): Parcelable
 
 @Suppress("unused")
 fun Label.toLabel(): BskyLabel {

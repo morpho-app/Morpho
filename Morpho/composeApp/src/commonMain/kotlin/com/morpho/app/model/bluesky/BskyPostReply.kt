@@ -3,18 +3,22 @@ package com.morpho.app.model.bluesky
 import androidx.compose.runtime.Immutable
 import app.bsky.actor.ProfileViewBasic
 import app.bsky.feed.*
+import com.atproto.repo.StrongRef
 import com.morpho.butterfly.Butterfly
+import dev.icerock.moko.parcelize.Parcelable
+import dev.icerock.moko.parcelize.Parcelize
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.serialization.Serializable
 
+@Parcelize
 @Immutable
 @Serializable
 data class BskyPostReply(
     val rootPost: BskyPost? = null,
     val parentPost: BskyPost? = null,
     val grandParentAuthor: Profile? = null,
-    val replyRef: PostReplyRef? = null
-)
+    val replyRef: BskyPostReplyRef? = null
+): Parcelable
 
 fun ReplyRef.toReply(): BskyPostReply {
     return BskyPostReply(
@@ -35,9 +39,26 @@ fun ReplyRef.toReply(): BskyPostReply {
     )
 }
 
+@Parcelize
+@Immutable
+@Serializable
+public data class BskyPostReplyRef(
+    public val root: StrongRef,
+    public val parent: StrongRef,
+    public val grandParentAuthor: Profile? = null,
+): Parcelable
+
+fun PostReplyRef.toReplyRef(): BskyPostReplyRef {
+    return BskyPostReplyRef(
+        root = this.root,
+        parent = this.parent,
+        grandParentAuthor = this.grandParentAuthor?.toProfile()
+    )
+}
+
 fun PostReplyRef.toReply(): BskyPostReply {
     return BskyPostReply(
-        replyRef = this,
+        replyRef = this.toReplyRef(),
         grandParentAuthor = this.grandParentAuthor?.toProfile()
     )
 }

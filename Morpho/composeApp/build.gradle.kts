@@ -11,7 +11,7 @@ plugins {
 
     alias(libs.plugins.androidApplication)
     id("kotlin-parcelize")
-    id("kotlin-kapt")
+    //id("kotlin-kapt")
 
     //id("com.rickclephas.kmp.nativecoroutines") version "1.0.0-ALPHA-27"
 }
@@ -88,6 +88,13 @@ kotlin {
         commonMain.dependencies {
             implementation("com.morpho:shared")
 
+            implementation("com.russhwolf:multiplatform-settings:1.2.0")
+            implementation("com.russhwolf:multiplatform-settings-serialization:1.2.0")
+            implementation("com.russhwolf:multiplatform-settings-coroutines:1.2.0")
+            implementation("com.russhwolf:multiplatform-settings-datastore:1.2.0")
+            implementation("com.russhwolf:multiplatform-settings-no-arg:1.2.0")
+            implementation("androidx.datastore:datastore-preferences-core:1.1.1")
+            implementation("androidx.datastore:datastore-core:1.1.1")
 
             implementation(compose.runtime)
             implementation(compose.foundation)
@@ -179,6 +186,9 @@ kotlin {
             implementation(libs.ktor.logging)
             implementation(libs.slf4j.api)
             //implementation(libs.slf4j.simple)
+
+            implementation("com.gu.android:toolargetool:0.3.0")
+            api("dev.icerock.moko:parcelize:0.9.0")
 
         }
         nativeMain.dependencies {

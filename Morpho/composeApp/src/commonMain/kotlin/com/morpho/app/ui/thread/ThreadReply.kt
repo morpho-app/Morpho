@@ -33,7 +33,9 @@ inline fun ThreadReply(
 ) {
     when(item) {
         is ThreadPost.ViewablePost -> {
-            val r = if (item.replies.isEmpty()) {
+            val r = if (role == PostFragmentRole.ThreadBranchStart || role == PostFragmentRole.Solo) {
+                role
+            } else if (item.replies.isEmpty()) {
                 PostFragmentRole.ThreadBranchEnd
             } else {
                 PostFragmentRole.ThreadBranchMiddle
@@ -43,6 +45,7 @@ inline fun ThreadReply(
                 role = r,
                 indentLevel = indentLevel,
                 modifier = modifier,
+                elevate = r != PostFragmentRole.ThreadBranchStart,
                 onItemClicked = {onItemClicked(it) },
                 onProfileClicked = { onProfileClicked(it) },
                 onUnClicked =  { type,uri-> onUnClicked(type,uri) },

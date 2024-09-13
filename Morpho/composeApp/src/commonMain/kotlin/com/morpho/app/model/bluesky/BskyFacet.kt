@@ -9,21 +9,25 @@ import com.morpho.butterfly.Did
 import com.morpho.butterfly.Handle
 import com.morpho.butterfly.Uri
 import com.morpho.butterfly.model.ReadOnlyList
+import dev.icerock.moko.parcelize.Parcelable
+import dev.icerock.moko.parcelize.Parcelize
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.serialization.Serializable
 
-
+@Parcelize
 @Immutable
 @Serializable
 data class BskyFacet(
     val start: Int,
     val end: Int,
     val facetType: List<FacetType>,
-)
+): Parcelable
 
+
+@Parcelize
 @Immutable
 @Serializable
-sealed interface FacetType {
+sealed interface FacetType: Parcelable {
     @Immutable
     @Serializable
     data class UserHandleMention(
@@ -83,9 +87,10 @@ sealed interface FacetType {
 
 }
 
+@Parcelize
 @Immutable
 @Serializable
-sealed interface BlueMojiImageLink {
+sealed interface BlueMojiImageLink: Parcelable {
     val url: String
     val apng: Boolean
     val lottie: Boolean
@@ -115,6 +120,7 @@ sealed interface BlueMojiImageLink {
     ) : BlueMojiImageLink
 
 }
+
 
 @Immutable
 @Serializable

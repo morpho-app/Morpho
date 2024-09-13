@@ -14,7 +14,6 @@ import androidx.compose.material.pullrefresh.pullRefresh
 import androidx.compose.material.pullrefresh.rememberPullRefreshState
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
@@ -58,7 +57,7 @@ fun <T: MorphoDataItem> SkylineFragment (
     listState: LazyListState = rememberLazyListState(
         initialFirstVisibleItemIndex = content.value.feed.cursor.scroll
     ),
-    debuggable: Boolean = true,
+    debuggable: Boolean = false,
 ) {
     val currentRefresh by rememberUpdatedState(refresh)
 
@@ -71,7 +70,7 @@ fun <T: MorphoDataItem> SkylineFragment (
     val scope = rememberCoroutineScope()
     var refreshing by remember { mutableStateOf(false) }
 
-    val data = rememberSaveable(loading, state, cursor, refreshing) {
+    val data = remember(loading, state, cursor, refreshing) {
         state.value.feed
     }
     val scrolledDownSome by remember {
@@ -80,7 +79,7 @@ fun <T: MorphoDataItem> SkylineFragment (
         }
     }
 
-    val scrollCursor by rememberSaveable { derivedStateOf {
+    val scrollCursor by remember { derivedStateOf {
         listState.firstVisibleItemIndex
     } }
 
@@ -223,6 +222,7 @@ fun <T: MorphoDataItem> SkylineFragment (
                             thread = item.thread,
                             modifier = if(debuggable) Modifier.border(1.dp, Color.White) else Modifier
                                 .fillMaxWidth()
+                                //.padding(horizontal = 4.dp),
                                 .padding(vertical = 2.dp, horizontal = 4.dp),
                             onItemClicked = onItemClicked,
                             onProfileClicked = onProfileClicked,
@@ -239,6 +239,7 @@ fun <T: MorphoDataItem> SkylineFragment (
                         PostFragment(
                             modifier = if(debuggable) Modifier.border(1.dp, Color.Blue) else Modifier
                                 .fillMaxWidth()
+                                //.padding(horizontal = 4.dp),
                                 .padding(vertical = 2.dp, horizontal = 4.dp),
                             post = item.post,
                             onItemClicked = onItemClicked,

@@ -37,8 +37,9 @@ import com.morpho.app.ui.common.LoadingCircle
 import com.morpho.app.ui.common.TabbedProfileScreenScaffold
 import com.morpho.app.ui.common.TabbedSkylineFragment
 import com.morpho.app.ui.profile.DetailedProfileFragment
-import com.morpho.app.util.JavaSerializable
 import com.morpho.butterfly.AtIdentifier
+import dev.icerock.moko.parcelize.Parcelable
+import dev.icerock.moko.parcelize.Parcelize
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.serialization.Serializable
@@ -153,7 +154,7 @@ fun TabScreen.TabbedProfileContent(
         var selectedTabIndex by rememberSaveable { mutableIntStateOf(0) }
         val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior(rememberTopAppBarState())
         val ownProfile = remember { sm.api.atpUser?.id == id }
-        val tabs = rememberSaveable(
+        val tabs = remember(
             sm.tabFlow,
             sm.profileUiState.loadingState,
         ) {
@@ -165,7 +166,7 @@ fun TabScreen.TabbedProfileContent(
                 )
             }
         }
-        val tabsCreated = rememberSaveable(tabs.size, sm.profileUiState.loadingState) {
+        val tabsCreated = remember(tabs.size, sm.profileUiState.loadingState) {
             tabs.isNotEmpty() && sm.profileUiState.loadingState == UiLoadingState.Idle
         }
         if (tabsCreated) {
@@ -276,12 +277,13 @@ abstract class ProfileTabScreen: NavTab {
     final override fun Content() = Content(TabbedProfileViewModel(),PaddingValues(0.dp),null, rememberLazyListState(), Modifier)
 }
 
+@Parcelize
 @Serializable
 data class ProfileSkylineTab(
     val index:  UShort,
     val ownProfile: Boolean = false,
     val title: String,
-): ProfileTabScreen(), JavaSerializable {
+): ProfileTabScreen(), Parcelable {
 
     @OptIn(ExperimentalMaterial3Api::class, ExperimentalVoyagerApi::class)
     @Composable

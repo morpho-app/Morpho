@@ -2,7 +2,6 @@ package com.morpho.app.model.uidata
 
 import androidx.compose.runtime.Immutable
 import com.morpho.app.model.uistate.FeedType
-import com.morpho.app.util.JavaSerializable
 import com.morpho.app.util.MutableSharedFlowSerializer
 import com.morpho.butterfly.AtIdentifier
 import com.morpho.butterfly.AtUri
@@ -11,10 +10,11 @@ import kotlinx.serialization.Serializable
 
 @Immutable
 @Serializable
-sealed interface ContentCardMapEntry: JavaSerializable {
+sealed interface ContentCardMapEntry {
     val uri: AtUri
     val title: String
     @Serializable(with = MutableSharedFlowSerializer::class)
+    //@TypeParceler<MutableSharedFlow<AtCursor>, AtCursorMutableSharedFlowParceler>
     val cursorFlow: MutableSharedFlow<AtCursor>
     val avatar: String?
 
@@ -24,6 +24,7 @@ sealed interface ContentCardMapEntry: JavaSerializable {
         override val uri: AtUri = AtUri.HOME_URI
         override val title: String = "Home"
         @Serializable(with = MutableSharedFlowSerializer::class)
+        //@TypeParceler<MutableSharedFlow<AtCursor>, AtCursorMutableSharedFlowParceler>
         override val cursorFlow: MutableSharedFlow<AtCursor> = initAtCursor()
         override val avatar: String? = null
     }
@@ -38,6 +39,7 @@ sealed interface ContentCardMapEntry: JavaSerializable {
         override val uri: AtUri,
         override val title: String = uri.atUri,
         @Serializable(with = MutableSharedFlowSerializer::class)
+        //@TypeParceler<MutableSharedFlow<AtCursor>, AtCursorMutableSharedFlowParceler>
         override val cursorFlow: MutableSharedFlow<AtCursor> = initAtCursor(),
         override val avatar: String? = null,
     ) : ContentCardMapEntry, Skyline
@@ -48,6 +50,7 @@ sealed interface ContentCardMapEntry: JavaSerializable {
         override val uri: AtUri,
         override val title: String = uri.atUri,
         @Serializable(with = MutableSharedFlowSerializer::class)
+        //@TypeParceler<MutableSharedFlow<AtCursor>, AtCursorMutableSharedFlowParceler>
         override val cursorFlow: MutableSharedFlow<AtCursor> = initAtCursor(),
         override val avatar: String? = null,
     ) : ContentCardMapEntry
@@ -58,6 +61,7 @@ sealed interface ContentCardMapEntry: JavaSerializable {
         override val uri: AtUri,
         override val title: String = uri.atUri,
         @Serializable(with = MutableSharedFlowSerializer::class)
+        //@TypeParceler<MutableSharedFlow<AtCursor>, AtCursorMutableSharedFlowParceler>
         override val cursorFlow: MutableSharedFlow<AtCursor> = initAtCursor(),
         override val avatar: String? = null,
     ) : ContentCardMapEntry
@@ -68,6 +72,7 @@ sealed interface ContentCardMapEntry: JavaSerializable {
         override val uri: AtUri,
         override val title: String = uri.atUri,
         @Serializable(with = MutableSharedFlowSerializer::class)
+        //@TypeParceler<MutableSharedFlow<AtCursor>, AtCursorMutableSharedFlowParceler>
         override val cursorFlow: MutableSharedFlow<AtCursor> = initAtCursor(),
         override val avatar: String? = null,
     ) : ContentCardMapEntry
@@ -78,6 +83,7 @@ sealed interface ContentCardMapEntry: JavaSerializable {
         override val uri: AtUri,
         override val title: String = uri.atUri,
         @Serializable(with = MutableSharedFlowSerializer::class)
+        //@TypeParceler<MutableSharedFlow<AtCursor>, AtCursorMutableSharedFlowParceler>
         override val cursorFlow: MutableSharedFlow<AtCursor> = initAtCursor(),
         override val avatar: String? = null,
     ) : ContentCardMapEntry
@@ -89,6 +95,7 @@ sealed interface ContentCardMapEntry: JavaSerializable {
         override val uri: AtUri = AtUri.profileUri(id),
         override val title: String = uri.atUri,
         @Serializable(with = MutableSharedFlowSerializer::class)
+        //@TypeParceler<MutableSharedFlow<AtCursor>, AtCursorMutableSharedFlowParceler>
         override val cursorFlow: MutableSharedFlow<AtCursor> = initAtCursor(),
         override val avatar: String? = null,
     ) : ContentCardMapEntry

@@ -2,16 +2,16 @@ package com.morpho.app.model.uistate
 
 import com.morpho.app.model.bluesky.*
 import com.morpho.app.model.uidata.MorphoData
-import com.morpho.app.util.JavaSerializable
 import com.morpho.butterfly.AtUri
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.serialization.Serializable
 
+
 @Suppress("unused")
 @Serializable
-sealed interface ContentCardState<T: MorphoDataItem>: JavaSerializable {
+sealed interface ContentCardState<T: MorphoDataItem> {
     val uri: AtUri
     val feed: MorphoData<T>
     val hasNewPosts: Boolean

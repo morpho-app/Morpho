@@ -45,7 +45,8 @@ import com.morpho.app.ui.common.TabbedScreenScaffold
 import com.morpho.app.ui.common.TabbedSkylineFragment
 import com.morpho.app.ui.elements.AvatarShape
 import com.morpho.app.ui.elements.OutlinedAvatar
-import com.morpho.app.util.JavaSerializable
+import dev.icerock.moko.parcelize.Parcelable
+import dev.icerock.moko.parcelize.Parcelize
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.serialization.Serializable
 import org.jetbrains.compose.resources.ExperimentalResourceApi
@@ -265,13 +266,13 @@ fun HomeTabRow(
 }
 
 
-
+@Parcelize
 @Serializable
 data class HomeSkylineTab @OptIn(ExperimentalVoyagerApi::class) constructor(
     val index: UShort,
     val title: String,
     val avatar: String? = null,
-): SkylineTab(), JavaSerializable {
+): SkylineTab(), Parcelable {
 
     @OptIn(ExperimentalMaterial3Api::class, ExperimentalVoyagerApi::class)
     @Composable
