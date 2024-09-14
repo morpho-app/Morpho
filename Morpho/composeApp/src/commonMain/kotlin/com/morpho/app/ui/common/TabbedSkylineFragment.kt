@@ -8,7 +8,7 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.*
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewModelScope
+import cafe.adriel.voyager.core.model.screenModelScope
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import cafe.adriel.voyager.navigator.tab.TabNavigator
@@ -134,7 +134,7 @@ fun <T: MainScreenModel, I: MorphoDataItem, S: ContentCardState<I>> TabbedSkylin
                     draft = DraftPost()
                 },
                 onSend = { finishedDraft ->
-                    sm.viewModelScope.launch(Dispatchers.IO) {
+                    sm.screenModelScope.launch(Dispatchers.IO) {
                         val post = finishedDraft.createPost(sm.api)
                         sm.api.createRecord(RecordUnion.MakePost(post))
                     }

@@ -3,9 +3,9 @@ package com.morpho.app.screens.main.tabbed
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.lifecycle.viewModelScope
 import app.bsky.actor.SavedFeed
 import app.bsky.feed.GetFeedGeneratorsQuery
+import cafe.adriel.voyager.core.model.screenModelScope
 import com.morpho.app.model.bluesky.FeedGenerator
 import com.morpho.app.model.bluesky.MorphoDataItem
 import com.morpho.app.model.bluesky.Profile
@@ -52,10 +52,10 @@ class TabbedMainScreenModel : MainScreenModel() {
         return tabs[index].uri
     }
 
-    fun initTabs() = viewModelScope.launch {
+    fun initTabs() = screenModelScope.launch {
         if (initialized) return@launch
         init(false)
-        viewModelScope.launch(Dispatchers.Default) {
+        screenModelScope.launch(Dispatchers.Default) {
             settings.pinnedFeeds.collect { feeds ->
                 MainScreenModel.log.d { "Pinned Feeds: $feeds" }
                 pinnedFeeds.value = feeds

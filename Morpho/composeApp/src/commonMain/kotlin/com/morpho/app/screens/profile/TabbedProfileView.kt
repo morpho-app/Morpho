@@ -17,8 +17,6 @@ import cafe.adriel.voyager.core.annotation.ExperimentalVoyagerApi
 import cafe.adriel.voyager.core.lifecycle.LifecycleEffectOnce
 import cafe.adriel.voyager.core.screen.ScreenKey
 import cafe.adriel.voyager.core.screen.uniqueScreenKey
-import cafe.adriel.voyager.jetpack.ProvideNavigatorLifecycleKMPSupport
-import cafe.adriel.voyager.jetpack.navigatorViewModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import cafe.adriel.voyager.navigator.tab.LocalTabNavigator
@@ -44,6 +42,7 @@ import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.serialization.Serializable
 import org.jetbrains.compose.resources.ExperimentalResourceApi
+import org.koin.compose.getKoin
 import cafe.adriel.voyager.navigator.tab.Tab as NavTab
 
 @OptIn(ExperimentalAnimationApi::class, ExperimentalMaterial3Api::class)
@@ -136,9 +135,9 @@ fun ProfileTabItem(
 @Composable
 fun TabScreen.TabbedProfileContent(
     id: AtIdentifier? = null,
-    sm: TabbedProfileViewModel = navigatorViewModel { TabbedProfileViewModel(id) }
+    sm: TabbedProfileViewModel = getKoin().get<TabbedProfileViewModel>()
 ) {
-    ProvideNavigatorLifecycleKMPSupport {
+    //ProvideNavigatorLifecycleKMPSupport {
         val navigator = LocalNavigator.currentOrThrow
 
 
@@ -233,7 +232,7 @@ fun TabScreen.TabbedProfileContent(
                 state = sm.profileUiState.tabStates.getOrNull(selectedTabIndex),
             )
         }
-    }
+    //}
 }
 
 @Composable

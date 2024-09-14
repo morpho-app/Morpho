@@ -19,6 +19,8 @@ import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.*
+import cafe.adriel.voyager.core.annotation.ExperimentalVoyagerApi
+import cafe.adriel.voyager.jetpack.ProvideNavigatorLifecycleKMPSupport
 import ch.qos.logback.classic.LoggerContext
 import ch.qos.logback.core.util.StatusPrinter2
 import com.morpho.app.App
@@ -49,8 +51,9 @@ import kotlin.io.path.createDirectories
 
 val log = logging("main")
 
-@OptIn(KoinExperimentalAPI::class, ExperimentalResourceApi::class)
+@OptIn(KoinExperimentalAPI::class, ExperimentalResourceApi::class, ExperimentalVoyagerApi::class)
 fun main() = application {
+    ProvideNavigatorLifecycleKMPSupport {
     StatusPrinter2().print(LoggerFactory.getILoggerFactory() as LoggerContext)
     KmLogging.setLoggers(PlatformLogger(VariableLogLevel(LogLevel.Verbose)))
     val koin = startKoin {
@@ -87,10 +90,11 @@ fun main() = application {
 
     Window(
         onCloseRequest = {
-            runBlocking {
-                api.refreshSession().join()
+            // possible hack to catch the exception on exit
+            try { (::exitApplication)() } catch (e: Exception) {
+                e.printStackTrace()
+
             }
-            (::exitApplication)()
         },
         state = windowState,
         title = "Morpho",
@@ -103,10 +107,10 @@ fun main() = application {
                 MorphoWindow(
                     windowState = windowState,
                     onCloseRequest = {
-                        runBlocking {
-                            api.refreshSession().join()
+                        try { (::exitApplication)() } catch (e: Exception) {
+                            e.printStackTrace()
+
                         }
-                        (::exitApplication)()
                     }
                 ) {
                     App()
@@ -116,6 +120,7 @@ fun main() = application {
             }
         }
 
+    }
     }
 }
 

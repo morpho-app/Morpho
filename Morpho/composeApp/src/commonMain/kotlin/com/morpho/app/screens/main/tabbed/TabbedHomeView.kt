@@ -26,8 +26,7 @@ import cafe.adriel.voyager.core.lifecycle.LifecycleEffectOnce
 import cafe.adriel.voyager.core.screen.ScreenKey
 import cafe.adriel.voyager.core.screen.uniqueScreenKey
 import cafe.adriel.voyager.core.stack.StackEvent
-import cafe.adriel.voyager.jetpack.ProvideNavigatorLifecycleKMPSupport
-import cafe.adriel.voyager.jetpack.navigatorViewModel
+import cafe.adriel.voyager.koin.koinNavigatorScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.NavigatorDisposeBehavior
@@ -103,9 +102,9 @@ abstract class SkylineTab: NavTab {
 )
 @Composable
 fun TabScreen.TabbedHomeView(
-    sm: TabbedMainScreenModel = navigatorViewModel { TabbedMainScreenModel() }
+    sm: TabbedMainScreenModel = LocalNavigator.currentOrThrow.koinNavigatorScreenModel<TabbedMainScreenModel>()
 ) {
-    ProvideNavigatorLifecycleKMPSupport {
+    //ProvideNavigatorLifecycleKMPSupport {
         val navigator = LocalNavigator.currentOrThrow
 
 
@@ -172,7 +171,7 @@ fun TabScreen.TabbedHomeView(
             }
 
         } else LoadingCircle()
-    }
+   // }
 }
 
 @OptIn(ExperimentalVoyagerApi::class)

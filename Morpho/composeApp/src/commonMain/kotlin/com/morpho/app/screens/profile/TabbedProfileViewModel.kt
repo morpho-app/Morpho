@@ -3,8 +3,8 @@ package com.morpho.app.screens.profile
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.lifecycle.viewModelScope
 import app.bsky.actor.GetProfileQuery
+import cafe.adriel.voyager.core.model.screenModelScope
 import com.morpho.app.model.bluesky.*
 import com.morpho.app.model.uidata.AtCursor
 import com.morpho.app.model.uidata.ContentCardMapEntry
@@ -58,7 +58,7 @@ class TabbedProfileViewModel(
 
 
 
-    fun initProfile() = viewModelScope.launch {
+    fun initProfile() = screenModelScope.launch {
         if(initialized) return@launch
         init(false)
         if(id != null) {

@@ -10,7 +10,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.core.annotation.ExperimentalVoyagerApi
-import cafe.adriel.voyager.jetpack.navigatorViewModel
+import cafe.adriel.voyager.core.model.rememberNavigatorScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.currentOrThrow
@@ -49,7 +49,7 @@ fun TabScreen.ThreadViewContent(
     navigator:Navigator = LocalNavigator.currentOrThrow,
 
 ) {
-    val sm = navigatorViewModel { MainScreenModel() }
+    val sm = navigator.rememberNavigatorScreenModel { MainScreenModel() }
 
     TabbedScreenScaffold(
         navBar = { navBar(navigator) },

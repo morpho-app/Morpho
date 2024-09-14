@@ -7,13 +7,13 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.lifecycle.viewModelScope
 import cafe.adriel.voyager.core.annotation.ExperimentalVoyagerApi
 import cafe.adriel.voyager.core.lifecycle.LifecycleEffectOnce
+import cafe.adriel.voyager.core.model.rememberNavigatorScreenModel
+import cafe.adriel.voyager.core.model.screenModelScope
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.core.screen.ScreenKey
 import cafe.adriel.voyager.core.screen.uniqueScreenKey
-import cafe.adriel.voyager.jetpack.navigatorViewModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.currentOrThrow
@@ -75,7 +75,7 @@ data class HomeTab(
     @OptIn(ExperimentalVoyagerApi::class)
     @Composable
     override fun Content() {
-        val sm = navigatorViewModel { TabbedMainScreenModel() }
+        val sm = LocalNavigator.currentOrThrow.rememberNavigatorScreenModel { TabbedMainScreenModel() }
         TabbedHomeView(sm)
     }
 
@@ -233,10 +233,10 @@ data class ThreadTab(
     @Composable
     override fun Content() {
         val navigator = LocalNavigator.currentOrThrow
-        val sm = navigatorViewModel { TabbedMainScreenModel() }
+        val sm = navigator.rememberNavigatorScreenModel { TabbedMainScreenModel() }
         var threadState: StateFlow<ContentCardState.PostThread>? by remember { mutableStateOf(null)}
         LifecycleEffectOnce {
-            sm.viewModelScope.launch { threadState = sm.loadThread(uri) }
+            sm.screenModelScope.launch { threadState = sm.loadThread(uri) }
         }
         if(threadState != null) {
             ThreadViewContent(threadState!!, navigator)

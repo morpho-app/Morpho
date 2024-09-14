@@ -17,9 +17,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.unit.Dp
 import androidx.constraintlayout.compose.ConstraintLayout
-import androidx.lifecycle.viewModelScope
 import cafe.adriel.voyager.core.annotation.ExperimentalVoyagerApi
-import cafe.adriel.voyager.jetpack.navigatorViewModel
+import cafe.adriel.voyager.core.model.rememberNavigatorScreenModel
+import cafe.adriel.voyager.core.model.screenModelScope
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.currentOrThrow
@@ -55,7 +55,7 @@ fun TabScreen.NotificationViewContent(
     navigator: Navigator = LocalNavigator.currentOrThrow,
 
 ) {
-    val sm = navigatorViewModel { TabbedNotificationScreenModel() }
+    val sm = navigator.rememberNavigatorScreenModel { TabbedNotificationScreenModel() }
     val numberUnread by sm.uiState.value.numberUnread.collectAsState(0)
     var showSettings by remember { mutableStateOf(false) }
     val hasUnread = remember(numberUnread) { numberUnread > 0 }
@@ -220,7 +220,7 @@ fun TabScreen.NotificationViewContent(
                             draft = DraftPost()
                         },
                         onSend = { finishedDraft ->
-                            sm.viewModelScope.launch(Dispatchers.IO) {
+                            sm.screenModelScope.launch(Dispatchers.IO) {
                                 val post = finishedDraft.createPost(sm.api)
                                 sm.api.createRecord(RecordUnion.MakePost(post))
                             }

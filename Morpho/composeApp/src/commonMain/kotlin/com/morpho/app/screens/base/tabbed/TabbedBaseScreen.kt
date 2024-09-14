@@ -15,7 +15,6 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.core.annotation.ExperimentalVoyagerApi
 import cafe.adriel.voyager.core.screen.ScreenKey
-import cafe.adriel.voyager.jetpack.ProvideNavigatorLifecycleKMPSupport
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.NavigatorDisposeBehavior
@@ -40,7 +39,7 @@ data object TabbedBaseScreen: Tab {
     @OptIn(ExperimentalMaterial3Api::class, ExperimentalVoyagerApi::class)
     @Composable
     override fun Content() {
-        ProvideNavigatorLifecycleKMPSupport {
+        //ProvideNavigatorLifecycleKMPSupport {
             Navigator(
                 HomeTab("startHome"),
                 disposeBehavior = NavigatorDisposeBehavior(
@@ -50,7 +49,7 @@ data object TabbedBaseScreen: Tab {
                 /*LaunchedEffect(Unit) { navigator.replaceAll(HomeTab("startHome2")) }*/
                 SlideTabTransition(navigator)
             }
-        }
+        //}
 
     }
 

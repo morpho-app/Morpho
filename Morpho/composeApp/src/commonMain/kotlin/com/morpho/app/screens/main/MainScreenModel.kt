@@ -3,13 +3,13 @@ package com.morpho.app.screens.main
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.lifecycle.viewModelScope
 import app.bsky.actor.GetProfileQuery
 import app.bsky.actor.SavedFeed
 import app.bsky.feed.GetFeedGeneratorsQuery
 import app.bsky.feed.GetPostThreadQuery
 import app.bsky.feed.GetPostThreadResponseThreadUnion
 import app.bsky.feed.GetPostsQuery
+import cafe.adriel.voyager.core.model.screenModelScope
 import cafe.adriel.voyager.core.stack.mutableStateStackOf
 import com.morpho.app.model.bluesky.*
 import com.morpho.app.model.uidata.*
@@ -108,7 +108,7 @@ open class MainScreenModel: BaseScreenModel() {
             }
         }
         if(populateFeeds) {
-            viewModelScope.launch(Dispatchers.Default) {
+            screenModelScope.launch(Dispatchers.Default) {
                 settings.pinnedFeeds.collect { feeds ->
                     log.d { "Pinned Feeds: $feeds" }
                     pinnedFeeds.value = feeds
@@ -249,7 +249,7 @@ open class MainScreenModel: BaseScreenModel() {
         if(feed == null) { emit(null); return@flow }
         if(update == null) dataService.peekLatest(feed.value.feed).onEach { emit(it) }
         else dataService.peekLatest(feed.value.feed, update).onEach { emit(it) }
-    }.stateIn(viewModelScope)
+    }.stateIn(screenModelScope)
 
     suspend fun loadThread(uri: AtUri): StateFlow<ContentCardState.PostThread>? {
         val state = _threadStates.firstOrNull { it.value.uri == uri }
@@ -292,7 +292,7 @@ open class MainScreenModel: BaseScreenModel() {
             }
         }
         emit(r.getOrDefault(state.copy(loadingState = ContentLoadingState.Error("Failed to load thread"))))
-    }.stateIn(viewModelScope)
+    }.stateIn(screenModelScope)
 
     private fun <T: MorphoDataItem> indexOf(state: ContentCardState<T>): Int {
         return when(state) {
@@ -331,7 +331,7 @@ open class MainScreenModel: BaseScreenModel() {
 
         } else {
             val i = _feedStates.indexOf(feedState)
-            _feedStates[i] = newFeed.filterNotNull().stateIn(viewModelScope)
+            _feedStates[i] = newFeed.filterNotNull().stateIn(screenModelScope)
             emit(newFeed.value)
         }
     }
@@ -380,7 +380,7 @@ open class MainScreenModel: BaseScreenModel() {
             log.d { "Preferences found"}
             settings.feedViewPrefs.map {
                 it["home"] ?: BskyFeedPref()
-            }.stateIn(viewModelScope, SharingStarted.Lazily, BskyFeedPref())
+            }.stateIn(screenModelScope, SharingStarted.Lazily, BskyFeedPref())
         }
         val feedService = dataService.dataFlows[timeline.uri]
         log.d { "Timeline service: $feedService"}
@@ -412,7 +412,7 @@ open class MainScreenModel: BaseScreenModel() {
         val uri = AtUri.HOME_URI
         val prefs = settings.feedViewPrefs.map {
             it["home"] ?: BskyFeedPref()
-        }.filterNotNull().stateIn(viewModelScope)
+        }.filterNotNull().stateIn(screenModelScope)
         val feedService = dataService.dataFlows[uri]
 
         // Delete the feed if it's already there, initializing from scratch
@@ -533,31 +533,31 @@ open class MainScreenModel: BaseScreenModel() {
                 _cursors[AtUri.profileModServiceUri(p.did)] = servicesCursor
                 val services = dataService
                     .profileServiceView(p.did, servicesCursor.map { Unit }
-                        .shareIn(viewModelScope, SharingStarted.Lazily)
+                        .shareIn(screenModelScope, SharingStarted.Lazily)
                     ).handleToState(p, MorphoData("Labels", AtUri.profileModServiceUri(p.did),
                                                   servicesCursor.replayCache.lastOrNull() ?: AtCursor.EMPTY))
                 servicesCursor.emit(AtCursor.EMPTY)
                 ContentCardState.FullProfile(
                     p,
-                    posts.stateIn(viewModelScope),
-                    replies.stateIn(viewModelScope),
-                    media.stateIn(viewModelScope),
-                    likes.stateIn(viewModelScope),
-                    lists.stateIn(viewModelScope),
-                    feeds.stateIn(viewModelScope),
-                    services.stateIn(viewModelScope),
+                    posts.stateIn(screenModelScope),
+                    replies.stateIn(screenModelScope),
+                    media.stateIn(screenModelScope),
+                    likes.stateIn(screenModelScope),
+                    lists.stateIn(screenModelScope),
+                    feeds.stateIn(screenModelScope),
+                    services.stateIn(screenModelScope),
                     ContentLoadingState.Idle
                 )
             } else {
                 postsCursor.emit(AtCursor.EMPTY)
                 ContentCardState.FullProfile(
                     p,
-                    posts.stateIn(viewModelScope),
-                    replies.stateIn(viewModelScope),
-                    media.stateIn(viewModelScope),
-                    likes.stateIn(viewModelScope),
-                    lists.stateIn(viewModelScope),
-                    feeds.stateIn(viewModelScope),
+                    posts.stateIn(screenModelScope),
+                    replies.stateIn(screenModelScope),
+                    media.stateIn(screenModelScope),
+                    likes.stateIn(screenModelScope),
+                    lists.stateIn(screenModelScope),
+                    feeds.stateIn(screenModelScope),
                     loadingState = ContentLoadingState.Idle
                 )
             }
