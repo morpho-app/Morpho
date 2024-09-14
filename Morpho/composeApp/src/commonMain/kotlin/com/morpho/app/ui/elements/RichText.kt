@@ -49,7 +49,7 @@ fun RichTextElement(
         pushStyle(SpanStyle(MaterialTheme.colorScheme.onSurface))
         pushStyle(SpanStyle(
             fontStyle = MaterialTheme.typography.bodyMedium.fontStyle,
-            fontWeight = FontWeight(275),
+            fontWeight = MaterialTheme.typography.bodyMedium.fontWeight,//FontWeight(275),
             fontSize = MaterialTheme.typography.bodyMedium.fontSize,
         ))
         append(splitText.next())
