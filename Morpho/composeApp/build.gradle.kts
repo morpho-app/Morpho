@@ -83,6 +83,9 @@ kotlin {
             implementation(libs.ktor.client.android)
 
             implementation(libs.kotlin.jwt)
+
+            implementation("androidx.paging:paging-runtime:3.3.0-alpha02")
+            implementation("androidx.paging:paging-compose:3.3.0-alpha02")
         }
 
         commonMain.dependencies {
@@ -95,6 +98,9 @@ kotlin {
             implementation("com.russhwolf:multiplatform-settings-no-arg:1.2.0")
             implementation("androidx.datastore:datastore-preferences-core:1.1.1")
             implementation("androidx.datastore:datastore-core:1.1.1")
+
+            implementation("app.cash.paging:paging-common:3.3.0-alpha02-0.5.1")
+            implementation("app.cash.paging:paging-compose-common:3.3.0-alpha02-0.5.1")
 
             implementation(compose.runtime)
             implementation(compose.foundation)
@@ -192,7 +198,7 @@ kotlin {
 
         }
         nativeMain.dependencies {
-
+            implementation("app.cash.paging:paging-runtime-uikit:3.3.0-alpha02-0.5.1")
         }
         desktopMain.dependencies {
             implementation(compose.desktop.currentOs)
@@ -209,6 +215,9 @@ kotlin {
             implementation(libs.kotlin.test)
             @OptIn(org.jetbrains.compose.ExperimentalComposeLibrary::class)
             implementation(compose.uiTest)
+            implementation("app.cash.paging:paging-testing:3.3.0-alpha02-0.5.1")
+
+
         }
         val desktopTest by getting {
             dependencies {
