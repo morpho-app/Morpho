@@ -34,6 +34,8 @@ open class MainScreenModel: BaseScreenModel() {
 
     val feedStates = mutableMapOf<FeedSourceInfo, ContentCardMapEntry<FeedEvent>>()
 
+    var initialized = false
+
     companion object {
         val log = logging("MainScreenModel")
     }
@@ -41,7 +43,6 @@ open class MainScreenModel: BaseScreenModel() {
     init {
         if(isLoggedIn) screenModelScope.launch {
             userProfile = userDid?.let { agent.getProfile(it).getOrNull()?.toProfile() }
-            feedSources.add(FeedSourceInfo.Home)
             feedSources.addAll(pinnedFeeds.mapNotNull { feed -> feed.toFeedSourceInfo(agent).getOrNull() })
             feedPresenters.putAll(feedSources.map { source ->
                 source to FeedPresenter(source.feedDescriptor)
@@ -64,6 +65,8 @@ open class MainScreenModel: BaseScreenModel() {
                     )
                 }
             }
+
+            initialized = true
 
         }
     }

@@ -17,6 +17,7 @@ import com.morpho.butterfly.PagedResponse
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
+
 class FeedPresenter<Data: MorphoDataItem.FeedItem, E: FeedEvent>(
     descriptor: FeedDescriptor? = null,
 ): Presenter<Data, E>() {
