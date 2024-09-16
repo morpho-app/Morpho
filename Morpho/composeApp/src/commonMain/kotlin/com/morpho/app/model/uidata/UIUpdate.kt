@@ -11,6 +11,7 @@ sealed interface UIUpdate {
         val initialContent: BskyPost,
         val role: ComposerRole,
     ): UIUpdate
+    data object Empty: UIUpdate
 }
 
 sealed interface SearchUpdate: UIUpdate {
@@ -36,20 +37,20 @@ sealed interface SearchUpdate: UIUpdate {
     ): SearchUpdate
 }
 
-sealed interface FeedUpdate: UIUpdate {
-    data object Empty: FeedUpdate
+sealed interface FeedUpdate<Data: MorphoDataItem.FeedItem>: UIUpdate {
+    data object Empty: FeedUpdate<MorphoDataItem.FeedItem>
 
-    data class Error(val error: String): FeedUpdate
+    data class Error(val error: String): FeedUpdate<MorphoDataItem.FeedItem>
 
     data class Feed<Data: MorphoDataItem.FeedItem>(
         val info: FeedSourceInfo,
         val feed: Flow<PagingData<Data>>,
-    ): FeedUpdate
+    ): FeedUpdate<Data>
 
     data class Peek<Data: MorphoDataItem.FeedItem>(
         val info: FeedSourceInfo,
         val post: Flow<Data>,
-    ): FeedUpdate
+    ): FeedUpdate<Data>
 }
 
 sealed interface AuthorFeedUpdate: UIUpdate {

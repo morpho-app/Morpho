@@ -133,6 +133,7 @@ sealed interface SearchEvent: Event {
 
 // Unsure about some of these, maybe events should only be repeatable things?
 sealed interface LikeEvent: Event
+sealed interface ThreadEvent: Event
 
 sealed interface PostEvent: Event {
     data class Reply(val post: BskyPost): PostEvent
@@ -147,7 +148,7 @@ sealed interface PostEvent: Event {
     data class Hide(val uri: AtUri): PostEvent, PrefsEvent, ModerationEvent
     data class Unhide(val uri: AtUri): PostEvent, PrefsEvent, ModerationEvent
 
-    data class LoadThread(val post: AtUri): PostEvent, LoadEvent
+    data class LoadThread(val post: AtUri): PostEvent, LoadEvent, ThreadEvent
     data class ReportPost(val subject: StrongRef): PostEvent, ModerationEvent
 }
 

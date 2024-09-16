@@ -6,6 +6,7 @@ package com.morpho.app.model.uistate
 import androidx.compose.runtime.Immutable
 import com.morpho.app.model.bluesky.MorphoDataItem
 import com.morpho.app.model.uidata.ContentCardMapEntry
+import com.morpho.app.model.uidata.Event
 import com.morpho.app.util.StateFlowSerializer
 import com.morpho.butterfly.AtUri
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -19,8 +20,8 @@ import kotlinx.serialization.Serializable
 data class TabbedScreenState(
     override val loadingState: UiLoadingState = UiLoadingState.Idle,
     @Serializable(with = StateFlowSerializer::class)
-    val tabs:  StateFlow<List<ContentCardMapEntry>> =
-        MutableStateFlow<List<ContentCardMapEntry>>(listOf()).asStateFlow(),
+    val tabs:  StateFlow<List<ContentCardMapEntry<Event>>> =
+        MutableStateFlow<List<ContentCardMapEntry<Event>>>(listOf()).asStateFlow(),
     val tabStates:  List<StateFlow<ContentCardState<MorphoDataItem>>> = listOf(),
 ): UiState {
 
@@ -40,8 +41,8 @@ data class TabbedScreenState(
 data class TabbedProfileScreenState(
     override val loadingState: UiLoadingState = UiLoadingState.Idle,
     @Serializable(with = StateFlowSerializer::class)
-    val tabs: StateFlow<List<ContentCardMapEntry>> =
-        MutableStateFlow<List<ContentCardMapEntry>>(listOf()).asStateFlow(),
+    val tabs: StateFlow<List<ContentCardMapEntry<Event>>> =
+        MutableStateFlow<List<ContentCardMapEntry<Event>>>(listOf()).asStateFlow(),
     val tabStates:  List<StateFlow<ContentCardState.ProfileTimeline<MorphoDataItem>>> = listOf(),
 ): UiState {
 

@@ -1,14 +1,11 @@
 package com.morpho.app.ui.common
 
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.lazy.LazyListState
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.*
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.unit.dp
-import cafe.adriel.voyager.core.model.screenModelScope
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import cafe.adriel.voyager.navigator.tab.TabNavigator
@@ -16,14 +13,13 @@ import com.atproto.repo.StrongRef
 import com.morpho.app.model.bluesky.BskyPost
 import com.morpho.app.model.bluesky.DraftPost
 import com.morpho.app.model.bluesky.MorphoDataItem
-import com.morpho.app.model.uidata.AtCursor
-import com.morpho.app.model.uistate.ContentCardState
+import com.morpho.app.model.uidata.FeedUpdate
+import com.morpho.app.model.uidata.UIUpdate
 import com.morpho.app.screens.base.tabbed.ProfileTab
 import com.morpho.app.screens.base.tabbed.ThreadTab
-import com.morpho.app.screens.main.MainScreenModel
 import com.morpho.app.ui.elements.doMenuOperation
 import com.morpho.app.util.ClipboardManager
-import com.morpho.butterfly.model.RecordUnion
+import com.morpho.butterfly.ButterflyAgent
 import io.ktor.util.reflect.instanceOf
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
@@ -33,19 +29,17 @@ import org.koin.compose.getKoin
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun <T: MainScreenModel, I: MorphoDataItem, S: ContentCardState<I>> TabbedSkylineFragment(
-    sm: T,
-    state: StateFlow<S>?,
+fun TabbedSkylineFragment(
     paddingValues: PaddingValues = PaddingValues(0.dp),
-    refresh: (AtCursor) -> Unit = {},
     isProfileFeed: Boolean = false,
-    listState: LazyListState = rememberLazyListState(
-        initialFirstVisibleItemIndex = state?.value?.feed?.cursor?.scroll ?: 0
-    ),
+    feedUpdate: StateFlow<UIUpdate>,
+    uiState: StateFlow<UIUpdate>,
 ) {
+    val agent = getKoin().get<ButterflyAgent>()
     val navigator = if (LocalNavigator.current?.parent?.instanceOf(TabNavigator::class) == true) {
         LocalNavigator.currentOrThrow
     } else LocalNavigator.currentOrThrow.parent!!
+    val scope = rememberCoroutineScope()
     var repostClicked by remember { mutableStateOf(false) }
     var initialContent: BskyPost? by remember { mutableStateOf(null) }
     var showComposer by remember { mutableStateOf(false) }
@@ -76,30 +70,30 @@ fun <T: MainScreenModel, I: MorphoDataItem, S: ContentCardState<I>> TabbedSkylin
             showComposer = true
         }
     }
-    val content = state?.collectAsState()
     val clipboard = getKoin().get<ClipboardManager>()
-    if(content?.value != null) {
-
-        SkylineFragment(
-            content = state,
-            onProfileClicked = { actor -> navigator.push(ProfileTab(actor)) },
-            onItemClicked = { uri -> navigator.push(ThreadTab(uri)) },
-            refresh = { cursor -> refresh(cursor)},
-            onUnClicked = { type, rkey -> sm.deleteRecord(type, rkey) },
-            onRepostClicked = { onRepostClicked(it) },
-            onMenuClicked = { option, post ->
-                doMenuOperation(option, post,
-                                clipboardManager = clipboard,
-                                uriHandler = uriHandler
-                ) },
-            onReplyClicked = { onReplyClicked(it) },
-            onLikeClicked = { uri -> sm.createRecord(RecordUnion.Like(uri)) },
-            onPostButtonClicked = { onPostButtonClicked() },
-            getContentHandling = { post -> sm.labelService.getContentHandlingForPost(post)},
-            contentPadding = paddingValues,
-            isProfileFeed = isProfileFeed,
-            listState = listState,
-        )
+    if(uiState.value !is UIUpdate.Empty) {
+        if(feedUpdate.value is FeedUpdate<*>) {
+            SkylineFragment(
+                onProfileClicked = { actor -> navigator.push(ProfileTab(actor)) },
+                onItemClicked = { uri -> navigator.push(ThreadTab(uri)) },
+                onUnClicked = { type, rkey -> agent.deleteRecord(type, rkey) },
+                onRepostClicked = { onRepostClicked(it) },
+                onMenuClicked = { option, post ->
+                    doMenuOperation(option, post,
+                                    clipboardManager = clipboard,
+                                    uriHandler = uriHandler
+                    ) },
+                onReplyClicked = { onReplyClicked(it) },
+                onLikeClicked = { ref -> agent.like(ref) },
+                onPostButtonClicked = { onPostButtonClicked() },
+                getContentHandling = { post -> listOf() },
+                contentPadding = paddingValues,
+                isProfileFeed = isProfileFeed,
+                feedUpdate = feedUpdate as StateFlow<FeedUpdate<MorphoDataItem.FeedItem>>,
+            )
+        } else {
+            LoadingCircle()
+        }
         if(repostClicked) {
             RepostQueryDialog(
                 onDismissRequest = {
@@ -108,11 +102,7 @@ fun <T: MainScreenModel, I: MorphoDataItem, S: ContentCardState<I>> TabbedSkylin
                 },
                 onRepost = {
                     repostClicked = false
-                    initialContent?.let { post ->
-                        RecordUnion.Repost(
-                            StrongRef(post.uri, post.cid)
-                        )
-                    }?.let { sm.api.createRecord(it) }
+                    initialContent?.let { agent.repost(StrongRef(it.uri, it.cid)) }
                 },
                 onQuotePost = {
                     composerRole = ComposerRole.QuotePost
@@ -134,18 +124,13 @@ fun <T: MainScreenModel, I: MorphoDataItem, S: ContentCardState<I>> TabbedSkylin
                     draft = DraftPost()
                 },
                 onSend = { finishedDraft ->
-                    sm.screenModelScope.launch(Dispatchers.IO) {
-                        val post = finishedDraft.createPost(sm.api)
-                        sm.api.createRecord(RecordUnion.MakePost(post))
-                    }
+                    scope.launch(Dispatchers.IO) { agent.post(finishedDraft.createPost(agent)) }
                     showComposer = false
                 },
                 onUpdate = { draft = it }
             )
 
         }
-    } else {
-        LoadingCircle()
-    }
+    } else LoadingCircle()
 }
 

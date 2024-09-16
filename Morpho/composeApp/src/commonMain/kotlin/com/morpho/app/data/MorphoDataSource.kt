@@ -5,6 +5,7 @@ import app.cash.paging.PagingConfig
 import app.cash.paging.PagingSource
 import app.cash.paging.PagingState
 import com.morpho.app.model.bluesky.*
+import com.morpho.app.model.uidata.ContentLabelService
 import com.morpho.app.model.uidata.Delta
 import com.morpho.app.model.uidata.Moment
 import com.morpho.butterfly.ButterflyAgent
@@ -23,7 +24,9 @@ import kotlin.time.Duration
 
 
 abstract class MorphoDataSource<Data : MorphoDataItem>: PagingSource<Cursor, Data>(), KoinComponent {
-    val agent: ButterflyAgent by inject()
+    val agent: MorphoAgent by inject()
+    val moderator: ContentLabelService by inject()
+
     override fun getRefreshKey(state: PagingState<Cursor, Data>): Cursor? {
         return state.anchorPosition?.let { anchorPosition ->
             val anchorPage = state.closestPageToPosition(anchorPosition)
@@ -64,12 +67,13 @@ data class MorphoFeedSource<Data : MorphoDataItem.FeedItem>(
                 val tunedList =  when(pagedList) {
                     is PagedResponse.Feed -> {
                         var tunedFeed = pagedList.copy(
-                            items =  if(collectThreads) pagedList.items
-                                .collectThreads(
-                                    repliesBumpThreads = repliesBumpThreads,
-                                    agent = agent
-                                ).getOrNull() ?: pagedList.items
-                            else pagedList.items
+                            items =  if(collectThreads) {
+                                pagedList.items.filter { !moderator.shouldHideItem(it) }
+                                    .collectThreads(
+                                        repliesBumpThreads = repliesBumpThreads,
+                                        agent = agent
+                                    ).getOrNull() ?: pagedList.items
+                            } else pagedList.items
                         )
                         tuners.forEach { tuner ->
                             tunedFeed = tuner.tune(tunedFeed)
@@ -318,3 +322,4 @@ suspend fun <Data: MorphoDataItem> List<Data>.collectThreads(
     }
     return Result.success(sortedFeed as List<Data>)
 }
+

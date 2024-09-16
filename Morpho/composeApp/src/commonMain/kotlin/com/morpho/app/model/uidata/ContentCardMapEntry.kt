@@ -6,26 +6,27 @@ import com.morpho.app.util.MutableSharedFlowSerializer
 import com.morpho.butterfly.AtIdentifier
 import com.morpho.butterfly.AtUri
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.serialization.Serializable
 
 @Immutable
 @Serializable
-sealed interface ContentCardMapEntry {
+sealed interface ContentCardMapEntry<E: Event> {
     val uri: AtUri
     val title: String
     @Serializable(with = MutableSharedFlowSerializer::class)
-    //@TypeParceler<MutableSharedFlow<AtCursor>, AtCursorMutableSharedFlowParceler>
-    val cursorFlow: MutableSharedFlow<AtCursor>
+    val events: MutableSharedFlow<E>
+    @Serializable(with = MutableSharedFlowSerializer::class)
+    val updates: MutableStateFlow<UIUpdate>
     val avatar: String?
 
     @Immutable
     @Serializable
-    data object Home: ContentCardMapEntry, Skyline {
+    data object Home: ContentCardMapEntry<FeedEvent>, Skyline {
         override val uri: AtUri = AtUri.HOME_URI
         override val title: String = "Home"
-        @Serializable(with = MutableSharedFlowSerializer::class)
-        //@TypeParceler<MutableSharedFlow<AtCursor>, AtCursorMutableSharedFlowParceler>
-        override val cursorFlow: MutableSharedFlow<AtCursor> = initAtCursor()
+        override val events: MutableSharedFlow<FeedEvent> = MutableSharedFlow()
+        override val updates: MutableStateFlow<UIUpdate> = MutableStateFlow(FeedUpdate.Empty)
         override val avatar: String? = null
     }
 
@@ -38,55 +39,50 @@ sealed interface ContentCardMapEntry {
     data class Feed(
         override val uri: AtUri,
         override val title: String = uri.atUri,
-        @Serializable(with = MutableSharedFlowSerializer::class)
-        //@TypeParceler<MutableSharedFlow<AtCursor>, AtCursorMutableSharedFlowParceler>
-        override val cursorFlow: MutableSharedFlow<AtCursor> = initAtCursor(),
+        override val events: MutableSharedFlow<FeedEvent> = MutableSharedFlow(),
+        override val updates: MutableStateFlow<UIUpdate> = MutableStateFlow(FeedUpdate.Empty),
         override val avatar: String? = null,
-    ) : ContentCardMapEntry, Skyline
+    ) : ContentCardMapEntry<FeedEvent>, Skyline
 
     @Immutable
     @Serializable
     data class PostThread(
         override val uri: AtUri,
         override val title: String = uri.atUri,
-        @Serializable(with = MutableSharedFlowSerializer::class)
-        //@TypeParceler<MutableSharedFlow<AtCursor>, AtCursorMutableSharedFlowParceler>
-        override val cursorFlow: MutableSharedFlow<AtCursor> = initAtCursor(),
+        override val events: MutableSharedFlow<ThreadEvent> = MutableSharedFlow(),
+        override val updates: MutableStateFlow<UIUpdate> = MutableStateFlow(UIUpdate.Empty),
         override val avatar: String? = null,
-    ) : ContentCardMapEntry
+    ) : ContentCardMapEntry<ThreadEvent>
 
     @Immutable
     @Serializable
     data class UserList(
         override val uri: AtUri,
         override val title: String = uri.atUri,
-        @Serializable(with = MutableSharedFlowSerializer::class)
-        //@TypeParceler<MutableSharedFlow<AtCursor>, AtCursorMutableSharedFlowParceler>
-        override val cursorFlow: MutableSharedFlow<AtCursor> = initAtCursor(),
+        override val events: MutableSharedFlow<ListEvent> = MutableSharedFlow(),
+        override val updates: MutableStateFlow<UIUpdate> = MutableStateFlow(UIUpdate.Empty),
         override val avatar: String? = null,
-    ) : ContentCardMapEntry
+    ) : ContentCardMapEntry<ListEvent>
 
     @Immutable
     @Serializable
     data class FeedList(
         override val uri: AtUri,
         override val title: String = uri.atUri,
-        @Serializable(with = MutableSharedFlowSerializer::class)
-        //@TypeParceler<MutableSharedFlow<AtCursor>, AtCursorMutableSharedFlowParceler>
-        override val cursorFlow: MutableSharedFlow<AtCursor> = initAtCursor(),
+        override val events: MutableSharedFlow<ListEvent> = MutableSharedFlow(),
+        override val updates: MutableStateFlow<UIUpdate> = MutableStateFlow(UIUpdate.Empty),
         override val avatar: String? = null,
-    ) : ContentCardMapEntry
+    ) : ContentCardMapEntry<ListEvent>
 
     @Immutable
     @Serializable
     data class ServiceList(
         override val uri: AtUri,
         override val title: String = uri.atUri,
-        @Serializable(with = MutableSharedFlowSerializer::class)
-        //@TypeParceler<MutableSharedFlow<AtCursor>, AtCursorMutableSharedFlowParceler>
-        override val cursorFlow: MutableSharedFlow<AtCursor> = initAtCursor(),
+        override val events: MutableSharedFlow<LabelerEvent> = MutableSharedFlow(),
+        override val updates: MutableStateFlow<UIUpdate> = MutableStateFlow(UIUpdate.Empty),
         override val avatar: String? = null,
-    ) : ContentCardMapEntry
+    ) : ContentCardMapEntry<LabelerEvent>
 
     @Immutable
     @Serializable
@@ -94,11 +90,10 @@ sealed interface ContentCardMapEntry {
         val id: AtIdentifier,
         override val uri: AtUri = AtUri.profileUri(id),
         override val title: String = uri.atUri,
-        @Serializable(with = MutableSharedFlowSerializer::class)
-        //@TypeParceler<MutableSharedFlow<AtCursor>, AtCursorMutableSharedFlowParceler>
-        override val cursorFlow: MutableSharedFlow<AtCursor> = initAtCursor(),
+        override val events: MutableSharedFlow<Event> = MutableSharedFlow(),
+        override val updates: MutableStateFlow<UIUpdate> = MutableStateFlow(UIUpdate.Empty),
         override val avatar: String? = null,
-    ) : ContentCardMapEntry
+    ) : ContentCardMapEntry<Event>
 
     val isHome: Boolean
         get() = uri == AtUri.HOME_URI

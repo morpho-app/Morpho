@@ -87,6 +87,55 @@ fun PostActions(
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+fun DummyPostActions(
+    modifier: Modifier = Modifier,
+    showMenu: Boolean = true,
+) {
+    var menuExpanded by remember { mutableStateOf(false) }
+    Row(
+        horizontalArrangement = Arrangement.SpaceEvenly
+    ) {
+        PostAction(
+            parameter = 0,
+            iconNormal = Icons.Outlined.ChatBubbleOutline,
+            contentDescription = "Reply ",
+
+            onUnClicked = {  },
+        )
+        PostAction(
+            parameter = 0,
+            iconNormal = Icons.Outlined.Repeat,
+            contentDescription = "Repost ",
+            active = false
+        )
+        PostAction(
+            parameter = 0,
+            iconNormal = Icons.Outlined.FavoriteBorder,
+            iconActive = Icons.Default.Favorite,
+            contentDescription = "Like ",
+            activeColor = Color(0xFFEC7B9E),
+            active = false
+        )
+        if (showMenu) {
+
+            PostAction(
+                parameter = -1,
+                iconNormal = Icons.Default.MoreHoriz,
+                contentDescription = "More ",
+                onClicked = {
+                    menuExpanded = true
+                },
+                onUnClicked = {
+                    menuExpanded = true
+                },
+            )
+        }
+
+    }
+}
+
 
 
 @OptIn(ExperimentalLayoutApi::class)

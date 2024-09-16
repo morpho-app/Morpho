@@ -1,47 +1,44 @@
 package com.morpho.app.screens.base
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import cafe.adriel.voyager.core.model.ScreenModel
-import cafe.adriel.voyager.core.model.screenModelScope
-import com.morpho.app.data.PreferencesRepository
-import com.morpho.app.model.bluesky.BskyPost
+import com.morpho.app.data.MorphoAgent
 import com.morpho.app.model.uidata.BskyNotificationService
 import com.morpho.app.model.uidata.ContentLabelService
-import com.morpho.butterfly.AtUri
-import com.morpho.butterfly.Butterfly
-import com.morpho.butterfly.model.RecordType
-import com.morpho.butterfly.model.RecordUnion
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.IO
-import kotlinx.coroutines.flow.firstOrNull
-import kotlinx.coroutines.launch
+import com.morpho.app.model.uidata.Event
+import com.morpho.butterfly.Did
+import kotlinx.coroutines.channels.BufferOverflow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import org.lighthousegames.logging.logging
 
 open class BaseScreenModel : ScreenModel, KoinComponent {
-    val api: Butterfly by inject()
-    val preferences: PreferencesRepository by inject()
+    val agent: MorphoAgent by inject()
     val notifService: BskyNotificationService by inject()
     val labelService: ContentLabelService by inject()
 
+
+    var userDid: Did? by mutableStateOf(agent.id)
+        protected set
+
+    val globalEvents = MutableSharedFlow<Event>(
+        extraBufferCapacity = 100, onBufferOverflow = BufferOverflow.DROP_OLDEST)
+
     val isLoggedIn: Boolean
-        get() = api.isLoggedIn()
+        get() = agent.isLoggedIn
 
     companion object {
         val log = logging()
     }
 
-    fun createRecord(record: RecordUnion) = screenModelScope.launch(Dispatchers.IO) {
-        api.createRecord(record)
+    init {
+
     }
 
-    fun deleteRecord(type: RecordType, rkey: AtUri) = screenModelScope.launch(Dispatchers.IO) {
-        api.deleteRecord(type, rkey)
+    suspend fun sendGlobalEvent(event: Event) {
+        globalEvents.emit(event)
     }
-
-    suspend fun getPost(uri: AtUri): BskyPost? {
-        return com.morpho.app.model.uidata.getPost(uri, api).firstOrNull()
-    }
-
-
 }

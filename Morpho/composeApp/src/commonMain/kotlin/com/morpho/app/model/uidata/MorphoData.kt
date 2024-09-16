@@ -12,7 +12,10 @@ import dev.icerock.moko.parcelize.Parcelable
 import dev.icerock.moko.parcelize.Parcelize
 import kotlinx.collections.immutable.toPersistentList
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.single
 import kotlinx.datetime.Instant
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonElement
@@ -20,7 +23,7 @@ import kotlinx.serialization.json.JsonObject
 import kotlin.time.Duration
 
 
-typealias TunerFunction = (List<MorphoDataItem.FeedItem>, FeedTuner) -> List<MorphoDataItem.FeedItem>
+typealias TunerFunction = (List<MorphoDataItem.FeedItem>, FeedTuner<MorphoDataItem.FeedItem>) -> List<MorphoDataItem.FeedItem>
 
 @Parcelize
 @Immutable
@@ -347,13 +350,15 @@ data class MorphoData<T: MorphoDataItem>(
                 val parent = reply.post.reply?.parentPost
                     ?: reply.post.reply?.replyRef?.parent?.uri?.let {
                         if (api != null) {
-                            getPost(it, api).firstOrNull()
+                            null // stubbed out before removing
+                            //getPost(it, api).firstOrNull()
                         } else null
                     }
                 val root = reply.post.reply?.rootPost
                     ?: reply.post.reply?.replyRef?.root?.uri?.let {
                         if (api != null) {
-                            getPost(it, api).firstOrNull()
+                            null  // stubbed out before removing
+                            //getPost(it, api).firstOrNull()
                         } else null
                     }
                 replies[index] = MorphoDataItem.Post(

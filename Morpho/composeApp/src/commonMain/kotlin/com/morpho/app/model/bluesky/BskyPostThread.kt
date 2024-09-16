@@ -51,6 +51,28 @@ data class BskyPostThread(
         return false
     }
 
+    fun anyMutedOrBlocked(): Boolean {
+        return this.post.author.mutedByMe || this.post.author.blocking
+            || this.post.author.blockedBy || this.replies.any { it.anyMutedOrBlocked() }
+            || this.parents.any { it.anyMutedOrBlocked() }
+    }
+
+    fun containsWord(word: String): Boolean {
+        return this.post.text.contains(word, ignoreCase = true)
+            || this.replies.any { it.containsWord(word) }
+            || this.parents.any { it.containsWord(word) }
+    }
+
+    fun getLabels(): List<BskyLabel> {
+        return this.post.labels + this.replies.flatMap { it.getLabels() }
+    }
+
+    fun containsLabel(label: String): Boolean {
+        return this.post.labels.any { it.value == label }
+            || this.replies.any { it.containsLabel(label) }
+            || this.parents.any { it.containsLabel(label) }
+    }
+
     fun filterReplies(filter: (ThreadPost) -> Boolean): BskyPostThread {
         val threadReplies = this.replies.toMutableList()
         threadReplies.fastForEachIndexed { index, reply ->
@@ -271,6 +293,42 @@ sealed interface ThreadPost:Parcelable {
 
         override fun hashCode(): Int {
             return uri?.hashCode() ?: 0
+        }
+    }
+
+    fun anyMutedOrBlocked(): Boolean {
+        return when(this) {
+            is ViewablePost -> this.post.author.mutedByMe || this.post.author.blocking
+                    || this.post.author.blockedBy || this.replies.any { it.anyMutedOrBlocked() }
+
+            is BlockedPost -> true
+            is NotFoundPost -> true
+        }
+    }
+
+    fun containsLabel(label: String): Boolean {
+        return when(this) {
+            is ViewablePost -> this.post.labels.any { it.value == label }
+                    || this.replies.any { it.containsLabel(label) }
+            is BlockedPost -> false
+            is NotFoundPost -> false
+        }
+    }
+
+    fun getLabels(): List<BskyLabel> {
+        return when(this) {
+            is ViewablePost -> this.post.labels + this.replies.flatMap { it.getLabels() }
+            is BlockedPost -> listOf()
+            is NotFoundPost -> listOf()
+        }
+    }
+
+    fun containsWord(word: String): Boolean {
+        return when(this) {
+            is ViewablePost -> this.post.text.contains(word, ignoreCase = true)
+                    || this.replies.any { it.containsWord(word) }
+            is BlockedPost -> false
+            is NotFoundPost -> false
         }
     }
 

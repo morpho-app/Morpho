@@ -5,6 +5,7 @@ import app.bsky.feed.GetFeedQuery
 import app.bsky.feed.GetListFeedQuery
 import app.bsky.graph.GetListQuery
 import app.cash.paging.Pager
+import app.cash.paging.cachedIn
 import com.morpho.app.data.FeedTuner
 import com.morpho.app.data.MorphoDataSource
 import com.morpho.app.data.MorphoFeedSource
@@ -43,35 +44,42 @@ class FeedPresenter<Data: MorphoDataItem.FeedItem, E: FeedEvent>(
             is FeedEvent.Load -> {
                 switchPager(event.descriptor.getDataSource(agent))
                 when(event.descriptor) {
-                    is FeedDescriptor.Author -> AuthorFeedUpdate.Feed(event.descriptor.did, event.descriptor.filter, pager.flow)
+                    is FeedDescriptor.Author -> AuthorFeedUpdate.Feed(
+                        event.descriptor.did, event.descriptor.filter, pager.flow.cachedIn(presenterScope))
                     is FeedDescriptor.FeedGen -> {
-                        val info = agent.api.getList(GetListQuery(event.descriptor.uri, 1))
+                        val info = agent.api
+                            .getList(GetListQuery(event.descriptor.uri, 1))
                             .map { it.list.hydrateList() }
                         if(info.isSuccess) {
                             switchPager(info.getOrThrow().getDataSource(agent))
-                            FeedUpdate.Feed(info.getOrThrow(), pager.flow)
+                            FeedUpdate.Feed(info.getOrThrow(), pager.flow.cachedIn(presenterScope))
                         } else {
                             FeedUpdate.Error(info.exceptionOrNull()?.message ?:
                                 "Failed to load saved feed: ${event.descriptor}, error: $info")
                         }
                     }
-                    FeedDescriptor.Home -> FeedUpdate.Feed(FeedSourceInfo.Home, pager.flow)
-                    is FeedDescriptor.Likes -> AuthorFeedUpdate.Likes(event.descriptor.did, pager.flow)
-                    is FeedDescriptor.List -> FeedUpdate.Error("Internal error: LoadLists should not be sent to this presenter")
+                    FeedDescriptor.Home -> FeedUpdate.Feed(
+                        FeedSourceInfo.Home, pager.flow.cachedIn(presenterScope))
+                    is FeedDescriptor.Likes -> AuthorFeedUpdate.Likes(
+                        event.descriptor.did, pager.flow.cachedIn(presenterScope))
+                    is FeedDescriptor.List -> FeedUpdate.Error(
+                        "Internal error: LoadLists should not be sent to this presenter")
                 }
             }
-            is FeedEvent.LoadLists -> FeedUpdate.Error("Internal error: LoadLists should not be sent to this presenter")
+            is FeedEvent.LoadLists -> FeedUpdate.Error(
+                "Internal error: LoadLists should not be sent to this presenter")
             is FeedEvent.LoadHydrated -> {
                 switchPager(event.info.getDataSource(agent))
-                FeedUpdate.Feed(event.info, pager.flow)
+                FeedUpdate.Feed(event.info, pager.flow.cachedIn(presenterScope))
             }
             is FeedEvent.LoadSaved -> {
                 val info = event.info.toFeedSourceInfo(agent)
                 if(info.isSuccess) {
                     switchPager(info.getOrThrow().getDataSource(agent))
-                    FeedUpdate.Feed(info.getOrThrow(), pager.flow)
+                    FeedUpdate.Feed(info.getOrThrow(), pager.flow.cachedIn(presenterScope))
                 } else {
-                    FeedUpdate.Error(info.exceptionOrNull()?.message ?: "Failed to load saved feed: ${event.info}")
+                    FeedUpdate.Error(info.exceptionOrNull()?.message ?:
+                        "Failed to load saved feed: ${event.info}")
                 }
             }
             is FeedEvent.Peek -> FeedUpdate.Peek(event.info, dataSource.updates())

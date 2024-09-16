@@ -3,20 +3,25 @@ package com.morpho.app.model.uidata
 import app.bsky.feed.GetActorFeedsQuery
 import app.bsky.graph.GetListsQuery
 import app.cash.paging.Pager
+import app.cash.paging.cachedIn
+import com.morpho.app.data.MorphoAgent
 import com.morpho.app.data.MorphoDataSource
 import com.morpho.app.model.bluesky.MorphoDataItem
 import com.morpho.app.model.bluesky.toFeedGenerator
 import com.morpho.app.model.bluesky.toList
 import com.morpho.butterfly.AtIdentifier
-import com.morpho.butterfly.ButterflyAgent
 import com.morpho.butterfly.Cursor
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 
 abstract class Presenter<Data:MorphoDataItem, E: Event>: KoinComponent {
-    val agent: ButterflyAgent by inject()
+    val agent: MorphoAgent by inject()
+    val presenterScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     abstract var pager: Pager<Cursor, Data>
     abstract fun produceUpdates(events: Flow<E>): Flow<UIUpdate>
 }
@@ -33,7 +38,7 @@ class UserListPresenter(
 
     override fun produceUpdates(events: Flow<ListEvent>): Flow<UIUpdate> = events.map { event ->
         when(event) {
-            is FeedEvent.LoadLists -> AuthorFeedUpdate.Lists(actor, pager.flow)
+            is FeedEvent.LoadLists -> AuthorFeedUpdate.Lists(actor, pager.flow.cachedIn(presenterScope))
             else -> AuthorFeedUpdate.Error("Unknown event type: $event")
         }
     }
@@ -86,7 +91,7 @@ class UserFeedsPresenter(
 
     override fun produceUpdates(events: Flow<ListEvent>): Flow<UIUpdate> = events.map { event ->
         when(event) {
-            is FeedEvent.LoadLists -> AuthorFeedUpdate.Feeds(actor, pager.flow)
+            is FeedEvent.LoadLists -> AuthorFeedUpdate.Feeds(actor, pager.flow.cachedIn(presenterScope))
             else -> AuthorFeedUpdate.Error("Unknown event type: $event")
         }
     }
@@ -105,22 +110,24 @@ class UserFeedsFeedSource(
                 is LoadParams.Prepend -> Cursor.Empty
                 is LoadParams.Refresh -> Cursor.Empty
             }
-            return agent.api.getActorFeeds(GetActorFeedsQuery(actor, limit.toLong(), loadCursor.value)).map { response ->
-                val newCursor = Cursor(response.cursor)
-                val items = response.feeds
-                    .map { MorphoDataItem.FeedInfo(it.toFeedGenerator()) }
-                LoadResult.Page(
-                    data = items,
-                    prevKey = when(params) {
-                        is LoadParams.Append -> loadCursor
-                        is LoadParams.Prepend -> Cursor.Empty
-                        is LoadParams.Refresh -> Cursor.Empty
-                    },
-                    nextKey = newCursor,
-                )
-            }.onFailure {
-                return LoadResult.Error(it)
-            }.getOrDefault(LoadResult.Error(Exception("Load failed")))
+            return agent.api
+                .getActorFeeds(GetActorFeedsQuery(actor, limit.toLong(), loadCursor.value))
+                .map { response ->
+                    val newCursor = Cursor(response.cursor)
+                    val items = response.feeds
+                        .map { MorphoDataItem.FeedInfo(it.toFeedGenerator()) }
+                    LoadResult.Page(
+                        data = items,
+                        prevKey = when(params) {
+                            is LoadParams.Append -> loadCursor
+                            is LoadParams.Prepend -> Cursor.Empty
+                            is LoadParams.Refresh -> Cursor.Empty
+                        },
+                        nextKey = newCursor,
+                    )
+                }.onFailure {
+                    return LoadResult.Error(it)
+                }.getOrDefault(LoadResult.Error(Exception("Load failed")))
         } catch (e: Exception) {
             return LoadResult.Error(e)
         }

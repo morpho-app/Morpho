@@ -9,7 +9,8 @@ interface Platform {
 
 expect fun getPlatform(): Platform
 
-
+expect val myLang:String?
+expect val myCountry:String?
 
 // For Android @Parcelize
 @OptIn(ExperimentalMultiplatform::class)

@@ -1,10 +1,10 @@
 package com.morpho.app.ui.common
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.border
+import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyListState
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.icons.Icons
@@ -18,15 +18,20 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
+import androidx.paging.PagingData
+import app.cash.paging.LoadStateError
+import app.cash.paging.LoadStateLoading
+import app.cash.paging.LoadStateNotLoading
+import app.cash.paging.compose.collectAsLazyPagingItems
+import app.cash.paging.compose.itemKey
 import com.atproto.repo.StrongRef
 import com.morpho.app.model.bluesky.BskyPost
 import com.morpho.app.model.bluesky.MorphoDataItem
-import com.morpho.app.model.uidata.AtCursor
 import com.morpho.app.model.uidata.ContentHandling
-import com.morpho.app.model.uistate.ContentCardState
-import com.morpho.app.model.uistate.ContentLoadingState
+import com.morpho.app.model.uidata.FeedUpdate
 import com.morpho.app.ui.elements.MenuOptions
 import com.morpho.app.ui.elements.WrappedLazyColumn
+import com.morpho.app.ui.post.PlaceholderSkylineItem
 import com.morpho.app.ui.post.PostFragment
 import com.morpho.butterfly.AtIdentifier
 import com.morpho.butterfly.AtUri
@@ -37,15 +42,13 @@ import kotlinx.coroutines.launch
 typealias OnPostClicked = (AtUri) -> Unit
 
 
-@OptIn(ExperimentalMaterialApi::class)
+@OptIn(ExperimentalMaterialApi::class, ExperimentalFoundationApi::class)
 @Composable
-fun <T: MorphoDataItem> SkylineFragment (
-    content: StateFlow<ContentCardState<T>>,
+fun SkylineFragment (
     modifier: Modifier = Modifier,
     onItemClicked: OnPostClicked,
     onProfileClicked: (AtIdentifier) -> Unit = {},
     onPostButtonClicked: () -> Unit = {},
-    refresh: (AtCursor) -> Unit = { },
     onReplyClicked: (BskyPost) -> Unit = { },
     onRepostClicked: (BskyPost) -> Unit = { },
     onLikeClicked: (StrongRef) -> Unit = { },
@@ -54,34 +57,30 @@ fun <T: MorphoDataItem> SkylineFragment (
     getContentHandling: (BskyPost) -> List<ContentHandling> = { listOf() },
     contentPadding: PaddingValues = PaddingValues(0.dp),
     isProfileFeed: Boolean = false,
-    listState: LazyListState = rememberLazyListState(
-        initialFirstVisibleItemIndex = content.value.feed.cursor.scroll
-    ),
     debuggable: Boolean = false,
+    feedUpdate: StateFlow<FeedUpdate<MorphoDataItem.FeedItem>>,
 ) {
-    val currentRefresh by rememberUpdatedState(refresh)
-
-
-    val state = content.collectAsState()
-    val loading = state.value.loadingState
-    val cursor by rememberUpdatedState(state.value.feed.cursor)
-
-
     val scope = rememberCoroutineScope()
-    var refreshing by remember { mutableStateOf(false) }
 
-    val data = remember(loading, state, cursor, refreshing) {
-        state.value.feed
-    }
+    val listState = rememberLazyListState()
+    val state = feedUpdate.collectAsState()
+    val pager = remember { when(state.value) {
+        is FeedUpdate.Feed -> (state.value as FeedUpdate.Feed<MorphoDataItem.FeedItem>).feed
+        is FeedUpdate.Peek -> null
+        else -> null
+    } }
+
+    val data = pager?.collectAsLazyPagingItems()
+    val pagerState = pager?.collectAsState(
+        if(data != null) PagingData.from(data.itemSnapshotList.items) else PagingData.empty()
+    )
+
+
     val scrolledDownSome by remember {
         derivedStateOf {
             listState.firstVisibleItemIndex > 5
         }
     }
-
-    val scrollCursor by remember { derivedStateOf {
-        listState.firstVisibleItemIndex
-    } }
 
     val scrolledDownLots by remember {
         derivedStateOf {
@@ -90,35 +89,16 @@ fun <T: MorphoDataItem> SkylineFragment (
     }
 
 
-    fun refreshPull() = scope.launch {
-        refreshing = true
-        launch { currentRefresh(AtCursor.EMPTY) }
-            .invokeOnCompletion { refreshing = false }
+    fun refreshPull() = data?.refresh()
 
-    }
-
-
-
-    LaunchedEffect(
-        data.items.isNotEmpty() &&
-            loading == ContentLoadingState.Idle &&
-            !listState.canScrollForward &&
-            !refreshing &&
-            scrolledDownSome
-    ) {
-        currentRefresh(cursor.copy(scroll = scrollCursor))
-    }
-
-
+    val refreshing by remember { mutableStateOf(false) }
     val refreshState = rememberPullRefreshState(refreshing, ::refreshPull)
-
 
 
     ConstraintLayout(
         modifier = if(isProfileFeed) {
             Modifier
-                .fillMaxWidth()
-                .systemBarsPadding()
+                .fillMaxSize().systemBarsPadding()
 
         } else {
             Modifier
@@ -139,9 +119,15 @@ fun <T: MorphoDataItem> SkylineFragment (
                     top.linkTo(parent.top)
                     bottom.linkTo(parent.bottom)
                 },
-            //flingBehavior = rememberSnapFlingBehavior(lazyListState = listState),
+            flingBehavior = rememberSnapFlingBehavior(lazyListState = listState),
             contentPadding = if(isProfileFeed) {
-                contentPadding
+                //contentPadding
+                PaddingValues(
+                    bottom = contentPadding.calculateBottomPadding(),
+//                    top = WindowInsets.safeContent.only(WindowInsetsSides.Top).asPaddingValues()
+//                        .calculateTopPadding()
+                    top = contentPadding.calculateTopPadding()
+                )
             } else {
                 PaddingValues(
                     bottom = contentPadding.calculateBottomPadding(),
@@ -198,82 +184,80 @@ fun <T: MorphoDataItem> SkylineFragment (
                     }
                 }
             }
+            when(val loadState = data?.loadState?.refresh) {
+                is LoadStateError -> {
+                    item { Text("Error: ${loadState.error}") }
+                    item { Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+                        TextButton(onClick = { data.retry() }) {
+                            Text("Retry")
+                        } } }
+                }
 
-            items(
-                data.items,
-//                key = {
-//                    when(it) {
-//                        is MorphoDataItem.Post -> "post_${it.post.uri}_${it.post.hashCode()}_${it.post.cid}".encodeBase64()
-//                        is MorphoDataItem.Thread -> "thread_${it.thread.post.uri}_${it.thread.hashCode()}_${it.thread.post.cid}".encodeBase64()
-//                        else -> "${it.hashCode()}".encodeBase64()
-//                    }
-//                },
-                contentType = {
-                    when(it) {
-                        is MorphoDataItem.Post -> MorphoDataItem.Post::class
-                        is MorphoDataItem.Thread -> MorphoDataItem.Thread::class
-                        else -> {}
-                    }
-                }
-            ) {item ->
-                when(item) {
-                    is MorphoDataItem.Thread -> {
-                        SkylineThreadFragment(
-                            thread = item.thread,
-                            modifier = if(debuggable) Modifier.border(1.dp, Color.White) else Modifier
-                                .fillMaxWidth()
-                                //.padding(horizontal = 4.dp),
-                                .padding(vertical = 2.dp, horizontal = 4.dp),
-                            onItemClicked = onItemClicked,
-                            onProfileClicked = onProfileClicked,
-                            onUnClicked = onUnClicked,
-                            onRepostClicked = onRepostClicked,
-                            onReplyClicked = onReplyClicked,
-                            onMenuClicked = onMenuClicked,
-                            onLikeClicked = onLikeClicked,
-                            getContentHandling = getContentHandling,
-                            debuggable = debuggable,
-                        )
-                    }
-                    is MorphoDataItem.Post -> {
-                        PostFragment(
-                            modifier = if(debuggable) Modifier.border(1.dp, Color.Blue) else Modifier
-                                .fillMaxWidth()
-                                //.padding(horizontal = 4.dp),
-                                .padding(vertical = 2.dp, horizontal = 4.dp),
-                            post = item.post,
-                            onItemClicked = onItemClicked,
-                            onProfileClicked = onProfileClicked,
-                            elevate = true,
-                            onUnClicked = onUnClicked,
-                            onRepostClicked = onRepostClicked,
-                            onReplyClicked = onReplyClicked,
-                            onMenuClicked = onMenuClicked,
-                            onLikeClicked = onLikeClicked,
-                            getContentHandling = getContentHandling,
-                        )
-                    }
+                is LoadStateNotLoading -> {
+                    items(
+                        data.itemCount,
+                        key = data.itemKey { it.key }
+                    ) { index ->
+                        when(val item = data[index]) {
+                            is MorphoDataItem.Thread -> {
+                                SkylineThreadFragment(
+                                    thread = item.thread,
+                                    modifier = if(debuggable) Modifier.border(1.dp, Color.White) else Modifier
+                                        .fillMaxWidth()
+                                        //.padding(horizontal = 4.dp),
+                                        .padding(vertical = 2.dp, horizontal = 4.dp),
+                                    onItemClicked = onItemClicked,
+                                    onProfileClicked = onProfileClicked,
+                                    onUnClicked = onUnClicked,
+                                    onRepostClicked = onRepostClicked,
+                                    onReplyClicked = onReplyClicked,
+                                    onMenuClicked = onMenuClicked,
+                                    onLikeClicked = onLikeClicked,
+                                    getContentHandling = getContentHandling,
+                                    debuggable = debuggable,
+                                )
+                            }
+                            is MorphoDataItem.Post -> {
+                                PostFragment(
+                                    modifier = if(debuggable) Modifier.border(1.dp, Color.Blue) else Modifier
+                                        .fillMaxWidth()
+                                        //.padding(horizontal = 4.dp),
+                                        .padding(vertical = 2.dp, horizontal = 4.dp),
+                                    post = item.post,
+                                    onItemClicked = onItemClicked,
+                                    onProfileClicked = onProfileClicked,
+                                    elevate = true,
+                                    onUnClicked = onUnClicked,
+                                    onRepostClicked = onRepostClicked,
+                                    onReplyClicked = onReplyClicked,
+                                    onMenuClicked = onMenuClicked,
+                                    onLikeClicked = onLikeClicked,
+                                    getContentHandling = getContentHandling,
+                                )
+                            }
 
-                    else -> {}
-                }
-            }
-            item {
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
-                    TextButton(
-                        onClick = { currentRefresh(cursor.copy(scroll = data.items.size - 1)) },
-                        modifier = Modifier.padding(6.dp)
-                    ) {
-                        Text("Load more...")
+                            else -> {
+                                PlaceholderSkylineItem(
+                                    modifier = if(debuggable) Modifier.border(1.dp, Color.Black) else Modifier
+                                        .fillMaxWidth()
+                                        //.padding(horizontal = 4.dp),
+                                        .padding(vertical = 2.dp, horizontal = 4.dp),
+                                    elevate = true,
+                                )
+                            }
+                        }
                     }
                 }
+                else -> { item { LoadingCircle() } }
             }
+            if (data?.loadState?.append == LoadStateLoading) item { LoadingCircle() }
         }
         if (scrolledDownSome) {
 
             OutlinedIconButton(
                 onClick = {
                     scope.launch {
-                        refreshPull()
+                        //refreshPull()
                         if (scrolledDownLots) {
                             listState.scrollToItem(0)
                         } else {

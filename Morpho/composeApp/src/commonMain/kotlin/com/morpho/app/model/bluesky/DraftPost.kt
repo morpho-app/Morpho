@@ -13,7 +13,7 @@ import com.morpho.app.data.SharedImage
 import com.morpho.app.data.imageToBlob
 import com.morpho.app.util.makeBlueskyText
 import com.morpho.app.util.resolveBlueskyText
-import com.morpho.butterfly.Butterfly
+import com.morpho.butterfly.ButterflyAgent
 import com.morpho.butterfly.Language
 import kotlinx.collections.immutable.toPersistentList
 import kotlinx.datetime.Clock
@@ -37,9 +37,9 @@ data class DraftPost(
 
     val images: MutableList<DraftImage> = mutableListOf(),
 ) {
-    suspend fun createPost(api: Butterfly): Post {
+    suspend fun createPost(agent: ButterflyAgent): Post {
         val text = makeBlueskyText(text)
-        val blueskyText = resolveBlueskyText(text, api).getOrDefault(text)
+        val blueskyText = resolveBlueskyText(text, agent).getOrDefault(text)
         val replyRef = if (reply != null && reply.reply?.replyRef != null) {
             val root = reply.reply.replyRef.root
             val parent = StrongRef(reply.uri, reply.cid)
@@ -58,7 +58,7 @@ data class DraftPost(
                     app.bsky.embed.RecordWithMediaMediaUnion.Images(
                         Images(
                             images.mapNotNull {
-                                it.toImageRef(api)
+                                it.toImageRef(agent)
                             }.toPersistentList()
                         )
                     )
@@ -68,7 +68,7 @@ data class DraftPost(
             PostEmbedUnion.Images(
                 Images(
                     images.mapNotNull {
-                        it.toImageRef(api)
+                        it.toImageRef(agent)
                     }.toPersistentList()
                 )
             )
@@ -96,9 +96,9 @@ data class DraftImage(
     val altText: String? = null,
     val aspectRatio: AspectRatio? = null,
 ) {
-    suspend fun toImageRef(api: Butterfly) : app.bsky.embed.ImagesImage? {
+    suspend fun toImageRef(agent: ButterflyAgent) : app.bsky.embed.ImagesImage? {
         return app.bsky.embed.ImagesImage(
-            image = imageToBlob(image, api)?: return null,
+            image = imageToBlob(image, agent)?: return null,
             alt = altText ?: "",
             aspectRatio = aspectRatio,
         )

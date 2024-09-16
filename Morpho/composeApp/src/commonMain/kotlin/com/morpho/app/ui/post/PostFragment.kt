@@ -44,7 +44,6 @@ import morpho.composeapp.generated.resources.replyIndicator
 import org.jetbrains.compose.resources.ExperimentalResourceApi
 import org.jetbrains.compose.resources.stringResource
 
-
 @OptIn(ExperimentalLayoutApi::class, ExperimentalFoundationApi::class)
 @Composable
 fun PostFragment(

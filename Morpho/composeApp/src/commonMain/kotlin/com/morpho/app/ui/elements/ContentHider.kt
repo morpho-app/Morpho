@@ -27,21 +27,22 @@ import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastFilter
-import com.morpho.app.model.bluesky.LabelAction
-import com.morpho.app.model.bluesky.LabelScope
-import com.morpho.app.model.uidata.ContentHandling
+import com.atproto.label.Blurs
+import com.morpho.butterfly.ContentHandling
+import com.morpho.butterfly.LabelAction
 
 
 @Composable
 public fun ContentHider(
     reasons: List<ContentHandling> = listOf(),
-    scope: LabelScope,
+    scope: Blurs,
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit,
 ) {
 
     val scopedBehaviours = reasons.filter { it.scope == scope }
-    val toHide = scopedBehaviours.fastFilter { it.action == LabelAction.Blur || it.action == LabelAction.Alert }
+    val toHide = scopedBehaviours
+        .fastFilter { it.action == LabelAction.Blur || it.action == LabelAction.Alert }
     var hideContent by remember {
         mutableStateOf(
             toHide.isNotEmpty()
@@ -59,11 +60,23 @@ public fun ContentHider(
                     .clickable { hideContent = !hideContent }.fillMaxWidth().padding(12.dp)
                 , horizontalArrangement = Arrangement.SpaceBetween) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        imageVector = reason?.icon?.icon?: Icons.Default.Info,
-                        contentDescription = reason?.source?.description,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+
+                    if(reason?.icon?.labelerAvatar!= null) {
+                        OutlinedAvatar(
+                            url = reason.icon.labelerAvatar!!,
+                            contentDescription = reason.source.description,
+                            modifier = Modifier.size(20.dp),
+                            avatarShape = AvatarShape.Circle,
+                            outlineColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+
+                    } else {
+                        Icon(
+                            imageVector = reason?.icon?.icon?: Icons.Default.Info,
+                            contentDescription = reason?.source?.description,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(reason?.source?.name ?: "",
                          style = MaterialTheme.typography.labelLarge,

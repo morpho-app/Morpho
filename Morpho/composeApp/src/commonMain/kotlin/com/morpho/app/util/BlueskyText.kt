@@ -3,11 +3,10 @@ package com.morpho.app.util
 import androidx.compose.ui.util.fastFilterNotNull
 import androidx.compose.ui.util.fastFlatMap
 import androidx.compose.ui.util.fastMap
-import com.atproto.identity.ResolveHandleQuery
 import com.morpho.app.model.bluesky.BskyFacet
 import com.morpho.app.model.bluesky.FacetType
 import com.morpho.app.model.bluesky.RichTextFormat
-import com.morpho.butterfly.Butterfly
+import com.morpho.butterfly.ButterflyAgent
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -74,16 +73,16 @@ sealed interface Segment {
 
 expect fun makeBlueskyText(text: String): BlueskyText
 
-suspend fun resolveBlueskyText(text: BlueskyText, api: Butterfly): Result<BlueskyText> = runCatching {
+suspend fun resolveBlueskyText(text: BlueskyText, agent: ButterflyAgent): Result<BlueskyText> = runCatching {
     val facets:List<BskyFacet> = text.facets.fastFlatMap { facet: BskyFacet ->
         facet.facetType.fastMap {
             if (it is FacetType.UserHandleMention) {
                 // Resolve handles
-                val response = api.api.resolveHandle(ResolveHandleQuery(it.handle)).getOrNull()
-                if (response != null) {
+                val did = agent.resolveHandle(it.handle).getOrNull()
+                if (did != null) {
                     val index = facet.facetType.indexOf(it)
                     val facetTypes = facet.facetType.toMutableList()
-                    facetTypes[index] = FacetType.UserDidMention(response.did)
+                    facetTypes[index] = FacetType.UserDidMention(did)
                     facet.copy(facetType = facetTypes)
                 } else null
 
