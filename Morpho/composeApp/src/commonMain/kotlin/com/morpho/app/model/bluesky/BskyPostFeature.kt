@@ -98,7 +98,12 @@ data class EmbedImage(
     val aspectRatio: AspectRatio? = null,
 ): Parcelable
 
-
+@Immutable
+@Serializable
+data class Reference(
+    val uri: AtUri,
+    val cid: Cid,
+)
 
 @Parcelize
 @Immutable

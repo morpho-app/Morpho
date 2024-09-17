@@ -1,10 +1,8 @@
 package com.morpho.app.model.uistate
 
 
-
-interface UiState {
-    val loadingState: UiLoadingState
-
-    val isLoading: Boolean
-        get() = loadingState == UiLoadingState.Loading
+sealed interface UiLoadingState {
+    data object Loading : UiLoadingState
+    data object Idle : UiLoadingState
+    data class Error(val errorMessage: String) : UiLoadingState
 }

@@ -18,7 +18,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
-import com.morpho.app.model.bluesky.NotificationsListItem
+import com.morpho.app.data.NotificationsListItem
 import com.morpho.app.ui.elements.OutlinedAvatar
 import com.morpho.butterfly.Did
 import kotlin.math.min

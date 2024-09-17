@@ -66,7 +66,7 @@ sealed interface MorphoDataItem: Parcelable {
                         null
                     }
                     is ReplyRefParentUnion.PostView -> {
-                        (parent as ReplyRefParentUnion.PostView).value
+                        parent.value
                     }
                 }
                 items.add(feedPost.post)

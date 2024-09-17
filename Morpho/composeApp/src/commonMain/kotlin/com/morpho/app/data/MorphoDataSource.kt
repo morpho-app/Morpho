@@ -5,7 +5,6 @@ import app.cash.paging.PagingConfig
 import app.cash.paging.PagingSource
 import app.cash.paging.PagingState
 import com.morpho.app.model.bluesky.*
-import com.morpho.app.model.uidata.ContentLabelService
 import com.morpho.app.model.uidata.Delta
 import com.morpho.app.model.uidata.Moment
 import com.morpho.butterfly.ButterflyAgent
