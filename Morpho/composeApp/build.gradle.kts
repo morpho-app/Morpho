@@ -1,5 +1,6 @@
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
@@ -20,22 +21,13 @@ kotlin {
     androidTarget {
         @OptIn(ExperimentalKotlinGradlePluginApi::class)
         compilerOptions {
+            jvmTarget = JvmTarget.JVM_11
             freeCompilerArgs.addAll(
                 "-P",
                 "plugin:org.jetbrains.kotlin.parcelize:additionalAnnotation=com.morpho.app.CommonParcelize",
             )
         }
-        compilations.all {
-            kotlinOptions {
-                jvmTarget = "11"
 
-            }
-            //move from the deprecated above to this
-//            compileJavaTaskProvider.configure {
-//                jvm
-//            }
-
-        }
 
     }
     
@@ -177,7 +169,6 @@ kotlin {
             implementation(libs.voyager.navigator)
             // Screen Model
             implementation(libs.voyager.screenmodel)
-            implementation("org.jetbrains.androidx.lifecycle:lifecycle-viewmodel-compose:2.8.0")
             implementation("cafe.adriel.voyager:voyager-lifecycle-kmp:1.1.0-beta02")
             // BottomSheetNavigator
             implementation(libs.voyager.bottom.sheet.navigator)
@@ -197,7 +188,7 @@ kotlin {
             api("dev.icerock.moko:parcelize:0.9.0")
 
         }
-        nativeMain.dependencies {
+        appleMain.dependencies {
             implementation("app.cash.paging:paging-runtime-uikit:3.3.0-alpha02-0.5.1")
         }
         desktopMain.dependencies {
