@@ -13,9 +13,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.atproto.repo.StrongRef
+import com.morpho.app.data.NotificationsListItem
 import com.morpho.app.model.bluesky.BskyNotification
 import com.morpho.app.model.bluesky.BskyPost
-import com.morpho.app.model.bluesky.NotificationsListItem
 import com.morpho.app.ui.common.OnPostClicked
 import com.morpho.app.ui.elements.MenuOptions
 import com.morpho.app.ui.post.PostFragment

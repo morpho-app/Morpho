@@ -1,9 +1,10 @@
-package com.morpho.app.model.bluesky
+package com.morpho.app.data
 
 import app.bsky.notification.ListNotificationsReason
 import app.cash.paging.PagingConfig
 import app.cash.paging.compose.LazyPagingItems
-import com.morpho.app.data.MorphoDataSource
+import com.morpho.app.model.bluesky.BskyNotification
+import com.morpho.app.model.bluesky.toBskyNotification
 import com.morpho.app.model.uistate.NotificationsFilterState
 import com.morpho.butterfly.AtUri
 import com.morpho.butterfly.Cursor

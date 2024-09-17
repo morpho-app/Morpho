@@ -27,8 +27,12 @@ sealed interface AuthState {
 @Serializable
 @Immutable
 data class LoginState(
-    override val loadingState: UiLoadingState = UiLoadingState.Idle,
+    val loadingState: UiLoadingState = UiLoadingState.Idle,
     val mode: LoginScreenMode = LoginScreenMode.SIGN_IN,
     val authState: AuthState = AuthState.NoAuth,
     val credentials: Credentials? = null,
-) : UiState
+) {
+    val isLoading: Boolean
+        get() = loadingState is UiLoadingState.Loading
+}
+

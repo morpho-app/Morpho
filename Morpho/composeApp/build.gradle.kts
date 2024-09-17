@@ -1,4 +1,5 @@
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
+import org.jetbrains.kotlin.compose.compiler.gradle.ComposeFeatureFlag
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
@@ -28,14 +29,17 @@ kotlin {
             )
         }
 
-
     }
     
     jvm("desktop")
-    
+//    linuxX64()
+//    mingwX64()
+//    linuxArm64()
+
     listOf(
         iosX64(),
         iosArm64(),
+
         iosSimulatorArm64()
     ).forEach { iosTarget ->
         iosTarget.binaries.framework {
@@ -80,6 +84,10 @@ kotlin {
             implementation("androidx.paging:paging-compose:3.3.0-alpha02")
         }
 
+        commonMain.languageSettings {
+            progressiveMode = true
+        }
+
         commonMain.dependencies {
             implementation("com.morpho:shared")
 
@@ -99,6 +107,7 @@ kotlin {
             implementation(compose.material)
             implementation(compose.material3)
             implementation(compose.ui)
+
             implementation(compose.components.resources)
             implementation(compose.components.uiToolingPreview)
             implementation(compose.materialIconsExtended)
@@ -263,17 +272,26 @@ android {
     }
     buildFeatures {
         compose = true
-        viewBinding = true
+        //viewBinding = true
     }
 
     composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.11"
+        kotlinCompilerExtensionVersion = "1.5.15"
     }
 
 
     task("testClasses")
 }
 
+composeCompiler {
+    includeSourceInformation = true
+    includeTraceMarkers = true
+
+    featureFlags = setOf(
+        ComposeFeatureFlag.StrongSkipping.disabled(),
+        ComposeFeatureFlag.OptimizeNonSkippingGroups,
+    )
+}
 
 compose.desktop {
     application {
@@ -297,6 +315,7 @@ compose.desktop {
 dependencies {
 
     add("kspCommonMainMetadata", libs.koin.ksp.compiler) // Run KSP on [commonMain] code
+    //add("kspJvm", libs.koin.ksp.compiler)
     add("kspAndroid", libs.koin.ksp.compiler)
     //add("kspIosX64", libs.koin.ksp.compiler)
     //add("kspIosArm64", libs.koin.ksp.compiler)

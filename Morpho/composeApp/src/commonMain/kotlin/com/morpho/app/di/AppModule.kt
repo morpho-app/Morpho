@@ -1,9 +1,13 @@
 package com.morpho.app.di
 
+import com.morpho.app.data.ContentLabelService
 import com.morpho.app.data.MorphoAgent
 import com.morpho.app.data.PollBlueService
 import com.morpho.app.data.PreferencesRepository
-import com.morpho.app.model.uidata.*
+import com.morpho.app.model.uidata.FeedEvent
+import com.morpho.app.model.uidata.FeedPresenter
+import com.morpho.app.model.uidata.UserFeedsPresenter
+import com.morpho.app.model.uidata.UserListPresenter
 import com.morpho.app.screens.base.BaseScreenModel
 import com.morpho.app.screens.login.LoginScreenModel
 import com.morpho.app.screens.main.MainScreenModel

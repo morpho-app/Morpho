@@ -1,4 +1,4 @@
-package com.morpho.app.model.uidata
+package com.morpho.app.data
 
 import app.bsky.actor.MuteTargetGroup
 import app.bsky.actor.MutedWord
@@ -6,7 +6,6 @@ import app.bsky.actor.Visibility
 import app.bsky.labeler.LabelerViewDetailed
 import com.atproto.label.Blurs
 import com.atproto.label.Severity
-import com.morpho.app.data.MorphoAgent
 import com.morpho.app.model.bluesky.BskyPost
 import com.morpho.app.model.bluesky.MorphoDataItem
 import com.morpho.app.model.bluesky.toAtProtoLabel
