@@ -22,7 +22,11 @@ kotlin {
     androidTarget {
         @OptIn(ExperimentalKotlinGradlePluginApi::class)
         compilerOptions {
-            jvmTarget.set(JvmTarget.JVM_11)
+            jvmTarget = JvmTarget.JVM_11
+            freeCompilerArgs.addAll(
+                "-P",
+                "plugin:org.jetbrains.kotlin.parcelize:additionalAnnotation=com.morpho.app.CommonParcelize",
+            )
         }
 
     }
@@ -193,7 +197,7 @@ kotlin {
             api("dev.icerock.moko:parcelize:0.9.0")
 
         }
-        iosMain.dependencies {
+        appleMain.dependencies {
             implementation("app.cash.paging:paging-runtime-uikit:3.3.0-alpha02-0.5.1")
         }
         desktopMain.dependencies {
