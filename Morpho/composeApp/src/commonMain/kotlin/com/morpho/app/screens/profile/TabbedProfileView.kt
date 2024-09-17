@@ -5,19 +5,9 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.SecondaryScrollableTabRow
-import androidx.compose.material3.Tab
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.TopAppBarScrollBehavior
-import androidx.compose.material3.rememberTopAppBarState
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.unit.dp
@@ -31,7 +21,6 @@ import cafe.adriel.voyager.navigator.tab.TabDisposable
 import cafe.adriel.voyager.navigator.tab.TabNavigator
 import cafe.adriel.voyager.navigator.tab.TabOptions
 import coil3.annotation.ExperimentalCoilApi
-import com.morpho.app.model.bluesky.DetailedProfile
 import com.morpho.app.model.uidata.Event
 import com.morpho.app.model.uidata.FeedEvent
 import com.morpho.app.model.uistate.ContentCardState
@@ -49,7 +38,7 @@ import cafe.adriel.voyager.navigator.tab.Tab as NavTab
 @OptIn(ExperimentalAnimationApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun MyTabbedProfileTopBar(
-    profile: DetailedProfile,
+    profile: ContentCardState.MyProfile,
     scrollBehavior: TopAppBarScrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(
         rememberTopAppBarState()),
     tabs: List<ProfileSkylineTab>,
@@ -64,7 +53,7 @@ fun MyTabbedProfileTopBar(
             .nestedScroll(scrollBehavior.nestedScrollConnection),
     ) {
         DetailedProfileFragment(
-            profile = profile,
+            profile = profile.profile,
             myProfile = true,
             isTopLevel = true,
             scrollBehavior = scrollBehavior,
@@ -91,7 +80,7 @@ fun MyTabbedProfileTopBar(
 @OptIn(ExperimentalAnimationApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun TabbedProfileTopBar(
-    profile: DetailedProfile,
+    profile: ContentCardState.FullProfile,
     scrollBehavior: TopAppBarScrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(
         rememberTopAppBarState()),
     tabs: List<ProfileSkylineTab>,
@@ -106,7 +95,7 @@ fun TabbedProfileTopBar(
             .nestedScroll(scrollBehavior.nestedScrollConnection),
     ) {
         DetailedProfileFragment(
-            profile = profile,
+            profile = profile.profile,
             myProfile = true,
             isTopLevel = true,
             scrollBehavior = scrollBehavior,
@@ -177,7 +166,7 @@ fun TabScreen.TabbedProfileContent(
             modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
             topContent = {
                 if(ownProfile) MyTabbedProfileTopBar(
-                    profile = myProfileState.profile,
+                    profile = myProfileState,
                     scrollBehavior = scrollBehavior,
                     tabs = tabs,
                     onBackClicked = { navigator.pop() },
@@ -196,7 +185,7 @@ fun TabScreen.TabbedProfileContent(
                     },
                     tabIndex = selectedTabIndex,
                 ) else if(profileState != null) TabbedProfileTopBar(
-                    profile = profileState.profile,
+                    profile = profileState,
                     scrollBehavior = scrollBehavior,
                     tabs = tabs,
                     onBackClicked = { navigator.pop() },

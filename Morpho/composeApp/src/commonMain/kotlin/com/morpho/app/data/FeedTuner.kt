@@ -1,16 +1,11 @@
 package com.morpho.app.data
 
-import com.morpho.app.model.bluesky.AuthorContext
-import com.morpho.app.model.bluesky.AuthorFilter
-import com.morpho.app.model.bluesky.FeedDescriptor
-import com.morpho.app.model.bluesky.MorphoDataItem
-import com.morpho.app.model.bluesky.Profile
-import com.morpho.app.model.bluesky.ThreadPost
-import com.morpho.butterfly.AtUri
+import com.morpho.app.model.bluesky.*
+import com.morpho.app.model.uidata.MorphoData
+import com.morpho.app.model.uidata.areSameAuthor
+import com.morpho.app.model.uistate.FeedType
+import com.morpho.butterfly.*
 import com.morpho.butterfly.BskyPreferences
-import com.morpho.butterfly.Did
-import com.morpho.butterfly.Language
-import com.morpho.butterfly.PagedResponse
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.serialization.Serializable
 
@@ -75,6 +70,53 @@ data class FeedTuner<Data: MorphoDataItem.FeedItem>(val tuners: List<TunerFuncti
             return listOf()
         }
 
+        fun <Data: MorphoDataItem.FeedItem> useFeedTuners(
+            prefs: BskyUserPreferences,
+            feed: MorphoData<Data>
+        ): List<FeedTuner<Data>> {
+            if(feed.isProfileFeed) {
+                when(feed.feedType) {
+                    FeedType.PROFILE_POSTS -> return listOf(
+                        FeedTuner(tuners = persistentListOf(
+                            Companion::removeReplies
+                        )) as FeedTuner<Data>
+                    )
+                    FeedType.PROFILE_USER_LISTS -> return listOf()
+                    FeedType.PROFILE_FEEDS_LIST -> return listOf()
+                    FeedType.PROFILE_MOD_SERVICE -> return listOf()
+                    else -> {}
+                }
+            }
+            val languages = prefs.preferences.languages.toList()
+            val languageTuner: TunerFunction<MorphoDataItem.FeedItem> = { f, t ->
+                preferredLanguageOnly(languages, f, t)
+            }
+            if(feed.feedType == FeedType.OTHER) {
+                return listOf(FeedTuner(tuners = persistentListOf(languageTuner))) as List<FeedTuner<Data>>
+            }
+            if(feed.feedType == FeedType.LIST_FOLLOWING || feed.feedType == FeedType.HOME) {
+                val userDid = Did(prefs.user.userDid)
+                val tuners = mutableListOf(FeedTuner(tuners = persistentListOf(Companion::removeOrphans)))
+                val feedPrefs = prefs.preferences.feedViewPrefs[feed.uri.atUri] ?:
+                    return tuners.toList() as List<FeedTuner<Data>>
+                if(feedPrefs.hideReposts) tuners.add(FeedTuner(tuners = persistentListOf(Companion::removeReposts)))
+                if(feedPrefs.hideReplies) tuners.add(FeedTuner(tuners = persistentListOf(Companion::removeReplies)))
+                else {
+                    val followedRepliesOnly: TunerFunction<MorphoDataItem.FeedItem> = { f, t ->
+                        followedRepliesOnly(userDid, f, t)
+                    }
+                    tuners.add(FeedTuner(tuners = persistentListOf(followedRepliesOnly)))
+                }
+                if(feedPrefs.hideQuotePosts) tuners.add(
+                    FeedTuner(tuners = persistentListOf(
+                        Companion::removeQuotePosts
+                    ))
+                )
+                tuners.add(FeedTuner(tuners = persistentListOf(Companion::dedupThreads)))
+                return tuners.toList() as List<FeedTuner<Data>>
+            }
+            return listOf()
+        }
 
         fun <Data: MorphoDataItem.FeedItem> removeReplies(
             feed: List<Data>,
@@ -187,7 +229,55 @@ data class FeedTuner<Data: MorphoDataItem.FeedItem>(val tuners: List<TunerFuncti
             return newFeed.ifEmpty { feed } as List<Data>
         }
     }
-
+    fun tune(
+        feed: MorphoData<Data>
+    ): MorphoData<Data> {
+        var workingFeed = feed.items
+        tuners.forEach { tuner ->
+            workingFeed = tuner(workingFeed, this)
+        }
+        workingFeed = workingFeed.map { item ->
+            if(seenKeys.contains(item.key)) return@map null
+            else if(item is MorphoDataItem.Thread) {
+                val itemUris = item.getUris()
+                val seenInThisThread = itemUris.filter { seenUris.contains(it) }
+                if(seenInThisThread.isNotEmpty()) {
+                    if(seenInThisThread.size == itemUris.size) {
+                        return@map null
+                    } else {
+                        val newParents = item.thread.parents.filter { parent ->
+                            when(parent) {
+                                is ThreadPost.ViewablePost -> parent.post.uri in seenInThisThread
+                                is ThreadPost.BlockedPost -> false
+                                is ThreadPost.NotFoundPost -> false
+                            }
+                        }
+                        val newThread = item.copy(thread = item.thread.filterReplies { reply ->
+                            when(reply) {
+                                is ThreadPost.ViewablePost -> reply.post.uri in seenInThisThread
+                                is ThreadPost.BlockedPost -> false
+                                is ThreadPost.NotFoundPost -> false
+                            }
+                        }.copy(parents = newParents))
+                        seenUris.addAll(itemUris)
+                        if(newThread.thread.replies.isEmpty() && newThread.thread.parents.isEmpty()) {
+                            return@map null
+                        } else {
+                            return@map newThread
+                        }
+                    }
+                } else {
+                    seenUris.addAll(itemUris)
+                    item
+                }
+            } else {
+                val disableDedub = item.isReply && item.isRepost
+                if(!disableDedub) seenKeys.add(item.key)
+                item
+            }
+        }.filterNotNull() as List<Data>
+        return feed.copy(items = workingFeed)
+    }
     fun tune(
         feed: PagedResponse.Feed<Data>
     ): PagedResponse.Feed<Data> {
@@ -295,18 +385,4 @@ fun shouldDisplayReplyInFollowing(
 
 fun isSelfOrFollowing(profile: Profile?, userDid: Did): Boolean {
     return profile?.did == userDid || profile?.followedByMe == true
-}
-
-fun areSameAuthor(authors: AuthorContext): Boolean {
-    val authorDid = authors.author.did
-    if(authors.parentAuthor != null && authors.parentAuthor.did != authorDid) {
-        return false
-    }
-    if(authors.grandParentAuthor != null && authors.grandParentAuthor.did != authorDid) {
-        return false
-    }
-    if(authors.rootAuthor != null && authors.rootAuthor.did != authorDid) {
-        return false
-    }
-    return true
 }

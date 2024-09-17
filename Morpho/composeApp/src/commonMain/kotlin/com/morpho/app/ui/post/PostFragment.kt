@@ -4,26 +4,11 @@ package com.morpho.app.ui.post
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ColumnScope
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentWidth
+import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Reply
 import androidx.compose.material.icons.filled.Repeat
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.material3.surfaceColorAtElevation
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -40,29 +25,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastAny
 import com.atproto.label.Blurs
 import com.atproto.repo.StrongRef
-import com.morpho.app.model.bluesky.BskyPost
-import com.morpho.app.model.bluesky.BskyPostFeature
-import com.morpho.app.model.bluesky.BskyPostReason
-import com.morpho.app.model.bluesky.EmbedRecord
-import com.morpho.app.model.bluesky.FacetType
-import com.morpho.app.model.bluesky.TimelinePostMedia
+import com.morpho.app.model.bluesky.*
 import com.morpho.app.ui.common.OnPostClicked
-import com.morpho.app.ui.elements.AvatarShape
-import com.morpho.app.ui.elements.ContentHider
-import com.morpho.app.ui.elements.MenuOptions
-import com.morpho.app.ui.elements.OutlinedAvatar
-import com.morpho.app.ui.elements.RichTextElement
-import com.morpho.app.ui.elements.WrappedColumn
+import com.morpho.app.ui.elements.*
 import com.morpho.app.ui.lists.FeedListEntryFragment
 import com.morpho.app.ui.lists.UserListEntryFragment
 import com.morpho.app.util.getFormattedDateTimeSince
 import com.morpho.app.util.openBrowser
-import com.morpho.butterfly.AtIdentifier
-import com.morpho.butterfly.AtUri
-import com.morpho.butterfly.ContentHandling
-import com.morpho.butterfly.LabelAction
-import com.morpho.butterfly.LabelDescription
-import com.morpho.butterfly.LabelIcon
+import com.morpho.butterfly.*
 import com.morpho.butterfly.model.RecordType
 import kotlinx.collections.immutable.toImmutableList
 import morpho.app.ui.utils.indentLevel
@@ -111,7 +81,7 @@ fun PostFragment(
         }}
 
         val interactionSource = remember { MutableInteractionSource() }
-        //val indication = remember { MorphoHighlightIndication() }
+        val indication = remember { MorphoHighlightIndication() }
         val bgColor = if (role == PostFragmentRole.PrimaryThreadRoot) {
             MaterialTheme.colorScheme.background
         } else {
@@ -143,6 +113,9 @@ fun PostFragment(
                 .fillMaxWidth(indentLevel(indent))
                 .align(Alignment.End)
                 .clickable(
+                    interactionSource = interactionSource,
+                    indication = indication,
+                    enabled = true,
                     onClick = { onItemClicked(post.uri) }
                 )
 
@@ -239,6 +212,9 @@ fun PostFragment(
                                     .alignByBaseline()
                                     .pointerHoverIcon(PointerIcon.Hand)
                                     .clickable(
+                                        interactionSource = interactionSource,
+                                        indication = indication,
+                                        enabled = true,
                                         onClick = { onProfileClicked(post.author.did) }
                                     )
                             )

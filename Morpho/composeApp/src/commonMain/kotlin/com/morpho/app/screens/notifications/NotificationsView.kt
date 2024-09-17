@@ -25,10 +25,10 @@ import cafe.adriel.voyager.core.model.screenModelScope
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.currentOrThrow
-import com.morpho.app.data.NotificationsListItem
-import com.morpho.app.data.collectNotifications
 import com.morpho.app.model.bluesky.BskyPost
 import com.morpho.app.model.bluesky.DraftPost
+import com.morpho.app.model.bluesky.NotificationsListItem
+import com.morpho.app.model.bluesky.collectNotifications
 import com.morpho.app.model.uistate.NotificationsUIState
 import com.morpho.app.screens.base.tabbed.ProfileTab
 import com.morpho.app.screens.base.tabbed.TabScreen

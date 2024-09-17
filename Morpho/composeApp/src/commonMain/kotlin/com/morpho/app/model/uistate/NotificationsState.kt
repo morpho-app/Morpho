@@ -10,7 +10,8 @@ import org.koin.core.component.KoinComponent
 data class NotificationsUIState(
     val filterState: MutableStateFlow<NotificationsFilterState> = MutableStateFlow(NotificationsFilterState()),
     val showPosts: Boolean = true,
-): KoinComponent
+    override val loadingState: UiLoadingState = UiLoadingState.Loading,
+): KoinComponent, UiState
 @Immutable
 @Serializable
 data class NotificationsFilterState(

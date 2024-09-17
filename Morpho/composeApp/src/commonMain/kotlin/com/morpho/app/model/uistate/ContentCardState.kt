@@ -1,6 +1,5 @@
 package com.morpho.app.model.uistate
 
-import androidx.compose.runtime.Immutable
 import com.morpho.app.model.bluesky.*
 import com.morpho.app.model.uidata.*
 import com.morpho.app.util.MutableSharedFlowSerializer
@@ -146,19 +145,4 @@ sealed interface ContentCardState<E: Event> {
 enum class ListsOrFeeds {
     Lists,
     Feeds
-}
-
-@Immutable
-@Serializable
-enum class FeedType {
-    HOME,
-    PROFILE_POSTS,
-    PROFILE_REPLIES,
-    PROFILE_MEDIA,
-    PROFILE_LIKES,
-    PROFILE_USER_LISTS,
-    PROFILE_MOD_SERVICE,
-    PROFILE_FEEDS_LIST,
-    LIST_FOLLOWING,
-    OTHER,
 }

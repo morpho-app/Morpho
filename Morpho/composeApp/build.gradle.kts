@@ -1,7 +1,5 @@
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
-import org.jetbrains.kotlin.compose.compiler.gradle.ComposeFeatureFlag
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
@@ -22,24 +20,30 @@ kotlin {
     androidTarget {
         @OptIn(ExperimentalKotlinGradlePluginApi::class)
         compilerOptions {
-            jvmTarget = JvmTarget.JVM_11
             freeCompilerArgs.addAll(
                 "-P",
                 "plugin:org.jetbrains.kotlin.parcelize:additionalAnnotation=com.morpho.app.CommonParcelize",
             )
         }
+        compilations.all {
+            kotlinOptions {
+                jvmTarget = "11"
+
+            }
+            //move from the deprecated above to this
+//            compileJavaTaskProvider.configure {
+//                jvm
+//            }
+
+        }
 
     }
     
     jvm("desktop")
-//    linuxX64()
-//    mingwX64()
-//    linuxArm64()
-
+    
     listOf(
         iosX64(),
         iosArm64(),
-
         iosSimulatorArm64()
     ).forEach { iosTarget ->
         iosTarget.binaries.framework {
@@ -84,10 +88,6 @@ kotlin {
             implementation("androidx.paging:paging-compose:3.3.0-alpha02")
         }
 
-        commonMain.languageSettings {
-            progressiveMode = true
-        }
-
         commonMain.dependencies {
             implementation("com.morpho:shared")
 
@@ -107,7 +107,6 @@ kotlin {
             implementation(compose.material)
             implementation(compose.material3)
             implementation(compose.ui)
-
             implementation(compose.components.resources)
             implementation(compose.components.uiToolingPreview)
             implementation(compose.materialIconsExtended)
@@ -178,6 +177,7 @@ kotlin {
             implementation(libs.voyager.navigator)
             // Screen Model
             implementation(libs.voyager.screenmodel)
+            implementation("org.jetbrains.androidx.lifecycle:lifecycle-viewmodel-compose:2.8.0")
             implementation("cafe.adriel.voyager:voyager-lifecycle-kmp:1.1.0-beta02")
             // BottomSheetNavigator
             implementation(libs.voyager.bottom.sheet.navigator)
@@ -197,7 +197,7 @@ kotlin {
             api("dev.icerock.moko:parcelize:0.9.0")
 
         }
-        appleMain.dependencies {
+        nativeMain.dependencies {
             implementation("app.cash.paging:paging-runtime-uikit:3.3.0-alpha02-0.5.1")
         }
         desktopMain.dependencies {
@@ -272,26 +272,17 @@ android {
     }
     buildFeatures {
         compose = true
-        //viewBinding = true
+        viewBinding = true
     }
 
     composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.15"
+        kotlinCompilerExtensionVersion = "1.5.11"
     }
 
 
     task("testClasses")
 }
 
-composeCompiler {
-    includeSourceInformation = true
-    includeTraceMarkers = true
-
-    featureFlags = setOf(
-        ComposeFeatureFlag.StrongSkipping.disabled(),
-        ComposeFeatureFlag.OptimizeNonSkippingGroups,
-    )
-}
 
 compose.desktop {
     application {
@@ -315,7 +306,6 @@ compose.desktop {
 dependencies {
 
     add("kspCommonMainMetadata", libs.koin.ksp.compiler) // Run KSP on [commonMain] code
-    //add("kspJvm", libs.koin.ksp.compiler)
     add("kspAndroid", libs.koin.ksp.compiler)
     //add("kspIosX64", libs.koin.ksp.compiler)
     //add("kspIosArm64", libs.koin.ksp.compiler)
