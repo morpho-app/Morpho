@@ -4,15 +4,38 @@ import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.only
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.requiredHeight
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBackIosNew
-import androidx.compose.material3.*
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.LargeTopAppBar
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -33,14 +56,10 @@ import com.morpho.app.ui.elements.RichTextElement
 import kotlinx.collections.immutable.toImmutableList
 import morpho.composeapp.generated.resources.Res
 import morpho.composeapp.generated.resources.test_banner
-import org.jetbrains.compose.resources.ExperimentalResourceApi
 import org.jetbrains.compose.resources.painterResource
 
-@OptIn(
-    ExperimentalMaterial3Api::class,
-    ExperimentalLayoutApi::class,
-    ExperimentalResourceApi::class
-)
+
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 actual fun DetailedProfileFragment(
     profile: DetailedProfile,
@@ -57,11 +76,7 @@ actual fun DetailedProfileFragment(
     } else {
         (135.dp - (60 * scrollBehavior.state.collapsedFraction).dp)
     }
-    val collapsed = scrollBehavior.state.collapsedFraction > 0.5
-    LaunchedEffect(scrollState) {
-        println("Banner Height: $bannerHeight")
-        print("Collapsed: $collapsed")
-    }
+    val collapsed = scrollBehavior.state.collapsedFraction > 0.5f
 
     ConstraintLayout(
         modifier = Modifier
@@ -242,25 +257,21 @@ actual fun DetailedProfileFragment(
                     .padding(start = 20.dp, end = 20.dp, top = bannerHeight +40.dp)//.border(1.dp, Color.Yellow)
             ) {
 
-                SelectionContainer {
-                    Text(
-                        text = name,
-                        style = MaterialTheme.typography.headlineMedium,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                }
-                SelectionContainer {
-                    Text(
-                        text = " @${profile.handle}",
-                        color = MaterialTheme.colorScheme.primary,
-                        style = MaterialTheme.typography.labelMedium,
-                    )
-                }
+                Text(
+                    text = name,
+                    style = MaterialTheme.typography.headlineMedium,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+
+                Text(
+                    text = " @${profile.handle}",
+                    color = MaterialTheme.colorScheme.primary,
+                    style = MaterialTheme.typography.labelMedium,
+                )
 
                 Spacer(modifier = Modifier.height(10.dp))
-                SelectionContainer {
-                    RichTextElement(profile.description.orEmpty())
-                }
+                RichTextElement(profile.description.orEmpty())
+
             }
 
         }

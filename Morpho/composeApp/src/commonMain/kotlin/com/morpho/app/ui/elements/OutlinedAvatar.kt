@@ -17,12 +17,14 @@ package com.morpho.app.ui.elements
  */
 
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
@@ -74,8 +76,8 @@ fun OutlinedAvatar(
         AvatarShape.Rounded -> MaterialTheme.shapes.small
         AvatarShape.Corner -> roundedTopLBotR.small
     }
-    val interactionSource = remember { MutableInteractionSource() }
-    val indication = remember { MorphoHighlightIndication() }
+    //val interactionSource = remember { MutableInteractionSource() }
+    //val indication = remember { MorphoHighlightIndication() }
     val pxSize = LocalDensity.current.run { (size-outlineSize).toPx()*2 }.toInt()
     val sB = when(avatarShape) {
         AvatarShape.Circle -> CircleShape.createOutline(
@@ -90,9 +92,7 @@ fun OutlinedAvatar(
     }
     val modClicked = if(onClicked != null) {
         modifier.clickable(
-            interactionSource = interactionSource,
-            indication = indication,
-            enabled = true,
+
             onClick = { onClicked() }
         )
     } else modifier

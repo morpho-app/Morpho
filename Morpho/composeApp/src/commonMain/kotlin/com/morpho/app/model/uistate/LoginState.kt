@@ -31,5 +31,8 @@ data class LoginState(
     val mode: LoginScreenMode = LoginScreenMode.SIGN_IN,
     val authState: AuthState = AuthState.NoAuth,
     val credentials: Credentials? = null,
-)
+) {
+    val isLoading: Boolean
+        get() = loadingState is UiLoadingState.Loading
+}
 

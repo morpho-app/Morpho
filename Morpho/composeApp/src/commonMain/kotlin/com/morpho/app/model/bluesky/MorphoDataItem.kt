@@ -2,7 +2,6 @@ package com.morpho.app.model.bluesky
 
 import androidx.compose.runtime.Immutable
 import app.bsky.feed.*
-import com.morpho.app.CommonParcelize
 import com.morpho.app.util.deserialize
 import com.morpho.butterfly.AtUri
 import dev.icerock.moko.parcelize.Parcelable
@@ -20,12 +19,10 @@ import kotlinx.serialization.Serializable
 @Parcelize
 @Immutable
 @Serializable
-@CommonParcelize
 sealed interface MorphoDataItem: Parcelable {
 
     @Immutable
     @Serializable
-    @CommonParcelize
     sealed interface FeedItem: MorphoDataItem {
         companion object {
             fun fromFeedViewPost(feedPost: FeedViewPost): FeedItem {
@@ -252,7 +249,7 @@ sealed interface MorphoDataItem: Parcelable {
 
     @Immutable
     @Serializable
-    @CommonParcelize
+    @Parcelize
     data class Post(
         val post: BskyPost,
         val reason: BskyPostReason? = post.reason,
@@ -261,7 +258,7 @@ sealed interface MorphoDataItem: Parcelable {
 
     @Immutable
     @Serializable
-    @CommonParcelize
+    @Parcelize
     data class Thread(
         val thread: BskyPostThread,
         val reason: BskyPostReason? = null,
@@ -279,21 +276,21 @@ sealed interface MorphoDataItem: Parcelable {
 
     @Immutable
     @Serializable
-    @CommonParcelize
+    @Parcelize
     data class FeedInfo(
         val feed: FeedGenerator,
     ): MorphoDataItem
 
     @Immutable
     @Serializable
-    @CommonParcelize
+    @Parcelize
     data class ProfileItem(
         val profile:Profile,
     ): MorphoDataItem
 
     @Immutable
     @Serializable
-    @CommonParcelize
+    @Parcelize
     data class ListInfo(
         val list: BskyList,
     ): MorphoDataItem
@@ -301,14 +298,14 @@ sealed interface MorphoDataItem: Parcelable {
 
     @Immutable
     @Serializable
-    @CommonParcelize
+    @Parcelize
     data class ModLabel(
         val label: BskyLabelDefinition,
     ): MorphoDataItem
 
     @Immutable
     @Serializable
-    @CommonParcelize
+    @Parcelize
     data class LabelService(
         val service: BskyLabelService,
     ): MorphoDataItem
@@ -380,6 +377,7 @@ sealed interface MorphoDataItem: Parcelable {
 
 }
 
+@Parcelize
 @Immutable
 @Serializable
 data class AuthorContext(
@@ -387,4 +385,4 @@ data class AuthorContext(
     val parentAuthor: Profile? = null,
     val grandParentAuthor: Profile? = null,
     val rootAuthor: Profile? = null,
-)
+): Parcelable

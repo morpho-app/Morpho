@@ -10,6 +10,7 @@ import com.morpho.butterfly.AtUri
 import com.morpho.butterfly.Cid
 import com.morpho.butterfly.Did
 import com.morpho.butterfly.Handle
+import dev.icerock.moko.parcelize.Parcelable
 import dev.icerock.moko.parcelize.Parcelize
 import dev.icerock.moko.parcelize.TypeParceler
 import kotlinx.collections.immutable.persistentListOf
@@ -30,7 +31,7 @@ open class BskyLabelService(
     val indexedAt: Moment,
     val policies: List<BskyLabelDefinition>,
     val labels: List<BskyLabel>,
-) {
+): Parcelable {
     val did: Did
         get() = creator?.did ?: Did("did:blank:did")
     val handle: Handle
