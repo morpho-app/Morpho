@@ -190,6 +190,7 @@ sealed interface ThreadPost:Parcelable {
     @Serializable
     data class ViewablePost(
         val post: BskyPost,
+        val parent: ThreadPost? = null,
         val replies: List<ThreadPost> = persistentListOf(),
     ) : ThreadPost {
         override val uri: AtUri
@@ -339,7 +340,7 @@ sealed interface ThreadPost:Parcelable {
 
     fun addReply(reply: ViewablePost): ThreadPost {
         return when(this) {
-            is ViewablePost -> ViewablePost(post, (replies + reply).distinctBy { it.uri })
+            is ViewablePost -> ViewablePost(post, parent, (replies + reply).distinctBy { it.uri })
             is BlockedPost -> BlockedPost(uri)
             is NotFoundPost -> NotFoundPost(uri)
         }
@@ -365,7 +366,7 @@ fun ThreadViewPost.toThread(): BskyPostThread {
         return BskyPostThread(
             post = post.toPost(),
             parents = persistentListOf(),
-            replies = replies.mapImmutable { it.toThreadPost(post.toPost(), post.toPost()) }
+            replies = replies.mapImmutable { it.toThreadPost() }
         )
     } else {
         val rootPost = parents.last().toPost()
@@ -379,32 +380,48 @@ fun ThreadViewPost.toThread(): BskyPostThread {
                     } else {
                         parents[index + 1].toPost()
                     },
-                    rootPost
                 )
             }.reversed().toImmutableList(),
-            replies = replies.mapImmutable { reply -> reply.toThreadPost(entryPost, rootPost) },
+            replies = replies.mapImmutable { reply -> reply.toThreadPost() },
         )
     }
 }
 
-fun ThreadViewPost.toThreadPost(parent: BskyPost, root: BskyPost): ThreadPost {
+fun ThreadViewPost.toThreadPost( root: BskyPost): ThreadPost {
     val post = post.toPost(null, null)
     return ViewablePost(
         post = post,
-        replies = replies.mapImmutable { it.toThreadPost(post, root) }
+        parent = parent?.toThreadPost(),
+        replies = replies.mapImmutable { it.toThreadPost() }
     )
 }
 
-fun ThreadViewPostReplyUnion.toThreadPost(parent: BskyPost, root: BskyPost): ThreadPost = when (this) {
+fun ThreadViewPostReplyUnion.toThreadPost(): ThreadPost = when (this) {
     is ThreadViewPostReplyUnion.ThreadViewPost -> {
         val post = value.post.toPost(null, null)
         ViewablePost(
             post = post,
-            replies = value.replies.mapImmutable { it.toThreadPost(post, root) }
+            parent = value.parent?.toThreadPost(),
+            replies = value.replies.mapImmutable { it.toThreadPost() }
         )
     }
     is ThreadViewPostReplyUnion.NotFoundPost -> NotFoundPost(value.uri)
     is ThreadViewPostReplyUnion.BlockedPost -> BlockedPost(value.uri)
 }
+
+fun ThreadViewPostParentUnion.toThreadPost(): ThreadPost = when (this) {
+    is ThreadViewPostParentUnion.ThreadViewPost -> {
+        val post = value.post.toPost(null, null)
+        ViewablePost(
+            post = post,
+            parent = value.parent?.toThreadPost(),
+            replies = value.replies.mapImmutable { it.toThreadPost() }
+        )
+    }
+    is ThreadViewPostParentUnion.NotFoundPost -> NotFoundPost(value.uri)
+    is ThreadViewPostParentUnion.BlockedPost -> BlockedPost(value.uri)
+}
+
+
 
 

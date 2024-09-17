@@ -24,18 +24,13 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastAny
 import androidx.compose.ui.util.fastForEach
+import com.atproto.label.Blurs
 import com.atproto.repo.StrongRef
 import com.morpho.app.model.bluesky.BskyPost
 import com.morpho.app.model.bluesky.FacetType
-import com.morpho.app.model.bluesky.LabelAction
-import com.morpho.app.model.bluesky.LabelScope
-import com.morpho.app.model.uidata.ContentHandling
-import com.morpho.app.model.uidata.LabelDescription
-import com.morpho.app.model.uidata.LabelIcon
 import com.morpho.app.ui.elements.*
 import com.morpho.app.util.openBrowser
-import com.morpho.butterfly.AtIdentifier
-import com.morpho.butterfly.AtUri
+import com.morpho.butterfly.*
 import com.morpho.butterfly.model.RecordType
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.datetime.TimeZone
@@ -62,7 +57,7 @@ fun FullPostFragment(
     val contentHandling = remember {
         if (post.author.mutedByMe) {
             getContentHandling(post) + ContentHandling(
-                scope = LabelScope.Content,
+                scope = Blurs.CONTENT,
                 id = "muted",
                 icon = LabelIcon.EyeSlash(labelerAvatar = null),
                 action = LabelAction.Blur,
@@ -84,7 +79,7 @@ fun FullPostFragment(
     ) {
         ContentHider(
             reasons = contentHandling,
-            scope = LabelScope.Content,
+            scope = Blurs.CONTENT,
         ) {
             Row(
                 modifier = Modifier

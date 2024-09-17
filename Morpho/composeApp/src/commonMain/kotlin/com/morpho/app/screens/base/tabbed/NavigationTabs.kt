@@ -5,7 +5,10 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import cafe.adriel.voyager.core.annotation.ExperimentalVoyagerApi
 import cafe.adriel.voyager.core.model.rememberNavigatorScreenModel
@@ -15,7 +18,6 @@ import cafe.adriel.voyager.core.screen.uniqueScreenKey
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.currentOrThrow
-import com.morpho.app.model.uistate.ContentCardState
 import com.morpho.app.screens.main.tabbed.TabbedHomeView
 import com.morpho.app.screens.main.tabbed.TabbedMainScreenModel
 import com.morpho.app.screens.notifications.NotificationViewContent
@@ -28,7 +30,6 @@ import com.morpho.butterfly.AtUri
 import com.morpho.butterfly.Did
 import dev.icerock.moko.parcelize.Parcelable
 import dev.icerock.moko.parcelize.Parcelize
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
@@ -245,7 +246,7 @@ data class ThreadTab(
     override fun Content() {
         val navigator = LocalNavigator.currentOrThrow
         val sm = navigator.rememberNavigatorScreenModel { TabbedMainScreenModel() }
-        var threadState: StateFlow<ContentCardState.PostThread>? by remember { mutableStateOf(null)}
+        val threadState by sm.getThread(uri).collectAsState(null)
         if(threadState != null) {
             ThreadViewContent(threadState!!, navigator)
         } else {

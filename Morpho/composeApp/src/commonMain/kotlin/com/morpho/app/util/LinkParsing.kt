@@ -7,7 +7,6 @@ import com.morpho.app.screens.base.tabbed.ProfileTab
 import com.morpho.butterfly.AtUri
 import com.morpho.butterfly.Cid
 import com.morpho.butterfly.Did
-import com.morpho.butterfly.Handle
 
 
 fun linkVisit(string: String, navigator: Navigator, uriHandler: UriHandler) {
@@ -15,7 +14,7 @@ fun linkVisit(string: String, navigator: Navigator, uriHandler: UriHandler) {
         if(string.startsWith("@did")) {
             navigator.push(ProfileTab(Did(string.removePrefix("@"))))
         } else {
-            navigator.push(ProfileTab(Handle(string.removePrefix("@"))))
+            //navigator.push(ProfileTab()))
         }
     } else if(string.startsWith("https://bsky.app/")
         || string.startsWith("https://staging.bsky.app/")

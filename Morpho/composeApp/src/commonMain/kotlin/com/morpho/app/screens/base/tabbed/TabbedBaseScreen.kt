@@ -14,6 +14,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.core.annotation.ExperimentalVoyagerApi
+import cafe.adriel.voyager.core.model.rememberNavigatorScreenModel
 import cafe.adriel.voyager.core.screen.ScreenKey
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.Navigator
@@ -22,11 +23,11 @@ import cafe.adriel.voyager.navigator.currentOrThrow
 import cafe.adriel.voyager.navigator.tab.Tab
 import cafe.adriel.voyager.navigator.tab.TabNavigator
 import cafe.adriel.voyager.navigator.tab.TabOptions
+import com.morpho.app.screens.main.tabbed.TabbedMainScreenModel
 import com.morpho.app.ui.common.SlideTabTransition
 import com.morpho.app.ui.theme.roundedTopR
 import io.ktor.util.reflect.instanceOf
 import kotlinx.serialization.Serializable
-import org.koin.compose.koinInject
 import kotlin.math.min
 
 @Serializable
@@ -86,8 +87,8 @@ fun TabNavigationItem(
         icon = {
             when (tab) {
                 is NotificationsTab -> {
-                    val notifService = koinInject<BskyNotificationService>()
-                    val unread by notifService.unreadCountFlow().collectAsState(0)
+                    val sm = LocalNavigator.currentOrThrow.rememberNavigatorScreenModel { TabbedMainScreenModel() }
+                    val unread by sm.unreadNotificationsCount().collectAsState(0)
                     BadgedBox(
                         badge = {
                             if (unread > 0) {

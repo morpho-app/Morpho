@@ -17,7 +17,6 @@ import com.atproto.repo.StrongRef
 import com.morpho.app.model.bluesky.BskyPost
 import com.morpho.app.model.bluesky.BskyPostThread
 import com.morpho.app.model.bluesky.ThreadPost
-import com.morpho.app.model.uidata.ContentHandling
 import com.morpho.app.ui.elements.MenuOptions
 import com.morpho.app.ui.post.PostFragment
 import com.morpho.app.ui.post.PostFragmentRole
@@ -25,6 +24,7 @@ import com.morpho.app.ui.thread.ThreadItem
 import com.morpho.app.ui.thread.ThreadTree
 import com.morpho.butterfly.AtIdentifier
 import com.morpho.butterfly.AtUri
+import com.morpho.butterfly.ContentHandling
 import com.morpho.butterfly.model.RecordType
 
 @Composable
@@ -41,7 +41,7 @@ inline fun SkylineThreadFragment(
     crossinline getContentHandling: (BskyPost) -> List<ContentHandling> = { listOf() },
     debuggable: Boolean = false,
 ) {
-    val threadPost = remember { ThreadPost.ViewablePost(thread.post, thread.replies) }
+    val threadPost = remember { ThreadPost.ViewablePost(thread.post, null, thread.replies) }
     val hasReplies = rememberSaveable { threadPost.replies.isNotEmpty() }
     var showReplies by remember { mutableStateOf(threadPost.replies.size <= 2)}
     var showFullThread by remember { mutableStateOf(thread.parents.size <= 3)}

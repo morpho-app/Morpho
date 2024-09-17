@@ -101,7 +101,7 @@ sealed interface FeedSourceInfo: Parcelable {
         override val displayName: String = "Home"
         override val description: String = "Your home feed, currently same as Following"
         override val creatorDid: Did = Did("did:web:morpho.app")
-        override val creatorHandle: Handle = Handle(displayName)
+        override val creatorHandle: Handle = Handle("${displayName.lowercase()}.morpho.app")
         override val feedDescriptor: FeedDescriptor = FeedDescriptor.Home
         override val type: Nsid = Nsid("app.morpho.feed.home")
     }
@@ -115,7 +115,7 @@ sealed interface FeedSourceInfo: Parcelable {
         override val avatar: String? = null
         override val displayName: String = "Following"
         override val description: String = "Your feed of people you follow"
-        override val creatorHandle: Handle = Handle(displayName)
+        override val creatorHandle: Handle = Handle("${displayName.lowercase()}.morpho.app")
         override val feedDescriptor: FeedDescriptor = FeedDescriptor.Home
         override val type: Nsid = Nsid("app.morpho.feed.following")
     }

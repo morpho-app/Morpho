@@ -71,19 +71,16 @@ fun TabScreen.ThreadViewContent(
                 }
 
                 is ThreadUpdate.Thread -> {
-                    val thread = state.results.collectAsState(null).value
-                    if(thread != null) {
-                        ThreadView(
-                            thread = thread,
-                            insets = insets,
-                            navigator = navigator,
-                            createRecord = { sm.screenModelScope.launch { sm.agent.createRecord(it) } },
-                            deleteRecord = { type, uri -> sm.screenModelScope.launch {
-                                sm.agent.deleteRecord(type, uri)
-                            } },
-                            resolveHandle = { handle -> sm.agent.resolveHandle(handle).getOrNull() }
-                        )
-                    }
+                    ThreadView(
+                        thread = state.results,
+                        insets = insets,
+                        navigator = navigator,
+                        createRecord = { sm.screenModelScope.launch { sm.agent.createRecord(it) } },
+                        deleteRecord = { type, uri -> sm.screenModelScope.launch {
+                            sm.agent.deleteRecord(type, uri)
+                        } },
+                        resolveHandle = { handle -> sm.agent.resolveHandle(handle).getOrNull() }
+                    )
                 }
                 else -> {
                     Text("Unknown state: $state")

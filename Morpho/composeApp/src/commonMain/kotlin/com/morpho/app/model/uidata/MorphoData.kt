@@ -401,9 +401,9 @@ data class MorphoData<T: MorphoDataItem>(
                         val oldEntry = threadToSplice.thread.parents.first() as ThreadPost.ViewablePost
 
                         val newReplies = (newEntry.replies + oldEntry.replies).distinctBy { it.uri }.toMutableList()
-                        newReplies.add(ThreadPost.ViewablePost(thread.thread.post, thread.thread.replies))
+                        newReplies.add(ThreadPost.ViewablePost(thread.thread.post, null, thread.thread.replies))
                         if( thread.getUri() != threadToSplice.getUri() )
-                            newReplies.add(ThreadPost.ViewablePost(threadToSplice.thread.post, threadToSplice.thread.replies))
+                            newReplies.add(ThreadPost.ViewablePost(threadToSplice.thread.post, null, threadToSplice.thread.replies))
                         val newThread = BskyPostThread(
                             post = newEntry.post,
                             parents = listOf(),
@@ -420,8 +420,8 @@ data class MorphoData<T: MorphoDataItem>(
                         if(threadToSplice.thread.parents.lastOrNull() !is ThreadPost.ViewablePost) return@fastForEachIndexed
                         val newParent = thread.thread.parents.last() as ThreadPost.ViewablePost
                         val oldParent = threadToSplice.thread.parents.last() as ThreadPost.ViewablePost
-                        val newReply = ThreadPost.ViewablePost(thread.thread.post, thread.thread.replies)
-                        val oldReply = ThreadPost.ViewablePost(threadToSplice.thread.post, threadToSplice.thread.replies)
+                        val newReply = ThreadPost.ViewablePost(thread.thread.post, null,  thread.thread.replies)
+                        val oldReply = ThreadPost.ViewablePost(threadToSplice.thread.post, null, threadToSplice.thread.replies)
                         newParent.addReply(newReply)
                         oldParent.addReply(oldReply)
                         newReplies.add(newReply)
@@ -440,7 +440,7 @@ data class MorphoData<T: MorphoDataItem>(
                 val inThreads = threads.indexOfFirst { t -> t?.containsUri(thread.thread.post.uri) ?: false }
                 if (inThreads == - 1) {
                     val threadToSplice = threads.getOrNull(index) ?: return@fastForEachIndexed
-                    threads[index] = threadToSplice.addReply(ThreadPost.ViewablePost(thread.thread.post, thread.thread.replies))
+                    threads[index] = threadToSplice.addReply(ThreadPost.ViewablePost(thread.thread.post, null, thread.thread.replies))
                     threadCandidates[index] = null
                 }
             }
@@ -541,17 +541,6 @@ data class MorphoData<T: MorphoDataItem>(
 
 }
 
-fun MorphoDataFeed<MorphoDataItem>.toMorphoData(
-    title: String = "",
-    newUri: AtUri? = null
-): MorphoData<MorphoDataItem> {
-    return MorphoData(
-        title = title,
-        uri = newUri ?: uri,
-        cursor = cursor,
-        items = items
-    )
-}
 
 fun AtUri.id(api:Butterfly): AtIdentifier {
     val idString = atUri.substringAfter("at://").split("/")[0]

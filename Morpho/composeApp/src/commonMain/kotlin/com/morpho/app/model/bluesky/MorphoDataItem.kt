@@ -108,7 +108,7 @@ sealed interface MorphoDataItem: Parcelable {
                          Post(post.toPost(reply.toReply(), null), null, isOrphan = isOrphan)
                     } else {
                         val parents = items.map {
-                            ThreadPost.ViewablePost(it.toPost(), listOf())
+                            ThreadPost.ViewablePost(it.toPost(), null, listOf())
                         }
                         Thread(
                             BskyPostThread(
@@ -130,7 +130,7 @@ sealed interface MorphoDataItem: Parcelable {
                     Post(post.toPost(reply.toReply(), null), null, isOrphan = isOrphan)
                 } else {
                     val parents = items.map {
-                        ThreadPost.ViewablePost(it.toPost(), listOf())
+                        ThreadPost.ViewablePost(it.toPost(), null,listOf())
                     }
                     Thread(
                         BskyPostThread(

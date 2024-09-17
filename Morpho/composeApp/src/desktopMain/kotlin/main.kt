@@ -24,12 +24,12 @@ import cafe.adriel.voyager.jetpack.ProvideNavigatorLifecycleKMPSupport
 import ch.qos.logback.classic.LoggerContext
 import ch.qos.logback.core.util.StatusPrinter2
 import com.morpho.app.App
+import com.morpho.app.data.MorphoAgent
 import com.morpho.app.data.PreferencesRepository
 import com.morpho.app.di.appModule
 import com.morpho.app.di.dataModule
 import com.morpho.app.di.storageModule
 import com.morpho.app.ui.theme.MorphoTheme
-import com.morpho.butterfly.Butterfly
 import com.morpho.butterfly.auth.SessionRepository
 import com.morpho.butterfly.auth.UserRepository
 import kotlinx.coroutines.flow.firstOrNull
@@ -70,7 +70,7 @@ fun main() = application {
     cachePath.toNioPath().createDirectories()
     koin.get<SessionRepository> { parametersOf(storageDir) }
     koin.get<UserRepository> { parametersOf(storageDir) }
-    val api = koin.get<Butterfly>()
+    val agent = koin.get<MorphoAgent>()
     val prefs = koin.get<PreferencesRepository> { parametersOf(storageDir) }
 
     val morphoPrefs = runBlocking {

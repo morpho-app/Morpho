@@ -49,8 +49,8 @@ open class BaseScreenModel : ScreenModel, KoinComponent {
 
     }
 
-    suspend fun sendGlobalEvent(event: Event) {
-        globalEvents.emit(event)
+    fun sendGlobalEvent(event: Event) {
+        globalEvents.tryEmit(event)
     }
 
     fun getProfilePresenter(
@@ -88,7 +88,7 @@ open class BaseScreenModel : ScreenModel, KoinComponent {
         emit(agent.unreadNotificationsCount().getOrDefault(0))
     }.stateIn(screenModelScope, SharingStarted.WhileSubscribed(), 0L)
 
-    fun markNotificationsAsRead() = screenModelScope.launch {
+    fun updateSeenNotifications() = screenModelScope.launch {
         agent.updateSeenNotifications()
         globalEvents.emit(Event.UpdateSeenNotifications())
     }

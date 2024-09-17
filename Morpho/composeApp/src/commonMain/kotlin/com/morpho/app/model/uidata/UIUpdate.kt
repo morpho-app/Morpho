@@ -89,7 +89,7 @@ sealed interface ThreadUpdate: UIUpdate {
     data class Error(val error: String): ThreadUpdate
 
     data class Thread(
-        val results: Flow<BskyPostThread>,
+        val results: BskyPostThread,
     ): ThreadUpdate
 }
 

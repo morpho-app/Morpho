@@ -67,6 +67,7 @@ fun TabScreen.NotificationViewContent(
     val uriHandler = LocalUriHandler.current
     val pager = sm.notificationsRaw.collectAsLazyPagingItems()
     var uiState by rememberSaveable { mutableStateOf(NotificationsUIState()) }
+    val toMarkRead = mutableStateListOf<AtUri>()
     TabbedScreenScaffold(
         navBar = { navBar(navigator) },
         topContent = {
@@ -80,7 +81,9 @@ fun TabScreen.NotificationViewContent(
                                     },
                 showSettings = showSettings,
                 hasUnread = hasUnread,
-                markAsRead = { sm.markNotificationsAsRead() }
+                markAsRead = {
+                    sm.updateSeenNotifications()
+                }
             )
         },
         state = uiState,
@@ -90,7 +93,7 @@ fun TabScreen.NotificationViewContent(
             val refreshing by remember { mutableStateOf(false)}
             val refreshState = rememberPullRefreshState(
                 refreshing,
-                { sm.notifService.updateNotificationsSeen()
+                { sm.updateSeenNotifications()
                     pager.refresh() })
 
 
@@ -133,6 +136,7 @@ fun TabScreen.NotificationViewContent(
                                 NotificationsFilterElement(
                                     uiState.filterState,
                                     onFilterClicked = {
+                                        uiState.filterState.value = it
                                         pager.refresh()
                                     }
                                 )
@@ -149,7 +153,7 @@ fun TabScreen.NotificationViewContent(
                                 } } }
                         }
                         is LoadStateNotLoading -> {
-                            val toMarkRead = mutableStateListOf<AtUri>()
+
                             val notifications = pager.collectNotifications(toMarkRead)
                             items(
                                 count = pager.itemCount,

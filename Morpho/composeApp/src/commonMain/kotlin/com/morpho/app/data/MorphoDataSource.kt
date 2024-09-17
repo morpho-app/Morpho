@@ -203,9 +203,9 @@ suspend fun <Data: MorphoDataItem> List<Data>.collectThreads(
                     val oldEntry = threadToSplice.thread.parents.first() as ThreadPost.ViewablePost
 
                     val newReplies = (newEntry.replies + oldEntry.replies).distinctBy { it.uri }.toMutableList()
-                    newReplies.add(ThreadPost.ViewablePost(thread.thread.post, thread.thread.replies))
+                    newReplies.add(ThreadPost.ViewablePost(thread.thread.post, thread.thread.parents.last(), thread.thread.replies))
                     if( thread.getUri() != threadToSplice.getUri() )
-                        newReplies.add(ThreadPost.ViewablePost(threadToSplice.thread.post, threadToSplice.thread.replies))
+                        newReplies.add(ThreadPost.ViewablePost(threadToSplice.thread.post, threadToSplice.thread.parents.last(),threadToSplice.thread.replies))
                     val newThread = BskyPostThread(
                         post = newEntry.post,
                         parents = listOf(),
@@ -222,8 +222,8 @@ suspend fun <Data: MorphoDataItem> List<Data>.collectThreads(
                     if(threadToSplice.thread.parents.lastOrNull() !is ThreadPost.ViewablePost) return@forEachIndexed
                     val newParent = thread.thread.parents.last() as ThreadPost.ViewablePost
                     val oldParent = threadToSplice.thread.parents.last() as ThreadPost.ViewablePost
-                    val newReply = ThreadPost.ViewablePost(thread.thread.post, thread.thread.replies)
-                    val oldReply = ThreadPost.ViewablePost(threadToSplice.thread.post, threadToSplice.thread.replies)
+                    val newReply = ThreadPost.ViewablePost(thread.thread.post, thread.thread.parents.last(), thread.thread.replies)
+                    val oldReply = ThreadPost.ViewablePost(threadToSplice.thread.post, threadToSplice.thread.parents.last(), threadToSplice.thread.replies)
                     newParent.addReply(newReply)
                     oldParent.addReply(oldReply)
                     newReplies.add(newReply)
@@ -242,7 +242,7 @@ suspend fun <Data: MorphoDataItem> List<Data>.collectThreads(
             val inThreads = threads.indexOfFirst { t -> t?.containsUri(thread.thread.post.uri) ?: false }
             if (inThreads == - 1) {
                 val threadToSplice = threads.getOrNull(index) ?: return@forEachIndexed
-                threads[index] = threadToSplice.addReply(ThreadPost.ViewablePost(thread.thread.post, thread.thread.replies))
+                threads[index] = threadToSplice.addReply(ThreadPost.ViewablePost(thread.thread.post, thread.thread.parents.last(), thread.thread.replies))
                 threadCandidates[index] = null
             }
         }

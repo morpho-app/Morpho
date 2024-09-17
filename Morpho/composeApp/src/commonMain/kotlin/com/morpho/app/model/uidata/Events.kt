@@ -14,7 +14,9 @@ import com.morpho.butterfly.Did
 import com.morpho.butterfly.model.Timestamp
 import io.github.vinceglb.filekit.core.PlatformFile
 import kotlinx.datetime.Clock
+import kotlinx.serialization.Serializable
 
+@Serializable
 sealed interface Event {
     data class UpdateSeenNotifications(
         val seenAt: Timestamp = Clock.System.now()

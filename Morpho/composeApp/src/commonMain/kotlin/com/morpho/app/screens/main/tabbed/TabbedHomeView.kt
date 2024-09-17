@@ -143,7 +143,7 @@ fun TabScreen.TabbedHomeView(
                         SkylineTabTransition(nav, sm, insets, state)
                     },
                     modifier = Modifier,
-                    state = sm.feedStates.get(tabUri) as ContentCardState.Skyline?
+                    state = sm.feedStates[tabUri] as ContentCardState.Skyline?
                 )
             }
 
@@ -259,8 +259,8 @@ data class HomeSkylineTab @OptIn(ExperimentalVoyagerApi::class) constructor(
         TabbedSkylineFragment(
             paddingValues = paddingValues,
             isProfileFeed = false,
-            feedUpdate = state.updates,
-            uiEvents = sm.globalEvents,
+            uiUpdate = state.updates,
+            eventCallback = { sm.sendGlobalEvent(it) },
         )
 
     }

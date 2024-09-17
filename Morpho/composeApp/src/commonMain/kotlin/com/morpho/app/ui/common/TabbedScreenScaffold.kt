@@ -36,7 +36,7 @@ expect fun <T> TabbedScreenScaffold(
 @Composable
 expect fun <T: Event> TabbedProfileScreenScaffold(
     navBar: @Composable () -> Unit,
-    content: @Composable (PaddingValues,ContentCardState<T>?) -> Unit,
+    content: @Composable (PaddingValues,ContentCardState<out T>?) -> Unit,
     topContent: @Composable (TopAppBarScrollBehavior) -> Unit,
     state: ContentCardState<out T>?,
     modifier: Modifier = Modifier,

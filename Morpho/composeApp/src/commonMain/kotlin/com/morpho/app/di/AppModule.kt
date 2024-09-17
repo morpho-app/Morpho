@@ -1,8 +1,8 @@
 package com.morpho.app.di
 
+import com.morpho.app.data.MorphoAgent
 import com.morpho.app.data.PollBlueService
 import com.morpho.app.data.PreferencesRepository
-import com.morpho.app.model.bluesky.MorphoDataItem
 import com.morpho.app.model.uidata.*
 import com.morpho.app.screens.base.BaseScreenModel
 import com.morpho.app.screens.login.LoginScreenModel
@@ -10,7 +10,6 @@ import com.morpho.app.screens.main.MainScreenModel
 import com.morpho.app.screens.main.tabbed.TabbedMainScreenModel
 import com.morpho.app.util.ClipboardManager
 import com.morpho.butterfly.AtpAgent
-import com.morpho.butterfly.Butterfly
 import com.morpho.butterfly.ButterflyAgent
 import com.morpho.butterfly.auth.SessionRepository
 import com.morpho.butterfly.auth.UserRepository
@@ -25,16 +24,12 @@ import org.koin.dsl.module
 
 val appModule = module {
     single<BaseScreenModel> { BaseScreenModel() }
-    factory<MainScreenModel> { MainScreenModel() }
-    factory<TabbedMainScreenModel> { TabbedMainScreenModel() }
-    factory<TabbedProfileViewModel> { TabbedProfileViewModel() }
-    factory<TabbedNotificationScreenModel> { TabbedNotificationScreenModel() }
-    factory<LoginScreenModel> { LoginScreenModel() }
+    single<MainScreenModel> { MainScreenModel() }
+    single<TabbedMainScreenModel> { TabbedMainScreenModel() }
+    single<LoginScreenModel> { LoginScreenModel() }
     factory<UpdateTick> { p-> UpdateTick(p.get<Long>()) }
     single<ClipboardManager> { ClipboardManager }
-    factory<UserListPresenter> { p -> UserListPresenter(p.get()) }
-    factory<UserFeedsPresenter> { p -> UserFeedsPresenter(p.get()) }
-    factory<FeedPresenter<MorphoDataItem.FeedItem, FeedEvent>> { p -> FeedPresenter(p.get()) }
+
 }
 
 val storageModule = module {
@@ -44,14 +39,14 @@ val storageModule = module {
 }
 
 val dataModule = module {
-    single<Butterfly> { Butterfly() }
     single<AtpAgent> { AtpAgent() }
     single<ButterflyAgent> { ButterflyAgent() }
-    single<BskyDataService> { BskyDataService() }
-    single<BskyNotificationService> { BskyNotificationService() }
+    single<MorphoAgent> { MorphoAgent() }
     single<ContentLabelService> { ContentLabelService() }
     single<PollBlueService> { PollBlueService() }
-    single<SettingsService> { SettingsService() }
+    factory<UserListPresenter> { p -> UserListPresenter(p.get()) }
+    factory<UserFeedsPresenter> { p -> UserFeedsPresenter(p.get()) }
+    factory<FeedPresenter<FeedEvent>> { p -> FeedPresenter(p.get()) }
 }
 
 @Suppress("MemberVisibilityCanBePrivate")

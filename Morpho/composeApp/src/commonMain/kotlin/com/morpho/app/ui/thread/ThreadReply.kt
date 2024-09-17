@@ -5,7 +5,6 @@ import androidx.compose.ui.Modifier
 import com.atproto.repo.StrongRef
 import com.morpho.app.model.bluesky.BskyPost
 import com.morpho.app.model.bluesky.ThreadPost
-import com.morpho.app.model.uidata.ContentHandling
 import com.morpho.app.ui.common.OnPostClicked
 import com.morpho.app.ui.elements.MenuOptions
 import com.morpho.app.ui.post.BlockedPostFragment
@@ -14,6 +13,7 @@ import com.morpho.app.ui.post.PostFragment
 import com.morpho.app.ui.post.PostFragmentRole
 import com.morpho.butterfly.AtIdentifier
 import com.morpho.butterfly.AtUri
+import com.morpho.butterfly.ContentHandling
 import com.morpho.butterfly.model.RecordType
 
 @Composable

@@ -74,7 +74,12 @@ fun TabbedSkylineFragment(
     val clipboard = getKoin().get<ClipboardManager>()
     if(uiState.value !is UIUpdate.Empty) {
         SkylineFragment(
-            onProfileClicked = { actor -> navigator.push(ProfileTab(actor)) },
+            onProfileClicked = { actor ->
+                scope.launch {
+                    val did = agent.resolveHandle(actor).getOrNull()
+                    if(did != null) navigator.push(ProfileTab(did))
+                }
+            },
             onItemClicked = { uri -> navigator.push(ThreadTab(uri)) },
             onUnClicked = { type, rkey -> agent.deleteRecord(type, rkey) },
             onRepostClicked = { onRepostClicked(it) },

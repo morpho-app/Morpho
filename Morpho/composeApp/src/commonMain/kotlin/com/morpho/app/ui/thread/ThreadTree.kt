@@ -20,13 +20,13 @@ import androidx.compose.ui.util.fastForEachIndexed
 import com.atproto.repo.StrongRef
 import com.morpho.app.model.bluesky.BskyPost
 import com.morpho.app.model.bluesky.ThreadPost
-import com.morpho.app.model.uidata.ContentHandling
 import com.morpho.app.ui.common.OnPostClicked
 import com.morpho.app.ui.elements.MenuOptions
 import com.morpho.app.ui.elements.WrappedColumn
 import com.morpho.app.ui.post.PostFragmentRole
 import com.morpho.butterfly.AtIdentifier
 import com.morpho.butterfly.AtUri
+import com.morpho.butterfly.ContentHandling
 import com.morpho.butterfly.model.RecordType
 import morpho.app.ui.utils.indentLevel
 
