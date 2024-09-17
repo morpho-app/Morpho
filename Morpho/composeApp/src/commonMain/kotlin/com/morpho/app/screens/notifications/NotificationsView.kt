@@ -1,8 +1,6 @@
 package com.morpho.app.screens.notifications
 
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.icons.Icons
@@ -13,10 +11,14 @@ import androidx.compose.material.pullrefresh.pullRefresh
 import androidx.compose.material.pullrefresh.rememberPullRefreshState
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.unit.Dp
 import androidx.constraintlayout.compose.ConstraintLayout
+import app.cash.paging.LoadStateError
+import app.cash.paging.LoadStateNotLoading
+import app.cash.paging.compose.collectAsLazyPagingItems
 import cafe.adriel.voyager.core.annotation.ExperimentalVoyagerApi
 import cafe.adriel.voyager.core.model.rememberNavigatorScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
@@ -26,21 +28,22 @@ import cafe.adriel.voyager.navigator.currentOrThrow
 import com.morpho.app.model.bluesky.BskyPost
 import com.morpho.app.model.bluesky.DraftPost
 import com.morpho.app.model.bluesky.NotificationsListItem
-import com.morpho.app.model.uidata.AtCursor
-import com.morpho.app.model.uidata.getPost
+import com.morpho.app.model.bluesky.collectNotifications
+import com.morpho.app.model.uistate.NotificationsUIState
 import com.morpho.app.screens.base.tabbed.ProfileTab
 import com.morpho.app.screens.base.tabbed.TabScreen
 import com.morpho.app.screens.base.tabbed.ThreadTab
+import com.morpho.app.screens.main.tabbed.TabbedMainScreenModel
 import com.morpho.app.ui.common.BottomSheetPostComposer
 import com.morpho.app.ui.common.ComposerRole
+import com.morpho.app.ui.common.LoadingCircle
 import com.morpho.app.ui.common.TabbedScreenScaffold
 import com.morpho.app.ui.elements.WrappedLazyColumn
 import com.morpho.app.ui.elements.doMenuOperation
 import com.morpho.app.ui.notifications.NotificationsElement
 import com.morpho.app.ui.notifications.NotificationsFilterElement
 import com.morpho.app.util.ClipboardManager
-import com.morpho.butterfly.model.RecordUnion
-import kotlinx.collections.immutable.persistentListOf
+import com.morpho.butterfly.AtUri
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.launch
@@ -55,13 +58,15 @@ fun TabScreen.NotificationViewContent(
     navigator: Navigator = LocalNavigator.currentOrThrow,
 
 ) {
-    val sm = navigator.rememberNavigatorScreenModel { TabbedNotificationScreenModel() }
-    val numberUnread by sm.uiState.value.numberUnread.collectAsState(0)
+    val sm = navigator.rememberNavigatorScreenModel { TabbedMainScreenModel() }
+    val numberUnread = sm.unreadNotificationsCount().value
     var showSettings by remember { mutableStateOf(false) }
     val hasUnread = remember(numberUnread) { numberUnread > 0 }
     val listState = rememberLazyListState()
     val scope = rememberCoroutineScope()
     val uriHandler = LocalUriHandler.current
+    val pager = sm.notificationsRaw.collectAsLazyPagingItems()
+    var uiState by rememberSaveable { mutableStateOf(NotificationsUIState()) }
     TabbedScreenScaffold(
         navBar = { navBar(navigator) },
         topContent = {
@@ -75,22 +80,18 @@ fun TabScreen.NotificationViewContent(
                                     },
                 showSettings = showSettings,
                 hasUnread = hasUnread,
-                markAsRead = { sm.markAllRead() }
+                markAsRead = { sm.markNotificationsAsRead() }
             )
         },
-        state = sm.uiState,
+        state = uiState,
         modifier = Modifier,
         content = { insets, state ->
 
             val refreshing by remember { mutableStateOf(false)}
             val refreshState = rememberPullRefreshState(
                 refreshing,
-                {
-                    sm.notifService.updateNotificationsSeen()
-                    sm.refreshNotifications(AtCursor.EMPTY)
-                }
-            )
-            val notifications by sm.uiState.value.notifications.collectAsState(persistentListOf())
+                { sm.notifService.updateNotificationsSeen()
+                    pager.refresh() })
 
 
             var repostClicked by remember { mutableStateOf(false)}
@@ -103,15 +104,6 @@ fun TabScreen.NotificationViewContent(
             var draft by remember{ mutableStateOf(DraftPost()) }
 
             val clipboardManager = getKoin().get<ClipboardManager>()
-            val cursor by rememberUpdatedState(sm.uiState.value.cursor)
-
-            LaunchedEffect(
-                notifications.isNotEmpty() &&
-                        !listState.canScrollForward &&
-                        !refreshing
-            ) {
-                sm.refreshNotifications(cursor)
-            }
 
 
             ConstraintLayout(
@@ -139,73 +131,73 @@ fun TabScreen.NotificationViewContent(
                             Column {
                                 HorizontalDivider(Modifier.fillMaxWidth(),thickness = Dp.Hairline)
                                 NotificationsFilterElement(
-                                    sm.uiState.value.filterState,
+                                    uiState.filterState,
                                     onFilterClicked = {
-                                        sm.notifService.updateFilter(it).invokeOnCompletion {
-                                            // forcing a refresh should reload the list with new filters
-                                            sm.refreshNotifications(cursor)
-                                        }
+                                        pager.refresh()
                                     }
                                 )
                                 HorizontalDivider(Modifier.fillMaxWidth(),thickness = Dp.Hairline)
                             }
                         }
                     }
-                    items(
-                        count = notifications.size,
-                        //key = { index -> notifications[index].hashCode() },
-                        contentType = {
-                            NotificationsListItem
+                    when(val loadState = pager.loadState.refresh) {
+                        is LoadStateError ->{
+                            item { Text("Error: ${loadState.error}") }
+                            item { Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+                                TextButton(onClick = { pager.retry() }) {
+                                    Text("Retry")
+                                } } }
                         }
-                    ) { index ->
-                        if (state != null) {
-                            NotificationsElement(
-                                item = notifications[index],
-                                showPost = state.value.showPosts,
-                                getPost = { getPost(it, sm.api)},
-                                onUnClicked = { type, rkey ->
-                                    sm.api.deleteRecord(type, rkey)
-                                },
-                                onAvatarClicked = {
-                                    navigator.push(ProfileTab(it))
-                                },
-                                onRepostClicked = {
-                                    initialContent = it
-                                    repostClicked = true
-                                },
-                                onReplyClicked = {
-                                    initialContent = it
-                                    composerRole = ComposerRole.Reply
-                                    showComposer = true
-                                },
-                                onMenuClicked = { option, post ->
-                                    doMenuOperation(option, post,
-                                                    clipboardManager = clipboardManager,
-                                                    uriHandler = uriHandler
-                                    ) },
-                                onLikeClicked = {
-                                    sm.api.createRecord(RecordUnion.Like(it))
-                                },
-                                onPostClicked = {
-                                    navigator.push(ThreadTab(it))
-                                },
-                                // If someone hides their read notifications,
-                                // we don't want to just mark them as read unprompted.
-                                // Might cause them to disappear unexpectedly.
-                                readOnLoad = !state.value.filterState.value.showAlreadyRead,
-                                markRead = { sm.markAsRead(it) }
-                            )
-                        }
-                    }
-                    item {
-                        TextButton(
-                            onClick = {
-                                sm.refreshNotifications(cursor)
+                        is LoadStateNotLoading -> {
+                            val toMarkRead = mutableStateListOf<AtUri>()
+                            val notifications = pager.collectNotifications(toMarkRead)
+                            items(
+                                count = pager.itemCount,
+                                //key = { index -> notifications[index].hashCode() },
+                                contentType = {
+                                    NotificationsListItem
+                                }
+                            ) { index ->
+                                if (state != null) {
+                                    NotificationsElement(
+                                        item = notifications[index],
+                                        showPost = state.showPosts,
+                                        getPost = { sm.getPost(it).getOrNull() },
+                                        onUnClicked = { type, rkey ->
+                                            sm.agent.deleteRecord(type, rkey)
+                                        },
+                                        onAvatarClicked = {
+                                            navigator.push(ProfileTab(it))
+                                        },
+                                        onRepostClicked = {
+                                            initialContent = it
+                                            repostClicked = true
+                                        },
+                                        onReplyClicked = {
+                                            initialContent = it
+                                            composerRole = ComposerRole.Reply
+                                            showComposer = true
+                                        },
+                                        onMenuClicked = { option, post ->
+                                            doMenuOperation(option, post,
+                                                            clipboardManager = clipboardManager,
+                                                            uriHandler = uriHandler
+                                            ) },
+                                        onLikeClicked = { sm.agent.like(it) },
+                                        onPostClicked = {
+                                            navigator.push(ThreadTab(it))
+                                        },
+                                        // If someone hides their read notifications,
+                                        // we don't want to just mark them as read unprompted.
+                                        // Might cause them to disappear unexpectedly.
+                                        readOnLoad = !state.filterState.value.showAlreadyRead,
+                                        markRead = { toMarkRead.add(it) },
+                                        resolveHandle = { handle -> sm.agent.resolveHandle(handle).getOrNull() }
+                                    )
+                                }
                             }
-                        ) {
-                            Text("Load More")
                         }
-
+                        else -> { item { LoadingCircle() } }
                     }
                 }
                 if(showComposer) {
@@ -221,8 +213,8 @@ fun TabScreen.NotificationViewContent(
                         },
                         onSend = { finishedDraft ->
                             sm.screenModelScope.launch(Dispatchers.IO) {
-                                val post = finishedDraft.createPost(sm.api)
-                                sm.api.createRecord(RecordUnion.MakePost(post))
+                                val post = finishedDraft.createPost(sm.agent)
+                                sm.agent.post(post)
                             }
                             showComposer = false
                         },

@@ -6,15 +6,15 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import app.bsky.actor.SavedFeed
 import cafe.adriel.voyager.core.model.screenModelScope
-import com.morpho.app.model.bluesky.*
-import com.morpho.app.model.uidata.ContentCardMapEntry
+import com.morpho.app.model.bluesky.DetailedProfile
+import com.morpho.app.model.bluesky.FeedSourceInfo
+import com.morpho.app.model.bluesky.toFeedSourceInfo
+import com.morpho.app.model.bluesky.toProfile
 import com.morpho.app.model.uidata.FeedEvent
 import com.morpho.app.model.uidata.FeedPresenter
-import com.morpho.app.model.uidata.FeedUpdate
+import com.morpho.app.model.uistate.ContentCardState
 import com.morpho.app.screens.base.BaseScreenModel
-import kotlinx.coroutines.channels.BufferOverflow
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.MutableStateFlow
+import com.morpho.butterfly.AtUri
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.launch
@@ -27,12 +27,12 @@ open class MainScreenModel: BaseScreenModel() {
         protected set
 
     val feedSources = mutableStateListOf<FeedSourceInfo>()
-    val feedPresenters = mutableMapOf<FeedSourceInfo, FeedPresenter<MorphoDataItem.FeedItem, FeedEvent>>()
+    val feedPresenters = mutableMapOf<AtUri, FeedPresenter<FeedEvent>>()
     val pinnedFeeds: List<SavedFeed>
         get() = agent.prefs.saved.filter { it.pinned }
 
 
-    val feedStates = mutableMapOf<FeedSourceInfo, ContentCardMapEntry<FeedEvent>>()
+    val feedStates = mutableMapOf<AtUri, ContentCardState<FeedEvent>>()
 
     var initialized = false
 
@@ -45,15 +45,10 @@ open class MainScreenModel: BaseScreenModel() {
             userProfile = userDid?.let { agent.getProfile(it).getOrNull()?.toProfile() }
             feedSources.addAll(pinnedFeeds.mapNotNull { feed -> feed.toFeedSourceInfo(agent).getOrNull() })
             feedPresenters.putAll(feedSources.map { source ->
-                source to FeedPresenter(source.feedDescriptor)
+                source.uri to FeedPresenter(source.feedDescriptor)
             })
             feedStates.putAll(feedSources.map { source ->
-                source to ContentCardMapEntry.Feed(
-                    source.uri, source.displayName?:"",
-                    events = MutableSharedFlow(
-                        extraBufferCapacity = 10,
-                        onBufferOverflow = BufferOverflow.DROP_OLDEST),
-                    updates = MutableStateFlow(FeedUpdate.Empty))
+                source.uri to ContentCardState.Skyline(source.uri)
             })
 
 

@@ -39,7 +39,7 @@ class LoginScreenModel: BaseScreenModel() {
             if(checkValidUrl(service) != null) Server.CustomServer(service) else Server.BlueskySocial
         }
         screenModelScope.launch {
-            api.makeLoginRequest(credentials, server).onSuccess {
+            agent.login(credentials, server).onSuccess {
                 loginState = loginState.copy(
                     loadingState = UiLoadingState.Idle,
                     authState = AuthState.Success(it)

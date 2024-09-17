@@ -18,30 +18,30 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
 
-class FeedPresenter<Data: MorphoDataItem.FeedItem, E: FeedEvent>(
+class FeedPresenter<E: FeedEvent>(
     descriptor: FeedDescriptor? = null,
-): Presenter<Data, E>() {
+): PagedPresenter<MorphoDataItem.FeedItem, E>() {
 
-    private var dataSource: MorphoFeedSource<Data> =
+    private var dataSource: MorphoFeedSource<MorphoDataItem.FeedItem> =
         descriptor?.getDataSource(agent) ?: getTimelineDataSource(agent)
 
-    override var pager: Pager<Cursor, Data> = run {
+    override var pager: Pager<Cursor, MorphoDataItem.FeedItem> = run {
         val pagingConfig = MorphoDataSource.defaultConfig
         Pager(pagingConfig) {
             dataSource
         }
     }
 
-    private fun switchPager(newDataSource: MorphoFeedSource<Data>) {
+    private fun switchPager(newDataSource: MorphoFeedSource<MorphoDataItem.FeedItem>) {
         dataSource = newDataSource
         pager = Pager(MorphoDataSource.defaultConfig) {
             dataSource
         }
     }
 
-    override fun produceUpdates(events: Flow<E>): Flow<UIUpdate> = events.map { event ->
+    override fun <E: Event> produceUpdates(events: Flow<E>): Flow<UIUpdate> = events.map { event ->
         when(event) {
-            is FeedEvent.ComposePost -> UIUpdate.OpenComposer(event.post, event.role)
+            is Event.ComposePost -> UIUpdate.OpenComposer(event.post, event.role)
             is FeedEvent.Load -> {
                 switchPager(event.descriptor.getDataSource(agent))
                 when(event.descriptor) {

@@ -18,7 +18,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
-import androidx.paging.PagingData
 import app.cash.paging.LoadStateError
 import app.cash.paging.LoadStateLoading
 import app.cash.paging.LoadStateNotLoading
@@ -27,16 +26,19 @@ import app.cash.paging.compose.itemKey
 import com.atproto.repo.StrongRef
 import com.morpho.app.model.bluesky.BskyPost
 import com.morpho.app.model.bluesky.MorphoDataItem
-import com.morpho.app.model.uidata.ContentHandling
+import com.morpho.app.model.uidata.AuthorFeedUpdate
 import com.morpho.app.model.uidata.FeedUpdate
+import com.morpho.app.model.uidata.UIUpdate
 import com.morpho.app.ui.elements.MenuOptions
 import com.morpho.app.ui.elements.WrappedLazyColumn
 import com.morpho.app.ui.post.PlaceholderSkylineItem
 import com.morpho.app.ui.post.PostFragment
 import com.morpho.butterfly.AtIdentifier
 import com.morpho.butterfly.AtUri
+import com.morpho.butterfly.ContentHandling
 import com.morpho.butterfly.model.RecordType
-import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.launch
 
 typealias OnPostClicked = (AtUri) -> Unit
@@ -44,36 +46,41 @@ typealias OnPostClicked = (AtUri) -> Unit
 
 @OptIn(ExperimentalMaterialApi::class, ExperimentalFoundationApi::class)
 @Composable
-fun SkylineFragment (
+inline fun <reified U: UIUpdate> SkylineFragment (
     modifier: Modifier = Modifier,
-    onItemClicked: OnPostClicked,
-    onProfileClicked: (AtIdentifier) -> Unit = {},
-    onPostButtonClicked: () -> Unit = {},
-    onReplyClicked: (BskyPost) -> Unit = { },
-    onRepostClicked: (BskyPost) -> Unit = { },
-    onLikeClicked: (StrongRef) -> Unit = { },
-    onMenuClicked: (MenuOptions, BskyPost) -> Unit = { _, _ -> },
-    onUnClicked: (type: RecordType, uri: AtUri) -> Unit = { _, _ -> },
-    getContentHandling: (BskyPost) -> List<ContentHandling> = { listOf() },
+    noinline onItemClicked: OnPostClicked,
+    noinline onProfileClicked: (AtIdentifier) -> Unit = {},
+    crossinline onPostButtonClicked: () -> Unit = {},
+    noinline onReplyClicked: (BskyPost) -> Unit = { },
+    noinline onRepostClicked: (BskyPost) -> Unit = { },
+    noinline onLikeClicked: (StrongRef) -> Unit = { },
+    noinline onMenuClicked: (MenuOptions, BskyPost) -> Unit = { _, _ -> },
+    noinline onUnClicked: (type: RecordType, uri: AtUri) -> Unit = { _, _ -> },
+    noinline getContentHandling: (BskyPost) -> List<ContentHandling> = { listOf() },
     contentPadding: PaddingValues = PaddingValues(0.dp),
     isProfileFeed: Boolean = false,
     debuggable: Boolean = false,
-    feedUpdate: StateFlow<FeedUpdate<MorphoDataItem.FeedItem>>,
+    feedUpdate: Flow<U>,
 ) {
     val scope = rememberCoroutineScope()
 
     val listState = rememberLazyListState()
-    val state = feedUpdate.collectAsState()
-    val pager = remember { when(state.value) {
-        is FeedUpdate.Feed -> (state.value as FeedUpdate.Feed<MorphoDataItem.FeedItem>).feed
-        is FeedUpdate.Peek -> null
-        else -> null
-    } }
-
-    val data = pager?.collectAsLazyPagingItems()
-    val pagerState = pager?.collectAsState(
-        if(data != null) PagingData.from(data.itemSnapshotList.items) else PagingData.empty()
+    val state = feedUpdate.filterIsInstance<U>().collectAsState(
+        when(feedUpdate) {
+            is AuthorFeedUpdate -> AuthorFeedUpdate.Empty
+            is FeedUpdate<*> -> FeedUpdate.Empty
+            else -> UIUpdate.Empty
+        }
     )
+    val data =  when(state.value) {
+        is AuthorFeedUpdate.Feed -> (state.value as AuthorFeedUpdate.Feed).feed.collectAsLazyPagingItems()
+        is AuthorFeedUpdate.Feeds -> (state.value as AuthorFeedUpdate.Feeds).feed.collectAsLazyPagingItems()
+        is AuthorFeedUpdate.Likes -> (state.value as AuthorFeedUpdate.Likes).feed.collectAsLazyPagingItems()
+        is AuthorFeedUpdate.Lists -> (state.value as AuthorFeedUpdate.Lists).feed.collectAsLazyPagingItems()
+        is FeedUpdate.Feed -> (state.value as FeedUpdate.Feed).feed.collectAsLazyPagingItems()
+        else -> null
+    }
+
 
 
     val scrolledDownSome by remember {
@@ -89,10 +96,8 @@ fun SkylineFragment (
     }
 
 
-    fun refreshPull() = data?.refresh()
-
     val refreshing by remember { mutableStateOf(false) }
-    val refreshState = rememberPullRefreshState(refreshing, ::refreshPull)
+    val refreshState = rememberPullRefreshState(refreshing, {data?.refresh()})
 
 
     ConstraintLayout(
@@ -150,7 +155,7 @@ fun SkylineFragment (
                                 .weight(0.4f)
                         )
                         IconButton(
-                            onClick = { refreshPull() },
+                            onClick = {data?.refresh()},
                             colors = IconButtonDefaults.iconButtonColors(
                                 containerColor = MaterialTheme.colorScheme.background,
                                 contentColor = MaterialTheme.colorScheme.onSurfaceVariant
@@ -196,7 +201,12 @@ fun SkylineFragment (
                 is LoadStateNotLoading -> {
                     items(
                         data.itemCount,
-                        key = data.itemKey { it.key }
+                        key = data.itemKey {when(it) {
+                            is MorphoDataItem.FeedItem -> it.key
+                            is MorphoDataItem.Post -> it.key
+                            is MorphoDataItem.Thread -> it.key
+                            else -> it.hashCode()
+                        } }
                     ) { index ->
                         when(val item = data[index]) {
                             is MorphoDataItem.Thread -> {

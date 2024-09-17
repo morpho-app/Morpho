@@ -22,8 +22,6 @@ import cafe.adriel.voyager.navigator.currentOrThrow
 import cafe.adriel.voyager.navigator.tab.Tab
 import cafe.adriel.voyager.navigator.tab.TabNavigator
 import cafe.adriel.voyager.navigator.tab.TabOptions
-import com.morpho.app.model.uidata.BskyDataService
-import com.morpho.app.model.uidata.BskyNotificationService
 import com.morpho.app.ui.common.SlideTabTransition
 import com.morpho.app.ui.theme.roundedTopR
 import io.ktor.util.reflect.instanceOf
@@ -110,11 +108,9 @@ fun TabNavigationItem(
                 }
 
                 is HomeTab -> {
-                    val dataService = koinInject<BskyDataService>()
-                    val hasNew by dataService.checkIfNewTimeline().collectAsState(false)
                     BadgedBox(
                         badge = {
-                            if (hasNew) {
+                            if (false) { /// TODO: put this back in later
                                 Badge(
                                     modifier = Modifier.size(4.dp),
                                     containerColor = MaterialTheme.colorScheme.secondary

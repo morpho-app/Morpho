@@ -8,9 +8,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import cafe.adriel.voyager.core.annotation.ExperimentalVoyagerApi
-import cafe.adriel.voyager.core.lifecycle.LifecycleEffectOnce
 import cafe.adriel.voyager.core.model.rememberNavigatorScreenModel
-import cafe.adriel.voyager.core.model.screenModelScope
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.core.screen.ScreenKey
 import cafe.adriel.voyager.core.screen.uniqueScreenKey
@@ -26,12 +24,11 @@ import com.morpho.app.screens.thread.ThreadTopBar
 import com.morpho.app.screens.thread.ThreadViewContent
 import com.morpho.app.ui.common.LoadingCircle
 import com.morpho.app.ui.common.TabbedScreenScaffold
-import com.morpho.butterfly.AtIdentifier
 import com.morpho.butterfly.AtUri
+import com.morpho.butterfly.Did
 import dev.icerock.moko.parcelize.Parcelable
 import dev.icerock.moko.parcelize.Parcelize
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.launch
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
@@ -187,7 +184,7 @@ data object NotificationsTab: TabScreen {
 @Serializable
 @Immutable
 data class ProfileTab(
-    val id: AtIdentifier,
+    val id: Did,
 ): TabScreen {
 
     override val key: ScreenKey
@@ -199,7 +196,21 @@ data class ProfileTab(
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     override fun Content() {
-        TabbedProfileContent(id)
+        val sm = LocalNavigator.currentOrThrow.rememberNavigatorScreenModel { TabbedMainScreenModel() }
+        val eventStream = sm.globalEvents
+        val profilePresenter by  sm.getProfilePresenter(id).collectAsState(null)
+        val myProfilePresenter by  sm.getMyProfilePresenter().collectAsState(null)
+        if(profilePresenter != null && myProfilePresenter != null) {
+            val presenter = profilePresenter!!.first
+            val updates = profilePresenter!!.second
+
+            val myProfileState = myProfilePresenter!!.first.profileState
+            TabbedProfileContent(
+                profileState = presenter.profileState,
+                myProfileState = myProfileState,
+                eventCallback = { eventStream.tryEmit(it) }
+            )
+        }
     }
 
 
@@ -235,9 +246,6 @@ data class ThreadTab(
         val navigator = LocalNavigator.currentOrThrow
         val sm = navigator.rememberNavigatorScreenModel { TabbedMainScreenModel() }
         var threadState: StateFlow<ContentCardState.PostThread>? by remember { mutableStateOf(null)}
-        LifecycleEffectOnce {
-            sm.screenModelScope.launch { threadState = sm.loadThread(uri) }
-        }
         if(threadState != null) {
             ThreadViewContent(threadState!!, navigator)
         } else {
@@ -277,7 +285,19 @@ data object MyProfileTab: TabScreen {
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     override fun Content() {
-        TabbedProfileContent()
+        val sm = LocalNavigator.currentOrThrow.rememberNavigatorScreenModel { TabbedMainScreenModel() }
+        val eventStream = sm.globalEvents
+        val myProfilePresenter by  sm.getMyProfilePresenter().collectAsState(null)
+        if(myProfilePresenter != null) {
+
+            val myProfileState = myProfilePresenter!!.first.profileState
+            TabbedProfileContent(
+                ownProfile = true,
+                profileState = null,
+                myProfileState = myProfileState,
+                eventCallback = { eventStream.tryEmit(it) }
+            )
+        }
     }
 
 

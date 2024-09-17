@@ -23,7 +23,7 @@ import org.koin.core.component.inject
 import kotlin.time.Duration
 
 
-abstract class MorphoDataSource<Data : MorphoDataItem>: PagingSource<Cursor, Data>(), KoinComponent {
+abstract class MorphoDataSource<Data:Any>: PagingSource<Cursor, Data>(), KoinComponent {
     val agent: MorphoAgent by inject()
     val moderator: ContentLabelService by inject()
 

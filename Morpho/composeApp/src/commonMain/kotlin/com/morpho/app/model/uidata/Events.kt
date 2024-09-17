@@ -6,6 +6,7 @@ import com.morpho.app.model.bluesky.AuthorFilter
 import com.morpho.app.model.bluesky.BskyPost
 import com.morpho.app.model.bluesky.FeedDescriptor
 import com.morpho.app.model.bluesky.FeedSourceInfo
+import com.morpho.app.model.uistate.ListsOrFeeds
 import com.morpho.app.ui.common.ComposerRole
 import com.morpho.butterfly.AtIdentifier
 import com.morpho.butterfly.AtUri
@@ -19,7 +20,10 @@ sealed interface Event {
         val seenAt: Timestamp = Clock.System.now()
     ): Event
 
-
+    data class ComposePost(
+        val post: BskyPost,
+        val role: ComposerRole = ComposerRole.StandalonePost,
+    ): Event, PostEvent
 }
 sealed interface ModerationEvent: Event
 
@@ -35,8 +39,8 @@ sealed interface FeedEvent: Event {
             is FeedDescriptor.Author -> when(descriptor.filter) {
                 AuthorFilter.PostsNoReplies -> AtUri.profilePostsUri(descriptor.did)
                 AuthorFilter.PostsWithReplies -> AtUri.profileRepliesUri(descriptor.did)
-                AuthorFilter.PostsAuthorThreads -> AtUri.profileMediaUri(descriptor.did)
-                AuthorFilter.PostsWithMedia -> AtUri.profileLikesUri(descriptor.did)
+                AuthorFilter.PostsAuthorThreads -> AtUri.profileRepliesUri(descriptor.did)
+                AuthorFilter.PostsWithMedia -> AtUri.profileMediaUri(descriptor.did)
             }
             is FeedDescriptor.FeedGen -> descriptor.uri
             is FeedDescriptor.Likes -> AtUri.profileLikesUri(descriptor.did)
@@ -47,8 +51,22 @@ sealed interface FeedEvent: Event {
 
     data class LoadLists(
         val actor: AtIdentifier,
+        val listsOrFeeds: ListsOrFeeds,
     ): FeedEvent, LoadEvent, ListEvent {
-        override val uri: AtUri = AtUri.myUserListUri(actor.toString())
+        override val uri: AtUri = AtUri.profileUserListsUri(actor)
+    }
+
+    data class LoadFeed(
+        val actor: AtIdentifier,
+        val filter: AuthorFilter?,
+    ): FeedEvent, LoadEvent, ListEvent {
+        override val uri: AtUri = when(filter) {
+            AuthorFilter.PostsNoReplies -> AtUri.profilePostsUri(actor)
+            AuthorFilter.PostsWithReplies -> AtUri.profileRepliesUri(actor)
+            AuthorFilter.PostsAuthorThreads -> AtUri.profileRepliesUri(actor)
+            AuthorFilter.PostsWithMedia -> AtUri.profileMediaUri(actor)
+            null -> AtUri.profileLikesUri(actor)
+        }
     }
 
     data class LoadSaved(
@@ -69,31 +87,29 @@ sealed interface FeedEvent: Event {
         override val uri: AtUri = info.uri
     }
 
-    data class ComposePost(
-        val post: BskyPost,
-        val role: ComposerRole = ComposerRole.StandalonePost,
-    ): FeedEvent, PostEvent {
-        override val uri: AtUri? = null
-    }
+
 }
 
-sealed interface FeedPageEvent: Event {
+sealed interface PageEvent: Event
+sealed interface ListPageEvent: PageEvent
+
+sealed interface FeedPageEvent: PageEvent {
     data class LikeFeed(val like: StrongRef): FeedPageEvent, LikeEvent
     data class UnlikeFeed(val uri: AtUri): FeedPageEvent, LikeEvent
     data class Save(val info: SavedFeed): FeedPageEvent, PrefsEvent
     data class UnSave(val id: String): FeedPageEvent, PrefsEvent
 }
 
-sealed interface CuratedListPage: Event {
-    data class Pin(val info: SavedFeed): CuratedListPage, PrefsEvent
-    data class Unpin(val id: String): CuratedListPage, PrefsEvent
+sealed interface CuratedListPageEvent: ListPageEvent {
+    data class Pin(val info: SavedFeed): CuratedListPageEvent, PrefsEvent
+    data class Unpin(val id: String): CuratedListPageEvent, PrefsEvent
 }
 
-sealed interface ModListPage: Event {
-    data class MuteList(val list: AtUri): ModListPage, ModerationEvent
-    data class UnmuteList(val uri: AtUri): ModListPage, ModerationEvent
-    data class BlockList(val list: AtUri): ModListPage, ModerationEvent
-    data class UnblockList(val uri: AtUri): ModListPage, ModerationEvent
+sealed interface ModListPageEvent: ListPageEvent {
+    data class MuteList(val list: AtUri): ModListPageEvent, ModerationEvent
+    data class UnmuteList(val uri: AtUri): ModListPageEvent, ModerationEvent
+    data class BlockList(val list: AtUri): ModListPageEvent, ModerationEvent
+    data class UnblockList(val uri: AtUri): ModListPageEvent, ModerationEvent
 }
 
 sealed interface PrefsEvent: Event {
@@ -165,27 +181,31 @@ sealed interface LabelerEvent: Event {
     ): LabelerEvent, PrefsEvent, ModerationEvent
 }
 
-sealed interface MyProfileEvent: Event {
+sealed interface MyProfileEvent: ProfileEvent {
     data object EnterEditing: MyProfileEvent
     data object ExitEditing: MyProfileEvent
 }
 
-sealed interface ProfileEditEvent: Event {
-    data class SetDisplayName(val name: String): ProfileEditEvent, MyProfileEvent
-    data class SetDescription(val description: String): ProfileEditEvent, MyProfileEvent
-    data class SetAvatar(val avatar: PlatformFile): ProfileEditEvent, MyProfileEvent
-    data class SetBanner(val banner: PlatformFile): ProfileEditEvent, MyProfileEvent
+sealed interface ProfileEditEvent: MyProfileEvent {
+    data class SetDisplayName(val name: String): ProfileEditEvent
+    data class SetDescription(val description: String): ProfileEditEvent
+    data class SetAvatar(val avatar: PlatformFile): ProfileEditEvent
+    data class SetBanner(val banner: PlatformFile): ProfileEditEvent
 }
 
 sealed interface ActorEvent: Event {
-    data class Follow(val subject: Did): ActorEvent
-    data class Unfollow(val uri: AtUri): ActorEvent
 
-    data class Mute(val subject: Did): ActorEvent, PrefsEvent, ModerationEvent
-    data class Unmute(val subject: Did): ActorEvent, PrefsEvent, ModerationEvent
+}
 
-    data class Block(val subject: Did): ActorEvent, ModerationEvent
-    data class Unblock(val uri: AtUri): ActorEvent, ModerationEvent
+sealed interface ProfileEvent: ActorEvent {
+    data class Follow(val subject: Did): ProfileEvent
+    data class Unfollow(val uri: AtUri): ProfileEvent
 
-    data class ReportAccount(val subject: Did): ActorEvent, ModerationEvent
+    data class Mute(val subject: Did): ProfileEvent, PrefsEvent, ModerationEvent
+    data class Unmute(val subject: Did): ProfileEvent, PrefsEvent, ModerationEvent
+
+    data class Block(val subject: Did): ProfileEvent, ModerationEvent
+    data class Unblock(val uri: AtUri): ProfileEvent, ModerationEvent
+
+    data class ReportAccount(val subject: Did): ProfileEvent, ModerationEvent
 }

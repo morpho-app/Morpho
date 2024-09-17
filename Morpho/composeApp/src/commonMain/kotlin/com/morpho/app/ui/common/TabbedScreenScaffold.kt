@@ -20,26 +20,25 @@ import cafe.adriel.voyager.navigator.CurrentScreen
 import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.transitions.ScreenTransition
 import cafe.adriel.voyager.transitions.ScreenTransitionContent
-import com.morpho.app.model.bluesky.MorphoDataItem
+import com.morpho.app.model.uidata.Event
 import com.morpho.app.model.uistate.ContentCardState
-import kotlinx.coroutines.flow.StateFlow
 
 @Composable
 expect fun <T> TabbedScreenScaffold(
     navBar: @Composable () -> Unit,
-    content: @Composable (PaddingValues, StateFlow<T>?) -> Unit,
+    content: @Composable (PaddingValues, T?) -> Unit,
     topContent: @Composable () -> Unit,
-    state: StateFlow<T>?,
+    state: T?,
     modifier: Modifier,
 )
 
 @ExperimentalMaterial3Api
 @Composable
-expect fun TabbedProfileScreenScaffold(
+expect fun <T: Event> TabbedProfileScreenScaffold(
     navBar: @Composable () -> Unit,
-    content: @Composable (PaddingValues,StateFlow<ContentCardState.ProfileTimeline<MorphoDataItem>>?) -> Unit,
+    content: @Composable (PaddingValues,ContentCardState<T>?) -> Unit,
     topContent: @Composable (TopAppBarScrollBehavior) -> Unit,
-    state: StateFlow<ContentCardState.ProfileTimeline<MorphoDataItem>>?,
+    state: ContentCardState<out T>?,
     modifier: Modifier = Modifier,
     scrollBehavior: TopAppBarScrollBehavior,
     nestedScrollConnection: NestedScrollConnection = scrollBehavior.nestedScrollConnection,

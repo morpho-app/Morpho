@@ -22,46 +22,48 @@ import com.morpho.app.ui.post.PostFragment
 import com.morpho.app.util.getFormattedDateTimeSince
 import com.morpho.butterfly.AtIdentifier
 import com.morpho.butterfly.AtUri
+import com.morpho.butterfly.Did
 import com.morpho.butterfly.model.RecordType
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.launch
 
 @Composable
 fun NotificationsElement(
     item: NotificationsListItem,
     showPost: Boolean = true,
-    getPost: suspend (AtUri) -> Flow<BskyPost?>,
+    getPost: suspend (AtUri) -> BskyPost?,
     onPostClicked: OnPostClicked,
-    onAvatarClicked: (AtIdentifier) -> Unit = {},
+    onAvatarClicked: (Did) -> Unit = {},
     onReplyClicked: (BskyPost) -> Unit = { },
     onRepostClicked: (BskyPost) -> Unit = { },
     onLikeClicked: (StrongRef) -> Unit = { },
     onMenuClicked: (MenuOptions, BskyPost) -> Unit = { _, _ -> },
     onUnClicked: (type: RecordType, uri: AtUri) -> Unit = { _, _ -> },
     readOnLoad: Boolean = false,
-    markRead: (AtUri) -> Unit = {  }
+    markRead: (AtUri) -> Unit = {  },
+    resolveHandle: suspend (AtIdentifier) -> Did?,
 ) {
     var expand by remember { mutableStateOf(showPost) }
     var post: BskyPost? by remember { mutableStateOf(null) }
     val delta = remember { getFormattedDateTimeSince(item.notifications.first().indexedAt) }
+    val scope = rememberCoroutineScope()
     LaunchedEffect(expand) {
         @Suppress("REDUNDANT_ELSE_IN_WHEN")
         when (val notif = item.notifications.first()) {
             is BskyNotification.Like -> {
-                if(showPost) post = getPost(notif.subject.uri).firstOrNull()
+                if(showPost) post = getPost(notif.subject.uri)
             }
             is BskyNotification.Follow -> {}
             is BskyNotification.Post -> {
                 post = notif.post
-                if(showPost) post = getPost(notif.uri).firstOrNull()
+                if(showPost) post = getPost(notif.uri)
             }
 
             is BskyNotification.Repost -> {
-                if(showPost) post = getPost(notif.subject.uri).firstOrNull()
+                if(showPost) post = getPost(notif.subject.uri)
             }
             is BskyNotification.Unknown -> {
                 if (notif.reasonSubject != null && showPost) {
-                    post = getPost(notif.reasonSubject!!).firstOrNull()
+                    post = getPost(notif.reasonSubject!!)
                 }
             }
 
@@ -132,6 +134,7 @@ fun NotificationsElement(
                 NotificationText(reason = item.reason, number = number, name = firstName, delta = delta)
                 if (expand && post != null) {
                     // TODO: maybe do a more compact variant
+
                     PostFragment(
                         post = post!!, elevate = true,
                         onItemClicked = {
@@ -140,8 +143,10 @@ fun NotificationsElement(
                                         },
                         onProfileClicked = {
                             if(!readOnLoad) markRead(item.notifications.first().uri)
-                            onAvatarClicked(it)
-                                           },
+                            scope.launch {
+                                resolveHandle(it)?.let { did -> onAvatarClicked(did) }
+                            }
+                        },
                         onUnClicked = { type, uri ->
                             if(!readOnLoad) markRead(item.notifications.first().uri)
                             onUnClicked(type, uri)

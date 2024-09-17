@@ -12,8 +12,7 @@ import cafe.adriel.voyager.navigator.tab.TabNavigator
 import com.atproto.repo.StrongRef
 import com.morpho.app.model.bluesky.BskyPost
 import com.morpho.app.model.bluesky.DraftPost
-import com.morpho.app.model.bluesky.MorphoDataItem
-import com.morpho.app.model.uidata.FeedUpdate
+import com.morpho.app.model.uidata.Event
 import com.morpho.app.model.uidata.UIUpdate
 import com.morpho.app.screens.base.tabbed.ProfileTab
 import com.morpho.app.screens.base.tabbed.ThreadTab
@@ -24,6 +23,7 @@ import io.ktor.util.reflect.instanceOf
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.launch
 import org.koin.compose.getKoin
 
@@ -32,10 +32,11 @@ import org.koin.compose.getKoin
 fun TabbedSkylineFragment(
     paddingValues: PaddingValues = PaddingValues(0.dp),
     isProfileFeed: Boolean = false,
-    feedUpdate: StateFlow<UIUpdate>,
-    uiState: StateFlow<UIUpdate>,
+    uiUpdate: StateFlow<UIUpdate>,
+    eventCallback: (Event) -> Unit = {},
 ) {
     val agent = getKoin().get<ButterflyAgent>()
+    val uiState = uiUpdate.collectAsState(initial = UIUpdate.Empty)
     val navigator = if (LocalNavigator.current?.parent?.instanceOf(TabNavigator::class) == true) {
         LocalNavigator.currentOrThrow
     } else LocalNavigator.currentOrThrow.parent!!
@@ -72,28 +73,24 @@ fun TabbedSkylineFragment(
     }
     val clipboard = getKoin().get<ClipboardManager>()
     if(uiState.value !is UIUpdate.Empty) {
-        if(feedUpdate.value is FeedUpdate<*>) {
-            SkylineFragment(
-                onProfileClicked = { actor -> navigator.push(ProfileTab(actor)) },
-                onItemClicked = { uri -> navigator.push(ThreadTab(uri)) },
-                onUnClicked = { type, rkey -> agent.deleteRecord(type, rkey) },
-                onRepostClicked = { onRepostClicked(it) },
-                onMenuClicked = { option, post ->
-                    doMenuOperation(option, post,
-                                    clipboardManager = clipboard,
-                                    uriHandler = uriHandler
-                    ) },
-                onReplyClicked = { onReplyClicked(it) },
-                onLikeClicked = { ref -> agent.like(ref) },
-                onPostButtonClicked = { onPostButtonClicked() },
-                getContentHandling = { post -> listOf() },
-                contentPadding = paddingValues,
-                isProfileFeed = isProfileFeed,
-                feedUpdate = feedUpdate as StateFlow<FeedUpdate<MorphoDataItem.FeedItem>>,
-            )
-        } else {
-            LoadingCircle()
-        }
+        SkylineFragment(
+            onProfileClicked = { actor -> navigator.push(ProfileTab(actor)) },
+            onItemClicked = { uri -> navigator.push(ThreadTab(uri)) },
+            onUnClicked = { type, rkey -> agent.deleteRecord(type, rkey) },
+            onRepostClicked = { onRepostClicked(it) },
+            onMenuClicked = { option, post ->
+                doMenuOperation(option, post,
+                                clipboardManager = clipboard,
+                                uriHandler = uriHandler
+                ) },
+            onReplyClicked = { onReplyClicked(it) },
+            onLikeClicked = { ref -> agent.like(ref) },
+            onPostButtonClicked = { onPostButtonClicked() },
+            getContentHandling = { post -> listOf() },
+            contentPadding = paddingValues,
+            isProfileFeed = isProfileFeed,
+            feedUpdate = uiUpdate.filterIsInstance(),
+        )
         if(repostClicked) {
             RepostQueryDialog(
                 onDismissRequest = {

@@ -9,16 +9,15 @@ import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
-import com.morpho.app.model.bluesky.MorphoDataItem
+import com.morpho.app.model.uidata.Event
 import com.morpho.app.model.uistate.ContentCardState
-import kotlinx.coroutines.flow.StateFlow
 
 @Composable
 actual fun <T> TabbedScreenScaffold(
     navBar: @Composable () -> Unit,
-    content: @Composable (PaddingValues, StateFlow<T>?) -> Unit,
+    content: @Composable (PaddingValues, T?) -> Unit,
     topContent: @Composable () -> Unit,
-    state: StateFlow<T>?,
+    state: T?,
     modifier: Modifier,
 ) {
     Scaffold(
@@ -34,11 +33,11 @@ actual fun <T> TabbedScreenScaffold(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-actual fun TabbedProfileScreenScaffold(
+actual fun  <T: Event>  TabbedProfileScreenScaffold(
     navBar: @Composable () -> Unit,
-    content: @Composable (PaddingValues, StateFlow<ContentCardState.ProfileTimeline<MorphoDataItem>>?) -> Unit,
+    content: @Composable (PaddingValues, ContentCardState<T>?) -> Unit,
     topContent: @Composable (TopAppBarScrollBehavior) -> Unit,
-    state: StateFlow<ContentCardState.ProfileTimeline<MorphoDataItem>>?,
+    state: ContentCardState<out T>?,
     modifier: Modifier,
     scrollBehavior: TopAppBarScrollBehavior,
     nestedScrollConnection: NestedScrollConnection,

@@ -88,8 +88,12 @@ fun PlaceholderSkylineItem(
         val bgColor = if (role == PostFragmentRole.PrimaryThreadRoot) {
             MaterialTheme.colorScheme.background
         } else {
-            MaterialTheme.colorScheme.surfaceColorAtElevation(if (elevate ) 2.dp else
-                                                                  if (indentLevel > 0) (indentLevel*2).dp else 0.dp)
+            MaterialTheme.colorScheme
+                .surfaceColorAtElevation(
+                    if (elevate ) 2.dp
+                    else if (indentLevel > 0) (indentLevel*2).dp
+                    else 0.dp
+                )
         }
 
         Surface (
@@ -103,96 +107,95 @@ fun PlaceholderSkylineItem(
                 .align(Alignment.End)
 
         ) {
-                Row(
-                    modifier = Modifier.padding(end = 6.dp)
+            Row(
+                modifier = Modifier.padding(end = 6.dp)
+                    .fillMaxWidth()//.fillMaxWidth(indentLevel(indent))
+            ) {
+
+                if (indent < 2) {
+                    OutlinedAvatar(
+                        url = "",
+                        contentDescription = "Placeholder avatar",
+                        size = 45.dp,
+                        outlineColor = MaterialTheme.colorScheme.background,
+                        avatarShape = AvatarShape.Corner,
+                        modifier = Modifier.padding(end = 2.dp)
+                    )
+                }
+
+                Column(
+                    Modifier
+                        .padding(top = 4.dp, start = 2.dp, end = 6.dp)
                         .fillMaxWidth()//.fillMaxWidth(indentLevel(indent))
                 ) {
 
-                    if (indent < 2) {
-                        OutlinedAvatar(
-                            url = "",
-                            contentDescription = "Placeholder avatar",
-                            size = 45.dp,
-                            outlineColor = MaterialTheme.colorScheme.background,
-                            avatarShape = AvatarShape.Corner,
-                            modifier = Modifier.padding(end = 2.dp)
+                    Row(
+                        modifier = Modifier.padding(top = 2.dp, start = 2.dp, end = 4.dp),
+                        horizontalArrangement = Arrangement.End
+                    ) {
+                        if (indent >= 2) {
+                            OutlinedAvatar(
+                                url = "",
+                                contentDescription = "Placeholder avatar",
+                                size = 30.dp,
+                                avatarShape = AvatarShape.Rounded,
+                                outlineColor = MaterialTheme.colorScheme.background,
+                            )
+                        }
+                        Text(
+                            text = buildAnnotatedString {
+                                withStyle(
+                                    style = SpanStyle(
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                        fontSize = MaterialTheme.typography.labelLarge.fontSize,
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                ) {
+                                    "                 "
+                                }
+                                withStyle(
+                                    style = SpanStyle(
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        fontSize = MaterialTheme.typography.labelLarge.fontSize.times(
+                                            0.8f
+                                        )
+                                    )
+                                ) {
+                                    append("@                ")
+                                }
+
+                            },
+                            maxLines = 1,
+                            style = MaterialTheme.typography.labelLarge,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier
+                                .wrapContentWidth(Alignment.Start)
+                                .weight(10.0F)
+                                .alignByBaseline()
+                        )
+
+                        Spacer(modifier = Modifier.width(1.dp).weight(0.1F))
+                        Text(
+                            text = "       ",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            style = MaterialTheme.typography.labelLarge,
+                            fontSize = MaterialTheme.typography.labelLarge.fontSize.div(1.2F),
+                            modifier = Modifier
+                                .wrapContentWidth(Alignment.End)
+                                //.weight(3.0F)
+                                .alignByBaseline(),
+                            maxLines = 1,
+                            overflow = TextOverflow.Visible,
+                            softWrap = false,
                         )
                     }
 
-                    Column(
-                        Modifier
-                            .padding(top = 4.dp, start = 2.dp, end = 6.dp)
-                            .fillMaxWidth()//.fillMaxWidth(indentLevel(indent))
-                    ) {
+                    Spacer(Modifier.height(100.dp))
 
-                        Row(
-                            modifier = Modifier.padding(top = 2.dp, start = 2.dp, end = 4.dp),
-                            horizontalArrangement = Arrangement.End
-                        ) {
-                            if (indent >= 2) {
-                                OutlinedAvatar(
-                                    url = "",
-                                    contentDescription = "Placeholder avatar",
-                                    size = 30.dp,
-                                    avatarShape = AvatarShape.Rounded,
-                                    outlineColor = MaterialTheme.colorScheme.background,
-                                )
-                            }
-                            Text(
-                                text = buildAnnotatedString {
-                                    withStyle(
-                                        style = SpanStyle(
-                                            color = MaterialTheme.colorScheme.onSurface,
-                                            fontSize = MaterialTheme.typography.labelLarge.fontSize,
-                                            fontWeight = FontWeight.Medium
-                                        )
-                                    ) {
-                                        "                 "
-                                    }
-                                    withStyle(
-                                        style = SpanStyle(
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                            fontSize = MaterialTheme.typography.labelLarge.fontSize.times(
-                                                0.8f
-                                            )
-                                        )
-                                    ) {
-                                        append("@                ")
-                                    }
-
-                                },
-                                maxLines = 1,
-                                style = MaterialTheme.typography.labelLarge,
-                                overflow = TextOverflow.Ellipsis,
-                                modifier = Modifier
-                                    .wrapContentWidth(Alignment.Start)
-                                    .weight(10.0F)
-                                    .alignByBaseline()
-                            )
-
-                            Spacer(modifier = Modifier.width(1.dp).weight(0.1F))
-                            Text(
-                                text = "       ",
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                style = MaterialTheme.typography.labelLarge,
-                                fontSize = MaterialTheme.typography.labelLarge.fontSize.div(1.2F),
-                                modifier = Modifier
-                                    .wrapContentWidth(Alignment.End)
-                                    //.weight(3.0F)
-                                    .alignByBaseline(),
-                                maxLines = 1,
-                                overflow = TextOverflow.Visible,
-                                softWrap = false,
-                            )
-                        }
-
-                        Spacer(Modifier.height(100.dp))
-
-                        DummyPostActions()
-                    }
+                    DummyPostActions()
                 }
-
             }
+
         }
     }
 }

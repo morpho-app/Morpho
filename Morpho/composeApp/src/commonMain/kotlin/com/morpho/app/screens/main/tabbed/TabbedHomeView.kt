@@ -11,8 +11,6 @@ import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyListState
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.*
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.runtime.*
@@ -22,7 +20,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.core.annotation.ExperimentalVoyagerApi
-import cafe.adriel.voyager.core.lifecycle.LifecycleEffectOnce
 import cafe.adriel.voyager.core.screen.ScreenKey
 import cafe.adriel.voyager.core.screen.uniqueScreenKey
 import cafe.adriel.voyager.core.stack.StackEvent
@@ -35,9 +32,8 @@ import cafe.adriel.voyager.navigator.tab.TabOptions
 import cafe.adriel.voyager.transitions.ScreenTransition
 import cafe.adriel.voyager.transitions.ScreenTransitionContent
 import coil3.annotation.ExperimentalCoilApi
-import com.morpho.app.model.bluesky.MorphoDataItem
+import com.morpho.app.model.uidata.Event
 import com.morpho.app.model.uistate.ContentCardState
-import com.morpho.app.model.uistate.UiLoadingState
 import com.morpho.app.screens.base.tabbed.TabScreen
 import com.morpho.app.ui.common.LoadingCircle
 import com.morpho.app.ui.common.TabbedScreenScaffold
@@ -46,7 +42,6 @@ import com.morpho.app.ui.elements.AvatarShape
 import com.morpho.app.ui.elements.OutlinedAvatar
 import dev.icerock.moko.parcelize.Parcelable
 import dev.icerock.moko.parcelize.Parcelize
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.serialization.Serializable
 import org.jetbrains.compose.resources.ExperimentalResourceApi
 import kotlin.math.max
@@ -54,13 +49,10 @@ import kotlin.math.min
 import cafe.adriel.voyager.navigator.tab.Tab as NavTab
 
 @Composable
-public fun CurrentSkylineScreen(
+public fun <T: Event>CurrentSkylineScreen(
     sm: TabbedMainScreenModel,
     paddingValues: PaddingValues,
-    state: StateFlow<ContentCardState.Skyline<MorphoDataItem.FeedItem>>?,
-    listState: LazyListState = rememberLazyListState(
-        initialFirstVisibleItemIndex = state?.value?.feed?.cursor?.scroll ?: 0
-    ),
+    state: ContentCardState<T>?,
     modifier: Modifier
 ) {
     val navigator = LocalNavigator.currentOrThrow
@@ -71,7 +63,6 @@ public fun CurrentSkylineScreen(
             sm = sm,
             paddingValues = paddingValues,
             state = state,
-            listState = listState,
             modifier = modifier
         )
     }
@@ -81,22 +72,20 @@ public fun CurrentSkylineScreen(
 abstract class SkylineTab: NavTab {
 
     @Composable
-    abstract fun Content(
+    abstract fun <T: Event> Content(
         sm: TabbedMainScreenModel,
         paddingValues: PaddingValues,
-        state: StateFlow<ContentCardState.Skyline<MorphoDataItem.FeedItem>>?,
-        listState: LazyListState,
+        state: ContentCardState<T>?,
         modifier: Modifier
     )
 
     @OptIn(ExperimentalVoyagerApi::class)
     @Composable
     final override fun Content() =
-        Content(TabbedMainScreenModel(),PaddingValues(0.dp),null, rememberLazyListState(), Modifier)
+        Content<Event>(TabbedMainScreenModel(),PaddingValues(0.dp), null, Modifier)
 }
 
 
-@Suppress("UNCHECKED_CAST")
 @OptIn(ExperimentalAnimationApi::class, ExperimentalMaterial3Api::class,
        ExperimentalVoyagerApi::class
 )
@@ -108,25 +97,21 @@ fun TabScreen.TabbedHomeView(
         val navigator = LocalNavigator.currentOrThrow
 
 
-        var selectedTabIndex by rememberSaveable { mutableIntStateOf(0) }
+        var selectedTabIndex by rememberSaveable { mutableIntStateOf(sm.timelineIndex) }
 
-        LifecycleEffectOnce {
-            sm.initTabs()
-        }
+
         val tabs = remember(
-            sm.tabFlow.value, sm.uiState.loadingState, sm.uiState.tabs.value.size
+            sm.tabs, sm.loaded, sm.tabs.size
         ) {
-            List(sm.uiState.tabs.value.size) { index ->
+            List(sm.tabs.size) { index ->
                 HomeSkylineTab(
                     index = index.toUShort(),
-                    title = sm.uiState.tabs.value[index].title,
-                    avatar = sm.uiState.tabs.value[index].avatar,
+                    title = sm.tabs[index].title,
+                    avatar = sm.tabs[index].avatar,
                 )
             }
         }
-        val tabsCreated = remember(tabs.size, sm.uiState.loadingState) {
-            tabs.isNotEmpty() && sm.uiState.loadingState == UiLoadingState.Idle
-        }
+        val tabsCreated by derivedStateOf { sm.loaded }
         if (tabsCreated) {
             Navigator(
                 tabs.first(),
@@ -134,10 +119,7 @@ fun TabScreen.TabbedHomeView(
                     //disposeNestedNavigators = false,
                 )
             ) { nav ->
-                val listState = rememberLazyListState(
-                    initialFirstVisibleItemIndex =
-                        sm.uiState.tabStates[selectedTabIndex].value.feed.cursor.scroll
-                )
+                val tabUri = sm.uriForTab(selectedTabIndex)
                 TabbedScreenScaffold(
                     navBar = { navBar(navigator) },
                     topContent = {
@@ -153,20 +135,15 @@ fun TabScreen.TabbedHomeView(
                                     } else nav.replace(tabs[index])
                                 } else if(index > selectedTabIndex) nav.push(tabs[index])
                                 selectedTabIndex = index
-                                sm.refreshTab(
-                                    index,
-                                    sm.uiState.tabStates[index].value.feed.cursor
-                                        .copy(scroll = listState.firstVisibleItemIndex)
-                                )
                             }
 
                         )
                     },
                     content = { insets, state ->
-                        SkylineTabTransition(nav, sm, insets, state, listState)
+                        SkylineTabTransition(nav, sm, insets, state)
                     },
                     modifier = Modifier,
-                    state = sm.uiState.tabStates.getOrNull(selectedTabIndex) as StateFlow<ContentCardState.Skyline<MorphoDataItem.FeedItem>>?
+                    state = sm.feedStates.get(tabUri) as ContentCardState.Skyline?
                 )
             }
 
@@ -176,21 +153,18 @@ fun TabScreen.TabbedHomeView(
 
 @OptIn(ExperimentalVoyagerApi::class)
 @Composable
-fun SkylineTabTransition(
+fun <T: Event> SkylineTabTransition(
     navigator: Navigator,
     sm: TabbedMainScreenModel,
     insets: PaddingValues = PaddingValues(0.dp),
-    state: StateFlow<ContentCardState.Skyline<MorphoDataItem.FeedItem>>?,
-    listState: LazyListState = rememberLazyListState(
-        initialFirstVisibleItemIndex = state?.value?.feed?.cursor?.scroll ?: 0
-    ),
+    state: ContentCardState<T>?,
     modifier: Modifier = Modifier,
     animationSpec: FiniteAnimationSpec<IntOffset> = spring(
         stiffness = Spring.StiffnessMediumLow,
         visibilityThreshold = IntOffset.VisibilityThreshold
     ),
     content: ScreenTransitionContent = {
-        CurrentSkylineScreen(sm, insets, state, listState, modifier)
+        CurrentSkylineScreen(sm, insets, state, modifier)
     }
 ) {
     ScreenTransition(
@@ -275,21 +249,20 @@ data class HomeSkylineTab @OptIn(ExperimentalVoyagerApi::class) constructor(
 
     @OptIn(ExperimentalMaterial3Api::class, ExperimentalVoyagerApi::class)
     @Composable
-    override fun Content(
+    override fun <E : Event> Content(
         sm: TabbedMainScreenModel,
         paddingValues: PaddingValues,
-        state: StateFlow<ContentCardState.Skyline<MorphoDataItem.FeedItem>>?,
-        listState: LazyListState,
+        state: ContentCardState<E>?,
         modifier: Modifier
     ) {
-
+        if(state == null) return
         TabbedSkylineFragment(
-            sm, state, paddingValues,
-            refresh = { cursor ->
-                sm.refreshTab(index.toInt(), cursor)
-            },
-            listState = listState,
+            paddingValues = paddingValues,
+            isProfileFeed = false,
+            feedUpdate = state.updates,
+            uiEvents = sm.globalEvents,
         )
+
     }
 
     override val key: ScreenKey

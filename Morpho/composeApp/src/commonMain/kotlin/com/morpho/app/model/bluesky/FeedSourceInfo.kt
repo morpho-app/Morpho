@@ -6,11 +6,11 @@ import app.bsky.feed.GeneratorView
 import app.bsky.feed.GetFeedGeneratorQuery
 import app.bsky.graph.GetListQuery
 import app.bsky.graph.ListView
+import com.morpho.app.model.uidata.ContentCardMapEntry
 import com.morpho.butterfly.*
 import dev.icerock.moko.parcelize.Parcelable
 import dev.icerock.moko.parcelize.Parcelize
 import kotlinx.serialization.Serializable
-
 
 
 @Serializable
@@ -118,6 +118,15 @@ sealed interface FeedSourceInfo: Parcelable {
         override val creatorHandle: Handle = Handle(displayName)
         override val feedDescriptor: FeedDescriptor = FeedDescriptor.Home
         override val type: Nsid = Nsid("app.morpho.feed.following")
+    }
+}
+
+fun FeedSourceInfo.toContentCardMapEntry(): ContentCardMapEntry {
+    return when(this) {
+        is FeedSourceInfo.FeedInfo -> ContentCardMapEntry.Feed(this.uri, this.displayName?: "", this.avatar)
+        FeedSourceInfo.Following -> ContentCardMapEntry.Home
+        FeedSourceInfo.Home -> ContentCardMapEntry.Home
+        is FeedSourceInfo.ListInfo -> ContentCardMapEntry.ListFeed(this.uri, this.displayName?: "", this.avatar)
     }
 }
 

@@ -12,6 +12,7 @@ sealed interface UIUpdate {
         val role: ComposerRole,
     ): UIUpdate
     data object Empty: UIUpdate
+    data object NoOp: UIUpdate
 }
 
 sealed interface SearchUpdate: UIUpdate {
@@ -42,15 +43,15 @@ sealed interface FeedUpdate<Data: MorphoDataItem.FeedItem>: UIUpdate {
 
     data class Error(val error: String): FeedUpdate<MorphoDataItem.FeedItem>
 
-    data class Feed<Data: MorphoDataItem.FeedItem>(
+    data class Feed(
         val info: FeedSourceInfo,
-        val feed: Flow<PagingData<Data>>,
-    ): FeedUpdate<Data>
+        val feed: Flow<PagingData<MorphoDataItem.FeedItem>>,
+    ): FeedUpdate<MorphoDataItem.FeedItem>
 
-    data class Peek<Data: MorphoDataItem.FeedItem>(
+    data class Peek(
         val info: FeedSourceInfo,
-        val post: Flow<Data>,
-    ): FeedUpdate<Data>
+        val post: Flow<MorphoDataItem.FeedItem>,
+    ): FeedUpdate<MorphoDataItem.FeedItem>
 }
 
 sealed interface AuthorFeedUpdate: UIUpdate {
@@ -59,15 +60,15 @@ sealed interface AuthorFeedUpdate: UIUpdate {
 
     data class Error(val error: String): AuthorFeedUpdate
 
-    data class Feed<Data: MorphoDataItem.FeedItem>(
+    data class Feed(
         val actor: AtIdentifier,
         val filter: AuthorFilter,
-        val feed: Flow<PagingData<Data>>,
+        val feed: Flow<PagingData<MorphoDataItem.FeedItem>>,
     ): AuthorFeedUpdate
 
-    data class Likes<Data: MorphoDataItem.FeedItem>(
+    data class Likes(
         val actor: AtIdentifier,
-        val feed: Flow<PagingData<Data>>,
+        val feed: Flow<PagingData<MorphoDataItem.FeedItem>>,
     ): AuthorFeedUpdate
 
     data class Lists(
@@ -90,4 +91,27 @@ sealed interface ThreadUpdate: UIUpdate {
     data class Thread(
         val results: Flow<BskyPostThread>,
     ): ThreadUpdate
+}
+
+sealed interface MyProfileUpdate: UIUpdate {
+    data object Empty: MyProfileUpdate
+
+    data class Error(val error: String): MyProfileUpdate
+    data object Editing: MyProfileUpdate
+    data object ExitEditing: MyProfileUpdate
+}
+
+sealed interface ActorUpdate: UIUpdate {
+    data object Empty : ActorUpdate
+
+    data class Error(val error: String) : ActorUpdate
+    data object Followed : ActorUpdate
+    data object Unfollowed : ActorUpdate
+    data object Muted : ActorUpdate
+    data object Unmuted : ActorUpdate
+    data object Blocked : ActorUpdate
+    data object Unblocked : ActorUpdate
+    data object Reported : ActorUpdate
+    data object Liked : ActorUpdate
+    data object Unliked : ActorUpdate
 }

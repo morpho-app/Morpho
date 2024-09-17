@@ -19,16 +19,21 @@ import kotlinx.coroutines.flow.map
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 
-abstract class Presenter<Data:MorphoDataItem, E: Event>: KoinComponent {
+abstract class Presenter<E: Event>: KoinComponent {
     val agent: MorphoAgent by inject()
     val presenterScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    abstract fun <E: Event> produceUpdates(events: Flow<E>): Flow<UIUpdate>
+}
+
+
+
+abstract class PagedPresenter<Data:MorphoDataItem, E: Event>: Presenter<E>() {
     abstract var pager: Pager<Cursor, Data>
-    abstract fun produceUpdates(events: Flow<E>): Flow<UIUpdate>
 }
 
 class UserListPresenter(
     val actor: AtIdentifier,
-): Presenter<MorphoDataItem.ListInfo, ListEvent>() {
+): PagedPresenter<MorphoDataItem.ListInfo, ListEvent>() {
     override var pager: Pager<Cursor, MorphoDataItem.ListInfo> = run {
         val pagingConfig = MorphoDataSource.defaultConfig
         Pager(pagingConfig) {
@@ -36,7 +41,7 @@ class UserListPresenter(
         }
     }
 
-    override fun produceUpdates(events: Flow<ListEvent>): Flow<UIUpdate> = events.map { event ->
+    override fun <E : Event> produceUpdates(events: Flow<E>): Flow<UIUpdate> = events.map { event ->
         when(event) {
             is FeedEvent.LoadLists -> AuthorFeedUpdate.Lists(actor, pager.flow.cachedIn(presenterScope))
             else -> AuthorFeedUpdate.Error("Unknown event type: $event")
@@ -81,7 +86,7 @@ class UserListFeedSource(
 
 class UserFeedsPresenter(
     val actor: AtIdentifier,
-): Presenter<MorphoDataItem.FeedInfo, ListEvent>() {
+): PagedPresenter<MorphoDataItem.FeedInfo, ListEvent>() {
     override var pager: Pager<Cursor, MorphoDataItem.FeedInfo> = run {
         val pagingConfig = MorphoDataSource.defaultConfig
         Pager(pagingConfig) {
@@ -89,7 +94,7 @@ class UserFeedsPresenter(
         }
     }
 
-    override fun produceUpdates(events: Flow<ListEvent>): Flow<UIUpdate> = events.map { event ->
+    override fun <E : Event> produceUpdates(events: Flow<E>): Flow<UIUpdate> = events.map { event ->
         when(event) {
             is FeedEvent.LoadLists -> AuthorFeedUpdate.Feeds(actor, pager.flow.cachedIn(presenterScope))
             else -> AuthorFeedUpdate.Error("Unknown event type: $event")

@@ -25,11 +25,11 @@ import com.morpho.app.data.stripPollOptionCharacters
 import com.morpho.app.model.bluesky.BskyFacet
 import com.morpho.app.model.bluesky.BskyPost
 import com.morpho.app.model.bluesky.FacetType
-import com.morpho.app.model.uidata.ContentHandling
 import com.morpho.app.ui.elements.RichTextElement
 import com.morpho.app.util.openBrowser
 import com.morpho.app.util.utf8Slice
 import com.morpho.butterfly.AtIdentifier
+import com.morpho.butterfly.ContentHandling
 import com.morpho.butterfly.Uri
 import kotlinx.coroutines.launch
 import org.koin.compose.getKoin

@@ -11,32 +11,33 @@ import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.core.annotation.ExperimentalVoyagerApi
 import cafe.adriel.voyager.core.model.rememberNavigatorScreenModel
+import cafe.adriel.voyager.core.model.screenModelScope
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import com.atproto.repo.StrongRef
+import com.morpho.app.data.MorphoAgent
 import com.morpho.app.model.bluesky.BskyPost
 import com.morpho.app.model.bluesky.BskyPostThread
 import com.morpho.app.model.bluesky.DraftPost
+import com.morpho.app.model.uidata.ThreadUpdate
 import com.morpho.app.model.uistate.ContentCardState
 import com.morpho.app.screens.base.tabbed.ProfileTab
 import com.morpho.app.screens.base.tabbed.TabScreen
 import com.morpho.app.screens.base.tabbed.ThreadTab
 import com.morpho.app.screens.main.MainScreenModel
-import com.morpho.app.ui.common.BottomSheetPostComposer
-import com.morpho.app.ui.common.ComposerRole
-import com.morpho.app.ui.common.RepostQueryDialog
-import com.morpho.app.ui.common.TabbedScreenScaffold
+import com.morpho.app.ui.common.*
 import com.morpho.app.ui.elements.doMenuOperation
 import com.morpho.app.ui.thread.ThreadFragment
 import com.morpho.app.util.ClipboardManager
+import com.morpho.butterfly.AtIdentifier
 import com.morpho.butterfly.AtUri
-import com.morpho.butterfly.Butterfly
+import com.morpho.butterfly.Did
 import com.morpho.butterfly.model.RecordType
 import com.morpho.butterfly.model.RecordUnion
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
-import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.launch
 import org.koin.compose.getKoin
 
@@ -45,11 +46,12 @@ import org.koin.compose.getKoin
 )
 @Composable
 fun TabScreen.ThreadViewContent(
-    threadState: StateFlow<ContentCardState.PostThread>,
+    cardState: ContentCardState.PostThread,
     navigator:Navigator = LocalNavigator.currentOrThrow,
 
 ) {
     val sm = navigator.rememberNavigatorScreenModel { MainScreenModel() }
+    val threadState by cardState.updates.filterIsInstance<ThreadUpdate>().collectAsState(ThreadUpdate.Empty)
 
     TabbedScreenScaffold(
         navBar = { navBar(navigator) },
@@ -59,15 +61,32 @@ fun TabScreen.ThreadViewContent(
         modifier = Modifier,
         state = threadState,
         content = { insets, state ->
-            if (state != null) {
-                state.value.thread.value?.let { thread ->
-                    ThreadView(
-                        thread,
-                        insets = insets,
-                        navigator = navigator,
-                        createRecord = { sm.createRecord(it) },
-                        deleteRecord = { type, uri -> sm.deleteRecord(type, uri) }
-                    )
+            when(state) {
+                is ThreadUpdate.Empty -> {
+                    LoadingCircle()
+                }
+
+                is ThreadUpdate.Error -> {
+                    Text("Error: ${state.error}")
+                }
+
+                is ThreadUpdate.Thread -> {
+                    val thread = state.results.collectAsState(null).value
+                    if(thread != null) {
+                        ThreadView(
+                            thread = thread,
+                            insets = insets,
+                            navigator = navigator,
+                            createRecord = { sm.screenModelScope.launch { sm.agent.createRecord(it) } },
+                            deleteRecord = { type, uri -> sm.screenModelScope.launch {
+                                sm.agent.deleteRecord(type, uri)
+                            } },
+                            resolveHandle = { handle -> sm.agent.resolveHandle(handle).getOrNull() }
+                        )
+                    }
+                }
+                else -> {
+                    Text("Unknown state: $state")
                 }
             }
 
@@ -96,6 +115,7 @@ fun ThreadView(
     navigator: Navigator = LocalNavigator.currentOrThrow,
     createRecord: (RecordUnion) -> Unit = {  },
     deleteRecord: (RecordType, AtUri) -> Unit = { _, _ ->  },
+    resolveHandle: suspend (AtIdentifier) -> Did?,
 ) {
     var repostClicked by remember { mutableStateOf(false)}
     var initialContent: BskyPost? by remember { mutableStateOf(null) }
@@ -111,7 +131,12 @@ fun ThreadView(
     ThreadFragment(thread = thread,
                    contentPadding = insets,
                    onItemClicked = { navigator.push(ThreadTab(it)) },
-                   onProfileClicked = { navigator.push(ProfileTab(it)) },
+                   onProfileClicked = {
+                       scope.launch {
+                           val did = resolveHandle(it)
+                           if(did != null) navigator.push(ProfileTab(did))
+                       }
+                   },
                    onUnClicked = {type, uri ->  deleteRecord(type, uri)},
                    onRepostClicked = {
                        initialContent = it
@@ -151,7 +176,7 @@ fun ThreadView(
         )
     }
     if(showComposer) {
-        val api = getKoin().get<Butterfly>()
+        val agent = getKoin().get<MorphoAgent>()
         BottomSheetPostComposer(
             onDismissRequest = { showComposer = false },
             sheetState = sheetState,
@@ -165,7 +190,7 @@ fun ThreadView(
             },
             onSend = { finishedDraft ->
                 scope.launch(Dispatchers.IO) {
-                    val post = finishedDraft.createPost(api)
+                    val post = finishedDraft.createPost(agent)
                     createRecord(RecordUnion.MakePost(post))
                 }
                 showComposer = false

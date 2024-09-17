@@ -27,44 +27,18 @@ open class BskyLabelService(
     val liked: Boolean,
     val likeUri: AtUri?,
     @TypeParceler<Moment, MomentParceler>()
-    override val indexedAt: Moment,
+    val indexedAt: Moment,
     val policies: List<BskyLabelDefinition>,
-    override val labels: List<BskyLabel>,
-): Profile {
-    override val did: Did
+    val labels: List<BskyLabel>,
+) {
+    val did: Did
         get() = creator?.did ?: Did("did:blank:did")
-    override val handle: Handle
+    val handle: Handle
         get() = creator?.handle ?: Handle("blank.handle")
-    override val displayName: String?
+    val displayName: String?
         get() = creator?.displayName
-    override val avatar: String?
+    val avatar: String?
         get() = creator?.avatar
-    override val mutedByMe: Boolean
-        get() = creator?.mutedByMe ?: false
-    override val mutedByList: UserListBasic?
-        get() = null
-    override val block: BlockRecord?
-        get() = null
-    override val blockedBy: Boolean
-        get() = false
-    override val blockingByList: UserListBasic?
-        get() = null
-    override val following: FollowRecord?
-        get() = null
-    override val followedBy: FollowRecord?
-        get() = null
-    override val numKnownFollowers: Long
-        get() = 0
-    override val knownFollowers: List<Profile>
-        get() = listOf()
-    override val associated: BskyProfileAssociated?
-        get() = null
-    override val createdAt: Moment?
-        get() = null
-    override val followingMe: Boolean
-        get() = false
-    override val followedByMe: Boolean
-        get() = false
 }
 
 public data object BlueskyHardcodedLabeler: BskyLabelService(

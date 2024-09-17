@@ -23,19 +23,16 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastAny
+import com.atproto.label.Blurs
 import com.atproto.repo.StrongRef
 import com.morpho.app.model.bluesky.*
-import com.morpho.app.model.uidata.ContentHandling
-import com.morpho.app.model.uidata.LabelDescription
-import com.morpho.app.model.uidata.LabelIcon
 import com.morpho.app.ui.common.OnPostClicked
 import com.morpho.app.ui.elements.*
 import com.morpho.app.ui.lists.FeedListEntryFragment
 import com.morpho.app.ui.lists.UserListEntryFragment
 import com.morpho.app.util.getFormattedDateTimeSince
 import com.morpho.app.util.openBrowser
-import com.morpho.butterfly.AtIdentifier
-import com.morpho.butterfly.AtUri
+import com.morpho.butterfly.*
 import com.morpho.butterfly.model.RecordType
 import kotlinx.collections.immutable.toImmutableList
 import morpho.app.ui.utils.indentLevel
@@ -95,7 +92,7 @@ fun PostFragment(
         val contentHandling = remember {
             if (post.author.mutedByMe) {
                 getContentHandling(post) + ContentHandling(
-                    scope = LabelScope.Content,
+                    scope = Blurs.CONTENT,
                     id = "muted",
                     icon = LabelIcon.EyeSlash(labelerAvatar = null),
                     action = LabelAction.Blur,
@@ -125,7 +122,7 @@ fun PostFragment(
         ) {
             ContentHider(
                 reasons = contentHandling,
-                scope = LabelScope.Content,
+                scope = Blurs.CONTENT,
             ) {
                 Row(
                     modifier = Modifier.padding(end = 6.dp)
@@ -350,7 +347,7 @@ inline fun ColumnScope.PostFeatureElement(
         is BskyPostFeature.ImagesFeature -> {
             ContentHider(
                 reasons = contentHandling,
-                scope = LabelScope.Media,
+                scope = Blurs.MEDIA,
                 modifier = Modifier.padding(horizontal = 2.dp)
             ) {
                 PostImages(imagesFeature = feature,
@@ -361,7 +358,7 @@ inline fun ColumnScope.PostFeatureElement(
         is BskyPostFeature.MediaRecordFeature -> {
             ContentHider(
                 reasons = contentHandling,
-                scope = LabelScope.Media,
+                scope = Blurs.MEDIA,
             ) {
                 RecordFeature(
                     record = feature.record,
@@ -376,7 +373,7 @@ inline fun ColumnScope.PostFeatureElement(
         is BskyPostFeature.RecordFeature -> {
             ContentHider(
                 reasons = contentHandling,
-                scope = LabelScope.Content,
+                scope = Blurs.MEDIA,
             ) {
                 RecordFeature(
                     record = feature.record,
@@ -390,7 +387,7 @@ inline fun ColumnScope.PostFeatureElement(
         is BskyPostFeature.VideoFeature -> {
             ContentHider(
                 reasons = contentHandling,
-                scope = LabelScope.Media,
+                scope = Blurs.MEDIA,
             ) {
                 VideoEmbedThumb(
                     video = feature.video,
@@ -425,7 +422,7 @@ inline fun ColumnScope.RecordFeature(
 
         ContentHider(
             reasons = contentHandling,
-            scope = LabelScope.Media,
+            scope = Blurs.MEDIA,
             modifier = Modifier
                 .padding(horizontal = 2.dp)
                 .align(Alignment.CenterHorizontally)
@@ -463,7 +460,7 @@ inline fun ColumnScope.RecordFeature(
     if(record != null) {
         ContentHider(
             reasons = contentHandling,
-            scope = LabelScope.Content,
+            scope = Blurs.CONTENT,
             modifier = Modifier.align(Alignment.CenterHorizontally)
         ) {
             when (record) {
