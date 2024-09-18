@@ -11,11 +11,21 @@ import com.morpho.app.data.MorphoAgent
 import com.morpho.app.model.bluesky.BskyPost
 import com.morpho.app.model.bluesky.NotificationsSource
 import com.morpho.app.model.bluesky.toPost
-import com.morpho.app.model.uidata.*
+import com.morpho.app.model.uidata.ContentLabelService
+import com.morpho.app.model.uidata.Event
+import com.morpho.app.model.uidata.MyProfilePresenter
+import com.morpho.app.model.uidata.ProfilePresenter
+import com.morpho.app.model.uidata.UIUpdate
 import com.morpho.butterfly.AtUri
 import com.morpho.butterfly.Did
 import kotlinx.coroutines.channels.BufferOverflow
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
@@ -62,10 +72,10 @@ open class BaseScreenModel : ScreenModel, KoinComponent {
         if(!init) emit(Pair(presenter, MutableStateFlow(UIUpdate.Empty)))
         else {
             val stateFlow = MutableStateFlow<UIUpdate>(UIUpdate.Empty)
-            emit(Pair(presenter, stateFlow))
             screenModelScope.launch {
                 stateFlow.emitAll(presenter.produceUpdates(eventStream))
             }
+            emit(Pair(presenter, stateFlow))
         }
     }
 
@@ -77,10 +87,11 @@ open class BaseScreenModel : ScreenModel, KoinComponent {
         if(!init) emit(Pair(presenter, MutableStateFlow(UIUpdate.Empty)))
         else {
             val stateFlow = MutableStateFlow<UIUpdate>(UIUpdate.Empty)
-            emit(Pair(presenter, stateFlow))
             screenModelScope.launch {
                 stateFlow.emitAll(presenter.produceUpdates(eventStream))
             }
+            emit(Pair(presenter, stateFlow))
+
         }
     }
 

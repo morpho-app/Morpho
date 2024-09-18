@@ -9,6 +9,7 @@ import kotlinx.parcelize.Parceler
 import kotlinx.parcelize.Parcelize
 import kotlinx.parcelize.RawValue
 import kotlinx.parcelize.TypeParceler
+import java.util.Locale
 
 actual typealias CommonParcelize = Parcelize
 actual typealias CommonParcelable = Parcelable
@@ -34,3 +35,10 @@ class AndroidPlatform : Platform {
 
 actual fun getPlatform(): Platform = AndroidPlatform()
 
+
+
+actual val myLang:String?
+    get() = Locale.getDefault().language
+
+actual val myCountry:String?
+    get() = Locale.getDefault().country

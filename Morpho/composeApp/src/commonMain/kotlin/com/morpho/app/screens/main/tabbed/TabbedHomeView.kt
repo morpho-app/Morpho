@@ -118,9 +118,7 @@ fun TabScreen.TabbedHomeView(
         ) {
 
             List(sm.tabs.size) { index ->
-                val uri = sm.tabs[index].uri
-                val desc = sm.feedPresenters[uri]?.descriptor
-                desc?.let { FeedEvent.Load(it) }?.let { sm.sendGlobalEvent(it) }
+
                 HomeSkylineTab(
                     index = index.toUShort(),
                     title = sm.tabs[index].title,
@@ -146,6 +144,7 @@ fun TabScreen.TabbedHomeView(
                             tabIndex = selectedTabIndex,
                             onChanged = { index ->
                                 if (index == selectedTabIndex) return@HomeTabRow
+
                                 if(index < selectedTabIndex) {
                                     if (nav.items.contains(tabs[index])) {
                                         nav.popUntil {it == tabs[index] }
@@ -158,6 +157,7 @@ fun TabScreen.TabbedHomeView(
                         )
                     },
                     content = { insets, state ->
+
                         SkylineTabTransition(nav, sm, insets, state)
                     },
                     modifier = Modifier,
@@ -273,7 +273,11 @@ data class HomeSkylineTab @OptIn(ExperimentalVoyagerApi::class) constructor(
         state: ContentCardState<E>?,
         modifier: Modifier
     ) {
+        val presenter = sm.feedPresenters[state?.uri]
+        val desc = presenter?.descriptor
         if(state == null) return
+        desc?.let { FeedEvent.Load(it) }?.let { event -> sm.sendGlobalEvent(event) }
+
         TabbedSkylineFragment(
             paddingValues = paddingValues,
             isProfileFeed = false,

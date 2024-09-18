@@ -11,8 +11,10 @@ import com.morpho.app.model.uistate.ContentCardState
 import com.morpho.app.model.uistate.ListsOrFeeds
 import com.morpho.butterfly.Did
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.merge
+import kotlinx.coroutines.launch
 import org.lighthousegames.logging.logging
 
 class MyProfilePresenter(
@@ -23,23 +25,45 @@ class MyProfilePresenter(
     val postsPresenter = FeedPresenter<FeedEvent>(
         descriptor = FeedDescriptor.Author(profileState.profile.did, AuthorFilter.PostsNoReplies)
     )
-    val postsUpdates: Flow<UIUpdate> = postsPresenter.produceUpdates(profileState.events)
+
     val postRepliesPresenter = FeedPresenter<FeedEvent>(
         descriptor = FeedDescriptor.Author(profileState.profile.did, AuthorFilter.PostsWithReplies)
     )
-    val postRepliesUpdates: Flow<UIUpdate> = postRepliesPresenter.produceUpdates(profileState.events)
     val mediaPresenter = FeedPresenter<FeedEvent>(
         descriptor = FeedDescriptor.Author(profileState.profile.did, AuthorFilter.PostsWithMedia)
     )
-    val mediaUpdates: Flow<UIUpdate> = mediaPresenter.produceUpdates(profileState.events)
     val likesPresenter = FeedPresenter<FeedEvent>(
         descriptor = FeedDescriptor.Likes(profileState.profile.did)
     )
-    val likesUpdates: Flow<UIUpdate> = likesPresenter.produceUpdates(profileState.events)
     val listsPresenter = UserListPresenter(profileState.profile.did)
-    val listsUpdates: Flow<UIUpdate> = listsPresenter.produceUpdates(profileState.events)
     val feedsPresenter = UserFeedsPresenter(profileState.profile.did)
-    val feedsUpdates: Flow<UIUpdate> = feedsPresenter.produceUpdates(profileState.events)
+
+    init {
+        presenterScope.launch {
+            profileState.posts.updates.emitAll(
+                postsPresenter.produceUpdates(merge(profileState.events, profileState.posts.events)))
+        }
+        presenterScope.launch {
+            profileState.postReplies.updates.emitAll(
+                postRepliesPresenter.produceUpdates(merge(profileState.events, profileState.postReplies.events)))
+        }
+        presenterScope.launch {
+            profileState.media.updates.emitAll(mediaPresenter
+                .produceUpdates(merge(profileState.events, profileState.media.events)))
+        }
+        presenterScope.launch {
+            profileState.likes.updates.emitAll(likesPresenter
+                .produceUpdates(merge(profileState.events, profileState.likes.events)))
+        }
+        if(profileState.lists != null) presenterScope.launch {
+            profileState.lists.updates.emitAll(listsPresenter
+                .produceUpdates(merge(profileState.events, profileState.lists.events)))
+        }
+        if(profileState.feeds != null) presenterScope.launch {
+            profileState.feeds.updates.emitAll(feedsPresenter
+                .produceUpdates(merge(profileState.events, profileState.feeds.events)))
+        }
+    }
 
     companion object {
         val log = logging("ProfilePresenter")
@@ -84,7 +108,7 @@ class MyProfilePresenter(
     override fun <E : Event> produceUpdates(events: Flow<E>): Flow<UIUpdate> {
         val did = profileState.profile.did
         val combined = merge(events, profileState.events)
-        val profileUpdates = combined.map { event ->
+        return combined.map { event ->
             when (event) {
 
                 is Event.ComposePost -> UIUpdate.OpenComposer(event.post, event.role)
@@ -95,10 +119,6 @@ class MyProfilePresenter(
                 }
             }
         } as Flow<UIUpdate>
-        return merge(
-            profileUpdates, postsUpdates, postRepliesUpdates, mediaUpdates,
-            likesUpdates, listsUpdates, feedsUpdates
-        )
     }
 }
 
@@ -110,20 +130,38 @@ class ProfilePresenter(
     val postsPresenter = FeedPresenter<FeedEvent>(
         descriptor = FeedDescriptor.Author(profileState.profile.did, AuthorFilter.PostsNoReplies)
     )
-    val postsUpdates: Flow<UIUpdate> = postsPresenter.produceUpdates(profileState.events)
+
     val postRepliesPresenter = FeedPresenter<FeedEvent>(
         descriptor = FeedDescriptor.Author(profileState.profile.did, AuthorFilter.PostsWithReplies)
     )
-    val postRepliesUpdates: Flow<UIUpdate> = postRepliesPresenter.produceUpdates(profileState.events)
     val mediaPresenter = FeedPresenter<FeedEvent>(
         descriptor = FeedDescriptor.Author(profileState.profile.did, AuthorFilter.PostsWithMedia)
     )
-    val mediaUpdates: Flow<UIUpdate> = mediaPresenter.produceUpdates(profileState.events)
     val listsPresenter = UserListPresenter(profileState.profile.did)
-    val listsUpdates: Flow<UIUpdate> = listsPresenter.produceUpdates(profileState.events)
     val feedsPresenter = UserFeedsPresenter(profileState.profile.did)
-    val feedsUpdates: Flow<UIUpdate> = feedsPresenter.produceUpdates(profileState.events)
 
+    init {
+        presenterScope.launch {
+            profileState.posts.updates.emitAll(
+                postsPresenter.produceUpdates(merge(profileState.events, profileState.posts.events)))
+        }
+        presenterScope.launch {
+            profileState.postReplies.updates.emitAll(
+                postRepliesPresenter.produceUpdates(merge(profileState.events, profileState.postReplies.events)))
+        }
+        presenterScope.launch {
+            profileState.media.updates.emitAll(mediaPresenter
+                .produceUpdates(merge(profileState.events, profileState.media.events)))
+        }
+        if(profileState.lists != null) presenterScope.launch {
+            profileState.lists.updates.emitAll(listsPresenter
+                .produceUpdates(merge(profileState.events, profileState.lists.events)))
+        }
+        if(profileState.feeds != null) presenterScope.launch {
+            profileState.feeds.updates.emitAll(feedsPresenter
+                .produceUpdates(merge(profileState.events, profileState.feeds.events)))
+        }
+    }
     companion object {
         val log = logging("ProfilePresenter")
         suspend fun initialize(
@@ -168,7 +206,7 @@ class ProfilePresenter(
     override fun <E : Event> produceUpdates(events: Flow<E>): Flow<UIUpdate> {
         val did = profileState.profile.did
         val combined = merge(events, profileState.events)
-        val profileUpdates = combined.map { event ->
+        return combined.map { event ->
             when (event) {
                 is ProfileEvent.Block -> if(did == event.subject) {
                     agent.block(event.subject)
@@ -224,9 +262,5 @@ class ProfilePresenter(
                 }
             }
         } as Flow<UIUpdate>
-        return merge(
-            profileUpdates, postsUpdates, postRepliesUpdates,
-            mediaUpdates, listsUpdates, feedsUpdates
-        )
     }
 }

@@ -1,7 +1,19 @@
 package com.morpho.app.model.uistate
 
-import com.morpho.app.model.bluesky.*
-import com.morpho.app.model.uidata.*
+import com.morpho.app.model.bluesky.AuthorFilter
+import com.morpho.app.model.bluesky.BskyLabelService
+import com.morpho.app.model.bluesky.BskyList
+import com.morpho.app.model.bluesky.BskyPost
+import com.morpho.app.model.bluesky.DetailedProfile
+import com.morpho.app.model.bluesky.Profile
+import com.morpho.app.model.uidata.Event
+import com.morpho.app.model.uidata.FeedEvent
+import com.morpho.app.model.uidata.FeedUpdate
+import com.morpho.app.model.uidata.LabelerEvent
+import com.morpho.app.model.uidata.ListEvent
+import com.morpho.app.model.uidata.ListPageEvent
+import com.morpho.app.model.uidata.ThreadEvent
+import com.morpho.app.model.uidata.UIUpdate
 import com.morpho.app.util.MutableSharedFlowSerializer
 import com.morpho.app.util.MutableStateFlowSerializer
 import com.morpho.butterfly.AtUri
@@ -27,7 +39,9 @@ sealed interface ContentCardState<E: Event> {
             extraBufferCapacity = 10,
             onBufferOverflow = BufferOverflow.DROP_OLDEST),
         override val updates: MutableStateFlow<UIUpdate> = MutableStateFlow(FeedUpdate.Empty),
-    ) : ContentCardState<FeedEvent>
+    ) : ContentCardState<FeedEvent> {
+
+    }
 
     @Serializable
     data class PostThread(

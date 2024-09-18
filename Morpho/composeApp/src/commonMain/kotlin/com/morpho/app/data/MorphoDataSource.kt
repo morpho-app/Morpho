@@ -30,21 +30,23 @@ import kotlin.time.Duration
 abstract class MorphoDataSource<Data:Any>: PagingSource<Cursor, Data>(), KoinComponent {
     val agent: MorphoAgent by inject()
     val moderator: ContentLabelService by inject()
-    override val keyReuseSupported: Boolean = true
+    //override val keyReuseSupported: Boolean = true
 
     override fun getRefreshKey(state: PagingState<Cursor, Data>): Cursor? {
         return state.anchorPosition?.let { anchorPosition ->
             val anchorPage = state.closestPageToPosition(anchorPosition)
-            if (anchorPage?.prevKey == null) return Cursor.Empty // First page
+            if(anchorPage?.prevKey == null && anchorPage?.nextKey == null) null
+            else if (anchorPage.prevKey == null) anchorPage.nextKey // First page
             else if (anchorPage.nextKey == null) anchorPage.prevKey // Last page
-            else anchorPage.prevKey // Initial page
+            else anchorPage.nextKey // Initial page
         }
     }
+
     companion object {
         val defaultConfig = PagingConfig(
-            pageSize = 20,
-            prefetchDistance = 10,
-            initialLoadSize = 50,
+            pageSize = 50,
+            prefetchDistance = 20,
+            initialLoadSize = 100,
             enablePlaceholders = true,
         )
     }
@@ -93,7 +95,7 @@ data class MorphoFeedSource<Data : MorphoDataItem.FeedItem>(
                     data = tunedList.toList(),
                     prevKey = when(params) {
                         is LoadParams.Append -> loadCursor
-                        is LoadParams.Prepend -> Cursor.Empty
+                        is LoadParams.Prepend -> null
                         is LoadParams.Refresh -> Cursor.Empty
                     },
                     nextKey = pagedList.cursor,

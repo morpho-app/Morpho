@@ -3,7 +3,7 @@ package com.morpho.app.di
 import com.morpho.app.data.MorphoAgent
 import com.morpho.app.data.PollBlueService
 import com.morpho.app.data.PreferencesRepository
-import com.morpho.app.model.uidata.*
+import com.morpho.app.model.uidata.ContentLabelService
 import com.morpho.app.screens.base.BaseScreenModel
 import com.morpho.app.screens.login.LoginScreenModel
 import com.morpho.app.screens.main.MainScreenModel
@@ -44,9 +44,9 @@ val dataModule = module {
     single<MorphoAgent> { MorphoAgent() }
     single<ContentLabelService> { ContentLabelService() }
     single<PollBlueService> { PollBlueService() }
-    factory<UserListPresenter> { p -> UserListPresenter(p.get()) }
-    factory<UserFeedsPresenter> { p -> UserFeedsPresenter(p.get()) }
-    factory<FeedPresenter<FeedEvent>> { p -> FeedPresenter(p.get()) }
+    //factory<UserListPresenter> { p -> UserListPresenter(p.get()) }
+    //factory<UserFeedsPresenter> { p -> UserFeedsPresenter(p.get()) }
+    //factory<FeedPresenter<FeedEvent>> { p -> FeedPresenter(p.get()) }
 }
 
 @Suppress("MemberVisibilityCanBePrivate")

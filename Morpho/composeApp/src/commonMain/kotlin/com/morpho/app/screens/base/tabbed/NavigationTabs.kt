@@ -1,7 +1,11 @@
 package com.morpho.app.screens.base.tabbed
 
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.DynamicFeed
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.NotificationsNone
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -9,15 +13,21 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import cafe.adriel.voyager.core.annotation.ExperimentalVoyagerApi
+import cafe.adriel.voyager.core.lifecycle.LifecycleEffectOnce
 import cafe.adriel.voyager.core.model.rememberNavigatorScreenModel
+import cafe.adriel.voyager.core.model.screenModelScope
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.core.screen.ScreenKey
 import cafe.adriel.voyager.core.screen.uniqueScreenKey
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.currentOrThrow
+import com.morpho.app.model.uidata.MyProfilePresenter
 import com.morpho.app.screens.main.tabbed.TabbedHomeView
 import com.morpho.app.screens.main.tabbed.TabbedMainScreenModel
 import com.morpho.app.screens.notifications.NotificationViewContent
@@ -30,6 +40,8 @@ import com.morpho.butterfly.AtUri
 import com.morpho.butterfly.Did
 import dev.icerock.moko.parcelize.Parcelable
 import dev.icerock.moko.parcelize.Parcelize
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
@@ -283,15 +295,20 @@ data object MyProfileTab: TabScreen {
     override val navBar: @Composable (@Contextual Navigator) -> Unit = { n ->
         TabbedNavBar(options.index, n)
     }
-    @OptIn(ExperimentalMaterial3Api::class)
+    @OptIn(ExperimentalMaterial3Api::class, ExperimentalVoyagerApi::class)
     @Composable
     override fun Content() {
         val sm = LocalNavigator.currentOrThrow.rememberNavigatorScreenModel { TabbedMainScreenModel() }
         val eventStream = sm.globalEvents
-        val myProfilePresenter by  sm.getMyProfilePresenter().collectAsState(null)
+        var myProfilePresenter by remember { mutableStateOf<MyProfilePresenter?>(null) }
+        LifecycleEffectOnce {
+            sm.screenModelScope.launch {
+                sm.getMyProfilePresenter().first().also { it -> myProfilePresenter = it.first }
+            }
+        }
         if(myProfilePresenter != null) {
 
-            val myProfileState = myProfilePresenter!!.first.profileState
+            val myProfileState = myProfilePresenter!!.profileState
             TabbedProfileContent(
                 ownProfile = true,
                 profileState = null,

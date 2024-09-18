@@ -5,9 +5,19 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.SecondaryScrollableTabRow
+import androidx.compose.material3.Tab
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.TopAppBarScrollBehavior
+import androidx.compose.material3.rememberTopAppBarState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.unit.dp
@@ -21,6 +31,7 @@ import cafe.adriel.voyager.navigator.tab.TabDisposable
 import cafe.adriel.voyager.navigator.tab.TabNavigator
 import cafe.adriel.voyager.navigator.tab.TabOptions
 import coil3.annotation.ExperimentalCoilApi
+import com.morpho.app.model.bluesky.FeedDescriptor
 import com.morpho.app.model.uidata.Event
 import com.morpho.app.model.uidata.FeedEvent
 import com.morpho.app.model.uistate.ContentCardState
@@ -150,12 +161,12 @@ fun TabScreen.TabbedProfileContent(
     eventCallback: (Event) -> Unit = {},
 ) {
     //ProvideNavigatorLifecycleKMPSupport {
-        val navigator = LocalNavigator.currentOrThrow
-        var selectedTabIndex by rememberSaveable { mutableIntStateOf(0) }
-        val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior(rememberTopAppBarState())
-        val tabs = remember(myProfileState, profileState) {
-            if(ownProfile) myProfileState.toTabList() else profileState?.toTabList() ?: listOf()
-        }
+    val navigator = LocalNavigator.currentOrThrow
+    var selectedTabIndex by rememberSaveable { mutableIntStateOf(0) }
+    val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior(rememberTopAppBarState())
+    val tabs = remember(myProfileState, profileState) {
+        if (ownProfile) myProfileState.toTabList() else profileState?.toTabList() ?: listOf()
+    }
     TabNavigator(
         tab = tabs.first(),
         disposeNestedNavigators = true,
@@ -165,47 +176,33 @@ fun TabScreen.TabbedProfileContent(
             navBar = { navBar(navigator) },
             modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
             topContent = {
-                if(ownProfile) MyTabbedProfileTopBar(
-                    profile = myProfileState,
-                    scrollBehavior = scrollBehavior,
-                    tabs = tabs,
-                    onBackClicked = { navigator.pop() },
-                    onTabChanged = { index ->
-                        selectedTabIndex = index
-                        val state = myProfileState.indexToState(index)
-                        val actor = myProfileState.profile.did
-                        when(state) {
-                            is ContentCardState.ProfileTimeline -> state.events
-                                .tryEmit(FeedEvent.LoadFeed(actor, state.filter))
-                            is ContentCardState.ProfileList -> state.events
-                                .tryEmit(FeedEvent.LoadLists(actor, state.listsOrFeeds))
-                            is ContentCardState.ProfileLabeler -> {}
-                            else -> {}
-                        }
-                    },
-                    tabIndex = selectedTabIndex,
-                ) else if(profileState != null) TabbedProfileTopBar(
-                    profile = profileState,
-                    scrollBehavior = scrollBehavior,
-                    tabs = tabs,
-                    onBackClicked = { navigator.pop() },
-                    onTabChanged = { index ->
-                        selectedTabIndex = index
-                        val state = profileState.indexToState(index)
-                        val actor = profileState.profile.did
-                        when(state) {
-                            is ContentCardState.ProfileTimeline -> state.events
-                                .tryEmit(FeedEvent.LoadFeed(actor, state.filter))
-                            is ContentCardState.ProfileList -> state.events
-                                .tryEmit(FeedEvent.LoadLists(actor, state.listsOrFeeds))
-                            is ContentCardState.ProfileLabeler -> {}
-                            else -> {}
-                        }
-                    },
-                    tabIndex = selectedTabIndex,
-                ) else LoadingCircle()
+                if(ownProfile) {
+                    MyTabbedProfileTopBar(
+                        profile = myProfileState,
+                        scrollBehavior = scrollBehavior,
+                        tabs = tabs,
+                        onBackClicked = { navigator.pop() },
+                        onTabChanged = { index ->
+                            selectedTabIndex = index
+                        },
+                        tabIndex = selectedTabIndex,
+                    )
+                } else if(profileState != null) {
+                    TabbedProfileTopBar(
+                        profile = profileState,
+                        scrollBehavior = scrollBehavior,
+                        tabs = tabs,
+                        onBackClicked = { navigator.pop() },
+                        onTabChanged = { index ->
+                            selectedTabIndex = index
+                        },
+                        tabIndex = selectedTabIndex,
+                    )
+                }else LoadingCircle()
             },
-            content = { insets, state -> CurrentProfileScreen(eventCallback, insets, state, Modifier) },
+            content = { insets, state ->
+                CurrentProfileScreen(eventCallback, insets, state, Modifier)
+            },
             state = if(ownProfile) myProfileState.indexToState(selectedTabIndex)
                 else profileState?.indexToState(selectedTabIndex),
             scrollBehavior = scrollBehavior,
@@ -271,6 +268,15 @@ data class ProfileSkylineTab(
         modifier: Modifier
     ) {
         if(state == null) return
+        when(state) {
+            is ContentCardState.ProfileTimeline -> if(state.filter != null) {
+                state.events.tryEmit(FeedEvent.Load(FeedDescriptor.Author(state.profile.did, state.filter)))
+            } else state.events.tryEmit(FeedEvent.Load(FeedDescriptor.Likes(state.profile.did)))
+            is ContentCardState.ProfileList -> state.events
+                .tryEmit(FeedEvent.LoadLists(state.profile.did, state.listsOrFeeds))
+            is ContentCardState.ProfileLabeler -> {}
+            else -> {}
+        }
         TabbedSkylineFragment(
             paddingValues,
             isProfileFeed = true,

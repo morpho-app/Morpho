@@ -17,6 +17,7 @@ import com.morpho.butterfly.Cursor
 import com.morpho.butterfly.FeedRequest
 import com.morpho.butterfly.PagedResponse
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.map
 
 
@@ -36,7 +37,9 @@ class FeedPresenter<E: FeedEvent>(
 
 
 
-    override fun <E: Event> produceUpdates(events: Flow<E>): Flow<UIUpdate> = events.map { event ->
+    override fun <E: Event> produceUpdates(events: Flow<E>): Flow<UIUpdate> = events.filter {
+        it is FeedEvent.Load && it.descriptor == descriptor
+    }.map { event ->
         when(event) {
             is FeedEvent.Load -> {
                 when(event.descriptor) {
