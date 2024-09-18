@@ -55,11 +55,11 @@ open class MainScreenModel: BaseScreenModel() {
 
             screenModelScope.launch {
                 for(source in feedSources) {
-                    val entry = feedStates[source.uri]?: return@launch
-                    val presenter = feedPresenters[source.uri] ?: return@launch
+                    val cardState = feedStates[source.uri]?: continue
+                    val presenter = feedPresenters[source.uri] ?: continue
                     screenModelScope.launch {
-                        entry.updates.emitAll(
-                            presenter.produceUpdates(merge(globalEvents, entry.events))
+                        cardState.updates.emitAll(
+                            presenter.produceUpdates(merge(globalEvents, cardState.events))
                         )
                     }
                 }
