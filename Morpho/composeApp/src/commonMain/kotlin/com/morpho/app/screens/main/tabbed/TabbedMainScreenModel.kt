@@ -28,7 +28,6 @@ class TabbedMainScreenModel : MainScreenModel() {
     val timelineIndex = agent.prefs.timelineIndex ?: agent.prefs.saved.indexOfFirst {
         it.type == FeedType.TIMELINE
     }.let { if(it == -1) 0 else it }
-    val lastPinnedIndex = agent.prefs.saved.indexOfLast { it.pinned }
 
     var loaded by mutableStateOf(false)
 
@@ -42,10 +41,10 @@ class TabbedMainScreenModel : MainScreenModel() {
             while(!initialized) {
                 delay(10)
             }
-            for(i in 0 ..  lastPinnedIndex) {
-                val source = feedSources[i]
-                tabs.add(source.toContentCardMapEntry())
+            feedSources.filter { it.pinned == true }.forEach {
+                tabs.add(it.toContentCardMapEntry())
             }
+            loaded = true
 
         }
 

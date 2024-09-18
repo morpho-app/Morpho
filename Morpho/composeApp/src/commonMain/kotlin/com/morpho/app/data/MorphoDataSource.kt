@@ -4,7 +4,11 @@ import androidx.compose.ui.util.fastAny
 import app.cash.paging.PagingConfig
 import app.cash.paging.PagingSource
 import app.cash.paging.PagingState
-import com.morpho.app.model.bluesky.*
+import com.morpho.app.model.bluesky.BskyPostReason
+import com.morpho.app.model.bluesky.BskyPostThread
+import com.morpho.app.model.bluesky.MorphoDataItem
+import com.morpho.app.model.bluesky.ThreadPost
+import com.morpho.app.model.bluesky.toPost
 import com.morpho.app.model.uidata.ContentLabelService
 import com.morpho.app.model.uidata.Delta
 import com.morpho.app.model.uidata.Moment
@@ -26,6 +30,7 @@ import kotlin.time.Duration
 abstract class MorphoDataSource<Data:Any>: PagingSource<Cursor, Data>(), KoinComponent {
     val agent: MorphoAgent by inject()
     val moderator: ContentLabelService by inject()
+    override val keyReuseSupported: Boolean = true
 
     override fun getRefreshKey(state: PagingState<Cursor, Data>): Cursor? {
         return state.anchorPosition?.let { anchorPosition ->
@@ -85,7 +90,7 @@ data class MorphoFeedSource<Data : MorphoDataItem.FeedItem>(
                     is PagedResponse.Profile -> pagedList.items
                 }
                 LoadResult.Page(
-                    data = tunedList as List<Data>,
+                    data = tunedList.toList(),
                     prevKey = when(params) {
                         is LoadParams.Append -> loadCursor
                         is LoadParams.Prepend -> Cursor.Empty

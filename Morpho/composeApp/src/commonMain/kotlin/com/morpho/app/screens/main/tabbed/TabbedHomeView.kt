@@ -10,11 +10,24 @@ import androidx.compose.animation.core.spring
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
-import androidx.compose.foundation.layout.*
-import androidx.compose.material3.*
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.SecondaryScrollableTabRow
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRowDefaults
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
-import androidx.compose.runtime.*
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.IntOffset
@@ -33,6 +46,7 @@ import cafe.adriel.voyager.transitions.ScreenTransition
 import cafe.adriel.voyager.transitions.ScreenTransitionContent
 import coil3.annotation.ExperimentalCoilApi
 import com.morpho.app.model.uidata.Event
+import com.morpho.app.model.uidata.FeedEvent
 import com.morpho.app.model.uistate.ContentCardState
 import com.morpho.app.screens.base.tabbed.TabScreen
 import com.morpho.app.ui.common.LoadingCircle
@@ -99,11 +113,14 @@ fun TabScreen.TabbedHomeView(
 
         var selectedTabIndex by rememberSaveable { mutableIntStateOf(sm.timelineIndex) }
 
-
         val tabs = remember(
             sm.tabs, sm.loaded, sm.tabs.size
         ) {
+
             List(sm.tabs.size) { index ->
+                val uri = sm.tabs[index].uri
+                val desc = sm.feedPresenters[uri]?.descriptor
+                desc?.let { FeedEvent.Load(it) }?.let { sm.sendGlobalEvent(it) }
                 HomeSkylineTab(
                     index = index.toUShort(),
                     title = sm.tabs[index].title,
@@ -135,6 +152,7 @@ fun TabScreen.TabbedHomeView(
                                     } else nav.replace(tabs[index])
                                 } else if(index > selectedTabIndex) nav.push(tabs[index])
                                 selectedTabIndex = index
+
                             }
 
                         )

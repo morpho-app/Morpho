@@ -5,7 +5,13 @@ package com.morpho.app.model.bluesky
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.text.intl.Locale
 import app.bsky.actor.Visibility
-import com.atproto.label.*
+import com.atproto.label.Blurs
+import com.atproto.label.DefaultSetting
+import com.atproto.label.Label
+import com.atproto.label.LabelValueDefinition
+import com.atproto.label.LabelValues
+import com.atproto.label.SelfLabel
+import com.atproto.label.Severity
 import com.morpho.app.model.uidata.MaybeMomentParceler
 import com.morpho.app.model.uidata.Moment
 import com.morpho.app.model.uidata.MomentParceler
@@ -78,20 +84,20 @@ data class BskyLabel(
         return result
     }
 
-    fun getLabelValue(): LabelValue? {
+    fun getLabelValue(): LabelValues? {
         return when (value) {
-            LabelValue.PORN.value -> LabelValue.PORN
-            LabelValue.GORE.value -> LabelValue.GORE
-            LabelValue.NSFL.value -> LabelValue.NSFL
-            LabelValue.SEXUAL.value -> LabelValue.SEXUAL
-            LabelValue.GRAPHIC_MEDIA.value -> LabelValue.GRAPHIC_MEDIA
-            LabelValue.NUDITY.value -> LabelValue.NUDITY
-            LabelValue.DOXXING.value -> LabelValue.DOXXING
-            LabelValue.DMCA_VIOLATION.value -> LabelValue.DMCA_VIOLATION
-            LabelValue.NO_PROMOTE.value -> LabelValue.NO_PROMOTE
-            LabelValue.NO_UNAUTHENTICATED.value -> LabelValue.NO_UNAUTHENTICATED
-            LabelValue.WARN.value -> LabelValue.WARN
-            LabelValue.HIDE.value -> LabelValue.HIDE
+            LabelValues.PORN.value -> LabelValues.PORN
+            LabelValues.GORE.value -> LabelValues.GORE
+            LabelValues.NSFL.value -> LabelValues.NSFL
+            LabelValues.SEXUAL.value -> LabelValues.SEXUAL
+            LabelValues.GRAPHIC_MEDIA.value -> LabelValues.GRAPHIC_MEDIA
+            LabelValues.NUDITY.value -> LabelValues.NUDITY
+            LabelValues.DOXXING.value -> LabelValues.DOXXING
+            LabelValues.DMCA_VIOLATION.value -> LabelValues.DMCA_VIOLATION
+            LabelValues.NO_PROMOTE.value -> LabelValues.NO_PROMOTE
+            LabelValues.NO_UNAUTHENTICATED.value -> LabelValues.NO_UNAUTHENTICATED
+            LabelValues.WARN.value -> LabelValues.WARN
+            LabelValues.HIDE.value -> LabelValues.HIDE
             else -> null
         }
     }
@@ -106,6 +112,8 @@ enum class LabelSetting {
     WARN,
     @SerialName("hide")
     HIDE,
+    @SerialName("show")
+    SHOW,
 }
 
 fun DefaultSetting.toLabelSetting(): LabelSetting {
@@ -113,13 +121,14 @@ fun DefaultSetting.toLabelSetting(): LabelSetting {
         DefaultSetting.IGNORE -> LabelSetting.IGNORE
         DefaultSetting.WARN -> LabelSetting.WARN
         DefaultSetting.HIDE -> LabelSetting.HIDE
+        DefaultSetting.SHOW -> LabelSetting.SHOW
     }
 
 }
 
 fun Visibility.toLabelSetting(): LabelSetting {
     return when (this) {
-        Visibility.SHOW -> LabelSetting.IGNORE
+        Visibility.SHOW -> LabelSetting.SHOW
         Visibility.WARN -> LabelSetting.WARN
         Visibility.HIDE -> LabelSetting.HIDE
         Visibility.IGNORE -> LabelSetting.IGNORE
@@ -142,9 +151,10 @@ data class BskyLabelDefinition(
 ): Parcelable {
     fun getVisibility(): Visibility {
         return when(defaultSetting)  {
-            LabelSetting.IGNORE -> Visibility.SHOW
+            LabelSetting.IGNORE -> Visibility.IGNORE
             LabelSetting.WARN -> Visibility.WARN
             LabelSetting.HIDE -> Visibility.HIDE
+            LabelSetting.SHOW -> Visibility.SHOW
             null -> Visibility.IGNORE
         }
     }

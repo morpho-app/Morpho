@@ -3,13 +3,15 @@ package com.morpho.app.model.uidata
 import app.bsky.feed.GetAuthorFeedFilter
 import app.bsky.feed.GetFeedQuery
 import app.bsky.feed.GetListFeedQuery
-import app.bsky.graph.GetListQuery
 import app.cash.paging.Pager
 import app.cash.paging.cachedIn
 import com.morpho.app.data.FeedTuner
 import com.morpho.app.data.MorphoDataSource
 import com.morpho.app.data.MorphoFeedSource
-import com.morpho.app.model.bluesky.*
+import com.morpho.app.model.bluesky.AuthorFilter
+import com.morpho.app.model.bluesky.FeedDescriptor
+import com.morpho.app.model.bluesky.FeedSourceInfo
+import com.morpho.app.model.bluesky.MorphoDataItem
 import com.morpho.butterfly.ButterflyAgent
 import com.morpho.butterfly.Cursor
 import com.morpho.butterfly.FeedRequest
@@ -19,7 +21,7 @@ import kotlinx.coroutines.flow.map
 
 
 class FeedPresenter<E: FeedEvent>(
-    descriptor: FeedDescriptor? = null,
+    var descriptor: FeedDescriptor? = null,
 ): PagedPresenter<MorphoDataItem.FeedItem, E>() {
 
     private var dataSource: MorphoFeedSource<MorphoDataItem.FeedItem> =
@@ -32,59 +34,27 @@ class FeedPresenter<E: FeedEvent>(
         }
     }
 
-    private fun switchPager(newDataSource: MorphoFeedSource<MorphoDataItem.FeedItem>) {
-        dataSource = newDataSource
-        pager = Pager(MorphoDataSource.defaultConfig) {
-            dataSource
-        }
-    }
+
 
     override fun <E: Event> produceUpdates(events: Flow<E>): Flow<UIUpdate> = events.map { event ->
         when(event) {
-            is Event.ComposePost -> UIUpdate.OpenComposer(event.post, event.role)
             is FeedEvent.Load -> {
-                switchPager(event.descriptor.getDataSource(agent))
                 when(event.descriptor) {
                     is FeedDescriptor.Author -> AuthorFeedUpdate.Feed(
                         event.descriptor.did, event.descriptor.filter, pager.flow.cachedIn(presenterScope))
                     is FeedDescriptor.FeedGen -> {
-                        val info = agent.api
-                            .getList(GetListQuery(event.descriptor.uri, 1))
-                            .map { it.list.hydrateList() }
-                        if(info.isSuccess) {
-                            switchPager(info.getOrThrow().getDataSource(agent))
-                            FeedUpdate.Feed(info.getOrThrow(), pager.flow.cachedIn(presenterScope))
-                        } else {
-                            FeedUpdate.Error(info.exceptionOrNull()?.message ?:
-                                "Failed to load saved feed: ${event.descriptor}, error: $info")
-                        }
+                        FeedUpdate.Feed(event.uri, pager.flow.cachedIn(presenterScope))
                     }
                     FeedDescriptor.Home -> FeedUpdate.Feed(
-                        FeedSourceInfo.Home, pager.flow.cachedIn(presenterScope))
+                        FeedSourceInfo.Home.uri, pager.flow.cachedIn(presenterScope))
                     is FeedDescriptor.Likes -> AuthorFeedUpdate.Likes(
                         event.descriptor.did, pager.flow.cachedIn(presenterScope))
-                    is FeedDescriptor.List -> FeedUpdate.Error(
-                        "Internal error: LoadLists should not be sent to this presenter")
+                    is FeedDescriptor.List -> {
+                        FeedUpdate.Feed(event.uri, pager.flow.cachedIn(presenterScope))
+                    }
                 }
             }
-            is FeedEvent.LoadLists -> FeedUpdate.Error(
-                "Internal error: LoadLists should not be sent to this presenter")
-            is FeedEvent.LoadHydrated -> {
-                switchPager(event.info.getDataSource(agent))
-                FeedUpdate.Feed(event.info, pager.flow.cachedIn(presenterScope))
-            }
-            is FeedEvent.LoadSaved -> {
-                val info = event.info.toFeedSourceInfo(agent)
-                if(info.isSuccess) {
-                    switchPager(info.getOrThrow().getDataSource(agent))
-                    FeedUpdate.Feed(info.getOrThrow(), pager.flow.cachedIn(presenterScope))
-                } else {
-                    FeedUpdate.Error(info.exceptionOrNull()?.message ?:
-                        "Failed to load saved feed: ${event.info}")
-                }
-            }
-            is FeedEvent.Peek -> FeedUpdate.Peek(event.info, dataSource.updates())
-            else -> FeedUpdate.Error("Unknown event type: $event")
+            else -> UIUpdate.NoOp
         }
     }
 }

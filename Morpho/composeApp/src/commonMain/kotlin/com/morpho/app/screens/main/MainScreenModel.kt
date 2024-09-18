@@ -16,7 +16,7 @@ import com.morpho.app.model.uistate.ContentCardState
 import com.morpho.app.screens.base.BaseScreenModel
 import com.morpho.butterfly.AtUri
 import kotlinx.coroutines.flow.emitAll
-import kotlinx.coroutines.flow.filterIsInstance
+import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.launch
 import org.lighthousegames.logging.logging
 
@@ -49,7 +49,7 @@ open class MainScreenModel: BaseScreenModel() {
                 source.uri to FeedPresenter(source.feedDescriptor)
             })
             feedStates.putAll(feedSources.map { source ->
-                source.uri to ContentCardState.Skyline(source.uri)
+                source.uri to  ContentCardState.Skyline(source.uri)
             })
 
 
@@ -57,7 +57,7 @@ open class MainScreenModel: BaseScreenModel() {
                 feedPresenters.forEach { (source, presenter) ->
                     val entry = feedStates[source]?: return@forEach
                     entry.updates.emitAll(
-                        presenter.produceUpdates(entry.events.filterIsInstance<FeedEvent>())
+                        presenter.produceUpdates(merge(globalEvents, entry.events))
                     )
                 }
             }

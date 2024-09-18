@@ -1,9 +1,13 @@
 package com.morpho.app.model.uidata
 
 import app.cash.paging.PagingData
-import com.morpho.app.model.bluesky.*
+import com.morpho.app.model.bluesky.AuthorFilter
+import com.morpho.app.model.bluesky.BskyPost
+import com.morpho.app.model.bluesky.BskyPostThread
+import com.morpho.app.model.bluesky.MorphoDataItem
 import com.morpho.app.ui.common.ComposerRole
 import com.morpho.butterfly.AtIdentifier
+import com.morpho.butterfly.AtUri
 import kotlinx.coroutines.flow.Flow
 
 sealed interface UIUpdate {
@@ -44,12 +48,12 @@ sealed interface FeedUpdate<Data: MorphoDataItem.FeedItem>: UIUpdate {
     data class Error(val error: String): FeedUpdate<MorphoDataItem.FeedItem>
 
     data class Feed(
-        val info: FeedSourceInfo,
+        val uri: AtUri,
         val feed: Flow<PagingData<MorphoDataItem.FeedItem>>,
     ): FeedUpdate<MorphoDataItem.FeedItem>
 
     data class Peek(
-        val info: FeedSourceInfo,
+        val uri: AtUri,
         val post: Flow<MorphoDataItem.FeedItem>,
     ): FeedUpdate<MorphoDataItem.FeedItem>
 }

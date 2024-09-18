@@ -7,7 +7,12 @@ import app.bsky.feed.GetFeedGeneratorQuery
 import app.bsky.graph.GetListQuery
 import app.bsky.graph.ListView
 import com.morpho.app.model.uidata.ContentCardMapEntry
-import com.morpho.butterfly.*
+import com.morpho.butterfly.AtUri
+import com.morpho.butterfly.ButterflyAgent
+import com.morpho.butterfly.Cid
+import com.morpho.butterfly.Did
+import com.morpho.butterfly.Handle
+import com.morpho.butterfly.Nsid
 import dev.icerock.moko.parcelize.Parcelable
 import dev.icerock.moko.parcelize.Parcelize
 import kotlinx.serialization.Serializable
@@ -59,6 +64,7 @@ sealed interface FeedSourceInfo: Parcelable {
     val creatorHandle: Handle
     val feedDescriptor: FeedDescriptor
     val type: Nsid
+    val pinned: Boolean?
 
     @Serializable
     @Immutable
@@ -71,6 +77,7 @@ sealed interface FeedSourceInfo: Parcelable {
         override val creatorDid: Did,
         override val creatorHandle: Handle,
         override val feedDescriptor: FeedDescriptor,
+        override val pinned: Boolean? = null,
     ): FeedSourceInfo {
         override val type: Nsid = Nsid("app.bsky.feed.generator")
     }
@@ -88,6 +95,7 @@ sealed interface FeedSourceInfo: Parcelable {
         override val feedDescriptor: FeedDescriptor,
         val likeCount: Long? = null,
         val likeUri: AtUri? = null,
+        override val pinned: Boolean? = null,
     ): FeedSourceInfo {
         override val type: Nsid = Nsid("app.bsky.graph.list")
     }
@@ -104,6 +112,7 @@ sealed interface FeedSourceInfo: Parcelable {
         override val creatorHandle: Handle = Handle("${displayName.lowercase()}.morpho.app")
         override val feedDescriptor: FeedDescriptor = FeedDescriptor.Home
         override val type: Nsid = Nsid("app.morpho.feed.home")
+        override val pinned: Boolean = true
     }
 
     @Serializable
@@ -118,6 +127,7 @@ sealed interface FeedSourceInfo: Parcelable {
         override val creatorHandle: Handle = Handle("${displayName.lowercase()}.morpho.app")
         override val feedDescriptor: FeedDescriptor = FeedDescriptor.Home
         override val type: Nsid = Nsid("app.morpho.feed.following")
+        override val pinned: Boolean = true
     }
 }
 
@@ -162,11 +172,19 @@ suspend fun app.bsky.actor.SavedFeed.toFeedSourceInfo(agent: ButterflyAgent): Re
     return when(this.type) {
         FeedType.FEED -> {
             agent.api.getFeedGenerator(GetFeedGeneratorQuery(AtUri(this.value)))
-                .map { feed -> feed.view.hydrateFeedGenerator() }
+                .map { feed ->
+                    feed.view.hydrateFeedGenerator().copy(
+                        pinned = this.pinned
+                    )
+                }
         }
         FeedType.LIST -> {
             agent.api.getList(GetListQuery(AtUri(this.value), 1))
-                .map { list -> list.list.hydrateList() }
+                .map { list ->
+                    list.list.hydrateList().copy(
+                        pinned = this.pinned
+                    )
+                }
         }
         FeedType.TIMELINE -> Result.success(FeedSourceInfo.Following)
     }

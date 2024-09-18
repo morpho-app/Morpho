@@ -10,7 +10,21 @@ import com.morpho.app.model.bluesky.BskyPost
 import com.morpho.app.model.bluesky.MorphoDataItem
 import com.morpho.app.model.bluesky.toAtProtoLabel
 import com.morpho.app.model.bluesky.toListVewBasic
-import com.morpho.butterfly.*
+import com.morpho.butterfly.AtUri
+import com.morpho.butterfly.ContentHandling
+import com.morpho.butterfly.Did
+import com.morpho.butterfly.InterpretedLabelDefinition
+import com.morpho.butterfly.LabelAction
+import com.morpho.butterfly.LabelCause
+import com.morpho.butterfly.LabelDescription
+import com.morpho.butterfly.LabelIcon
+import com.morpho.butterfly.LabelSource
+import com.morpho.butterfly.LabelTarget
+import com.morpho.butterfly.LabelValueDefFlag
+import com.morpho.butterfly.LabelValueID
+import com.morpho.butterfly.LabelerID
+import com.morpho.butterfly.ModerationPreferences
+import com.morpho.butterfly.MutedWordTarget
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -171,8 +185,9 @@ class ContentLabelService: KoinComponent {
                         noOverride = !localLabelDef.configurable,
                         priority = when (localLabelDef.severity) {
                             Severity.INFORM -> 5
-                            Severity.ALERT -> 1
+                            Severity.ALERT -> 2
                             Severity.NONE -> 8
+                            Severity.WARN -> 1
                         },
                         downgraded = false,
                     ) to localLabelDef.toContentHandling(
