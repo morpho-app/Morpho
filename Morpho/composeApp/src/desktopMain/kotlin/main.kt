@@ -43,6 +43,10 @@ import cafe.adriel.voyager.core.annotation.ExperimentalVoyagerApi
 import cafe.adriel.voyager.jetpack.ProvideNavigatorLifecycleKMPSupport
 import ch.qos.logback.classic.LoggerContext
 import ch.qos.logback.core.util.StatusPrinter2
+import com.github.tkuenneth.nativeparameterstoreaccess.MacOSDefaults.getDefaultsEntry
+import com.github.tkuenneth.nativeparameterstoreaccess.NativeParameterStoreAccess.IS_MACOS
+import com.github.tkuenneth.nativeparameterstoreaccess.NativeParameterStoreAccess.IS_WINDOWS
+import com.github.tkuenneth.nativeparameterstoreaccess.WindowsRegistry.getWindowsRegistryEntry
 import com.morpho.app.App
 import com.morpho.app.data.MorphoAgent
 import com.morpho.app.data.PreferencesRepository
@@ -126,7 +130,7 @@ fun main() = application {
         transparent = undecorated,
         icon = painterResource(Res.drawable.morpho_icon_transparent)
     ) {
-        MorphoTheme(darkTheme = false) {
+        MorphoTheme(darkTheme = isSystemInDarkTheme()) {
             if(undecorated) {
                 MorphoWindow(
                     windowState = windowState,
@@ -148,7 +152,7 @@ fun main() = application {
     }
 }
 
-/*
+
 fun isSystemInDarkTheme(): Boolean {
     return when {
         IS_WINDOWS -> {
@@ -168,7 +172,7 @@ fun isSystemInDarkTheme(): Boolean {
             // just default to dark mode for now
         }
     }
-}*/
+}
 
 @OptIn(ExperimentalResourceApi::class)
 @Composable

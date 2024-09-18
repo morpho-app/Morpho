@@ -47,7 +47,7 @@ abstract class MorphoDataSource<Data:Any>: PagingSource<Cursor, Data>(), KoinCom
             pageSize = 50,
             prefetchDistance = 20,
             initialLoadSize = 100,
-            enablePlaceholders = true,
+            enablePlaceholders = false,
         )
     }
 }
