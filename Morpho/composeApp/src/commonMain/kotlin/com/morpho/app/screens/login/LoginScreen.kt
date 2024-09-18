@@ -1,11 +1,29 @@
 package com.morpho.app.screens.login
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusManager
@@ -28,6 +46,9 @@ import com.morpho.app.screens.base.tabbed.TabbedBaseScreen
 import com.morpho.app.ui.common.LoadingCircle
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
+import morpho.composeapp.generated.resources.BlueSkyKawaii
+import morpho.composeapp.generated.resources.Res
+import org.jetbrains.compose.resources.painterResource
 
 @CommonParcelize
 @Serializable
@@ -192,6 +213,9 @@ fun LoginView(
     innerPadding: PaddingValues
 ) {
     var appPWOverride by rememberSaveable { mutableStateOf(false) }
+
+    val kawaiiMode = true
+
     Text(
         text = "Login to Bluesky",
         style = MaterialTheme.typography.headlineMedium,
@@ -266,6 +290,17 @@ fun LoginView(
     }) {
         Text("Login")
     }
+
+    if(kawaiiMode) {
+        Image(
+            painter = painterResource(Res.drawable.BlueSkyKawaii),
+            contentDescription = "Bluesky Kawaii",
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(30.dp)
+        )
+    }
+    Spacer(modifier = Modifier.height(80.dp))
 }
 
 fun isAppPassword(password: String) : Boolean {

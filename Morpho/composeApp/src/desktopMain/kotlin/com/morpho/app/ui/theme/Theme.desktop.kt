@@ -15,7 +15,7 @@ actual fun MorphoTheme(
         } else {
             LightColorScheme
         },
-        typography = Typography,
+        typography = MorphoTypography(),
         content = content
     )
 }

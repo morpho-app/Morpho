@@ -1,7 +1,14 @@
 
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.DisableSelection
 import androidx.compose.foundation.window.WindowDraggableArea
@@ -10,7 +17,13 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.outlined.Rectangle
-import androidx.compose.material3.*
+import androidx.compose.material3.FilledTonalIconButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -18,7 +31,14 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.*
+import androidx.compose.ui.window.DialogState
+import androidx.compose.ui.window.Window
+import androidx.compose.ui.window.WindowPlacement
+import androidx.compose.ui.window.WindowScope
+import androidx.compose.ui.window.WindowState
+import androidx.compose.ui.window.application
+import androidx.compose.ui.window.rememberDialogState
+import androidx.compose.ui.window.rememberWindowState
 import cafe.adriel.voyager.core.annotation.ExperimentalVoyagerApi
 import cafe.adriel.voyager.jetpack.ProvideNavigatorLifecycleKMPSupport
 import ch.qos.logback.classic.LoggerContext
@@ -45,7 +65,11 @@ import org.koin.core.annotation.KoinExperimentalAPI
 import org.koin.core.context.startKoin
 import org.koin.core.logger.Level
 import org.koin.core.parameter.parametersOf
-import org.lighthousegames.logging.*
+import org.lighthousegames.logging.KmLogging
+import org.lighthousegames.logging.LogLevel
+import org.lighthousegames.logging.PlatformLogger
+import org.lighthousegames.logging.VariableLogLevel
+import org.lighthousegames.logging.logging
 import org.slf4j.LoggerFactory
 import kotlin.io.path.createDirectories
 
@@ -102,7 +126,7 @@ fun main() = application {
         transparent = undecorated,
         icon = painterResource(Res.drawable.morpho_icon_transparent)
     ) {
-        MorphoTheme(darkTheme = isSystemInDarkTheme()) {
+        MorphoTheme(darkTheme = false) {
             if(undecorated) {
                 MorphoWindow(
                     windowState = windowState,
