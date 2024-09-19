@@ -283,6 +283,7 @@ data class HomeSkylineTab @OptIn(ExperimentalVoyagerApi::class) constructor(
             isProfileFeed = false,
             uiUpdate = state.updates,
             eventCallback = { sm.sendGlobalEvent(it) },
+            getContentHandling = { post -> sm.labelService.getContentHandlingForPost(post).map { it.first } },
         )
 
     }

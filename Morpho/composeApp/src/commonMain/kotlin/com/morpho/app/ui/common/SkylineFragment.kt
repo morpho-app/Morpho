@@ -52,7 +52,6 @@ import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
 import app.cash.paging.LoadStateError
 import app.cash.paging.LoadStateLoading
-import app.cash.paging.LoadStateNotLoading
 import app.cash.paging.compose.collectAsLazyPagingItems
 import app.cash.paging.compose.itemKey
 import com.atproto.repo.StrongRef
@@ -229,8 +228,8 @@ inline fun <reified U: UIUpdate> SkylineFragment (
                             Text("Retry")
                         } } }
                 }
-
-                is LoadStateNotLoading -> {
+                is LoadStateLoading -> { item { LoadingCircle() } }
+                else -> { if(data != null) {
                     items(
                         data.itemCount,
                         key = data.itemKey {when(it) {
@@ -288,15 +287,8 @@ inline fun <reified U: UIUpdate> SkylineFragment (
                                 )
                             }
                         }
-                    }
+                    } }
                 }
-                else -> { item { PlaceholderSkylineItem(
-                    modifier = if(debuggable) Modifier.border(1.dp, Color.Black) else Modifier
-                        .fillMaxWidth()
-                        //.padding(horizontal = 4.dp),
-                        .padding(vertical = 2.dp, horizontal = 4.dp),
-                    elevate = true,
-                ) } }
             }
             if (data?.loadState?.append == LoadStateLoading) item { LoadingCircle() }
         }

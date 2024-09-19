@@ -3,7 +3,13 @@ package com.morpho.app.ui.common
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.rememberModalBottomSheetState
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.navigator.LocalNavigator
@@ -19,6 +25,7 @@ import com.morpho.app.screens.base.tabbed.ThreadTab
 import com.morpho.app.ui.elements.doMenuOperation
 import com.morpho.app.util.ClipboardManager
 import com.morpho.butterfly.ButterflyAgent
+import com.morpho.butterfly.ContentHandling
 import io.ktor.util.reflect.instanceOf
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
@@ -34,6 +41,7 @@ fun TabbedSkylineFragment(
     isProfileFeed: Boolean = false,
     uiUpdate: StateFlow<UIUpdate>,
     eventCallback: (Event) -> Unit = {},
+    getContentHandling: (BskyPost) -> List<ContentHandling> = { listOf() },
 ) {
     val agent = getKoin().get<ButterflyAgent>()
     val uiState = uiUpdate.collectAsState(initial = UIUpdate.Empty)
@@ -91,7 +99,7 @@ fun TabbedSkylineFragment(
             onReplyClicked = { onReplyClicked(it) },
             onLikeClicked = { ref -> agent.like(ref) },
             onPostButtonClicked = { onPostButtonClicked() },
-            getContentHandling = { post -> listOf() },
+            getContentHandling = { post -> getContentHandling(post) },
             contentPadding = paddingValues,
             isProfileFeed = isProfileFeed,
             feedUpdate = uiUpdate.filterIsInstance(),

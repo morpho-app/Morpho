@@ -2,7 +2,6 @@ package com.morpho.app.model.bluesky
 
 import app.bsky.notification.ListNotificationsReason
 import app.cash.paging.PagingConfig
-import app.cash.paging.compose.LazyPagingItems
 import com.morpho.app.data.MorphoDataSource
 import com.morpho.app.model.uistate.NotificationsFilterState
 import com.morpho.butterfly.AtUri
@@ -10,7 +9,7 @@ import com.morpho.butterfly.Cursor
 import kotlinx.serialization.Serializable
 import org.lighthousegames.logging.logging
 
-class NotificationsSource: MorphoDataSource<BskyNotification>() {
+class NotificationsSource: MorphoDataSource<NotificationsListItem>() {
     companion object {
         val log = logging()
         val defaultConfig = PagingConfig(
@@ -21,7 +20,7 @@ class NotificationsSource: MorphoDataSource<BskyNotification>() {
         )
     }
 
-    override suspend fun load(params: LoadParams<Cursor>): LoadResult<Cursor, BskyNotification> {
+    override suspend fun load(params: LoadParams<Cursor>): LoadResult<Cursor, NotificationsListItem> {
         try {
             val limit = params.loadSize
             val loadCursor = when(params) {
@@ -31,7 +30,7 @@ class NotificationsSource: MorphoDataSource<BskyNotification>() {
             }
             return agent.listNotifications(limit.toLong(), loadCursor.value).map { response ->
                 val newCursor = response.cursor
-                val items = response.items.map { it.toBskyNotification()}
+                val items = response.items.map { it.toBskyNotification()}.collectNotifications()
                 LoadResult.Page(
                     data = items,
                     prevKey = when(params) {
@@ -50,18 +49,10 @@ class NotificationsSource: MorphoDataSource<BskyNotification>() {
     }
 }
 
-fun LazyPagingItems<BskyNotification>.collectNotifications(
-    toMark: List<AtUri> = listOf()
-) : List<NotificationsListItem> {
+fun List<BskyNotification>.collectNotifications() : List<NotificationsListItem> {
     val seen = mutableListOf<AtUri>()
     val workList = mutableListOf<MutableNotificationsListItem>()
-    this.itemSnapshotList.map { notif ->
-        if (notif == null) return@map NotificationsListItem(
-            notifications = listOf(),
-            reason = ListNotificationsReason.PLACEHOLDER,
-            isRead = false,
-            reasonSubject = null,
-        )
+    this.map { notif ->
         if(notif.reasonSubject != null && seen.contains(notif.reasonSubject)) {
             val index = workList.indexOfFirst {
                 it.reasonSubject == notif.reasonSubject

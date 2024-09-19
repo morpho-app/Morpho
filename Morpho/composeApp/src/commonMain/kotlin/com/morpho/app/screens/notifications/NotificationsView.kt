@@ -36,8 +36,9 @@ import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.unit.Dp
 import androidx.constraintlayout.compose.ConstraintLayout
 import app.cash.paging.LoadStateError
-import app.cash.paging.LoadStateNotLoading
+import app.cash.paging.LoadStateLoading
 import app.cash.paging.compose.collectAsLazyPagingItems
+import app.cash.paging.compose.itemKey
 import cafe.adriel.voyager.core.annotation.ExperimentalVoyagerApi
 import cafe.adriel.voyager.core.model.rememberNavigatorScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
@@ -47,7 +48,6 @@ import cafe.adriel.voyager.navigator.currentOrThrow
 import com.morpho.app.model.bluesky.BskyPost
 import com.morpho.app.model.bluesky.DraftPost
 import com.morpho.app.model.bluesky.NotificationsListItem
-import com.morpho.app.model.bluesky.collectNotifications
 import com.morpho.app.model.uistate.NotificationsUIState
 import com.morpho.app.screens.base.tabbed.ProfileTab
 import com.morpho.app.screens.base.tabbed.TabScreen
@@ -61,6 +61,7 @@ import com.morpho.app.ui.elements.WrappedLazyColumn
 import com.morpho.app.ui.elements.doMenuOperation
 import com.morpho.app.ui.notifications.NotificationsElement
 import com.morpho.app.ui.notifications.NotificationsFilterElement
+import com.morpho.app.ui.post.PlaceholderSkylineItem
 import com.morpho.app.util.ClipboardManager
 import com.morpho.butterfly.AtUri
 import kotlinx.coroutines.Dispatchers
@@ -84,7 +85,7 @@ fun TabScreen.NotificationViewContent(
     val listState = rememberLazyListState()
     val scope = rememberCoroutineScope()
     val uriHandler = LocalUriHandler.current
-    val pager = sm.notificationsRaw.collectAsLazyPagingItems()
+    val pager = sm.notifications.collectAsLazyPagingItems()
     var uiState by rememberSaveable { mutableStateOf(NotificationsUIState()) }
     val toMarkRead = mutableStateListOf<AtUri>()
     TabbedScreenScaffold(
@@ -128,6 +129,7 @@ fun TabScreen.NotificationViewContent(
             val clipboardManager = getKoin().get<ClipboardManager>()
 
 
+
             ConstraintLayout(
                 Modifier
                     .fillMaxSize()
@@ -163,64 +165,84 @@ fun TabScreen.NotificationViewContent(
                             }
                         }
                     }
-                    when(val loadState = pager.loadState.refresh) {
-                        is LoadStateError ->{
-                            item { Text("Error: ${loadState.error}") }
+                    val refreshLoadState = pager.loadState.refresh
+                    val appendLoadState = pager.loadState.append
+
+                    when {
+                        refreshLoadState is LoadStateError || appendLoadState is LoadStateError -> {
+                            item { Text("$refreshLoadState\n$appendLoadState") }
                             item { Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
                                 TextButton(onClick = { pager.retry() }) {
                                     Text("Retry")
                                 } } }
                         }
-                        is LoadStateNotLoading -> {
+                        refreshLoadState is LoadStateLoading  -> { item { LoadingCircle() } }
+                        else -> {
 
-                            val notifications = pager.collectNotifications(toMarkRead)
+
                             items(
-                                count = notifications.size,
-                                //key = { index -> notifications[index].hashCode() },
+                                count = pager.itemCount,
+                                key = { pager.itemKey {
+                                    it.hashCode()
+                                }},
                                 contentType = {
                                     NotificationsListItem
                                 }
                             ) { index ->
                                 if (state != null) {
-                                    NotificationsElement(
-                                        item = notifications[index],
-                                        showPost = state.showPosts,
-                                        getPost = { sm.getPost(it).getOrNull() },
-                                        onUnClicked = { type, rkey ->
-                                            sm.agent.deleteRecord(type, rkey)
-                                        },
-                                        onAvatarClicked = {
-                                            navigator.push(ProfileTab(it))
-                                        },
-                                        onRepostClicked = {
-                                            initialContent = it
-                                            repostClicked = true
-                                        },
-                                        onReplyClicked = {
-                                            initialContent = it
-                                            composerRole = ComposerRole.Reply
-                                            showComposer = true
-                                        },
-                                        onMenuClicked = { option, post ->
-                                            doMenuOperation(option, post,
-                                                            clipboardManager = clipboardManager,
-                                                            uriHandler = uriHandler
-                                            ) },
-                                        onLikeClicked = { sm.agent.like(it) },
-                                        onPostClicked = {
-                                            navigator.push(ThreadTab(it))
-                                        },
-                                        // If someone hides their read notifications,
-                                        // we don't want to just mark them as read unprompted.
-                                        // Might cause them to disappear unexpectedly.
-                                        readOnLoad = !state.filterState.value.showAlreadyRead,
-                                        markRead = { toMarkRead.add(it) },
-                                        resolveHandle = { handle -> sm.agent.resolveHandle(handle).getOrNull() }
-                                    )
+                                    when(val item = pager[index]) {
+                                        is NotificationsListItem -> {
+                                            NotificationsElement(
+                                                item = item,
+                                                showPost = state.showPosts,
+                                                getPost = { sm.getPost(it).getOrNull() },
+                                                onUnClicked = { type, rkey ->
+                                                    sm.agent.deleteRecord(type, rkey)
+                                                },
+                                                onAvatarClicked = {
+                                                    navigator.push(ProfileTab(it))
+                                                },
+                                                onRepostClicked = {
+                                                    initialContent = it
+                                                    repostClicked = true
+                                                },
+                                                onReplyClicked = {
+                                                    initialContent = it
+                                                    composerRole = ComposerRole.Reply
+                                                    showComposer = true
+                                                },
+                                                onMenuClicked = { option, post ->
+                                                    doMenuOperation(
+                                                        option, post,
+                                                        clipboardManager = clipboardManager,
+                                                        uriHandler = uriHandler
+                                                    )
+                                                },
+                                                onLikeClicked = { sm.agent.like(it) },
+                                                onPostClicked = {
+                                                    navigator.push(ThreadTab(it))
+                                                },
+                                                // If someone hides their read notifications,
+                                                // we don't want to just mark them as read unprompted.
+                                                // Might cause them to disappear unexpectedly.
+                                                readOnLoad = !state.filterState.value.showAlreadyRead,
+                                                markRead = { toMarkRead.add(it) },
+                                                resolveHandle = { handle ->
+                                                    sm.agent.resolveHandle(
+                                                        handle
+                                                    ).getOrNull()
+                                                }
+                                            )
+                                        }
+                                        null -> {
+                                            PlaceholderSkylineItem()
+                                        }
+                                    }
+
                                 }
+
                             }
                         }
-                        else -> { item { LoadingCircle() } }
                     }
                 }
                 if(showComposer) {

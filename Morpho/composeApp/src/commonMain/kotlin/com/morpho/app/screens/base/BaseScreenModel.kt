@@ -45,7 +45,7 @@ open class BaseScreenModel : ScreenModel, KoinComponent {
     val isLoggedIn: Boolean
         get() = agent.isLoggedIn
 
-    val notificationsRaw = Pager(NotificationsSource.defaultConfig) {
+    val notifications = Pager(NotificationsSource.defaultConfig) {
         NotificationsSource()
     }.flow.cachedIn(screenModelScope)
 
