@@ -49,15 +49,12 @@ import com.github.tkuenneth.nativeparameterstoreaccess.NativeParameterStoreAcces
 import com.github.tkuenneth.nativeparameterstoreaccess.WindowsRegistry.getWindowsRegistryEntry
 import com.morpho.app.App
 import com.morpho.app.data.MorphoAgent
-import com.morpho.app.data.PreferencesRepository
 import com.morpho.app.di.appModule
 import com.morpho.app.di.dataModule
 import com.morpho.app.di.storageModule
 import com.morpho.app.ui.theme.MorphoTheme
 import com.morpho.butterfly.auth.SessionRepository
 import com.morpho.butterfly.auth.UserRepository
-import kotlinx.coroutines.flow.firstOrNull
-import kotlinx.coroutines.runBlocking
 import morpho.composeapp.generated.resources.Res
 import morpho.composeapp.generated.resources.morpho_icon_transparent
 import net.harawata.appdirs.AppDirsFactory
@@ -99,17 +96,10 @@ fun main() = application {
     koin.get<SessionRepository> { parametersOf(storageDir) }
     koin.get<UserRepository> { parametersOf(storageDir) }
     val agent = koin.get<MorphoAgent>()
-    val prefs = koin.get<PreferencesRepository> { parametersOf(storageDir) }
-
-    val morphoPrefs = runBlocking {
-        prefs.prefs.firstOrNull()?.firstOrNull()?.morphoPrefs
-    }
-    val (undecorated, tabbed) = if (morphoPrefs != null) {
+    val morphoPrefs = agent.morphoPrefs
+    val (undecorated, tabbed) = run {
         log.d{ "Morpho Preferences: $morphoPrefs" }
         morphoPrefs.tabbed to morphoPrefs.undecorated
-    } else {
-        log.d {"No Morpho Preferences found, using defaults" }
-        true to true
     }
     val windowState = rememberWindowState(
         placement = WindowPlacement.Floating,

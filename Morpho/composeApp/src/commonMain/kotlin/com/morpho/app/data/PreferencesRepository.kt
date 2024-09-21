@@ -13,7 +13,11 @@ import io.github.xxfast.kstore.KStore
 import io.github.xxfast.kstore.extensions.updatesOrEmpty
 import io.github.xxfast.kstore.file.extensions.listStoreOf
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.onEach
 import kotlinx.serialization.Serializable
 import okio.Path.Companion.toPath
 import org.koin.core.component.KoinComponent
@@ -40,6 +44,7 @@ data class AccessibilityPreferences(
 data class MorphoPreferences(
     val tabbed: Boolean = true,
     val undecorated: Boolean = true,
+    val kawaiiMode: Boolean = true,
     val notificationsFilter: NotificationsFilterState = NotificationsFilterState(),
     val accessibility: AccessibilityPreferences = AccessibilityPreferences(),
 )

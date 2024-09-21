@@ -214,7 +214,7 @@ fun LoginView(
 ) {
     var appPWOverride by rememberSaveable { mutableStateOf(false) }
 
-    val kawaiiMode = true
+    val kawaiiMode = remember { screenModel.kawaiiMode }
 
     Text(
         text = "Login to Bluesky",

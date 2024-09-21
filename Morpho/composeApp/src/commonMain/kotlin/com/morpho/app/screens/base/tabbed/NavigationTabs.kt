@@ -6,6 +6,7 @@ import androidx.compose.material.icons.filled.DynamicFeed
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.NotificationsNone
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -264,10 +265,10 @@ data class ThreadTab(
         } else {
             TabbedScreenScaffold(
                 navBar = { navBar(navigator) },
-                topContent = { ThreadTopBar(navigator = navigator) },
                 content = { _, _ -> LoadingCircle() },
+                topContent = { ThreadTopBar(navigator = navigator) },
                 state = threadState,
-                modifier = Modifier
+                modifier = Modifier,
             )
         }
     }
@@ -330,4 +331,27 @@ data object MyProfileTab: TabScreen {
         }
 
 
+}
+
+data object SettingsTab : TabScreen {
+    override val key: ScreenKey = "SettingsTab${uniqueScreenKey}"
+
+    override val navBar: @Composable (@Contextual Navigator) -> Unit = { n ->
+        TabbedNavBar(MyProfileTab.options.index, n)
+    }
+
+    @Composable
+    override fun Content() {
+        LoadingCircle()
+    }
+
+    override val options: TabScreenOptions
+        @Composable get() {
+            return TabScreenOptions(
+                index = 5,
+                icon = { Icon(Icons.Default.Settings, contentDescription = "Settings",
+                              tint = MaterialTheme.colorScheme.onBackground) },
+                title = "Settings"
+            )
+        }
 }

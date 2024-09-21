@@ -53,7 +53,6 @@ import androidx.constraintlayout.compose.ConstraintLayout
 import app.cash.paging.LoadStateError
 import app.cash.paging.LoadStateLoading
 import app.cash.paging.compose.collectAsLazyPagingItems
-import app.cash.paging.compose.itemKey
 import com.atproto.repo.StrongRef
 import com.morpho.app.model.bluesky.BskyPost
 import com.morpho.app.model.bluesky.MorphoDataItem
@@ -232,12 +231,6 @@ inline fun <reified U: UIUpdate> SkylineFragment (
                 else -> { if(data != null) {
                     items(
                         data.itemCount,
-                        key = data.itemKey {when(it) {
-                            is MorphoDataItem.FeedItem -> it.key
-                            is MorphoDataItem.Post -> it.key
-                            is MorphoDataItem.Thread -> it.key
-                            else -> it.hashCode()
-                        } }
                     ) { index ->
                         when(val item = data[index]) {
                             is MorphoDataItem.Thread -> {

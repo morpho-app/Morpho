@@ -14,6 +14,8 @@ import androidx.compose.material.pullrefresh.PullRefreshIndicator
 import androidx.compose.material.pullrefresh.pullRefresh
 import androidx.compose.material.pullrefresh.rememberPullRefreshState
 import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.DrawerState
+import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -22,6 +24,7 @@ import androidx.compose.material3.IconToggleButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberDrawerState
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -88,26 +91,12 @@ fun TabScreen.NotificationViewContent(
     val pager = sm.notifications.collectAsLazyPagingItems()
     var uiState by rememberSaveable { mutableStateOf(NotificationsUIState()) }
     val toMarkRead = mutableStateListOf<AtUri>()
+
+    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     TabbedScreenScaffold(
         navBar = { navBar(navigator) },
-        topContent = {
-            NotificationsTopBar(
-                navigator = navigator,
-                onSettingsClicked = {
-                    showSettings = it
-                    scope.launch {
-                        listState.animateScrollToItem(0)
-                    }
-                                    },
-                showSettings = showSettings,
-                hasUnread = hasUnread,
-                markAsRead = {
-                    sm.updateSeenNotifications()
-                }
-            )
-        },
-        state = uiState,
-        modifier = Modifier,
+        drawerState = drawerState,
+        profile = sm.userProfile,
         content = { insets, state ->
 
             val refreshing by remember { mutableStateOf(false)}
@@ -272,7 +261,26 @@ fun TabScreen.NotificationViewContent(
                     centerHorizontallyTo(parent)
                 }, backgroundColor = MaterialTheme.colorScheme.background, contentColor = MaterialTheme.colorScheme.primary)
             }
-        }
+        },
+        topContent = {
+            NotificationsTopBar(
+                navigator = navigator,
+                onSettingsClicked = {
+                    showSettings = it
+                    scope.launch {
+                        listState.animateScrollToItem(0)
+                    }
+                                    },
+                showSettings = showSettings,
+                hasUnread = hasUnread,
+                markAsRead = {
+                    sm.updateSeenNotifications()
+                },
+                drawerState = drawerState,
+            )
+        },
+        state = uiState,
+        modifier = Modifier,
     )
 }
 
@@ -283,13 +291,18 @@ fun NotificationsTopBar(
     onSettingsClicked : (Boolean) -> Unit = {},
     showSettings: Boolean = false,
     hasUnread: Boolean = false,
-    markAsRead: () -> Unit = {}
+    markAsRead: () -> Unit = {},
+    drawerState: DrawerState = rememberDrawerState(initialValue = DrawerValue.Closed),
 ) {
     var show by remember { mutableStateOf(showSettings) }
+    val scope = rememberCoroutineScope()
     CenterAlignedTopAppBar(
         title = { Text("Notifications") },
         navigationIcon = {
-            IconButton(onClick = { navigator.pop() }) {
+            IconButton(onClick = {
+                if(drawerState.isClosed) scope.launch { drawerState.open() }
+                else scope.launch { drawerState.close() }
+            }) {
                 Icon(Icons.Default.Menu, contentDescription = "Menu")
             }
         },

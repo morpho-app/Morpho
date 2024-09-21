@@ -5,12 +5,14 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.SecondaryScrollableTabRow
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.TopAppBarScrollBehavior
+import androidx.compose.material3.rememberDrawerState
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -164,6 +166,7 @@ fun TabScreen.TabbedProfileContent(
     val navigator = LocalNavigator.currentOrThrow
     var selectedTabIndex by rememberSaveable { mutableIntStateOf(0) }
     val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior(rememberTopAppBarState())
+    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val tabs = remember(myProfileState, profileState) {
         if (ownProfile) myProfileState.toTabList() else profileState?.toTabList() ?: listOf()
     }
@@ -206,6 +209,8 @@ fun TabScreen.TabbedProfileContent(
             state = if(ownProfile) myProfileState.indexToState(selectedTabIndex)
                 else profileState?.indexToState(selectedTabIndex),
             scrollBehavior = scrollBehavior,
+            profile = myProfileState.profile,
+            drawerState = drawerState,
         )
     }
     //}

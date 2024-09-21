@@ -2,7 +2,14 @@ package com.morpho.app.screens.base.tabbed
 
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBarsPadding
-import androidx.compose.material3.*
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.PrimaryTabRow
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRowDefaults
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -38,18 +45,14 @@ data object TabbedBaseScreen: Tab {
     @OptIn(ExperimentalMaterial3Api::class, ExperimentalVoyagerApi::class)
     @Composable
     override fun Content() {
-        //ProvideNavigatorLifecycleKMPSupport {
-            Navigator(
-                HomeTab("startHome"),
-                disposeBehavior = NavigatorDisposeBehavior(
-                    disposeNestedNavigators = false,
-                )
-            ) { navigator ->
-                /*LaunchedEffect(Unit) { navigator.replaceAll(HomeTab("startHome2")) }*/
-                SlideTabTransition(navigator)
-            }
-        //}
-
+        Navigator(
+            HomeTab("startHome"),
+            disposeBehavior = NavigatorDisposeBehavior(
+                disposeNestedNavigators = false,
+            )
+        ) { navigator ->
+            SlideTabTransition(navigator)
+        }
     }
 
     override val options: TabOptions

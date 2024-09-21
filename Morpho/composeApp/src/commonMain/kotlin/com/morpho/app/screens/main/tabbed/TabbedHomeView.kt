@@ -10,22 +10,33 @@ import androidx.compose.animation.core.spring
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material3.DrawerState
+import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.SecondaryScrollableTabRow
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRowDefaults
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -56,8 +67,12 @@ import com.morpho.app.ui.elements.AvatarShape
 import com.morpho.app.ui.elements.OutlinedAvatar
 import dev.icerock.moko.parcelize.Parcelable
 import dev.icerock.moko.parcelize.Parcelize
+import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
+import morpho.composeapp.generated.resources.BlueSkyKawaii
+import morpho.composeapp.generated.resources.Res
 import org.jetbrains.compose.resources.ExperimentalResourceApi
+import org.jetbrains.compose.resources.painterResource
 import kotlin.math.max
 import kotlin.math.min
 import cafe.adriel.voyager.navigator.tab.Tab as NavTab
@@ -135,8 +150,13 @@ fun TabScreen.TabbedHomeView(
                 )
             ) { nav ->
                 val tabUri = sm.uriForTab(selectedTabIndex)
+                val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
                 TabbedScreenScaffold(
                     navBar = { navBar(navigator) },
+                    content = { insets, state ->
+
+                        SkylineTabTransition(nav, sm, insets, state)
+                    },
                     topContent = {
                         HomeTabRow(
                             tabs = tabs,
@@ -152,16 +172,16 @@ fun TabScreen.TabbedHomeView(
                                 } else if(index > selectedTabIndex) nav.push(tabs[index])
                                 selectedTabIndex = index
 
-                            }
+                            },
+                            drawerState = drawerState,
+                            kawaiiMode = sm.kawaiiMode,
 
                         )
                     },
-                    content = { insets, state ->
-
-                        SkylineTabTransition(nav, sm, insets, state)
-                    },
+                    state = sm.feedStates[tabUri] as ContentCardState.Skyline?,
                     modifier = Modifier,
-                    state = sm.feedStates[tabUri] as ContentCardState.Skyline?
+                    drawerState = drawerState,
+                    profile = sm.userProfile,
                 )
             }
 
@@ -211,49 +231,75 @@ fun HomeTabRow(
     modifier: Modifier = Modifier,
     tabIndex: Int = 0,
     onChanged: (Int) -> Unit = {},
+    drawerState: DrawerState = rememberDrawerState(initialValue = DrawerValue.Closed),
+    kawaiiMode: Boolean = false,
 ) {
     var selectedTabIndex by rememberSaveable { mutableIntStateOf(tabIndex) }
+    val scope = rememberCoroutineScope()
 
-    SecondaryScrollableTabRow(
-        selectedTabIndex = selectedTabIndex,
-        modifier = modifier.fillMaxWidth(),//.zIndex(1f),
-        edgePadding = 10.dp,
-        indicator = { tabPositions ->
-            if(tabPositions.isNotEmpty()) {
-                TabRowDefaults.SecondaryIndicator(
-                    Modifier.tabIndicatorOffset(tabPositions[max(0, min(selectedTabIndex, tabs.lastIndex))])
-                )
-            }
-        }
-    ) {
-        tabs.forEachIndexed { index, tab ->
-            Tab(
-                selected = selectedTabIndex == index,
+    TopAppBar(
+        modifier = Modifier.fillMaxWidth(),
+        navigationIcon = {
+            IconButton(
                 onClick = {
-                    selectedTabIndex = max(0, min(index, tabs.lastIndex))
-                    onChanged(max(0, min(index, tabs.lastIndex)))
+                    if(drawerState.isClosed) scope.launch { drawerState.open() }
+                    else scope.launch { drawerState.close() }
                 },
-                //icon = { tab.icon() },
-                text = {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                    ){
-                        if(tab.avatar != null) {
-                            OutlinedAvatar(
-                                url = tab.avatar,
-                                size = 20.dp,
-                                avatarShape = AvatarShape.Rounded,
-                                modifier = Modifier.padding(end = 8.dp),
-                            )
-                        }
-                        Text(
-                            text = tab.title,
-                            //style = MaterialTheme.typography.titleSmall,
+                modifier = if(kawaiiMode) Modifier.size(90.dp) else Modifier
+            ) {
+                if(kawaiiMode) {
+                    Image(
+                        painterResource(Res.drawable.BlueSkyKawaii),
+                        contentDescription = "open navigation drawer (but kawaii)",
+                    )
+                } else {
+                    Icon(Icons.Default.Menu, contentDescription = "open navigation drawer")
+                }
+            }
+        },
+        title = {
+            SecondaryScrollableTabRow(
+                selectedTabIndex = selectedTabIndex,
+                edgePadding = 10.dp,
+                indicator = { tabPositions ->
+                    if(tabPositions.isNotEmpty()) {
+                        TabRowDefaults.SecondaryIndicator(
+                            Modifier.tabIndicatorOffset(tabPositions[max(0, min(selectedTabIndex, tabs.lastIndex))])
                         )
-                    } }
-            )
-        }
-    }
+                    }
+                },
+                divider = {},
+                //modifier = Modifier.offset(y = 8.dp),
+            ) {
+                tabs.forEachIndexed { index, tab ->
+                    Tab(
+                        selected = selectedTabIndex == index,
+                        onClick = {
+                            selectedTabIndex = max(0, min(index, tabs.lastIndex))
+                            onChanged(max(0, min(index, tabs.lastIndex)))
+                        },
+                        text = {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.padding(vertical = 12.dp)
+                            ){
+                                if(tab.avatar != null) {
+                                    OutlinedAvatar(
+                                        url = tab.avatar,
+                                        size = 20.dp,
+                                        avatarShape = AvatarShape.Rounded,
+                                        modifier = Modifier.padding(end = 8.dp),
+                                    )
+                                }
+                                Text(
+                                    text = tab.title,
+                                )
+                            } }
+                    )
+                }
+            }
+        },
+    )
 }
 
 

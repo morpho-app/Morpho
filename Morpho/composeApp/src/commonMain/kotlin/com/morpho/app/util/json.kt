@@ -1,5 +1,6 @@
 package com.morpho.app.util
 
+import com.morpho.butterfly.butterflySerializersModule
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -11,6 +12,7 @@ val json = Json {
     classDiscriminator = "${'$'}type"
     ignoreUnknownKeys = true
     prettyPrint = true
+    serializersModule = butterflySerializersModule
 }
 
 val JsonElement.recordType: String

@@ -35,6 +35,8 @@ open class BaseScreenModel : ScreenModel, KoinComponent {
     val agent: MorphoAgent by inject()
     val labelService: ContentLabelService by inject()
 
+    val kawaiiMode: Boolean
+        get() = agent.kawaiiMode
 
     var userDid: Did? by mutableStateOf(agent.id)
         protected set

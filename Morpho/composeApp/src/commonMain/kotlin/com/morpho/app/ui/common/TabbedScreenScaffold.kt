@@ -8,8 +8,11 @@ import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.material3.DrawerState
+import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.TopAppBarScrollBehavior
+import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
@@ -20,6 +23,7 @@ import cafe.adriel.voyager.navigator.CurrentScreen
 import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.transitions.ScreenTransition
 import cafe.adriel.voyager.transitions.ScreenTransitionContent
+import com.morpho.app.model.bluesky.DetailedProfile
 import com.morpho.app.model.uidata.Event
 import com.morpho.app.model.uistate.ContentCardState
 
@@ -30,6 +34,8 @@ expect fun <T> TabbedScreenScaffold(
     topContent: @Composable () -> Unit,
     state: T?,
     modifier: Modifier,
+    drawerState: DrawerState = rememberDrawerState(initialValue = DrawerValue.Closed),
+    profile: DetailedProfile? = null,
 )
 
 @ExperimentalMaterial3Api
@@ -42,6 +48,8 @@ expect fun <T: Event> TabbedProfileScreenScaffold(
     modifier: Modifier = Modifier,
     scrollBehavior: TopAppBarScrollBehavior,
     nestedScrollConnection: NestedScrollConnection = scrollBehavior.nestedScrollConnection,
+    drawerState: DrawerState = rememberDrawerState(initialValue = DrawerValue.Closed),
+    profile: DetailedProfile? = null,
 )
 
 @OptIn(ExperimentalVoyagerApi::class)
