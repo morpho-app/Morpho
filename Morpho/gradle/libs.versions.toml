@@ -46,6 +46,7 @@ ktorClientAndroid = "[ktor-version]"
 logbackClassic = "1.5.7"
 logbackCore = "1.5.7"
 logging = "1.4.2"
+logkmpanion = "1.8.0"
 nativeparameterstoreaccess = "0.1.0"
 okio = "3.9.0"
 slf4j-api = "2.0.13"
@@ -135,6 +136,7 @@ filekit-core = { module = "io.github.vinceglb:filekit-core", version.ref = "file
 logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "logbackClassic" }
 logback-core = { module = "ch.qos.logback:logback-core", version.ref = "logbackCore" }
 logging = { module = "org.lighthousegames:logging", version.ref = "logging" }
+logkmpanion = { module = "io.github.idfinance-oss:logkmpanion", version.ref = "logkmpanion" }
 nativeparameterstoreaccess = { module = "com.github.tkuenneth:nativeparameterstoreaccess", version.ref = "nativeparameterstoreaccess" }
 slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j-api" }
 oshai-kotlin-logging-jvm = { module = "io.github.oshai:kotlin-logging-jvm", version.ref = "github-kotlin-logging-jvm" }

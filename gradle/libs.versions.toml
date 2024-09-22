@@ -39,6 +39,7 @@ ktor = "2.3.9"
 logbackClassic = "1.5.7"
 logbackCore = "1.5.7"
 logging = "1.4.2"
+logkmpanion = "1.8.0"
 nativeparameterstoreaccess = "0.1.0"
 okio = "3.9.0"
 pagingCommon = "3.3.0-alpha02-0.5.1"
@@ -133,6 +134,7 @@ koin-compose = { module = "io.insert-koin:koin-compose", version.ref = "koin-com
 logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "logbackClassic" }
 logback-core = { module = "ch.qos.logback:logback-core", version.ref = "logbackCore" }
 logging = { module = "org.lighthousegames:logging", version.ref = "logging" }
+logkmpanion = { module = "io.github.idfinance-oss:logkmpanion", version.ref = "logkmpanion" }
 nativeparameterstoreaccess = { module = "com.github.tkuenneth:nativeparameterstoreaccess", version.ref = "nativeparameterstoreaccess" }
 paging-common = { module = "app.cash.paging:paging-common", version.ref = "pagingCommon" }
 paging-compose-common = { module = "app.cash.paging:paging-compose-common", version.ref = "pagingComposeCommon" }

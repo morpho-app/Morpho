@@ -173,6 +173,7 @@ fun TabScreen.TabbedProfileContent(
     TabNavigator(
         tab = tabs.first(),
         disposeNestedNavigators = true,
+        key = "profileTabsNavigator",
         tabDisposable = { TabDisposable(navigator = it, tabs = tabs) }
     ) {
         TabbedProfileScreenScaffold(
@@ -201,7 +202,7 @@ fun TabScreen.TabbedProfileContent(
                         },
                         tabIndex = selectedTabIndex,
                     )
-                }else LoadingCircle()
+                } else LoadingCircle()
             },
             content = { insets, state ->
                 CurrentProfileScreen(eventCallback, insets, state, Modifier)

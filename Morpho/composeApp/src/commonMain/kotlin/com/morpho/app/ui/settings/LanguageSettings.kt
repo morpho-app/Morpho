@@ -1,6 +1,6 @@
 package com.morpho.app.ui.settings
 
-import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -15,6 +15,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.surfaceColorAtElevation
@@ -39,14 +40,15 @@ fun LanguageSettings(
     agent: MorphoAgent = getKoin().get(),
     modifier: Modifier = Modifier,
     distinguish: Boolean = true,
+    topLevel: Boolean = true,
 ) {
     val morphoPrefs = agent.morphoPrefs.value
     SettingsGroup(
-        title = "Language Settings",
+        title = if(!topLevel) "Language Settings" else "",
         modifier = modifier,
         distinguish = distinguish,
     ) {
-        SettingsItem(text = AnnotatedString("AppLanguage")) {
+        SettingsItem(text = AnnotatedString("App Language")) {
             LanguageDropDownMenu(
                 onSelected = { lang ->
                     agent.setUILanguage(lang)
@@ -63,7 +65,7 @@ fun LanguageDropDownMenu(
     initialLanguage: Language,
     expandedInitially: Boolean = false,
 ) {
-    Box(Modifier.height(300.dp).fillMaxWidth()) {
+    Box(Modifier.height(100.dp).fillMaxWidth()) {
         val shape = MaterialTheme.shapes.medium
         var expanded by remember { mutableStateOf(expandedInitially) }
         var language by remember { mutableStateOf(initialLanguage) }
@@ -75,17 +77,24 @@ fun LanguageDropDownMenu(
         Button(
             onClick = { expanded = !expanded },
             shape = shape,
-            colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp)
-            )
+            colors = ButtonDefaults.filledTonalButtonColors(
+                containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(12.dp)
+            ),
+            modifier = Modifier.width(240.dp)
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp)
+                horizontalArrangement = Arrangement.SpaceBetween,
+                modifier = Modifier.padding(start = 12.dp, top = 10.dp, bottom = 10.dp)
             ) {
-                Text(initialLanguage.toLanguageName())
-                Spacer(Modifier.width(4.dp))
-                Image(Icons.Rounded.KeyboardArrowDown, null)
+                Text(
+                    initialLanguage.toLanguageName()
+                )
+                Spacer(Modifier.width(4.dp).weight(1f))
+                Icon(
+                    Icons.Rounded.KeyboardArrowDown,
+                    null,
+                )
             }
         }
         DropdownMenu(modifier = Modifier.align(Alignment.TopCenter).width(240.dp), expanded = expanded,

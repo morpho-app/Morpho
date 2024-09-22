@@ -3,8 +3,6 @@ package com.morpho.app.util
 import app.bsky.actor.PreferencesUnion
 import kotlinx.serialization.InternalSerializationApi
 import kotlinx.serialization.KSerializer
-import kotlinx.serialization.SerialName
-import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
@@ -14,7 +12,6 @@ import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.polymorphic
 import kotlinx.serialization.modules.subclass
 import kotlinx.serialization.serializer
-import kotlin.jvm.JvmInline
 
 @OptIn(InternalSerializationApi::class)
 val morphoSerializersModule = SerializersModule {
@@ -31,19 +28,14 @@ val morphoSerializersModule = SerializersModule {
         subclass(PreferencesUnion.HiddenPostsPref::class)
         subclass(PreferencesUnion.MutedWordsPref::class)
         subclass(PreferencesUnion.InterestsPref::class)
-        subclass(MorphoPreferences::class)
+        subclass(PreferencesUnion.ButterflyPreference::class)
+        subclass(PreferencesUnion.UnknownPreference::class)
         defaultDeserializer { _ ->
             PreferencesUnion.UnknownPreference::class.serializer()
         }
     }
 }
 
-@Serializable
-@JvmInline
-@SerialName("app.bsky.actor.defs#morphoPrefs")
-value class MorphoPreferences(
-    val value: com.morpho.app.data.MorphoPreferences
-): PreferencesUnion
 
 val json = Json {
     classDiscriminator = "${'$'}type"

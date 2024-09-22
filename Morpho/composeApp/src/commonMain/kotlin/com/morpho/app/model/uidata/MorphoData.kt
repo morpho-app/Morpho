@@ -2,12 +2,30 @@ package com.morpho.app.model.uidata
 
 //import com.rickclephas.kmp.nativecoroutines.NativeCoroutines
 import androidx.compose.runtime.Immutable
-import androidx.compose.ui.util.*
+import androidx.compose.ui.util.fastAny
+import androidx.compose.ui.util.fastDistinctBy
+import androidx.compose.ui.util.fastFilterNotNull
+import androidx.compose.ui.util.fastForEach
+import androidx.compose.ui.util.fastForEachIndexed
 import app.bsky.feed.FeedViewPost
 import com.morpho.app.data.FeedTuner
-import com.morpho.app.model.bluesky.*
+import com.morpho.app.data.MorphoAgent
+import com.morpho.app.model.bluesky.AuthorContext
+import com.morpho.app.model.bluesky.BskyLabelDefinition
+import com.morpho.app.model.bluesky.BskyLabelService
+import com.morpho.app.model.bluesky.BskyList
+import com.morpho.app.model.bluesky.BskyPostReason
+import com.morpho.app.model.bluesky.BskyPostThread
+import com.morpho.app.model.bluesky.FeedGenerator
+import com.morpho.app.model.bluesky.MorphoDataItem
+import com.morpho.app.model.bluesky.Profile
+import com.morpho.app.model.bluesky.ThreadPost
 import com.morpho.app.model.uistate.FeedType
-import com.morpho.butterfly.*
+import com.morpho.butterfly.AtIdentifier
+import com.morpho.butterfly.AtUri
+import com.morpho.butterfly.Cid
+import com.morpho.butterfly.Did
+import com.morpho.butterfly.Handle
 import dev.icerock.moko.parcelize.Parcelable
 import dev.icerock.moko.parcelize.Parcelize
 import kotlinx.collections.immutable.toPersistentList
@@ -100,7 +118,7 @@ data class MorphoData<T: MorphoDataItem>(
             data: MorphoData<MorphoDataItem.FeedItem>,
             uri: AtUri = data.uri,
             title: String = data.title,
-            api: Butterfly? = null,
+            api: MorphoAgent? = null,
         ): Flow<MorphoData<MorphoDataItem.FeedItem>> = flow {
             val newItems = fromFeed<MorphoDataItem.FeedItem>(
                 feed.toList(), AtCursor(responseCursor, 0),
@@ -324,7 +342,7 @@ data class MorphoData<T: MorphoDataItem>(
         depth: Int = 3, height: Int = 80,
         timeRange: Delta = Delta(Duration.parse("4h")),
         repliesBumpThreads: Boolean = !isProfileFeed,
-        api: Butterfly? = null, // allows to just use local data
+        api: MorphoAgent? = null, // allows to just use local data
     ): Flow<MorphoData<T>> = flow {
         val threads = mutableListOf<MorphoDataItem.Thread?>()
         val replies = mutableListOf<MorphoDataItem.Post?>()
@@ -542,9 +560,9 @@ data class MorphoData<T: MorphoDataItem>(
 }
 
 
-fun AtUri.id(api:Butterfly): AtIdentifier {
+fun AtUri.id(api:MorphoAgent): AtIdentifier {
     val idString = atUri.substringAfter("at://").split("/")[0]
-    return if (idString == "me") api.atpUser!!.id else {
+    return if (idString == "me") api.id!! else {
         // TODO: make this resolve a handle to a DID
         if (idString.contains("did:")) Did(idString) else Handle(idString)
     }

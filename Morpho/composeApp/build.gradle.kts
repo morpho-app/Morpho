@@ -129,6 +129,9 @@ kotlin {
 
             implementation(libs.androidx.paging.runtime)
             implementation(libs.androidx.paging.compose)
+
+
+            //implementation(libs.logkmpanion)
         }
 
         commonMain.dependencies {
@@ -180,9 +183,6 @@ kotlin {
             implementation(libs.kotlinx.immutable)
             implementation(libs.kotlinx.serialization.cbor)
             implementation(libs.kotlinx.serialization.json)
-
-
-
 
             implementation(kotlin("reflect"))
 
@@ -251,6 +251,9 @@ kotlin {
             implementation(libs.logback.classic)
             implementation(libs.nativeparameterstoreaccess)
             implementation(libs.kotlin.jwt)
+
+
+            //implementation(libs.logkmpanion)
         }
 
         commonTest.dependencies {

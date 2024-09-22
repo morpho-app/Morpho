@@ -3,7 +3,10 @@ package com.morpho.app.ui.settings
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material3.Icon
@@ -14,6 +17,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import app.bsky.labeler.LabelerViewDetailed
@@ -66,40 +70,37 @@ fun LabelerLink(
     onClick: () -> Unit = {},
 ) {
     Surface(
-        modifier = modifier.padding(6.dp),
+        modifier = modifier,
         shape = MaterialTheme.shapes.medium,
         tonalElevation = 2.dp,
     ) {
         Row(
-            modifier = modifier.clickable(onClick = onClick),
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth()
+                .clickable(onClick = onClick).padding(12.dp),
         ) {
             OutlinedAvatar(
                 url = labeler.creator.avatar.orEmpty(),
                 contentDescription = "Avatar for ${labeler.creator.displayName.orEmpty()}",
                 size = 50.dp,
                 avatarShape = AvatarShape.Rounded,
-                modifier = modifier
-                    .padding(6.dp)
             )
-            Column {
+            Column(
+                Modifier.padding(horizontal = 12.dp)
+            ) {
                 Text(
                     text = labeler.creator.displayName.orEmpty(),
-                    style = MaterialTheme.typography.headlineSmall,
-                    modifier = modifier
-                        .padding(6.dp)
+                    style = MaterialTheme.typography.titleSmall,
                 )
                 Text(
-                    text = labeler.creator.handle.handle,
-                    style = MaterialTheme.typography.bodySmall,
-                    modifier = modifier
-                        .padding(6.dp)
+                    text = "@${labeler.creator.handle.handle}",
+                    style = MaterialTheme.typography.bodyMedium,
                 )
             }
+            Spacer(modifier = Modifier.width(6.dp).weight(1F))
             Icon(
                 imageVector = Icons.Default.ChevronRight,
                 contentDescription = "Open Labeler",
-                modifier = modifier
-                    .padding(6.dp)
             )
         }
     }

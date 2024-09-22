@@ -2,9 +2,13 @@ package com.morpho.app.model.bluesky
 
 import androidx.compose.runtime.Immutable
 import app.bsky.actor.ProfileViewBasic
-import app.bsky.feed.*
+import app.bsky.feed.GetPostsQuery
+import app.bsky.feed.PostReplyRef
+import app.bsky.feed.ReplyRef
+import app.bsky.feed.ReplyRefParentUnion
+import app.bsky.feed.ReplyRefRootUnion
 import com.atproto.repo.StrongRef
-import com.morpho.butterfly.Butterfly
+import com.morpho.app.data.MorphoAgent
 import dev.icerock.moko.parcelize.Parcelable
 import dev.icerock.moko.parcelize.Parcelize
 import kotlinx.collections.immutable.persistentListOf
@@ -63,11 +67,11 @@ fun PostReplyRef.toReply(): BskyPostReply {
     )
 }
 
-suspend fun PostReplyRef.hydratedReply(api: Butterfly): BskyPostReply {
-    val parents = api.api.getPosts(GetPostsQuery(persistentListOf(this.parent.uri, this.root.uri)))
+suspend fun PostReplyRef.hydratedReply(agent: MorphoAgent): BskyPostReply {
+    val parents = agent.api.getPosts(GetPostsQuery(persistentListOf(this.parent.uri, this.root.uri)))
         .getOrNull()?.posts?.map { it.toPost() } ?: persistentListOf()
     val grandparent = if (parents.first().reply?.replyRef?.parent?.uri != null) {
-        api.api.getPosts(GetPostsQuery(persistentListOf(parents.first().reply?.replyRef?.parent?.uri!!))).getOrNull()?.posts?.firstOrNull()
+        agent.api.getPosts(GetPostsQuery(persistentListOf(parents.first().reply?.replyRef?.parent?.uri!!))).getOrNull()?.posts?.firstOrNull()
     } else null
     return BskyPostReply(
         rootPost = parents.firstOrNull { it.cid == this.root.cid },

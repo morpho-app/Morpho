@@ -39,20 +39,20 @@ import cafe.adriel.voyager.navigator.currentOrThrow
 import cafe.adriel.voyager.navigator.tab.LocalTabNavigator
 import cafe.adriel.voyager.navigator.tab.Tab
 import cafe.adriel.voyager.navigator.tab.TabOptions
-import com.morpho.app.CommonParcelable
-import com.morpho.app.CommonParcelize
 import com.morpho.app.model.uistate.AuthState
 import com.morpho.app.screens.base.tabbed.TabbedBaseScreen
 import com.morpho.app.ui.common.LoadingCircle
+import dev.icerock.moko.parcelize.Parcelable
+import dev.icerock.moko.parcelize.Parcelize
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 import morpho.composeapp.generated.resources.BlueSkyKawaii
 import morpho.composeapp.generated.resources.Res
 import org.jetbrains.compose.resources.painterResource
 
-@CommonParcelize
+@Parcelize
 @Serializable
-data object LoginScreen: Tab, CommonParcelable {
+data object LoginScreen: Tab, Parcelable {
 
 
     override val key: ScreenKey = hashCode().toString() + "TabbedLoginScreen"

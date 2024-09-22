@@ -145,6 +145,7 @@ fun TabScreen.TabbedHomeView(
         if (tabsCreated) {
             Navigator(
                 tabs.first(),
+                key = "homeFeedsNavigator",
                 disposeBehavior = NavigatorDisposeBehavior(
                     //disposeNestedNavigators = false,
                 )

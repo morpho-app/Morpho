@@ -33,12 +33,15 @@ import cafe.adriel.voyager.navigator.tab.TabOptions
 import com.morpho.app.screens.main.tabbed.TabbedMainScreenModel
 import com.morpho.app.ui.common.SlideTabTransition
 import com.morpho.app.ui.theme.roundedTopR
+import dev.icerock.moko.parcelize.Parcelable
+import dev.icerock.moko.parcelize.Parcelize
 import io.ktor.util.reflect.instanceOf
 import kotlinx.serialization.Serializable
 import kotlin.math.min
 
+@Parcelize
 @Serializable
-data object TabbedBaseScreen: Tab {
+data object TabbedBaseScreen: Tab, Parcelable {
 
     override val key: ScreenKey = "TabbedBaseScreen_${hashCode()}"
 
@@ -48,7 +51,7 @@ data object TabbedBaseScreen: Tab {
         Navigator(
             HomeTab("startHome"),
             disposeBehavior = NavigatorDisposeBehavior(
-                disposeNestedNavigators = false,
+                disposeNestedNavigators = false
             )
         ) { navigator ->
             SlideTabTransition(navigator)

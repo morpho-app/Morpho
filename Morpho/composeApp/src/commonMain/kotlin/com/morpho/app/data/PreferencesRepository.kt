@@ -1,5 +1,6 @@
 package com.morpho.app.data
 
+import app.bsky.actor.PreferencesUnion
 import com.morpho.app.model.uistate.NotificationsFilterState
 import com.morpho.butterfly.BskyPreferences
 import com.morpho.butterfly.Did
@@ -84,7 +85,7 @@ data class MorphoPreferences(
     val darkMode: DarkModeSetting? = DarkModeSetting.SYSTEM,
     val notificationsFilter: NotificationsFilterPref? = NotificationsFilterPref(),
     val accessibility: AccessibilityPreferences? = AccessibilityPreferences(),
-) {
+): PreferencesUnion.ButterflyPreference() {
     companion object {
         fun update(
             existing: MorphoPreferences,

@@ -18,8 +18,10 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import org.koin.core.component.inject
 
 class MorphoAgent: ButterflyAgent() {
@@ -32,7 +34,7 @@ class MorphoAgent: ButterflyAgent() {
         notificationsFilter = NotificationsFilterPref(),
         accessibility = AccessibilityPreferences(),
     ))
-    private val _bskyPrefs: MutableStateFlow<BskyPreferences> = MutableStateFlow(BskyPreferences())
+    private val _bskyPrefs: MutableStateFlow<BskyPreferences> = MutableStateFlow(prefs)
     private var _myLanguage = MutableStateFlow(Language(myLang ?: _morphoPrefs.value.uiLanguage?.tag ?: "en"))
 
     val morphoPrefs = _morphoPrefs.asStateFlow()
@@ -48,24 +50,26 @@ class MorphoAgent: ButterflyAgent() {
         // Belt and suspenders bc of the super/derived class initialization uncertainty
         api = XrpcBlueskyApi(atpClient, morphoSerializersModule)
         if(id != null) {
+            runBlocking {
+                getPreferences()
+            }
             serviceScope.launch {
-                localPrefs.morphoPrefs(id!!).collectLatest {
-                    if (it != null) {
+                localPrefs.morphoPrefs(id!!).distinctUntilChanged().collectLatest {
+                    if (it != null && it != MorphoPreferences()) {
                         _morphoPrefs.value = it
                     }
-
                 }
             }
             serviceScope.launch {
-                localPrefs.bskyPrefs(id!!).collectLatest {
-                    if (it != null) {
+                localPrefs.bskyPrefs(id!!).distinctUntilChanged().collectLatest {
+                    if (it != null && it != BskyPreferences()) {
                         prefs = it
                     }
                 }
             }
             serviceScope.launch {
-                localPrefs.bskyPrefs(id!!).collectLatest {
-                    if (it != null) {
+                localPrefs.bskyPrefs(id!!).distinctUntilChanged().collectLatest {
+                    if (it != null && it != BskyPreferences()) {
                         _bskyPrefs.value = it
                     }
                 }
@@ -74,7 +78,7 @@ class MorphoAgent: ButterflyAgent() {
                 localPrefs.writePreferences(
                     BskyUserPreferences(
                         id!!,
-                        getPreferences().getOrNull() ?: BskyPreferences(),
+                        prefs,
                         morphoPrefs.value
                     )
                 )

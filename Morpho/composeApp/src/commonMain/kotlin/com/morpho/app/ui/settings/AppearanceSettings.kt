@@ -1,7 +1,6 @@
 package com.morpho.app.ui.settings
 
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
@@ -16,6 +15,9 @@ import com.morpho.app.data.DarkModeSetting
 import com.morpho.app.data.MorphoAgent
 import com.morpho.app.ui.elements.SettingsGroup
 import com.morpho.app.ui.elements.SettingsItem
+import com.morpho.app.ui.theme.segmentedButtonEnd
+import com.morpho.app.ui.theme.segmentedButtonMiddle
+import com.morpho.app.ui.theme.segmentedButtonStart
 import org.koin.compose.getKoin
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -23,11 +25,12 @@ import org.koin.compose.getKoin
 fun AppearanceSettings(
     agent: MorphoAgent = getKoin().get(),
     modifier: Modifier = Modifier,
-    distinguish: Boolean = true,
+    distinguish: Boolean = false,
+    topLevel: Boolean = true,
 ) {
     val morphoPrefs = agent.morphoPrefs.value
     SettingsGroup(
-        title = "Appearance",
+        title = if(!topLevel) "Appearance" else "",
         modifier = modifier,
         distinguish = distinguish,
     ) {
@@ -35,14 +38,16 @@ fun AppearanceSettings(
             var darkMode by remember {
                 mutableStateOf(morphoPrefs.darkMode ?: DarkModeSetting.SYSTEM)
             }
-            SingleChoiceSegmentedButtonRow {
+            SingleChoiceSegmentedButtonRow(
+                modifier = it
+            ) {
                 SegmentedButton(
                     selected = darkMode == DarkModeSetting.SYSTEM,
                     onClick = {
                         darkMode = DarkModeSetting.SYSTEM
                         agent.setDarkMode(DarkModeSetting.SYSTEM)
                     },
-                    shape = MaterialTheme.shapes.small,
+                    shape = segmentedButtonStart.small,
                     label = { Text("System") },
                 )
                 SegmentedButton(
@@ -51,7 +56,7 @@ fun AppearanceSettings(
                         darkMode = DarkModeSetting.LIGHT
                         agent.setDarkMode(DarkModeSetting.LIGHT)
                     },
-                    shape = MaterialTheme.shapes.small,
+                    shape = segmentedButtonMiddle,
                     label = { Text("Light") },
                 )
                 SegmentedButton(
@@ -60,7 +65,7 @@ fun AppearanceSettings(
                         darkMode = DarkModeSetting.DARK
                         agent.setDarkMode(DarkModeSetting.DARK)
                     },
-                    shape = MaterialTheme.shapes.small,
+                    shape = segmentedButtonEnd.small,
                     label = { Text("Dark") },
                 )
 
@@ -71,7 +76,9 @@ fun AppearanceSettings(
             var tabbed by remember {
                 mutableStateOf(morphoPrefs.tabbed ?: true)
             }
-            SingleChoiceSegmentedButtonRow {
+            SingleChoiceSegmentedButtonRow(
+                modifier = it
+            ) {
                 SegmentedButton(
                     selected = tabbed,
                     enabled = false,
@@ -80,7 +87,7 @@ fun AppearanceSettings(
                         // TODO: come back when the non-tabbed view is ready
                         agent.setDarkMode(DarkModeSetting.DARK)
                     },
-                    shape = MaterialTheme.shapes.small,
+                    shape = segmentedButtonStart.small,
                     label = { Text("System") },
                 )
                 SegmentedButton(
@@ -91,7 +98,7 @@ fun AppearanceSettings(
                         // TODO: come back when the non-tabbed view is ready
                         agent.setDarkMode(DarkModeSetting.LIGHT)
                     },
-                    shape = MaterialTheme.shapes.small,
+                    shape = segmentedButtonEnd.small,
                     label = { Text("Light") },
                 )
             }

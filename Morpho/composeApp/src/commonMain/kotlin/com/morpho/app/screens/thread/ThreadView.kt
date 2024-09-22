@@ -62,7 +62,7 @@ import org.koin.compose.getKoin
 @Composable
 fun TabScreen.ThreadViewContent(
     cardState: ContentCardState.PostThread,
-    navigator:Navigator = LocalNavigator.currentOrThrow,
+    navigator: Navigator = LocalNavigator.currentOrThrow,
 
 ) {
     val sm = navigator.rememberNavigatorScreenModel { MainScreenModel() }

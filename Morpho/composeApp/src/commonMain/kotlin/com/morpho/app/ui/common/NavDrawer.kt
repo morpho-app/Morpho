@@ -49,6 +49,7 @@ import com.morpho.app.screens.base.tabbed.HomeTab
 import com.morpho.app.screens.base.tabbed.MyProfileTab
 import com.morpho.app.screens.base.tabbed.NotificationsTab
 import com.morpho.app.screens.base.tabbed.SearchTab
+import com.morpho.app.screens.base.tabbed.SettingsTab
 import com.morpho.app.screens.base.tabbed.TabScreen
 import com.morpho.app.screens.main.tabbed.TabbedMainScreenModel
 import com.morpho.app.ui.elements.AvatarShape
@@ -259,4 +260,5 @@ fun ColumnScope.NavDrawerItems(
                     })
     NavDrawerItem(FeedsTab, drawerState = drawerState, navigator = navigator)
     NavDrawerItem(MyProfileTab, drawerState = drawerState, navigator = navigator)
+    NavDrawerItem(SettingsTab, drawerState = drawerState, navigator = navigator)
 }

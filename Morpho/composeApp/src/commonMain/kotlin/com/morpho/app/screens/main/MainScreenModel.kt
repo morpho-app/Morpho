@@ -42,7 +42,6 @@ open class MainScreenModel: BaseScreenModel() {
 
     init {
         if(isLoggedIn) screenModelScope.launch {
-            agent.getPreferences()
             userProfile = userDid?.let { agent.getProfile(it).getOrNull()?.toProfile() }
             feedSources.addAll(pinnedFeeds.mapNotNull { feed -> feed.toFeedSourceInfo(agent).getOrNull() })
             feedPresenters.putAll(feedSources.map { source ->

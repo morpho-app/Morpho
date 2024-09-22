@@ -8,6 +8,7 @@ import app.cash.paging.cachedIn
 import cafe.adriel.voyager.core.model.ScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
 import com.morpho.app.data.MorphoAgent
+import com.morpho.app.di.UpdateTick
 import com.morpho.app.model.bluesky.BskyPost
 import com.morpho.app.model.bluesky.NotificationsSource
 import com.morpho.app.model.bluesky.toPost
@@ -23,8 +24,10 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import org.koin.core.component.KoinComponent
@@ -57,8 +60,11 @@ open class BaseScreenModel : ScreenModel, KoinComponent {
         val log = logging()
     }
 
+    private val notificationsTick = UpdateTick(10000)
     init {
-
+        screenModelScope.launch {
+            notificationsTick.tick(true)
+        }
     }
 
     fun sendGlobalEvent(event: Event) {
@@ -97,9 +103,12 @@ open class BaseScreenModel : ScreenModel, KoinComponent {
         }
     }
 
-    fun unreadNotificationsCount() = flow {
-        emit(agent.unreadNotificationsCount().getOrDefault(0))
-    }.stateIn(screenModelScope, SharingStarted.WhileSubscribed(), 0L)
+
+
+    fun unreadNotificationsCount() = notificationsTick.t.map {
+        agent.unreadNotificationsCount().getOrDefault(0)
+    }.distinctUntilChanged()
+        .stateIn(screenModelScope, SharingStarted.WhileSubscribed(), 0L)
 
     fun updateSeenNotifications() = screenModelScope.launch {
         agent.updateSeenNotifications()

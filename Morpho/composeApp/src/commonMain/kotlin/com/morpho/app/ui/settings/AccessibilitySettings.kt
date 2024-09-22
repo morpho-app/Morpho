@@ -1,5 +1,6 @@
 package com.morpho.app.ui.settings
 
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Switch
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -8,6 +9,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.unit.dp
 import com.morpho.app.data.AccessibilityPreferences
 import com.morpho.app.data.MorphoAgent
 import com.morpho.app.ui.elements.SettingsGroup
@@ -19,18 +21,20 @@ fun AccessibilitySettings(
     agent: MorphoAgent = getKoin().get(),
     distinguish: Boolean = true,
     modifier: Modifier = Modifier,
+    topLevel: Boolean = true,
 ) {
     val morphoPrefs = agent.morphoPrefs.value
     SettingsGroup(
-        title = "Accessibility",
+        title = if(!topLevel) "Accessibility" else "",
         modifier = modifier,
         distinguish = distinguish,
     ) {
         SettingsGroup(
             title = "Alt Text",
             distinguish = true,
+            modifier = Modifier.padding(8.dp),
         ) {
-            SettingsItem( text = AnnotatedString("Require Alt Text")) {
+            SettingsItem( description = AnnotatedString("Require Alt Text")) { mod ->
                 var requireAltText by remember {
                     mutableStateOf(morphoPrefs.accessibility?.requireAltText ?: false)
                 }
@@ -42,11 +46,12 @@ fun AccessibilitySettings(
                         agent.setAccessibilityPrefs(
                             AccessibilityPreferences.toUpdate(requireAltText = requireAltText)
                         )
-                    }
+                    },
+                    modifier = mod
                 )
             }
 
-            SettingsItem( text = AnnotatedString("Display larger alt text")) {
+            SettingsItem( description = AnnotatedString("Display larger alt text")) { mod ->
                 var showLargerAltText by remember {
                     mutableStateOf(morphoPrefs.accessibility?.displayLargerAltBadge ?: false)
                 }
@@ -58,7 +63,8 @@ fun AccessibilitySettings(
                         agent.setAccessibilityPrefs(
                             AccessibilityPreferences.toUpdate(displayLargerAltBadge = showLargerAltText)
                         )
-                    }
+                    },
+                    modifier = mod
                 )
             }
         }
@@ -66,8 +72,9 @@ fun AccessibilitySettings(
         SettingsGroup(
             title = "Sensory",
             distinguish = true,
+            modifier = Modifier.padding(8.dp),
         ) {
-            SettingsItem( text = AnnotatedString("Disable autoplay for media")) {
+            SettingsItem( description = AnnotatedString("Disable autoplay for media")) { mod ->
                 var disableAutoplay by remember {
                     mutableStateOf(morphoPrefs.accessibility?.disableAutoplay ?: false)
                 }
@@ -79,11 +86,12 @@ fun AccessibilitySettings(
                         agent.setAccessibilityPrefs(
                             AccessibilityPreferences.toUpdate(disableAutoplay = disableAutoplay)
                         )
-                    }
+                    },
+                    modifier = mod
                 )
             }
 
-            SettingsItem( text = AnnotatedString("Reduce/remove animations")) {
+            SettingsItem( description = AnnotatedString("Reduce/remove animations")) { mod ->
                 var reduceMotion by remember {
                     mutableStateOf(morphoPrefs.accessibility?.reduceMotion ?: false)
                 }
@@ -95,10 +103,11 @@ fun AccessibilitySettings(
                         agent.setAccessibilityPrefs(
                             AccessibilityPreferences.toUpdate(reduceMotion = reduceMotion)
                         )
-                    }
+                    },
+                    modifier = mod
                 )
             }
-            SettingsItem( text = AnnotatedString("Disable haptic feedback")) {
+            SettingsItem( description = AnnotatedString("Disable haptic feedback")) { mod ->
                 var disableHaptics by remember {
                     mutableStateOf(morphoPrefs.accessibility?.disableHaptics ?: false)
                 }
@@ -110,10 +119,11 @@ fun AccessibilitySettings(
                         agent.setAccessibilityPrefs(
                             AccessibilityPreferences.toUpdate(disableHaptics = disableHaptics)
                         )
-                    }
+                    },
+                    modifier = mod
                 )
             }
-            SettingsItem( text = AnnotatedString("Simplify UI")) {
+            SettingsItem( description = AnnotatedString("Simplify UI")) { mod ->
                 var simpleUI by remember {
                     mutableStateOf(morphoPrefs.accessibility?.simpleUI ?: false)
                 }
@@ -126,7 +136,8 @@ fun AccessibilitySettings(
                         agent.setAccessibilityPrefs(
                             AccessibilityPreferences.toUpdate(simpleUI = simpleUI)
                         )
-                    }
+                    },
+                    modifier = mod
                 )
             }
         }

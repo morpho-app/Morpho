@@ -114,6 +114,8 @@ enum class LabelSetting {
     HIDE,
     @SerialName("show")
     SHOW,
+    @SerialName("inform")
+    INFORM,
 }
 
 fun DefaultSetting.toLabelSetting(): LabelSetting {
@@ -122,6 +124,7 @@ fun DefaultSetting.toLabelSetting(): LabelSetting {
         DefaultSetting.WARN -> LabelSetting.WARN
         DefaultSetting.HIDE -> LabelSetting.HIDE
         DefaultSetting.SHOW -> LabelSetting.SHOW
+        DefaultSetting.INFORM -> LabelSetting.INFORM
     }
 
 }
@@ -132,8 +135,8 @@ fun Visibility.toLabelSetting(): LabelSetting {
         Visibility.WARN -> LabelSetting.WARN
         Visibility.HIDE -> LabelSetting.HIDE
         Visibility.IGNORE -> LabelSetting.IGNORE
+        Visibility.INFORM -> LabelSetting.INFORM
     }
-
 }
 
 @Parcelize
@@ -155,6 +158,7 @@ data class BskyLabelDefinition(
             LabelSetting.WARN -> Visibility.WARN
             LabelSetting.HIDE -> Visibility.HIDE
             LabelSetting.SHOW -> Visibility.SHOW
+            LabelSetting.INFORM -> Visibility.INFORM
             null -> Visibility.IGNORE
         }
     }

@@ -33,6 +33,8 @@ import com.morpho.app.screens.main.tabbed.TabbedHomeView
 import com.morpho.app.screens.main.tabbed.TabbedMainScreenModel
 import com.morpho.app.screens.notifications.NotificationViewContent
 import com.morpho.app.screens.profile.TabbedProfileContent
+import com.morpho.app.screens.settings.SettingsRootPage
+import com.morpho.app.screens.settings.SettingsScreenTransition
 import com.morpho.app.screens.thread.ThreadTopBar
 import com.morpho.app.screens.thread.ThreadViewContent
 import com.morpho.app.ui.common.LoadingCircle
@@ -333,22 +335,34 @@ data object MyProfileTab: TabScreen {
 
 }
 
-data object SettingsTab : TabScreen {
-    override val key: ScreenKey = "SettingsTab${uniqueScreenKey}"
+data object SettingsTab: TabScreen {
+    override val key: ScreenKey
+        get() = "SettingsTab${uniqueScreenKey}"
 
     override val navBar: @Composable (@Contextual Navigator) -> Unit = { n ->
-        TabbedNavBar(MyProfileTab.options.index, n)
+        TabbedNavBar(options.index, n)
     }
 
     @Composable
     override fun Content() {
-        LoadingCircle()
+        val sm = LocalNavigator.currentOrThrow.rememberNavigatorScreenModel { TabbedMainScreenModel() }
+        val navigator = LocalNavigator.currentOrThrow
+        Navigator(
+            SettingsRootPage,
+        ){ nav ->
+            SettingsScreenTransition(
+                navigator = nav,
+                sm = sm,
+                parentNav = navigator,
+                modifier = Modifier
+            )
+        }
     }
 
     override val options: TabScreenOptions
         @Composable get() {
             return TabScreenOptions(
-                index = 5,
+                index = 6,
                 icon = { Icon(Icons.Default.Settings, contentDescription = "Settings",
                               tint = MaterialTheme.colorScheme.onBackground) },
                 title = "Settings"

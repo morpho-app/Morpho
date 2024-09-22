@@ -1,6 +1,8 @@
 package com.morpho.app.ui.settings
 
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SegmentedButton
@@ -14,10 +16,15 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.unit.dp
 import app.bsky.actor.Visibility
 import com.morpho.app.data.MorphoAgent
 import com.morpho.app.ui.elements.SettingsGroup
 import com.morpho.app.ui.elements.SettingsItem
+import com.morpho.app.ui.theme.segmentedButtonEnd
+import com.morpho.app.ui.theme.segmentedButtonMiddle
+import com.morpho.app.ui.theme.segmentedButtonStart
 import com.morpho.butterfly.InterpretedLabelDefinition
 import com.morpho.butterfly.localize
 import org.koin.compose.getKoin
@@ -43,7 +50,7 @@ fun BuiltinContentFilters(
     ) {
 
         SettingsItem(
-            text = AnnotatedString("Enable adult content")
+            description = AnnotatedString("Enable adult content")
         ) {
 
             Switch(
@@ -70,16 +77,16 @@ fun BuiltinContentFilters(
                 }
             )
             BuiltinContentFilterSelector(
-                labelDefinition =  com.morpho.butterfly.Sexual.localize(agent.myLanguage.value),
-                initialFilter = modPrefs.labels[com.morpho.butterfly.Sexual.identifier] ?:
-                com.morpho.butterfly.Sexual.defaultSetting,
+                labelDefinition =  com.morpho.butterfly.NSFW.localize(agent.myLanguage.value),
+                initialFilter = modPrefs.labels[com.morpho.butterfly.NSFW.identifier] ?:
+                com.morpho.butterfly.NSFW.defaultSetting,
                 onSelected = { visibility ->
                     modPrefs = modPrefs.copy(
                         labels = modPrefs.labels.toMutableMap().apply {
-                            this[com.morpho.butterfly.Sexual.identifier] = visibility
+                            this[com.morpho.butterfly.NSFW.identifier] = visibility
                         }
                     )
-                    agent.setContentLabelPref(com.morpho.butterfly.Sexual.identifier, visibility)
+                    agent.setContentLabelPref(com.morpho.butterfly.NSFW.identifier, visibility)
                 }
             )
             BuiltinContentFilterSelector(
@@ -109,7 +116,7 @@ fun BuiltinContentFilters(
                 agent.setContentLabelPref(com.morpho.butterfly.Nudity.identifier, visibility)
             }
         )
-
+        Spacer(modifier = Modifier.height(6.dp))
     }
 }
 
@@ -125,20 +132,35 @@ fun ColumnScope.BuiltinContentFilterSelector(
     modifier: Modifier = Modifier,
 ) {
     var setting by remember { mutableStateOf(initialFilter) }
+    val text = buildAnnotatedString {
+        pushStyle(MaterialTheme.typography.titleSmall.toSpanStyle().copy(
+            color = MaterialTheme.colorScheme.onSurface
+        ))
+        append("${labelDefinition.localizedName}\n")
+        pop()
+        pushStyle(MaterialTheme.typography.bodyMedium.toSpanStyle().copy(
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        ))
+        append(labelDefinition.localizedDescription)
+        pop()
+
+        toAnnotatedString()
+    }
 
     SettingsItem(
-        text = AnnotatedString(labelDefinition.localizedName),
-        description = AnnotatedString(labelDefinition.localizedDescription),
+        text = text,
         modifier = modifier
     ) {
-        SingleChoiceSegmentedButtonRow {
+        SingleChoiceSegmentedButtonRow(
+            modifier = it
+        ) {
             SegmentedButton(
                 selected = setting == Visibility.SHOW || setting == Visibility.IGNORE,
                 onClick = {
                     setting = Visibility.SHOW
                     onSelected(Visibility.SHOW)
                 },
-                shape = MaterialTheme.shapes.small,
+                shape = segmentedButtonStart.small,
                 label = { Text(text = "Show") }
             )
             SegmentedButton(
@@ -147,7 +169,7 @@ fun ColumnScope.BuiltinContentFilterSelector(
                     setting = Visibility.WARN
                     onSelected(Visibility.WARN)
                 },
-                shape = MaterialTheme.shapes.small,
+                shape = segmentedButtonMiddle,
                 label = { Text(text = "Warn") }
             )
             SegmentedButton(
@@ -156,7 +178,7 @@ fun ColumnScope.BuiltinContentFilterSelector(
                     setting = Visibility.HIDE
                     onSelected(Visibility.HIDE)
                 },
-                shape = MaterialTheme.shapes.small,
+                shape = segmentedButtonEnd.small,
                 label = { Text(text = "Hide") }
             )
         }
