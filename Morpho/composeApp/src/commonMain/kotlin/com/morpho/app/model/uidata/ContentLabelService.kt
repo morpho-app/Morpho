@@ -171,7 +171,7 @@ class ContentLabelService: KoinComponent {
             val possibleCauses = filteredPostLabels.mapNotNull { label ->
                 labelDefinitions[label.creator.did]?.get(label.value)?.let { labelDef ->
                     val localizedDefString = labelDef.allDescriptions.firstOrNull {
-                        it.lang == agent.myLanguage
+                        it.lang == agent.myLanguage.value
                     } ?: labelDef.allDescriptions.firstOrNull { it.lang.tag == "en" }
                     val localLabelDef = labelDef.copy(
                         localizedName = localizedDefString?.name ?: labelDef.localizedName,

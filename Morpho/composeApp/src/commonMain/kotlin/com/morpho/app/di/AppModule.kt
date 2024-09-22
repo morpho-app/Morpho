@@ -9,8 +9,6 @@ import com.morpho.app.screens.login.LoginScreenModel
 import com.morpho.app.screens.main.MainScreenModel
 import com.morpho.app.screens.main.tabbed.TabbedMainScreenModel
 import com.morpho.app.util.ClipboardManager
-import com.morpho.butterfly.AtpAgent
-import com.morpho.butterfly.ButterflyAgent
 import com.morpho.butterfly.auth.SessionRepository
 import com.morpho.butterfly.auth.UserRepository
 import com.morpho.butterfly.auth.UserRepositoryImpl
@@ -39,8 +37,8 @@ val storageModule = module {
 }
 
 val dataModule = module {
-    single<AtpAgent> { AtpAgent() }
-    single<ButterflyAgent> { ButterflyAgent() }
+//    single<AtpAgent> { AtpAgent() }
+//    single<ButterflyAgent> { ButterflyAgent() }
     single<MorphoAgent> { MorphoAgent() }
     single<ContentLabelService> { ContentLabelService() }
     single<PollBlueService> { PollBlueService() }

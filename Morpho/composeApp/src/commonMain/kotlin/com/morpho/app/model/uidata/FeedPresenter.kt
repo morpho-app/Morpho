@@ -102,6 +102,7 @@ fun <Data: MorphoDataItem.FeedItem> getLikesDataSource(
     return MorphoFeedSource(request, tuners, repliesBumpThreads = true)
 }
 
+@Suppress("UNCHECKED_CAST")
 fun <Data: MorphoDataItem.FeedItem> getAuthorFeedDataSource(
     descriptor: FeedDescriptor.Author,
     agent: ButterflyAgent

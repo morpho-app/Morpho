@@ -1,18 +1,55 @@
 package com.morpho.app.util
 
-import com.morpho.butterfly.butterflySerializersModule
+import app.bsky.actor.PreferencesUnion
+import kotlinx.serialization.InternalSerializationApi
 import kotlinx.serialization.KSerializer
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.modules.SerializersModule
+import kotlinx.serialization.modules.polymorphic
+import kotlinx.serialization.modules.subclass
+import kotlinx.serialization.serializer
+import kotlin.jvm.JvmInline
+
+@OptIn(InternalSerializationApi::class)
+val morphoSerializersModule = SerializersModule {
+    polymorphic(PreferencesUnion::class) {
+        subclass(PreferencesUnion.AdultContentPref::class)
+        subclass(PreferencesUnion.FeedViewPref::class)
+        subclass(PreferencesUnion.ThreadViewPref::class)
+        subclass(PreferencesUnion.SkyFeedBuilderFeedsPref::class)
+        subclass(PreferencesUnion.SavedFeedsPref::class)
+        subclass(PreferencesUnion.SavedFeedsPrefV2::class)
+        subclass(PreferencesUnion.PersonalDetailsPref::class)
+        subclass(PreferencesUnion.ContentLabelPref::class)
+        subclass(PreferencesUnion.LabelersPref::class)
+        subclass(PreferencesUnion.HiddenPostsPref::class)
+        subclass(PreferencesUnion.MutedWordsPref::class)
+        subclass(PreferencesUnion.InterestsPref::class)
+        subclass(MorphoPreferences::class)
+        defaultDeserializer { _ ->
+            PreferencesUnion.UnknownPreference::class.serializer()
+        }
+    }
+}
+
+@Serializable
+@JvmInline
+@SerialName("app.bsky.actor.defs#morphoPrefs")
+value class MorphoPreferences(
+    val value: com.morpho.app.data.MorphoPreferences
+): PreferencesUnion
 
 val json = Json {
     classDiscriminator = "${'$'}type"
     ignoreUnknownKeys = true
     prettyPrint = true
-    serializersModule = butterflySerializersModule
+    serializersModule = morphoSerializersModule
 }
 
 val JsonElement.recordType: String

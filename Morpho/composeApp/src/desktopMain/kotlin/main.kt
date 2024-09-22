@@ -49,6 +49,7 @@ import com.github.tkuenneth.nativeparameterstoreaccess.NativeParameterStoreAcces
 import com.github.tkuenneth.nativeparameterstoreaccess.WindowsRegistry.getWindowsRegistryEntry
 import com.morpho.app.App
 import com.morpho.app.data.MorphoAgent
+import com.morpho.app.data.PreferencesRepository
 import com.morpho.app.di.appModule
 import com.morpho.app.di.dataModule
 import com.morpho.app.di.storageModule
@@ -95,11 +96,12 @@ fun main() = application {
     cachePath.toNioPath().createDirectories()
     koin.get<SessionRepository> { parametersOf(storageDir) }
     koin.get<UserRepository> { parametersOf(storageDir) }
+    koin.get<PreferencesRepository> { parametersOf(storageDir) }
     val agent = koin.get<MorphoAgent>()
     val morphoPrefs = agent.morphoPrefs
     val (undecorated, tabbed) = run {
         log.d{ "Morpho Preferences: $morphoPrefs" }
-        morphoPrefs.tabbed to morphoPrefs.undecorated
+        (morphoPrefs.value.tabbed == true) to (morphoPrefs.value.undecorated == true)
     }
     val windowState = rememberWindowState(
         placement = WindowPlacement.Floating,

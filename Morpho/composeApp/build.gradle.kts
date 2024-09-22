@@ -1,3 +1,4 @@
+import com.codingfeline.buildkonfig.compiler.FieldSpec.Type.STRING
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 
@@ -10,10 +11,52 @@ plugins {
     alias(libs.plugins.compose.compiler)
 
     alias(libs.plugins.androidApplication)
+    id("com.codingfeline.buildkonfig")
     id("kotlin-parcelize")
     //id("kotlin-kapt")
 
     //id("com.rickclephas.kmp.nativecoroutines") version "1.0.0-ALPHA-27"
+}
+
+val versionString = "1.0.0-alpha_1"
+val packageString = "com.morpho.app"
+
+buildkonfig {
+    packageName = packageString
+    // objectName = "YourAwesomeConfig"
+    // exposeObjectWithName = "YourAwesomePublicConfig"
+
+    defaultConfigs {
+        buildConfigField(STRING, "versionString", versionString)
+    }
+    defaultConfigs("dev") {
+        buildConfigField(STRING, "versionString", "${versionString}-dev")
+    }
+
+    targetConfigs {
+        create("android") {
+            buildConfigField(STRING, "versionString", "android-${versionString}")
+        }
+        create("desktop") {
+            buildConfigField(STRING, "versionString", "desktop-${versionString}")
+        }
+        create("ios") {
+            buildConfigField(STRING, "versionString", "ios-${versionString}")
+        }
+
+    }
+    targetConfigs("dev") {
+        create("android") {
+            buildConfigField(STRING, "versionString", "android-${versionString}-dev")
+        }
+        create("desktop") {
+            buildConfigField(STRING, "versionString", "desktop-${versionString}-dev")
+        }
+        create("ios") {
+            buildConfigField(STRING, "versionString", "ios-${versionString}-dev")
+        }
+
+    }
 }
 
 kotlin {
@@ -84,8 +127,8 @@ kotlin {
 
             implementation(libs.kotlin.jwt)
 
-            implementation("androidx.paging:paging-runtime:3.3.0-alpha02")
-            implementation("androidx.paging:paging-compose:3.3.0-alpha02")
+            implementation(libs.androidx.paging.runtime)
+            implementation(libs.androidx.paging.compose)
         }
 
         commonMain.dependencies {
@@ -99,8 +142,8 @@ kotlin {
             implementation("androidx.datastore:datastore-preferences-core:1.1.1")
             implementation("androidx.datastore:datastore-core:1.1.1")
 
-            implementation("app.cash.paging:paging-common:3.3.0-alpha02-0.5.1")
-            implementation("app.cash.paging:paging-compose-common:3.3.0-alpha02-0.5.1")
+            implementation(libs.paging.common)
+            implementation(libs.paging.compose.common)
 
             implementation(compose.runtime)
             implementation(compose.foundation)
@@ -177,8 +220,7 @@ kotlin {
             implementation(libs.voyager.navigator)
             // Screen Model
             implementation(libs.voyager.screenmodel)
-            implementation("org.jetbrains.androidx.lifecycle:lifecycle-viewmodel-compose:2.8.0")
-            implementation("cafe.adriel.voyager:voyager-lifecycle-kmp:1.1.0-beta02")
+            implementation(libs.voyager.lifecycle.kmp)
             // BottomSheetNavigator
             implementation(libs.voyager.bottom.sheet.navigator)
             // TabNavigator
@@ -193,12 +235,12 @@ kotlin {
             implementation(libs.slf4j.api)
             //implementation(libs.slf4j.simple)
 
-            implementation("com.gu.android:toolargetool:0.3.0")
-            api("dev.icerock.moko:parcelize:0.9.0")
+            implementation(libs.toolargetool)
+            api(libs.parcelize)
 
         }
         nativeMain.dependencies {
-            implementation("app.cash.paging:paging-runtime-uikit:3.3.0-alpha02-0.5.1")
+            implementation(libs.paging.runtime.uikit)
         }
         desktopMain.dependencies {
             implementation(compose.desktop.currentOs)
@@ -215,7 +257,7 @@ kotlin {
             implementation(libs.kotlin.test)
             @OptIn(org.jetbrains.compose.ExperimentalComposeLibrary::class)
             implementation(compose.uiTest)
-            implementation("app.cash.paging:paging-testing:3.3.0-alpha02-0.5.1")
+            implementation(libs.paging.testing)
 
 
         }
@@ -227,7 +269,7 @@ kotlin {
         }
         getByName("commonMain") {
             dependencies {
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1")
+                implementation(libs.kotlinx.coroutines)
             }
         }
     }
@@ -242,11 +284,11 @@ android {
     sourceSets["main"].resources.srcDirs("src/commonMain/resources")
 
     defaultConfig {
-        applicationId = "com.morpho.app"
+        applicationId = packageString
         minSdk = libs.versions.android.minSdk.get().toInt()
         targetSdk = libs.versions.android.targetSdk.get().toInt()
         versionCode = 1
-        versionName = "1.0"
+        versionName = versionString
     }
     packaging {
         resources {
@@ -302,8 +344,9 @@ compose.desktop {
                 TargetFormat.AppImage,
                 TargetFormat.Pkg
             )
-            packageName = "com.morpho.app"
-            packageVersion = "1.0.0"
+            packageName = packageString
+
+            packageVersion = versionString.split("-")[0]
         }
     }
 }

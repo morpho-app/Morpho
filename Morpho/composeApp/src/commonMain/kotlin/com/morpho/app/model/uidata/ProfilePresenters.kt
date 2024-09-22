@@ -78,7 +78,7 @@ class MyProfilePresenter(
             val hasLists = agent.api
                 .getLists(GetListsQuery(id, 1, null)).getOrNull()?.lists?.isNotEmpty() ?: false
             val maybeLabeler = agent.getLabelers(listOf(profile.did))
-                .getOrNull()?.firstOrNull()?.toLabelService()
+                .getOrNull()?.firstOrNull()?.toLabelService(agent)
 
             return ContentCardState.MyProfile(
                 profile = profile,
@@ -175,7 +175,7 @@ class ProfilePresenter(
             val hasLists = agent.api
                 .getLists(GetListsQuery(actor, 1, null)).getOrNull()?.lists?.isNotEmpty() ?: false
             val maybeLabeler = agent.getLabelers(listOf(profile.did))
-                .getOrNull()?.firstOrNull()?.toLabelService()
+                .getOrNull()?.firstOrNull()?.toLabelService(agent)
 
             return ContentCardState.FullProfile(
                 profile = profile,

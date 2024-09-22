@@ -1,16 +1,24 @@
 package com.morpho.app.data
 
-import com.morpho.app.model.bluesky.*
+import com.morpho.app.model.bluesky.AuthorFilter
+import com.morpho.app.model.bluesky.FeedDescriptor
+import com.morpho.app.model.bluesky.MorphoDataItem
+import com.morpho.app.model.bluesky.Profile
+import com.morpho.app.model.bluesky.ThreadPost
 import com.morpho.app.model.uidata.MorphoData
 import com.morpho.app.model.uidata.areSameAuthor
 import com.morpho.app.model.uistate.FeedType
-import com.morpho.butterfly.*
+import com.morpho.butterfly.AtUri
 import com.morpho.butterfly.BskyPreferences
+import com.morpho.butterfly.Did
+import com.morpho.butterfly.Language
+import com.morpho.butterfly.PagedResponse
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.serialization.Serializable
 
 typealias TunerFunction<Data> = (List<Data>, FeedTuner<Data>) -> List<Data>
 
+@Suppress("UNCHECKED_CAST")
 @Serializable
 data class FeedTuner<Data: MorphoDataItem.FeedItem>(val tuners: List<TunerFunction<Data>> = persistentListOf()) {
     val seenKeys = mutableSetOf<String>()
@@ -95,23 +103,7 @@ data class FeedTuner<Data: MorphoDataItem.FeedItem>(val tuners: List<TunerFuncti
                 return listOf(FeedTuner(tuners = persistentListOf(languageTuner))) as List<FeedTuner<Data>>
             }
             if(feed.feedType == FeedType.LIST_FOLLOWING || feed.feedType == FeedType.HOME) {
-                val userDid = Did(prefs.user.userDid)
                 val tuners = mutableListOf(FeedTuner(tuners = persistentListOf(Companion::removeOrphans)))
-                val feedPrefs = prefs.preferences.feedViewPrefs[feed.uri.atUri] ?:
-                    return tuners.toList() as List<FeedTuner<Data>>
-                if(feedPrefs.hideReposts) tuners.add(FeedTuner(tuners = persistentListOf(Companion::removeReposts)))
-                if(feedPrefs.hideReplies) tuners.add(FeedTuner(tuners = persistentListOf(Companion::removeReplies)))
-                else {
-                    val followedRepliesOnly: TunerFunction<MorphoDataItem.FeedItem> = { f, t ->
-                        followedRepliesOnly(userDid, f, t)
-                    }
-                    tuners.add(FeedTuner(tuners = persistentListOf(followedRepliesOnly)))
-                }
-                if(feedPrefs.hideQuotePosts) tuners.add(
-                    FeedTuner(tuners = persistentListOf(
-                        Companion::removeQuotePosts
-                    ))
-                )
                 tuners.add(FeedTuner(tuners = persistentListOf(Companion::dedupThreads)))
                 return tuners.toList() as List<FeedTuner<Data>>
             }

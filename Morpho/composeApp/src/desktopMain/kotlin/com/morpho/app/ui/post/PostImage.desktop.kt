@@ -1,9 +1,23 @@
 package com.morpho.app.ui.post
 
 import MorphoDialog
-import androidx.compose.foundation.*
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.HorizontalScrollbar
+import androidx.compose.foundation.LocalScrollbarStyle
+import androidx.compose.foundation.VerticalScrollbar
+import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.requiredWidthIn
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.rememberScrollbarAdapter
 import androidx.compose.foundation.text.selection.SelectionContainer
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
@@ -48,7 +62,7 @@ actual fun FullImageView(
     }
     val (undecorated, tabbed) = if (morphoPrefs != null) {
         log.d{ "Morpho Preferences: $morphoPrefs" }
-        morphoPrefs.tabbed to morphoPrefs.undecorated
+        (morphoPrefs.tabbed == true) to (morphoPrefs.undecorated == true)
     } else {
         log.d {"No Morpho Preferences found, using defaults" }
         true to true

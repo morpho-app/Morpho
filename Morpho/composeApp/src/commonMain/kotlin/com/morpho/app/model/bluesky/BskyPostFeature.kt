@@ -1,7 +1,14 @@
 package com.morpho.app.model.bluesky
 
 import androidx.compose.runtime.Immutable
-import app.bsky.embed.*
+import app.bsky.embed.AspectRatio
+import app.bsky.embed.ExternalView
+import app.bsky.embed.ImagesView
+import app.bsky.embed.RecordViewRecordUnion
+import app.bsky.embed.RecordWithMediaViewMediaUnion
+import app.bsky.embed.VideoCaption
+import app.bsky.embed.VideoView
+import app.bsky.embed.VideoViewVideo
 import app.bsky.feed.Post
 import app.bsky.feed.PostEmbedUnion
 import app.bsky.feed.PostViewEmbedUnion
@@ -9,9 +16,17 @@ import com.morpho.app.CommonRawValue
 import com.morpho.app.model.uidata.Moment
 import com.morpho.app.model.uidata.MomentParceler
 import com.morpho.app.util.mapImmutable
-import com.morpho.butterfly.*
+import com.morpho.butterfly.AtUri
+import com.morpho.butterfly.Cid
+import com.morpho.butterfly.Did
+import com.morpho.butterfly.Uri
+import com.morpho.butterfly.deserialize
 import com.morpho.butterfly.model.Blob
-import dev.icerock.moko.parcelize.*
+import dev.icerock.moko.parcelize.Parcel
+import dev.icerock.moko.parcelize.Parcelable
+import dev.icerock.moko.parcelize.Parceler
+import dev.icerock.moko.parcelize.Parcelize
+import dev.icerock.moko.parcelize.TypeParceler
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonElement
 
@@ -329,7 +344,7 @@ private fun RecordViewRecordUnion.toEmbedRecord(): EmbedRecord {
                 uri = value.uri,
                 cid = value.cid,
                 author = value.creator.toProfile(),
-                labelService = value.toLabelService(),
+                labelService = value.toLabelServiceLocal(),
             )
         }
 

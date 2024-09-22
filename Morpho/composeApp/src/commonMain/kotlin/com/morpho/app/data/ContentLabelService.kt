@@ -64,7 +64,7 @@ class ContentLabelService: KoinComponent {
 
     init {
         serviceScope.launch {
-            agent.getLabelDefinitions(modPrefs)
+            agent.localizeLabelDefinitions(agent.prefs)
             agent.getLabelersDetailed(labelers.keys.map { Did(it) })
         }
 
@@ -166,31 +166,22 @@ class ContentLabelService: KoinComponent {
 
             val possibleCauses = filteredPostLabels.mapNotNull { label ->
                 labelDefinitions[label.creator.did]?.get(label.value)?.let { labelDef ->
-                    val localizedDefString = labelDef.allDescriptions.firstOrNull {
-                        it.lang == agent.myLanguage
-                    } ?: labelDef.allDescriptions.firstOrNull { it.lang.tag == "en" }
-                    val localLabelDef = labelDef.copy(
-                        localizedName = localizedDefString?.name ?: labelDef.localizedName,
-                        localizedDescription = localizedDefString?.description
-                            ?: labelDef.localizedDescription,
-                    )
-
                     LabelCause.Label(
                         LabelSource.Labeler(labelerDetails[label.creator.did]!!),
                         label.toAtProtoLabel(),
-                        localLabelDef,
-                        localLabelDef.whatToHide,
+                        labelDef,
+                        labelDef.whatToHide,
                         labels[label.value] ?: labelDef.defaultSetting ?: Visibility.IGNORE,
-                        localLabelDef.behaviours.content,
-                        noOverride = !localLabelDef.configurable,
-                        priority = when (localLabelDef.severity) {
+                        labelDef.behaviours.content,
+                        noOverride = !labelDef.configurable,
+                        priority = when (labelDef.severity) {
                             Severity.INFORM -> 5
                             Severity.ALERT -> 2
                             Severity.NONE -> 8
                             Severity.WARN -> 1
                         },
                         downgraded = false,
-                    ) to localLabelDef.toContentHandling(
+                    ) to labelDef.toContentHandling(
                         LabelTarget.Content,
                         avatar = labelerDetails[label.creator.did]?.creator?.avatar
                     )

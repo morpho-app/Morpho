@@ -24,7 +24,8 @@ class TabbedMainScreenModel : MainScreenModel() {
 
     val tabs = mutableStateListOf<ContentCardMapEntry>()
 
-    val timelineIndex = 1
+    val timelineIndex: Int
+        get() = agent.prefs.timelineIndex ?: 0
 
     var loaded by mutableStateOf(false)
 

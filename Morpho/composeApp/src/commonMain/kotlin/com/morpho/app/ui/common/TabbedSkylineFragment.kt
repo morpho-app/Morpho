@@ -16,6 +16,7 @@ import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import cafe.adriel.voyager.navigator.tab.TabNavigator
 import com.atproto.repo.StrongRef
+import com.morpho.app.data.MorphoAgent
 import com.morpho.app.model.bluesky.BskyPost
 import com.morpho.app.model.bluesky.DraftPost
 import com.morpho.app.model.uidata.Event
@@ -24,7 +25,6 @@ import com.morpho.app.screens.base.tabbed.ProfileTab
 import com.morpho.app.screens.base.tabbed.ThreadTab
 import com.morpho.app.ui.elements.doMenuOperation
 import com.morpho.app.util.ClipboardManager
-import com.morpho.butterfly.ButterflyAgent
 import com.morpho.butterfly.ContentHandling
 import io.ktor.util.reflect.instanceOf
 import kotlinx.coroutines.Dispatchers
@@ -43,7 +43,7 @@ fun TabbedSkylineFragment(
     eventCallback: (Event) -> Unit = {},
     getContentHandling: (BskyPost) -> List<ContentHandling> = { listOf() },
 ) {
-    val agent = getKoin().get<ButterflyAgent>()
+    val agent = getKoin().get<MorphoAgent>()
     val uiState = uiUpdate.collectAsState(initial = UIUpdate.Empty)
     val navigator = if (LocalNavigator.current?.parent?.instanceOf(TabNavigator::class) == true) {
         LocalNavigator.currentOrThrow
