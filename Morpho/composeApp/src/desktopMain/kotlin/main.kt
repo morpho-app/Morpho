@@ -25,6 +25,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
@@ -40,7 +43,6 @@ import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberDialogState
 import androidx.compose.ui.window.rememberWindowState
 import cafe.adriel.voyager.core.annotation.ExperimentalVoyagerApi
-import cafe.adriel.voyager.jetpack.ProvideNavigatorLifecycleKMPSupport
 import ch.qos.logback.classic.LoggerContext
 import ch.qos.logback.core.util.StatusPrinter2
 import com.github.tkuenneth.nativeparameterstoreaccess.MacOSDefaults.getDefaultsEntry
@@ -48,6 +50,7 @@ import com.github.tkuenneth.nativeparameterstoreaccess.NativeParameterStoreAcces
 import com.github.tkuenneth.nativeparameterstoreaccess.NativeParameterStoreAccess.IS_WINDOWS
 import com.github.tkuenneth.nativeparameterstoreaccess.WindowsRegistry.getWindowsRegistryEntry
 import com.morpho.app.App
+import com.morpho.app.data.DarkModeSetting
 import com.morpho.app.data.MorphoAgent
 import com.morpho.app.data.PreferencesRepository
 import com.morpho.app.di.appModule
@@ -65,25 +68,29 @@ import org.jetbrains.compose.resources.imageResource
 import org.jetbrains.compose.resources.painterResource
 import org.koin.core.annotation.KoinExperimentalAPI
 import org.koin.core.context.startKoin
-import org.koin.core.logger.Level
 import org.koin.core.parameter.parametersOf
+import org.koin.logger.slf4jLogger
 import org.lighthousegames.logging.KmLogging
 import org.lighthousegames.logging.LogLevel
 import org.lighthousegames.logging.PlatformLogger
 import org.lighthousegames.logging.VariableLogLevel
 import org.lighthousegames.logging.logging
+import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import kotlin.io.path.createDirectories
 
 val log = logging("main")
 
+fun getLogger(): Logger = LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME)
+
+fun getLogger(name: String): Logger = LoggerFactory.getLogger(name)
+
 @OptIn(KoinExperimentalAPI::class, ExperimentalResourceApi::class, ExperimentalVoyagerApi::class)
 fun main() = application {
-    ProvideNavigatorLifecycleKMPSupport {
     StatusPrinter2().print(LoggerFactory.getILoggerFactory() as LoggerContext)
     KmLogging.setLoggers(PlatformLogger(VariableLogLevel(LogLevel.Verbose)))
     val koin = startKoin {
-        printLogger(Level.DEBUG)
+        slf4jLogger()
         modules(appModule, storageModule, dataModule)
     }.koin
     val storageDir = AppDirsFactory.getInstance()
@@ -98,8 +105,8 @@ fun main() = application {
     koin.get<UserRepository> { parametersOf(storageDir) }
     koin.get<PreferencesRepository> { parametersOf(storageDir) }
     val agent = koin.get<MorphoAgent>()
-    val morphoPrefs = agent.morphoPrefs
-    val (undecorated, tabbed) = run {
+    val morphoPrefs by derivedStateOf { agent.morphoPrefs }
+    val (undecorated, tabbed) = remember {
         log.d{ "Morpho Preferences: $morphoPrefs" }
         (morphoPrefs.value.tabbed == true) to (morphoPrefs.value.undecorated == true)
     }
@@ -122,7 +129,13 @@ fun main() = application {
         transparent = undecorated,
         icon = painterResource(Res.drawable.morpho_icon_transparent)
     ) {
-        MorphoTheme(darkTheme = isSystemInDarkTheme()) {
+        val darkTheme by derivedStateOf { when(morphoPrefs.value.darkMode){
+            DarkModeSetting.SYSTEM -> isSystemInDarkTheme()
+            DarkModeSetting.LIGHT -> false
+            DarkModeSetting.DARK -> true
+            null -> isSystemInDarkTheme()
+        } }
+        MorphoTheme(darkTheme = darkTheme) {
             if(undecorated) {
                 MorphoWindow(
                     windowState = windowState,
@@ -141,7 +154,7 @@ fun main() = application {
         }
 
     }
-    }
+
 }
 
 

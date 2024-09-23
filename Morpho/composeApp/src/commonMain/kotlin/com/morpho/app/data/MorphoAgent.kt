@@ -5,7 +5,6 @@ import app.bsky.actor.PreferencesUnion
 import app.bsky.labeler.LabelerViewDetailed
 import com.morpho.app.myLang
 import com.morpho.app.util.morphoSerializersModule
-import com.morpho.butterfly.BlueskyApi
 import com.morpho.butterfly.BskyPreferences
 import com.morpho.butterfly.ButterflyAgent
 import com.morpho.butterfly.InterpretedLabelDefinition
@@ -16,7 +15,6 @@ import com.morpho.butterfly.localize
 import com.morpho.butterfly.xrpc.XrpcBlueskyApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flow
@@ -25,21 +23,15 @@ import kotlinx.coroutines.runBlocking
 import org.koin.core.component.inject
 
 class MorphoAgent: ButterflyAgent() {
-    // Splices in the app's serializers module to handle any extensions to the type unions
-    override var api: BlueskyApi = XrpcBlueskyApi(atpClient, morphoSerializersModule)
     val localPrefs: PreferencesRepository by inject()
 
-    private val _morphoPrefs: MutableStateFlow<MorphoPreferences> = MutableStateFlow(MorphoPreferences(
+    val morphoPrefs: MutableStateFlow<MorphoPreferences> = MutableStateFlow(MorphoPreferences(
         kawaiiMode = true,
         notificationsFilter = NotificationsFilterPref(),
         accessibility = AccessibilityPreferences(),
     ))
-    private val _bskyPrefs: MutableStateFlow<BskyPreferences> = MutableStateFlow(prefs)
-    private var _myLanguage = MutableStateFlow(Language(myLang ?: _morphoPrefs.value.uiLanguage?.tag ?: "en"))
-
-    val morphoPrefs = _morphoPrefs.asStateFlow()
-    val bskyPrefs = _bskyPrefs.asStateFlow()
-    val myLanguage = _myLanguage.asStateFlow()
+    val bskyPrefs: MutableStateFlow<BskyPreferences> = MutableStateFlow(prefs)
+    val myLanguage = MutableStateFlow(Language(myLang ?: morphoPrefs.value.uiLanguage?.tag ?: "en"))
 
     val labelersDetailed: Flow<List<LabelerViewDetailed>> = flow {
         val labelers = getLabelersDetailed(labelers).getOrNull() ?: listOf()
@@ -56,7 +48,7 @@ class MorphoAgent: ButterflyAgent() {
             serviceScope.launch {
                 localPrefs.morphoPrefs(id!!).distinctUntilChanged().collectLatest {
                     if (it != null && it != MorphoPreferences()) {
-                        _morphoPrefs.value = it
+                        morphoPrefs.value = it
                     }
                 }
             }
@@ -70,7 +62,7 @@ class MorphoAgent: ButterflyAgent() {
             serviceScope.launch {
                 localPrefs.bskyPrefs(id!!).distinctUntilChanged().collectLatest {
                     if (it != null && it != BskyPreferences()) {
-                        _bskyPrefs.value = it
+                        bskyPrefs.value = it
                     }
                 }
             }
@@ -111,7 +103,7 @@ class MorphoAgent: ButterflyAgent() {
     }
 
     fun setUILanguage(language: Language) = serviceScope.launch {
-        _myLanguage.value = language
+        myLanguage.value = language
         updateMorphoPrefs {
             it.copy(uiLanguage = language)
         }
@@ -122,7 +114,7 @@ class MorphoAgent: ButterflyAgent() {
         val prefs = updateFun(morphoPrefs.value)
         return if(prefs != null) {
             localPrefs.setMorphoPrefs(id!!, prefs)
-            _morphoPrefs.value = prefs
+            morphoPrefs.value = prefs
             Result.success(prefs)
         } else Result.failure(Exception("Update failed"))
     }

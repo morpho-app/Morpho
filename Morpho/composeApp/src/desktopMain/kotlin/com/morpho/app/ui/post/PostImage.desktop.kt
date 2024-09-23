@@ -102,10 +102,10 @@ actual fun FullImageView(
                         image = image,
                         onDismissRequest = onDismissRequest
                     )
-                    println("Image width: ${image.aspectRatio?.width} Image height: ${image.aspectRatio?.height} Ratio: $ratio")
-                    println("Width: ${state.size.width.value.toInt()} Height: ${state.size.height.value.toInt()} Ratio: ${
-                        state.size.width.value.toInt().toFloat() / state.size.height.value.toInt().toFloat()
-                    }")
+//                    println("Image width: ${image.aspectRatio?.width} Image height: ${image.aspectRatio?.height} Ratio: $ratio")
+//                    println("Width: ${state.size.width.value.toInt()} Height: ${state.size.height.value.toInt()} Ratio: ${
+//                        state.size.width.value.toInt().toFloat() / state.size.height.value.toInt().toFloat()
+//                    }")
                 }
             } else {
                 DesktopImageViewContent(
@@ -171,7 +171,7 @@ fun DesktopImageViewContent(
                             text = image.alt,
                             style = MaterialTheme.typography.bodyLarge,
                             color = Color.White,
-                            modifier = Modifier.padding(12.dp),
+                            modifier = Modifier.padding(top= 4.dp, bottom = 12.dp, start = 12.dp, end = 12.dp),
                             textAlign = TextAlign.Start
                         )
                     }

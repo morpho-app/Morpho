@@ -5,6 +5,7 @@ import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -28,7 +29,7 @@ fun AppearanceSettings(
     distinguish: Boolean = false,
     topLevel: Boolean = true,
 ) {
-    val morphoPrefs = agent.morphoPrefs.value
+    val morphoPrefs by agent.morphoPrefs.collectAsState(initial = agent.morphoPrefs.value)
     SettingsGroup(
         title = if(!topLevel) "Appearance" else "",
         modifier = modifier,

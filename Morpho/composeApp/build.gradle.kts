@@ -198,6 +198,7 @@ kotlin {
             implementation(libs.koin.core.coroutines)
             implementation(libs.koin.annotations)
             implementation(libs.koin.compose)
+            implementation("io.insert-koin:koin-logger-slf4j:3.5.3")
 
 
             // Enables FileKit without Compose dependencies

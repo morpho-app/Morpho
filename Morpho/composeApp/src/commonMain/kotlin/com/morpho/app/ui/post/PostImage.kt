@@ -2,14 +2,26 @@ package com.morpho.app.ui.post
 
 
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.requiredHeightIn
+import androidx.compose.foundation.layout.requiredWidthIn
 import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
 import androidx.compose.foundation.lazy.staggeredgrid.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.*
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -40,7 +52,7 @@ fun PostImages(
     val numImages = rememberSaveable { imagesFeature.images.size}
     if(numImages > 1) {
         LazyVerticalStaggeredGrid(
-            columns = StaggeredGridCells.Adaptive(120.dp),
+            columns = StaggeredGridCells.Adaptive(150.dp),
             contentPadding = PaddingValues(2.dp),
             modifier = modifier
                 .padding(top = 6.dp)
@@ -49,7 +61,7 @@ fun PostImages(
             items(imagesFeature.images) {image ->
                 PostImageThumb(
                     image = image,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth().padding(2.dp)
                 )
             }
         }
@@ -100,11 +112,9 @@ fun PostImageThumb(
             if (ratio > 1) {
                 height /= ratio
                 height = height.roundToInt().toFloat()
-                width = width.roundToInt().toFloat()
             } else {
                 width /= ratio
                 width = width.roundToInt().toFloat()
-                height = height.roundToInt().toFloat()
             }
             AsyncImage(
                 model = ImageRequest.Builder(LocalPlatformContext.current)
