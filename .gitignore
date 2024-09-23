@@ -15,4 +15,4 @@ Morpho/.kotlin
 .kotlin
 /.kotlin/
 Butterfly
-*.log
+**.log
