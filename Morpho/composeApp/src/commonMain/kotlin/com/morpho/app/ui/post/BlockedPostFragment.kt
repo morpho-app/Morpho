@@ -10,6 +10,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.max
 import com.morpho.butterfly.AtUri
@@ -39,7 +40,7 @@ fun BlockedPostFragment(
                 SelectionContainer {
                     Text(
                         text = "Post by blocked or blocking user",
-                        style = MaterialTheme.typography.titleMedium,
+                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.ExtraLight),
                         modifier = Modifier
                             .padding(12.dp)
                             .align(Alignment.CenterHorizontally)

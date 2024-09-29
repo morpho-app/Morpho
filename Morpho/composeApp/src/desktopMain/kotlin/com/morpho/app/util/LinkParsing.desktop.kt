@@ -1,11 +1,12 @@
 package com.morpho.app.util
 
+import androidx.compose.ui.platform.UriHandler
 import java.awt.Desktop
 import java.net.URI
 import java.util.Locale
 
 
-actual fun openBrowser(url: String) {
+actual fun openBrowser(url: String, uriHandler: UriHandler) {
     val osName by lazy(LazyThreadSafetyMode.NONE) { System.getProperty("os.name").lowercase(Locale.ROOT) }
     val desktop = Desktop.getDesktop()
     try {

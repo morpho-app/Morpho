@@ -2,14 +2,22 @@ package com.morpho.app.model.bluesky
 
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.util.fastMap
+import app.bsky.actor.FeedType
+import app.bsky.actor.SavedFeed
 import app.bsky.feed.GeneratorView
 import com.morpho.app.model.uidata.Moment
+import com.morpho.app.model.uidata.MomentParceler
 import com.morpho.app.util.mapImmutable
 import com.morpho.butterfly.AtUri
 import com.morpho.butterfly.Cid
 import com.morpho.butterfly.Did
+import com.morpho.butterfly.model.TID
+import dev.icerock.moko.parcelize.Parcelable
+import dev.icerock.moko.parcelize.Parcelize
+import dev.icerock.moko.parcelize.TypeParceler
 import kotlinx.serialization.Serializable
 
+@Parcelize
 @Serializable
 @Immutable
 data class FeedGenerator(
@@ -24,8 +32,9 @@ data class FeedGenerator(
     public val likeCount: Long,
     public val likedByMe: Boolean,
     public val likeRecord: AtUri?,
+    @TypeParceler<Moment, MomentParceler>()
     public val indexedAt: Moment,
-)
+): Parcelable
 
 
 fun GeneratorView.toFeedGenerator() : FeedGenerator {
@@ -47,4 +56,13 @@ fun GeneratorView.toFeedGenerator() : FeedGenerator {
 
 fun List<GeneratorView>.toFeedGenList(): List<FeedGenerator> {
     return this.fastMap { it.toFeedGenerator() }
+}
+
+fun FeedGenerator.toSavedFeed(pinned: Boolean = false): SavedFeed {
+    return SavedFeed(
+        id = TID.next().toString(),
+        type = FeedType.FEED,
+        value = this.uri.atUri,
+        pinned = pinned,
+    )
 }

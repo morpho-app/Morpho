@@ -3,23 +3,20 @@ package com.morpho.app.model.bluesky
 import androidx.compose.runtime.Immutable
 import app.bsky.feed.*
 import com.morpho.app.model.uidata.Moment
+import com.morpho.app.model.uidata.MomentParceler
 import com.morpho.app.util.deserialize
 import com.morpho.app.util.mapImmutable
 import com.morpho.butterfly.AtUri
 import com.morpho.butterfly.Cid
 import com.morpho.butterfly.Language
+import dev.icerock.moko.parcelize.Parcelable
+import dev.icerock.moko.parcelize.Parcelize
+import dev.icerock.moko.parcelize.TypeParceler
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.datetime.Clock
 import kotlinx.serialization.Serializable
 
-@Serializable
-enum class PostType {
-    BlockedThread,
-    NotFoundThread,
-    VisibleThread,
-    BskyPost,
-}
-
+@Parcelize
 @Serializable
 @Immutable
 data class BskyPost (
@@ -31,12 +28,14 @@ data class BskyPost (
     val facets: List<BskyFacet> = listOf(),
     @Serializable
     val tags: List<String> = listOf(),
+    @TypeParceler<Moment, MomentParceler>()
     val createdAt: Moment,
     @Serializable
     val feature: BskyPostFeature? = null,
     val replyCount: Long,
     val repostCount: Long,
     val likeCount: Long,
+    @TypeParceler<Moment, MomentParceler>()
     val indexedAt: Moment,
     val reposted: Boolean,
     val repostUri: AtUri? = null,
@@ -48,8 +47,8 @@ data class BskyPost (
     val reason: BskyPostReason? = null,
     @Serializable
     val langs: List<Language> = listOf(),
-) {
-    override operator fun equals(other: Any?) : Boolean {
+): Parcelable {
+    override fun equals(other: Any?) : Boolean {
         return when(other) {
             null -> false
             is Cid -> other == cid
@@ -80,7 +79,7 @@ data class BskyPost (
             is Cid -> other == cid
             is AtUri -> other == uri
             is BskyPost -> other.cid == cid
-            else -> reply?.parent?.contains(other) == true
+            else -> reply?.parentPost?.contains(other) == true
         }
     }
 
@@ -116,17 +115,7 @@ fun PostView.toPost(): BskyPost {
 }
 
 fun ThreadViewPost.toPost() : BskyPost {
-    val replyRef = when (parent) {
-        is ThreadViewPostParentUnion.BlockedPost -> null
-        is ThreadViewPostParentUnion.NotFoundPost -> null
-        is ThreadViewPostParentUnion.ThreadViewPost -> {
-            val parentPost = (parent as ThreadViewPostParentUnion.ThreadViewPost).value.toPost()
-            val rootPost = findRootPost()?.toPost() ?: parentPost
-            BskyPostReply(root = rootPost, parent = parentPost, grandparentAuthor = parentPost.reply?.parent?.author)
-        }
-        null -> null
-    }
-    return post.toPost(reply = replyRef, reason = null)
+    return post.toPost()
 }
 
 fun ThreadViewPost.findRootPost(): ThreadViewPost? {
@@ -156,6 +145,7 @@ fun PostView.toPost(
         Post.serializer().deserialize(record)
     } catch (e: Exception) {
         Post(
+
             text = "Error deserializing post: $e\n" +
                     "Record: $record",
             facets = persistentListOf(),
@@ -164,6 +154,12 @@ fun PostView.toPost(
             langs = persistentListOf(),
         )
     }
+    // copy in the replyRef if it's not already there
+    val replyRef = reply?.copy(
+        replyRef = postRecord.reply?.toReplyRef(),
+        grandParentAuthor = reply.grandParentAuthor ?:
+            postRecord.reply?.grandParentAuthor?.toProfile()
+    ) ?: postRecord.reply?.toReply()
 
     return BskyPost(
         uri = uri,
@@ -184,7 +180,7 @@ fun PostView.toPost(
         likeUri = viewer?.like,
         labels = labels.mapImmutable { it.toLabel() },
         langs = postRecord.langs.mapImmutable { it },
-        reply = reply,
+        reply = replyRef,
         reason = reason,
     )
 }

@@ -3,7 +3,15 @@ package com.morpho.app.ui.post
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.text.selection.DisableSelection
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.icons.Icons
@@ -12,9 +20,14 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -23,20 +36,30 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastAny
 import androidx.compose.ui.util.fastForEach
+import cafe.adriel.voyager.navigator.LocalNavigator
+import cafe.adriel.voyager.navigator.currentOrThrow
+import com.atproto.label.Blurs
 import com.atproto.repo.StrongRef
 import com.morpho.app.model.bluesky.BskyPost
 import com.morpho.app.model.bluesky.FacetType
-import com.morpho.app.model.bluesky.LabelAction
-import com.morpho.app.model.bluesky.LabelScope
-import com.morpho.app.model.uidata.ContentHandling
-import com.morpho.app.model.uidata.LabelDescription
-import com.morpho.app.ui.elements.*
-import com.morpho.app.util.openBrowser
+import com.morpho.app.ui.elements.ContentHider
+import com.morpho.app.ui.elements.MenuOptions
+import com.morpho.app.ui.elements.OutlinedAvatar
+import com.morpho.app.ui.elements.PostMenu
+import com.morpho.app.ui.elements.RichTextElement
+import com.morpho.app.ui.elements.WrappedColumn
+import com.morpho.app.ui.utils.ItemClicked
+import com.morpho.app.ui.utils.OnFacetClicked
+import com.morpho.app.ui.utils.OnItemClicked
+import com.morpho.app.ui.utils.OnPostClicked
 import com.morpho.butterfly.AtIdentifier
 import com.morpho.butterfly.AtUri
+import com.morpho.butterfly.ContentHandling
+import com.morpho.butterfly.LabelAction
+import com.morpho.butterfly.LabelDescription
+import com.morpho.butterfly.LabelIcon
 import com.morpho.butterfly.model.RecordType
 import kotlinx.collections.immutable.toImmutableList
-import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import org.jetbrains.compose.resources.ExperimentalResourceApi
@@ -46,7 +69,10 @@ import org.jetbrains.compose.resources.ExperimentalResourceApi
 fun FullPostFragment(
     post: BskyPost,
     modifier: Modifier = Modifier,
-    onItemClicked: (AtUri) -> Unit = {},
+    onItemClicked: OnItemClicked = ItemClicked(
+        uriHandler = LocalUriHandler.current,
+        navigator = LocalNavigator.currentOrThrow,
+    ),
     onProfileClicked: (AtIdentifier) -> Unit = {},
     onReplyClicked: (BskyPost) -> Unit = { },
     onRepostClicked: (BskyPost) -> Unit = { },
@@ -56,13 +82,14 @@ fun FullPostFragment(
     getContentHandling: (BskyPost) -> List<ContentHandling> = { listOf() }
 ) {
     val postDate = remember { post.createdAt.instant.toLocalDateTime(TimeZone.currentSystemDefault()).date }
+    val postTime = remember { post.createdAt.instant.toLocalDateTime(TimeZone.currentSystemDefault()).time }
     var menuExpanded by remember { mutableStateOf(false) }
     val contentHandling = remember {
         if (post.author.mutedByMe) {
             getContentHandling(post) + ContentHandling(
-                scope = LabelScope.Content,
+                scope = Blurs.CONTENT,
                 id = "muted",
-                icon = Icons.Default.MoreHoriz,
+                icon = LabelIcon.EyeSlash(labelerAvatar = null),
                 action = LabelAction.Blur,
                 source = LabelDescription.YouMuted,
             )
@@ -71,6 +98,12 @@ fun FullPostFragment(
         }.toImmutableList()
     }
 
+    val onPostClicked: OnPostClicked = remember { { uri ->
+        onItemClicked.onRichTextFacetClicked(uri = uri)
+    } }
+    val onFacetClicked: OnFacetClicked = remember { { facet ->
+        onItemClicked.onRichTextFacetClicked(facet = facet)
+    } }
 
     WrappedColumn(
         modifier
@@ -81,7 +114,7 @@ fun FullPostFragment(
     ) {
         ContentHider(
             reasons = contentHandling,
-            scope = LabelScope.Content,
+            scope = Blurs.CONTENT,
         ) {
             Row(
                 modifier = Modifier
@@ -145,7 +178,7 @@ fun FullPostFragment(
                     Icon(
                         imageVector = Icons.Default.MoreHoriz,
                         contentDescription = "More",
-                        tint = MaterialTheme.colorScheme.onSurface
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
                 DisableSelection { PostMenu(menuExpanded, {
@@ -161,7 +194,7 @@ fun FullPostFragment(
                     text = post.text,
                     facets = post.facets,
                     //modifier = Modifier.padding(bottom = 2.dp).padding(start = 0.dp, end = 6.dp),
-                    onItemClicked = { onItemClicked(post.uri) },
+                    onItemClicked = { onPostClicked(post.uri) },
                     onProfileClicked = onProfileClicked,
                     getContentHandling = getContentHandling
                 )
@@ -171,34 +204,27 @@ fun FullPostFragment(
                     facets = post.facets,
                     onClick = { facetTypes ->
                         if (facetTypes.isEmpty()) {
-                            onItemClicked(post.uri)
+                            onPostClicked(post.uri)
                             return@RichTextElement
                         }
                         facetTypes.fastForEach {
-                            when(it) {
-                                is FacetType.ExternalLink -> {
-                                    openBrowser(it.uri.uri)
-                                }
-                                is FacetType.Tag -> {onItemClicked(post.uri)}
-                                is FacetType.UserDidMention -> {
-                                    onProfileClicked(it.did)
-                                }
-                                is FacetType.UserHandleMention -> {
-                                    onProfileClicked(it.handle)
-                                }
-
-                                else -> {}
-                            }
+                            onFacetClicked(it)
                         }
                     },
                 )
             }
-            val postTimestamp = remember {
-                val seconds = post.createdAt.instant.epochSeconds % 60
-                Instant.fromEpochSeconds(post.createdAt.instant.epochSeconds - seconds)
-                    .toLocalDateTime(TimeZone.currentSystemDefault()).time
-            }
 
+            val postTimestamp = remember {
+                // attmepts to cleanly handle 12-hour time while stripping seconds and sub-seconds
+                val string = postTime.toString()
+                if(string.contains("AM") || string.contains("PM")) {
+                    val ampm = if(string.contains("AM")) "AM" else "PM"
+                    val components = string.split(":")
+                    "${components[0]}:${components[1]} $ampm"
+                } else {
+                    string.substringBeforeLast(":")
+                }
+            }
             PostFeatureElement(
                 post.feature, onItemClicked, contentHandling =  contentHandling
             )

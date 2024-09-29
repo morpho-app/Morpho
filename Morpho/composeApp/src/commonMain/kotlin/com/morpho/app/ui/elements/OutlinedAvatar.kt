@@ -17,10 +17,12 @@ package com.morpho.app.ui.elements
  */
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
@@ -28,6 +30,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.graphics.drawOutline
 import androidx.compose.ui.graphics.drawscope.Fill
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
@@ -62,6 +65,7 @@ fun OutlinedAvatar(
     contentDescription: String = "",
     avatarShape: AvatarShape = AvatarShape.Corner,
     onClicked: (() -> Unit)? = null,
+    placeholder: Painter = painterResource(Res.drawable.placeholder_pfp),
     size: Dp = 30.dp,
 ) {
 
@@ -70,6 +74,8 @@ fun OutlinedAvatar(
         AvatarShape.Rounded -> MaterialTheme.shapes.small
         AvatarShape.Corner -> roundedTopLBotR.small
     }
+    val interactionSource = remember { MutableInteractionSource() }
+    val indication = remember { MorphoHighlightIndication() }
     val pxSize = LocalDensity.current.run { (size-outlineSize).toPx()*2 }.toInt()
     val sB = when(avatarShape) {
         AvatarShape.Circle -> CircleShape.createOutline(
@@ -83,7 +89,12 @@ fun OutlinedAvatar(
             LocalDensity.current)
     }
     val modClicked = if(onClicked != null) {
-        modifier.clickable { onClicked() }
+        modifier.clickable(
+            interactionSource = interactionSource,
+            indication = indication,
+            enabled = true,
+            onClick = { onClicked() }
+        )
     } else modifier
     val mod = if(outlineSize > 0.dp) {
         modClicked.size(size).clip(s)
@@ -109,8 +120,8 @@ fun OutlinedAvatar(
             .build(),
         contentDescription = contentDescription,
         contentScale = ContentScale.Crop,
-        fallback = painterResource(Res.drawable.placeholder_pfp),
-        placeholder = painterResource(Res.drawable.placeholder_pfp),
+        fallback = placeholder,
+        placeholder = placeholder,
         filterQuality = FilterQuality.High,
         modifier = mod
     )

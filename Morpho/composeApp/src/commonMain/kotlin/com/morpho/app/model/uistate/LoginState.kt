@@ -5,12 +5,14 @@ import com.morpho.butterfly.auth.AuthInfo
 import com.morpho.butterfly.auth.Credentials
 import kotlinx.serialization.Serializable
 
+@Immutable
 @Serializable
 enum class LoginScreenMode {
     SIGN_UP,
     SIGN_IN
 }
 
+@Immutable
 @Serializable
 sealed interface AuthState {
     data object NoAuth : AuthState

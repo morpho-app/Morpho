@@ -1,42 +1,59 @@
 package com.morpho.app.ui.common
 
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.rememberModalBottomSheetState
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.unit.dp
-import cafe.adriel.voyager.core.model.screenModelScope
+import app.cash.paging.compose.LazyPagingItems
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import cafe.adriel.voyager.navigator.tab.TabNavigator
 import com.atproto.repo.StrongRef
+import com.morpho.app.data.MorphoAgent
 import com.morpho.app.model.bluesky.BskyPost
 import com.morpho.app.model.bluesky.DraftPost
 import com.morpho.app.model.bluesky.MorphoDataItem
-import com.morpho.app.model.uidata.AtCursor
-import com.morpho.app.model.uistate.ContentCardState
+import com.morpho.app.model.uidata.Event
+import com.morpho.app.model.uidata.UIUpdate
 import com.morpho.app.screens.base.tabbed.ProfileTab
 import com.morpho.app.screens.base.tabbed.ThreadTab
-import com.morpho.app.screens.main.MainScreenModel
 import com.morpho.app.ui.elements.doMenuOperation
+import com.morpho.app.ui.utils.ItemClicked
 import com.morpho.app.util.ClipboardManager
-import com.morpho.butterfly.model.RecordUnion
+import com.morpho.butterfly.ContentHandling
 import io.ktor.util.reflect.instanceOf
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.launch
 import org.koin.compose.getKoin
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun <T: MainScreenModel, I: MorphoDataItem, S: ContentCardState<I>> TabbedSkylineFragment(
-    sm: T,
-    state: StateFlow<S>?,
+fun TabbedSkylineFragment(
     paddingValues: PaddingValues = PaddingValues(0.dp),
-    refresh: (AtCursor) -> Unit = {  },
-    isProfileFeed: Boolean = false
+    isProfileFeed: Boolean = false,
+    uiUpdate: StateFlow<UIUpdate>,
+    eventCallback: (Event) -> Unit = {},
+    getContentHandling: (BskyPost) -> List<ContentHandling> = { listOf() },
+    pager: LazyPagingItems<out MorphoDataItem>,
+    listState: LazyListState = rememberLazyListState(),
+    scope: CoroutineScope = rememberCoroutineScope(),
+    agent: MorphoAgent = getKoin().get(),
 ) {
+    val uiState = uiUpdate.collectAsState(initial = UIUpdate.Empty)
     val navigator = if (LocalNavigator.current?.parent?.instanceOf(TabNavigator::class) == true) {
         LocalNavigator.currentOrThrow
     } else LocalNavigator.currentOrThrow.parent!!
@@ -45,6 +62,7 @@ fun <T: MainScreenModel, I: MorphoDataItem, S: ContentCardState<I>> TabbedSkylin
     var showComposer by remember { mutableStateOf(false) }
     var composerRole by remember { mutableStateOf(ComposerRole.StandalonePost) }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val uriHandler = LocalUriHandler.current
     // Probably pull this farther up,
     //      but this means if you don't explicitly cancel you don't lose the post
     var draft by remember { mutableStateOf(DraftPost()) }
@@ -69,26 +87,35 @@ fun <T: MainScreenModel, I: MorphoDataItem, S: ContentCardState<I>> TabbedSkylin
             showComposer = true
         }
     }
-    val content = state?.collectAsState()
-    if(content?.value != null) {
-        val clipboard = getKoin().get<ClipboardManager>()
+    val clipboard = getKoin().get<ClipboardManager>()
+    if(uiState.value !is UIUpdate.Empty) {
         SkylineFragment(
-            content = state,
-            onProfileClicked = {
-                actor -> //if (isProfileFeed) navigator.popUntilRoot()
-                navigator.push(ProfileTab(actor))
-                               },
-            onItemClicked = { uri -> navigator.push(ThreadTab(uri)) },
-            refresh = { cursor -> refresh(cursor)},
-            onUnClicked = { type, rkey -> sm.deleteRecord(type, rkey) },
+            onItemClicked = ItemClicked(
+                uriHandler = LocalUriHandler.current,
+                navigator = navigator,
+                profileCallback = { actor ->
+                    scope.launch {
+                        val did = agent.resolveHandle(actor).getOrNull()
+                        if(did != null) navigator.push(ProfileTab(did))
+                    }
+                },
+            ),
+            onUnClicked = { type, rkey -> agent.deleteRecord(type, rkey) },
             onRepostClicked = { onRepostClicked(it) },
-            onMenuClicked = { option, post -> doMenuOperation(option, post, clipboardManager = clipboard) },
+            onMenuClicked = { option, post ->
+                doMenuOperation(option, post,
+                                clipboardManager = clipboard,
+                                uriHandler = uriHandler
+                ) },
             onReplyClicked = { onReplyClicked(it) },
-            onLikeClicked = { uri -> sm.createRecord(RecordUnion.Like(uri)) },
+            onLikeClicked = { ref -> agent.like(ref) },
             onPostButtonClicked = { onPostButtonClicked() },
-            getContentHandling = { post -> sm.labelService.getContentHandlingForPost(post)},
+            getContentHandling = { post -> getContentHandling(post) },
             contentPadding = paddingValues,
             isProfileFeed = isProfileFeed,
+            pager = pager,
+            listState = listState,
+            scope = scope,
         )
         if(repostClicked) {
             RepostQueryDialog(
@@ -98,14 +125,10 @@ fun <T: MainScreenModel, I: MorphoDataItem, S: ContentCardState<I>> TabbedSkylin
                 },
                 onRepost = {
                     repostClicked = false
-                    composerRole = ComposerRole.QuotePost
-                    initialContent?.let { post ->
-                        RecordUnion.Repost(
-                            StrongRef(post.uri, post.cid)
-                        )
-                    }?.let { sm.api.createRecord(it) }
+                    initialContent?.let { agent.repost(StrongRef(it.uri, it.cid)) }
                 },
                 onQuotePost = {
+                    composerRole = ComposerRole.QuotePost
                     showComposer = true
                     repostClicked = false
                 }
@@ -124,18 +147,13 @@ fun <T: MainScreenModel, I: MorphoDataItem, S: ContentCardState<I>> TabbedSkylin
                     draft = DraftPost()
                 },
                 onSend = { finishedDraft ->
-                    sm.screenModelScope.launch(Dispatchers.IO) {
-                        val post = finishedDraft.createPost(sm.api)
-                        sm.api.createRecord(RecordUnion.MakePost(post))
-                    }
+                    scope.launch(Dispatchers.IO) { agent.post(finishedDraft.createPost(agent)) }
                     showComposer = false
                 },
                 onUpdate = { draft = it }
             )
 
         }
-    } else {
-        LoadingCircle()
-    }
+    } else LoadingCircle()
 }
 

@@ -3,14 +3,16 @@ package com.morpho.app.util
 
 import android.content.Intent
 import android.net.Uri
-import com.morpho.app.MorphoApplication
+import androidx.compose.ui.platform.UriHandler
 
-actual fun openBrowser(url: String) {
+
+actual fun openBrowser(url: String, uriHandler: UriHandler) {
     val urlIntent = Intent(
         Intent.ACTION_VIEW,
         safeUrlParse(url)
     )
-    MorphoApplication().applicationContext.startActivity(urlIntent)
+
+    uriHandler.openUri(url)
 }
 
 fun safeUrlParse(uri: String): Uri? {

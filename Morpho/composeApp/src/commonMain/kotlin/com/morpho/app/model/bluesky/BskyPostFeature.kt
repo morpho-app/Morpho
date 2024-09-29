@@ -1,30 +1,55 @@
 package com.morpho.app.model.bluesky
 
-import app.bsky.embed.*
+import androidx.compose.runtime.Immutable
+import app.bsky.embed.AspectRatio
+import app.bsky.embed.ExternalView
+import app.bsky.embed.ImagesView
+import app.bsky.embed.RecordViewRecordUnion
+import app.bsky.embed.RecordWithMediaViewMediaUnion
+import app.bsky.embed.VideoCaption
+import app.bsky.embed.VideoView
+import app.bsky.embed.VideoViewVideo
 import app.bsky.feed.Post
 import app.bsky.feed.PostEmbedUnion
 import app.bsky.feed.PostViewEmbedUnion
+import com.morpho.app.CommonRawValue
 import com.morpho.app.model.uidata.Moment
+import com.morpho.app.model.uidata.MomentParceler
 import com.morpho.app.util.mapImmutable
-import com.morpho.butterfly.*
+import com.morpho.butterfly.AtUri
+import com.morpho.butterfly.Cid
+import com.morpho.butterfly.Did
+import com.morpho.butterfly.Uri
+import com.morpho.butterfly.deserialize
 import com.morpho.butterfly.model.Blob
+import dev.icerock.moko.parcelize.Parcel
+import dev.icerock.moko.parcelize.Parcelable
+import dev.icerock.moko.parcelize.Parceler
+import dev.icerock.moko.parcelize.Parcelize
+import dev.icerock.moko.parcelize.TypeParceler
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonElement
 
+@Parcelize
+@Immutable
 @Serializable
-sealed interface BskyPostFeature {
+sealed interface BskyPostFeature: Parcelable {
+    @Immutable
     @Serializable
     data class ImagesFeature(
         val images: List<EmbedImage>,
     ) : BskyPostFeature, TimelinePostMedia
 
+    @Immutable
     @Serializable
     data class VideoFeature(
         val video: VideoEmbed,
         val alt: String,
+        @TypeParceler<AspectRatio?, MaybeAspectRatioParceler>()
         val aspectRatio: AspectRatio?,
     ) : BskyPostFeature, TimelinePostMedia
 
+    @Immutable
     @Serializable
     data class ExternalFeature(
         val uri: Uri,
@@ -33,55 +58,69 @@ sealed interface BskyPostFeature {
         val thumb: String?,
     ) : BskyPostFeature, TimelinePostMedia
 
+    @Immutable
     @Serializable
     data class RecordFeature(
         val record: EmbedRecord,
     ) : BskyPostFeature
 
+    @Immutable
     @Serializable
     data class MediaRecordFeature(
         val record: EmbedRecord,
         val media: TimelinePostMedia,
     ) : BskyPostFeature
 
+    @Immutable
     @Serializable
     data class UnknownEmbed(
         val value: String,
     ) : BskyPostFeature, TimelinePostMedia
 }
 
+@Parcelize
+@Immutable
 @Serializable
-sealed interface TimelinePostMedia
+sealed interface TimelinePostMedia: Parcelable
 
+@Parcelize
+@Immutable
 @Serializable
-sealed interface VideoEmbed
+sealed interface VideoEmbed: Parcelable
 
+@Immutable
 @Serializable
 data class EmbedVideoView(
-    val cid: Cid,
+    val cid:  Cid,
     val playlist: AtUri,
     val thumbnail: AtUri,
 ): VideoEmbed
 
+@Immutable
 @Serializable
 data class EmbedVideo(
     val blob: Blob,
     val captions: List<VideoCaption>?,
 ): VideoEmbed
 
+@Parcelize
+@Immutable
 @Serializable
 data class EmbedImage(
     val thumb: String,
     val fullsize: String,
     val alt: String,
     val aspectRatio: AspectRatio? = null,
-)
+): Parcelable
 
 
 
+@Parcelize
+@Immutable
 @Serializable
-sealed interface EmbedRecord {
+sealed interface EmbedRecord: Parcelable {
 
+    @Immutable
     @Serializable
     data class VisibleEmbedPost(
         val uri: AtUri,
@@ -92,6 +131,7 @@ sealed interface EmbedRecord {
         val reference: Reference = Reference(uri, cid)
     }
 
+    @Immutable
     @Serializable
     data class EmbedFeed(
         val uri: AtUri,
@@ -101,6 +141,7 @@ sealed interface EmbedRecord {
         val feed: FeedGenerator,
     ) : EmbedRecord
 
+    @Immutable
     @Serializable
     data class EmbedList(
         val uri: AtUri,
@@ -109,6 +150,7 @@ sealed interface EmbedRecord {
         val list: BskyList,
     ) : EmbedRecord
 
+    @Immutable
     @Serializable
     data class EmbedLabelService(
         val uri: AtUri,
@@ -118,21 +160,25 @@ sealed interface EmbedRecord {
     ) : EmbedRecord
 
 
+    @Immutable
     @Serializable
     data class InvisibleEmbedPost(
         val uri: AtUri,
     ) : EmbedRecord
 
+    @Immutable
     @Serializable
     data class BlockedEmbedPost(
         val uri: AtUri,
     ) : EmbedRecord
 
+    @Immutable
     @Serializable
     data class DetachedQuotePost(
         val uri: AtUri,
     ) : EmbedRecord
 
+    @Immutable
     @Serializable
     data class EmbedVideo(
         val video: VideoEmbed,
@@ -140,16 +186,20 @@ sealed interface EmbedRecord {
         val aspectRatio: AspectRatio?,
     ) : EmbedRecord
 
+    @Immutable
     @Serializable
     data class UnknownEmbed(
         val value: String,
     ) : EmbedRecord
 
+    @Immutable
+    @Serializable
     data class StarterPack(
         val uri: AtUri,
         val cid: Cid,
-        val record: JsonElement,
+        val record: @CommonRawValue JsonElement,
         val creator: Profile,
+        @TypeParceler<Moment, MomentParceler>()
         val indexedAt: Moment,
         val labels: List<BskyLabel>,
     ) : EmbedRecord
@@ -294,7 +344,7 @@ private fun RecordViewRecordUnion.toEmbedRecord(): EmbedRecord {
                 uri = value.uri,
                 cid = value.cid,
                 author = value.creator.toProfile(),
-                labelService = value.toLabelService(),
+                labelService = value.toLabelServiceLocal(),
             )
         }
 
@@ -476,4 +526,22 @@ private fun VideoViewVideo.toEmbedVideoFeature(): BskyPostFeature.VideoFeature {
         alt = this.alt?:"",
         aspectRatio = this.aspectRatio,
     )
+}
+
+object MaybeAspectRatioParceler : Parceler<AspectRatio?> {
+    override fun create(parcel: Parcel): AspectRatio? {
+        val moment = parcel.readString()
+        val width = moment?.substringAfter("w:")?.substringBefore("h:")?.toLongOrNull()
+        val height = moment?.substringAfter("h:")?.substringBefore("w:")?.toLongOrNull()
+        return if(width != null && height != null) {
+            AspectRatio(width, height)
+        } else {
+            null
+        }
+    }
+
+    override fun AspectRatio?.write(parcel: Parcel, flags: Int) {
+        parcel.writeString("w:${this?.width}")
+        parcel.writeString("h:${this?.height}")
+    }
 }

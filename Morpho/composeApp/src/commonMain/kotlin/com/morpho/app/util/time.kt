@@ -1,12 +1,7 @@
 package com.morpho.app.util
 
-import kotlinx.datetime.Clock
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.minus
-import kotlinx.datetime.toInstant
-import kotlinx.datetime.toLocalDateTime
-import kotlinx.datetime.todayIn
 import com.morpho.app.model.uidata.Moment
+import kotlinx.datetime.*
 
 fun getFormattedDateTimeSince(moment: Moment): String {
     val postDate = moment.instant.toLocalDateTime(TimeZone.currentSystemDefault()).date
@@ -19,19 +14,21 @@ fun getFormattedDateTimeSince(moment: Moment): String {
     deltaTime.toComponents { hours, minutes, seconds, _ ->
     return when {
             deltaDays >= 180 -> {
-                moment.instant.toLocalDateTime(TimeZone.currentSystemDefault()).date.toString()
+                postTime.date.toString()
             }
-            deltaDays >= 1 -> {
-
-                "${if(dateDiff.years > 0) "${dateDiff.years} yrs " else ""}${if(dateDiff.months > 0) "${dateDiff.months} months " else ""}${if(dateDiff.days > 0 && dateDiff.months == 0) "${dateDiff.days} days " else ""}ago"
+            dateDiff.months > 0 -> {
+                "${dateDiff.months} months ago"
+            }
+            dateDiff.days > 0 -> {
+                "${dateDiff.days} days ago"
             }
             (deltaDays == 0 && hours >= 12)-> {
                 "$hours h ago"
             }
-            (deltaDays == 0 && hours >= 1)-> {
-                "${hours}:${minutes} ago"
+            (deltaDays == 0 && hours >= 2)-> {
+                "$hours h $minutes m ago"
             }
-            (deltaDays == 0 && hours.toInt() == 0 && minutes > 1) -> {
+            (deltaDays == 0 && hours.toInt() <= 1 && minutes > 1) -> {
                 "$minutes m ago"
             }
             (deltaDays == 0 && hours.toInt() == 0 && minutes == 0) -> {

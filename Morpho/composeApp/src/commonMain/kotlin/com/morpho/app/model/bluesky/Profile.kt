@@ -3,24 +3,31 @@ package com.morpho.app.model.bluesky
 
 import androidx.compose.runtime.Immutable
 import app.bsky.actor.*
+import com.morpho.app.model.uidata.MaybeMomentParceler
 import com.morpho.app.model.uidata.Moment
+import com.morpho.app.model.uidata.MomentParceler
 import com.morpho.app.util.mapImmutable
 import com.morpho.butterfly.AtUri
 import com.morpho.butterfly.Did
 import com.morpho.butterfly.Handle
+import dev.icerock.moko.parcelize.Parcelable
+import dev.icerock.moko.parcelize.Parcelize
+import dev.icerock.moko.parcelize.TypeParceler
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.serialization.Serializable
 
-
+@Immutable
+@Serializable
 enum class ProfileType {
     Basic,
     Detailed,
     Service
 }
 
+@Parcelize
 @Immutable
 @Serializable
-sealed interface Profile {
+sealed interface Profile: Parcelable {
     val did: Did
     val handle: Handle
     val displayName: String?
@@ -36,8 +43,10 @@ sealed interface Profile {
     val knownFollowers: List<Profile>
     @Serializable
     val labels: List<BskyLabel>
-    val associated: ProfileAssociated?
+    val associated: BskyProfileAssociated?
+    @TypeParceler<Moment, MomentParceler>()
     val createdAt: Moment?
+    @TypeParceler<Moment, MomentParceler>()
     val indexedAt: Moment?
     val type: ProfileType
         get() = when (this) {
@@ -53,14 +62,17 @@ sealed interface Profile {
         get() = followedBy != null
 }
 
+@Parcelize
 @Immutable
 @Serializable
-data class BlockRecord(val uri: AtUri)
+data class BlockRecord(val uri: AtUri): Parcelable
 
+@Parcelize
 @Immutable
 @Serializable
-data class FollowRecord(val uri: AtUri)
+data class FollowRecord(val uri: AtUri): Parcelable
 
+@Parcelize
 @Immutable
 @Serializable
 data class BasicProfile(
@@ -79,13 +91,16 @@ data class BasicProfile(
     override val blockingByList: UserListBasic?,
     override val numKnownFollowers: Long,
     override val knownFollowers: List<Profile>,
-    override val associated: ProfileAssociated?,
+    override val associated: BskyProfileAssociated?,
+    @TypeParceler<Moment?, MaybeMomentParceler>()
     override val createdAt: Moment?,
 
-) : Profile {
+    ) : Profile, Parcelable{
+    @TypeParceler<Moment?, MaybeMomentParceler>()
     override val indexedAt: Moment? = null
 }
 
+@Parcelize
 @Immutable
 @Serializable
 data class DetailedProfile(
@@ -98,7 +113,9 @@ data class DetailedProfile(
     val followersCount: Long,
     val followsCount: Long,
     val postsCount: Long,
+    @TypeParceler<Moment?, MaybeMomentParceler>()
     override val createdAt: Moment?,
+    @TypeParceler<Moment?, MaybeMomentParceler>()
     override val indexedAt: Moment?,
     override val mutedByMe: Boolean,
     override val following: FollowRecord?,
@@ -111,7 +128,7 @@ data class DetailedProfile(
     override val blockingByList: UserListBasic?,
     override val numKnownFollowers: Long,
     override val knownFollowers: List<Profile>,
-    override val associated: ProfileAssociated?,
+    override val associated: BskyProfileAssociated?,
 ) : Profile {
     fun toSerializableProfile(): SerializableProfile {
         return SerializableProfile(
@@ -142,6 +159,7 @@ data class DetailedProfile(
 
 }
 
+@Parcelize
 @Immutable
 @Serializable
 data class SerializableProfile(
@@ -154,7 +172,9 @@ data class SerializableProfile(
     val followersCount: Long,
     val followsCount: Long,
     val postsCount: Long,
+    @TypeParceler<Moment?, MaybeMomentParceler>()
     val indexedAt: Moment?,
+    @TypeParceler<Moment?, MaybeMomentParceler>()
     val createdAt: Moment?,
     val mutedByMe: Boolean,
     val following: FollowRecord?,
@@ -167,8 +187,8 @@ data class SerializableProfile(
     val blockingByList: UserListBasic?,
     val numKnownFollowers: Long,
     val knownFollowers: List<Profile>,
-    val associated: ProfileAssociated?,
-) {
+    val associated: BskyProfileAssociated?,
+): Parcelable {
     val type: ProfileType
         get() = ProfileType.Detailed
     fun toProfile(): DetailedProfile {
@@ -222,7 +242,7 @@ fun ProfileViewDetailed.toProfile(): DetailedProfile {
         blockingByList = viewer?.blockingByList?.toList(),
         numKnownFollowers = viewer?.knownFollowers?.count ?: 0,
         knownFollowers = viewer?.knownFollowers?.followers?.mapImmutable { it.toProfile() }?.toList() ?: listOf(),
-        associated = associated,
+        associated = associated?.toBskyProfileAssociated(),
         createdAt = createdAt?.let(::Moment),
     )
 }
@@ -243,7 +263,7 @@ fun ProfileViewBasic.toProfile(): Profile {
         blockingByList = viewer?.blockingByList?.toList(),
         numKnownFollowers = viewer?.knownFollowers?.count ?: 0,
         knownFollowers = viewer?.knownFollowers?.followers?.mapImmutable { it.toProfile() }?.toList() ?: listOf(),
-        associated = associated,
+        associated = associated?.toBskyProfileAssociated(),
         createdAt = createdAt?.let(::Moment),
     )
 }
@@ -264,7 +284,7 @@ fun ProfileView.toProfile(): Profile {
         blockingByList = viewer?.blockingByList?.toList(),
         numKnownFollowers = viewer?.knownFollowers?.count ?: 0,
         knownFollowers = viewer?.knownFollowers?.followers?.mapImmutable { it.toProfile() }?.toList() ?: listOf(),
-        associated = associated,
+        associated = associated?.toBskyProfileAssociated(),
         createdAt = createdAt?.let(::Moment),
     )
 }
@@ -292,3 +312,36 @@ fun Profile.toProfileViewBasic(): ProfileViewBasic {
 
     )
 }
+
+fun ProfileAssociated.toBskyProfileAssociated(): BskyProfileAssociated {
+    return BskyProfileAssociated(
+        lists = this.lists,
+        feedGens = this.feedGens,
+        labeler = this.labeler,
+        starterPacks = this.starterPacks,
+        chat = this.chat?.toProfileAssociatedChat()
+    )
+}
+@Immutable
+@Parcelize
+@Serializable
+public data class BskyProfileAssociated(
+    public val lists: Long? = null,
+    public val feedGens: Long? = null,
+    public val labeler: Boolean? = null,
+    public val starterPacks: Long? = null,
+    public val chat: BskyProfileAssociatedChat? = null,
+): Parcelable
+
+fun ProfileAssociatedChat.toProfileAssociatedChat(): BskyProfileAssociatedChat {
+    return BskyProfileAssociatedChat(
+        allowIncoming = this.allowIncoming
+    )
+}
+
+@Parcelize
+@Immutable
+@Serializable
+public data class BskyProfileAssociatedChat(
+    public val allowIncoming: AllowIncoming,
+): Parcelable
