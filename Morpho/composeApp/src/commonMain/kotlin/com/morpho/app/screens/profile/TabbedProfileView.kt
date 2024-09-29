@@ -15,6 +15,7 @@ import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
@@ -23,6 +24,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.unit.dp
+import app.cash.paging.compose.collectAsLazyPagingItems
 import cafe.adriel.voyager.core.annotation.ExperimentalVoyagerApi
 import cafe.adriel.voyager.core.screen.ScreenKey
 import cafe.adriel.voyager.core.screen.uniqueScreenKey
@@ -34,8 +36,11 @@ import cafe.adriel.voyager.navigator.tab.TabNavigator
 import cafe.adriel.voyager.navigator.tab.TabOptions
 import coil3.annotation.ExperimentalCoilApi
 import com.morpho.app.model.bluesky.FeedDescriptor
+import com.morpho.app.model.uidata.AuthorFeedUpdate
 import com.morpho.app.model.uidata.Event
 import com.morpho.app.model.uidata.FeedEvent
+import com.morpho.app.model.uidata.FeedUpdate
+import com.morpho.app.model.uidata.UIUpdate
 import com.morpho.app.model.uistate.ContentCardState
 import com.morpho.app.screens.base.tabbed.TabScreen
 import com.morpho.app.ui.common.LoadingCircle
@@ -283,12 +288,25 @@ data class ProfileSkylineTab(
             is ContentCardState.ProfileLabeler -> {}
             else -> {}
         }
-        TabbedSkylineFragment(
-            paddingValues,
-            isProfileFeed = true,
-            uiUpdate = state.updates,
-            eventCallback = eventCallback,
-        )
+        val data =  when(val feedState = state.updates.collectAsState(initial = UIUpdate.Empty).value) {
+            is AuthorFeedUpdate.Feed -> feedState.feed.collectAsLazyPagingItems()
+            is AuthorFeedUpdate.Feeds -> feedState.feed.collectAsLazyPagingItems()
+            is AuthorFeedUpdate.Likes -> feedState.feed.collectAsLazyPagingItems()
+            is AuthorFeedUpdate.Lists -> feedState.feed.collectAsLazyPagingItems()
+            is FeedUpdate.Feed -> feedState.feed.collectAsLazyPagingItems()
+            else -> null
+        }
+        if(data != null) {
+            TabbedSkylineFragment(
+                paddingValues,
+                isProfileFeed = true,
+                uiUpdate = state.updates,
+                eventCallback = eventCallback,
+                pager = data,
+            )
+        } else {
+            LoadingCircle()
+        }
     }
 
     override val key: ScreenKey

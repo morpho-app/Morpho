@@ -4,6 +4,7 @@ import app.bsky.feed.GetActorFeedsQuery
 import app.bsky.graph.GetListsQuery
 import com.morpho.app.data.MorphoAgent
 import com.morpho.app.model.bluesky.AuthorFilter
+import com.morpho.app.model.bluesky.DetailedProfile
 import com.morpho.app.model.bluesky.FeedDescriptor
 import com.morpho.app.model.bluesky.toLabelService
 import com.morpho.app.model.bluesky.toProfile
@@ -69,9 +70,10 @@ class MyProfilePresenter(
         val log = logging("ProfilePresenter")
         suspend fun initialize(
             agent: MorphoAgent,
+            myProfile: DetailedProfile? = null,
         ): ContentCardState.MyProfile? {
             val id = agent.id ?: return null
-            val profile = agent.getProfile(id).getOrNull()?.toProfile() ?: return null
+            val profile = myProfile ?: agent.getProfile(id).getOrNull()?.toProfile() ?: return null
             val hasFeeds = agent.api
                 .getActorFeeds(GetActorFeedsQuery(id, 1, null)).getOrNull()?.feeds?.isNotEmpty()
                 ?: false
@@ -98,8 +100,9 @@ class MyProfilePresenter(
         }
         suspend fun create(
             agent: MorphoAgent,
+            profile: DetailedProfile? = null,
         ): MyProfilePresenter? {
-            val state = initialize(agent) ?: return null
+            val state = initialize(agent, profile) ?: return null
             return MyProfilePresenter(state)
         }
     }
@@ -167,8 +170,9 @@ class ProfilePresenter(
         suspend fun initialize(
             agent: MorphoAgent,
             actor: Did,
+            actorProfile: DetailedProfile? = null,
         ): ContentCardState.FullProfile? {
-            val profile = agent.getProfile(actor).getOrNull()?.toProfile() ?: return null
+            val profile = actorProfile ?: agent.getProfile(actor).getOrNull()?.toProfile() ?: return null
             val hasFeeds = agent.api
                 .getActorFeeds(GetActorFeedsQuery(actor, 1, null)).getOrNull()?.feeds?.isNotEmpty()
                 ?: false
@@ -196,8 +200,9 @@ class ProfilePresenter(
         suspend fun create(
             agent: MorphoAgent,
             actor: Did,
+            actorProfile: DetailedProfile? = null,
         ): ProfilePresenter? {
-            val state = initialize(agent, actor) ?: return null
+            val state = initialize(agent, actor, actorProfile) ?: return null
             return ProfilePresenter(state)
         }
     }

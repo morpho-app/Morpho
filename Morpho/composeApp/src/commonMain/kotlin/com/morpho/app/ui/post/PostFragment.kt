@@ -4,11 +4,26 @@ package com.morpho.app.ui.post
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Reply
 import androidx.compose.material.icons.filled.Repeat
-import androidx.compose.material3.*
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -23,16 +38,37 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastAny
+import cafe.adriel.voyager.navigator.LocalNavigator
+import cafe.adriel.voyager.navigator.currentOrThrow
 import com.atproto.label.Blurs
 import com.atproto.repo.StrongRef
-import com.morpho.app.model.bluesky.*
+import com.morpho.app.model.bluesky.BskyPost
+import com.morpho.app.model.bluesky.BskyPostFeature
+import com.morpho.app.model.bluesky.BskyPostReason
+import com.morpho.app.model.bluesky.EmbedRecord
+import com.morpho.app.model.bluesky.FacetType
+import com.morpho.app.model.bluesky.TimelinePostMedia
 import com.morpho.app.ui.common.OnPostClicked
-import com.morpho.app.ui.elements.*
+import com.morpho.app.ui.elements.AvatarShape
+import com.morpho.app.ui.elements.ContentHider
+import com.morpho.app.ui.elements.MenuOptions
+import com.morpho.app.ui.elements.MorphoHighlightIndication
+import com.morpho.app.ui.elements.OutlinedAvatar
+import com.morpho.app.ui.elements.RichTextElement
+import com.morpho.app.ui.elements.WrappedColumn
 import com.morpho.app.ui.lists.FeedListEntryFragment
 import com.morpho.app.ui.lists.UserListEntryFragment
+import com.morpho.app.ui.utils.ItemClicked
+import com.morpho.app.ui.utils.OnFacetClicked
+import com.morpho.app.ui.utils.OnItemClicked
 import com.morpho.app.util.getFormattedDateTimeSince
 import com.morpho.app.util.openBrowser
-import com.morpho.butterfly.*
+import com.morpho.butterfly.AtIdentifier
+import com.morpho.butterfly.AtUri
+import com.morpho.butterfly.ContentHandling
+import com.morpho.butterfly.LabelAction
+import com.morpho.butterfly.LabelDescription
+import com.morpho.butterfly.LabelIcon
 import com.morpho.butterfly.model.RecordType
 import kotlinx.collections.immutable.toImmutableList
 import morpho.app.ui.utils.indentLevel
@@ -49,7 +85,10 @@ fun PostFragment(
     role: PostFragmentRole = PostFragmentRole.Solo,
     indentLevel: Int = 0,
     elevate: Boolean = false,
-    onItemClicked: OnPostClicked = {},
+    onItemClicked: OnItemClicked = ItemClicked(
+        uriHandler = LocalUriHandler.current,
+        navigator = LocalNavigator.currentOrThrow,
+    ),
     onProfileClicked: (AtIdentifier) -> Unit = {},
     onReplyClicked: (BskyPost) -> Unit = { },
     onRepostClicked: (BskyPost) -> Unit = { },
@@ -67,7 +106,6 @@ fun PostFragment(
         PostFragmentRole.ThreadRootUnfocused -> Modifier.padding(2.dp)
         PostFragmentRole.ThreadEnd -> Modifier.padding(start = 2.dp, top = 0.dp, end = 2.dp, bottom = 2.dp)
     }}
-    val uriHandler = LocalUriHandler.current
     WrappedColumn(modifier = modifier.then(padding.fillMaxWidth())) {
         val delta = remember { getFormattedDateTimeSince(post.createdAt) }
         val indent = remember { when(role) {
@@ -102,6 +140,12 @@ fun PostFragment(
                 getContentHandling(post)
             }.toImmutableList()
         }
+        val onPostClicked: OnPostClicked = remember { { uri ->
+            onItemClicked.onRichTextFacetClicked(uri = uri)
+        } }
+        val onFacetClicked: OnFacetClicked = remember { { facet ->
+            onItemClicked.onRichTextFacetClicked(facet = facet)
+        } }
 
         Surface (
             shadowElevation = if (elevate || indentLevel > 0) 2.dp else 0.dp,
@@ -116,7 +160,7 @@ fun PostFragment(
                     interactionSource = interactionSource,
                     indication = indication,
                     enabled = true,
-                    onClick = { onItemClicked(post.uri) }
+                    onClick = { onPostClicked(post.uri) }
                 )
 
         ) {
@@ -246,7 +290,7 @@ fun PostFragment(
                                 text = post.text,
                                 facets = post.facets,
                                 //modifier = Modifier.padding(bottom = 2.dp).padding(start = 0.dp, end = 6.dp),
-                                onItemClicked = { onItemClicked(post.uri) },
+                                onItemClicked = { onPostClicked(post.uri) },
                                 onProfileClicked = onProfileClicked,
                                 getContentHandling = getContentHandling
                             )
@@ -257,24 +301,11 @@ fun PostFragment(
                                 modifier = Modifier.padding(end = 2.dp),
                                 onClick = { facetTypes ->
                                     if (facetTypes.isEmpty()) {
-                                        onItemClicked(post.uri)
+                                        onPostClicked(post.uri)
                                         return@RichTextElement
                                     }
                                     facetTypes.forEach {
-                                        when(it) {
-                                            is FacetType.ExternalLink -> {
-                                                openBrowser(it.uri.uri, uriHandler)
-                                            }
-                                            is FacetType.Tag -> {onItemClicked(post.uri)}
-                                            is FacetType.UserDidMention -> {
-                                                onProfileClicked(it.did)
-                                            }
-                                            is FacetType.UserHandleMention -> {
-                                                onProfileClicked(it.handle)
-                                            }
-
-                                            else -> {}
-                                        }
+                                        onFacetClicked(it)
                                     }
                                 },
                             )
@@ -328,7 +359,10 @@ internal inline fun ReplyIndicator(
 @Composable
 inline fun ColumnScope.PostFeatureElement(
     feature: BskyPostFeature? = null,
-    crossinline onItemClicked: OnPostClicked = {},
+    onItemClicked: OnItemClicked = ItemClicked(
+        uriHandler = LocalUriHandler.current,
+        navigator = LocalNavigator.currentOrThrow,
+    ),
     crossinline onLikeClicked: (StrongRef) -> Unit = { },
     crossinline onUnClicked: (type: RecordType, uri: AtUri) -> Unit = { _, _ -> },
     contentHandling: List<ContentHandling> = listOf()
@@ -411,7 +445,10 @@ inline fun ColumnScope.PostFeatureElement(
 inline fun ColumnScope.RecordFeature(
     record: EmbedRecord? = null,
     media: TimelinePostMedia? = null,
-    crossinline onItemClicked: OnPostClicked = {},
+    onItemClicked: OnItemClicked = ItemClicked(
+        uriHandler = LocalUriHandler.current,
+        navigator = LocalNavigator.currentOrThrow,
+    ),
     crossinline onLikeClicked: (StrongRef) -> Unit = { },
     crossinline onUnClicked: (type: RecordType, uri: AtUri) -> Unit = { _, _ -> },
     contentHandling: List<ContentHandling> = listOf(),
@@ -468,7 +505,7 @@ inline fun ColumnScope.RecordFeature(
                 is EmbedRecord.InvisibleEmbedPost -> EmbedNotFoundPostFragment(uri = record.uri)
                 is EmbedRecord.VisibleEmbedPost -> EmbedPostFragment(
                     post = record,
-                    onItemClicked = { onItemClicked(record.uri) },
+                    onItemClicked = { onItemClicked.onRichTextFacetClicked(uri = record.uri) },
                     modifier = Modifier.align(Alignment.CenterHorizontally)
                 )
 

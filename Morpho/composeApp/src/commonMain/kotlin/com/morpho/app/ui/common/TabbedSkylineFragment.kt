@@ -1,6 +1,8 @@
 package com.morpho.app.ui.common
 
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -12,6 +14,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.unit.dp
+import app.cash.paging.compose.LazyPagingItems
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import cafe.adriel.voyager.navigator.tab.TabNavigator
@@ -19,14 +22,17 @@ import com.atproto.repo.StrongRef
 import com.morpho.app.data.MorphoAgent
 import com.morpho.app.model.bluesky.BskyPost
 import com.morpho.app.model.bluesky.DraftPost
+import com.morpho.app.model.bluesky.MorphoDataItem
 import com.morpho.app.model.uidata.Event
 import com.morpho.app.model.uidata.UIUpdate
 import com.morpho.app.screens.base.tabbed.ProfileTab
 import com.morpho.app.screens.base.tabbed.ThreadTab
 import com.morpho.app.ui.elements.doMenuOperation
+import com.morpho.app.ui.utils.ItemClicked
 import com.morpho.app.util.ClipboardManager
 import com.morpho.butterfly.ContentHandling
 import io.ktor.util.reflect.instanceOf
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.flow.StateFlow
@@ -42,13 +48,15 @@ fun TabbedSkylineFragment(
     uiUpdate: StateFlow<UIUpdate>,
     eventCallback: (Event) -> Unit = {},
     getContentHandling: (BskyPost) -> List<ContentHandling> = { listOf() },
+    pager: LazyPagingItems<out MorphoDataItem>,
+    listState: LazyListState = rememberLazyListState(),
+    scope: CoroutineScope = rememberCoroutineScope(),
+    agent: MorphoAgent = getKoin().get(),
 ) {
-    val agent = getKoin().get<MorphoAgent>()
     val uiState = uiUpdate.collectAsState(initial = UIUpdate.Empty)
     val navigator = if (LocalNavigator.current?.parent?.instanceOf(TabNavigator::class) == true) {
         LocalNavigator.currentOrThrow
     } else LocalNavigator.currentOrThrow.parent!!
-    val scope = rememberCoroutineScope()
     var repostClicked by remember { mutableStateOf(false) }
     var initialContent: BskyPost? by remember { mutableStateOf(null) }
     var showComposer by remember { mutableStateOf(false) }
@@ -82,13 +90,16 @@ fun TabbedSkylineFragment(
     val clipboard = getKoin().get<ClipboardManager>()
     if(uiState.value !is UIUpdate.Empty) {
         SkylineFragment(
-            onProfileClicked = { actor ->
-                scope.launch {
-                    val did = agent.resolveHandle(actor).getOrNull()
-                    if(did != null) navigator.push(ProfileTab(did))
-                }
-            },
-            onItemClicked = { uri -> navigator.push(ThreadTab(uri)) },
+            onItemClicked = ItemClicked(
+                uriHandler = LocalUriHandler.current,
+                navigator = navigator,
+                profileCallback = { actor ->
+                    scope.launch {
+                        val did = agent.resolveHandle(actor).getOrNull()
+                        if(did != null) navigator.push(ProfileTab(did))
+                    }
+                },
+            ),
             onUnClicked = { type, rkey -> agent.deleteRecord(type, rkey) },
             onRepostClicked = { onRepostClicked(it) },
             onMenuClicked = { option, post ->
@@ -102,7 +113,9 @@ fun TabbedSkylineFragment(
             getContentHandling = { post -> getContentHandling(post) },
             contentPadding = paddingValues,
             isProfileFeed = isProfileFeed,
-            feedUpdate = uiUpdate.filterIsInstance(),
+            pager = pager,
+            listState = listState,
+            scope = scope,
         )
         if(repostClicked) {
             RepostQueryDialog(

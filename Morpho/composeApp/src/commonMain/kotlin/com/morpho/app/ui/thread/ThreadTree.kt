@@ -15,8 +15,11 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEachIndexed
+import cafe.adriel.voyager.navigator.LocalNavigator
+import cafe.adriel.voyager.navigator.currentOrThrow
 import com.atproto.repo.StrongRef
 import com.morpho.app.model.bluesky.BskyPost
 import com.morpho.app.model.bluesky.ThreadPost
@@ -24,6 +27,8 @@ import com.morpho.app.ui.common.OnPostClicked
 import com.morpho.app.ui.elements.MenuOptions
 import com.morpho.app.ui.elements.WrappedColumn
 import com.morpho.app.ui.post.PostFragmentRole
+import com.morpho.app.ui.utils.ItemClicked
+import com.morpho.app.ui.utils.OnItemClicked
 import com.morpho.butterfly.AtIdentifier
 import com.morpho.butterfly.AtUri
 import com.morpho.butterfly.ContentHandling
@@ -43,7 +48,10 @@ fun ThreadTree(
             it.hashCode().toLong()
         }
     },
-    onItemClicked: OnPostClicked = {},
+    onItemClicked: OnItemClicked = ItemClicked(
+        uriHandler = LocalUriHandler.current,
+        navigator = LocalNavigator.currentOrThrow,
+    ),
     onProfileClicked: (AtIdentifier) -> Unit = {},
     onReplyClicked: (BskyPost) -> Unit = { },
     onRepostClicked: (BskyPost) -> Unit = { },
@@ -141,7 +149,7 @@ fun ThreadTree(
                             modifier = if(replies.size > 1) Modifier.padding(start = 2.dp, top = 2.dp)
                                 else if(replies.size == 1) Modifier.padding(start = 1.dp, top = 1.dp)
                                 else Modifier,
-                            onItemClicked = {onItemClicked(it) },
+                            onItemClicked = onItemClicked,
                             onProfileClicked = { onProfileClicked(it) },
                             onUnClicked =  { type,uri-> onUnClicked(type,uri) },
                             onRepostClicked = { onRepostClicked(it) },
@@ -185,7 +193,7 @@ fun ThreadTree(
                                                 }
                                             }.padding(start = 3.dp),
                                             indentLevel = indentLevel + 1,
-                                            onItemClicked = { onItemClicked(it) },
+                                            onItemClicked = onItemClicked,
                                             onProfileClicked = { onProfileClicked(it) },
                                             onUnClicked = { type, uri -> onUnClicked(type, uri) },
                                             onRepostClicked = { onRepostClicked(it) },
@@ -204,7 +212,7 @@ fun ThreadTree(
                                 role = PostFragmentRole.ThreadBranchEnd,
                                 indentLevel = indentLevel,
                                 modifier = Modifier.padding(start = 4.dp, top = 2.dp),
-                                onItemClicked = { onItemClicked(it) },
+                                onItemClicked = onItemClicked,
                                 onProfileClicked = { onProfileClicked(it) },
                                 onUnClicked = { type, uri -> onUnClicked(type, uri) },
                                 onRepostClicked = { onRepostClicked(it) },

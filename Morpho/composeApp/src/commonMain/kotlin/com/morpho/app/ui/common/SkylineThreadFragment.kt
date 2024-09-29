@@ -10,9 +10,12 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastForEachIndexed
+import cafe.adriel.voyager.navigator.LocalNavigator
+import cafe.adriel.voyager.navigator.currentOrThrow
 import com.atproto.repo.StrongRef
 import com.morpho.app.model.bluesky.BskyPost
 import com.morpho.app.model.bluesky.BskyPostThread
@@ -22,6 +25,8 @@ import com.morpho.app.ui.post.PostFragment
 import com.morpho.app.ui.post.PostFragmentRole
 import com.morpho.app.ui.thread.ThreadItem
 import com.morpho.app.ui.thread.ThreadTree
+import com.morpho.app.ui.utils.ItemClicked
+import com.morpho.app.ui.utils.OnItemClicked
 import com.morpho.butterfly.AtIdentifier
 import com.morpho.butterfly.AtUri
 import com.morpho.butterfly.ContentHandling
@@ -31,7 +36,10 @@ import com.morpho.butterfly.model.RecordType
 inline fun SkylineThreadFragment(
     thread: BskyPostThread,
     modifier: Modifier = Modifier,
-    crossinline onItemClicked: OnPostClicked = {},
+    onItemClicked: OnItemClicked = ItemClicked(
+        uriHandler = LocalUriHandler.current,
+        navigator = LocalNavigator.currentOrThrow,
+    ),
     crossinline onProfileClicked: (AtIdentifier) -> Unit = {},
     crossinline onReplyClicked: (BskyPost) -> Unit = { },
     crossinline onRepostClicked: (BskyPost) -> Unit = { },
@@ -68,7 +76,7 @@ inline fun SkylineThreadFragment(
                                 role = PostFragmentRole.Solo,
                                 elevate = true,
                                 modifier = if(debuggable) Modifier.border(1.dp, Color.Cyan) else Modifier,
-                                onItemClicked = {onItemClicked(it) },
+                                onItemClicked = onItemClicked,
                                 onProfileClicked = { onProfileClicked(it) },
                                 onUnClicked =  { type,uri-> onUnClicked(type,uri) },
                                 onRepostClicked = { onRepostClicked(it) },
@@ -340,7 +348,7 @@ inline fun SkylineThreadFragment(
                                         ThreadTree(
                                             reply = post, indentLevel = 1,
                                             modifier = Modifier.padding(4.dp),
-                                            onItemClicked = {onItemClicked(it) },
+                                            onItemClicked = onItemClicked,
                                             onProfileClicked = { onProfileClicked(it) },
                                             onUnClicked =  { type,uri-> onUnClicked(type,uri) },
                                             onRepostClicked = { onRepostClicked(it) },

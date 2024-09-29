@@ -1,5 +1,6 @@
 package com.morpho.app.model.uistate
 
+import androidx.compose.runtime.Immutable
 import com.morpho.app.model.bluesky.AuthorFilter
 import com.morpho.app.model.bluesky.BskyLabelService
 import com.morpho.app.model.bluesky.BskyList
@@ -17,11 +18,20 @@ import com.morpho.app.model.uidata.UIUpdate
 import com.morpho.app.util.MutableSharedFlowSerializer
 import com.morpho.app.util.MutableStateFlowSerializer
 import com.morpho.butterfly.AtUri
+import dev.icerock.moko.parcelize.Parcelable
+import dev.icerock.moko.parcelize.Parcelize
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.serialization.Serializable
 
+@Parcelize
+@Serializable
+@Immutable
+data class ScrollPosition(
+    val index: Int = 0,
+    val scrollOffset: Int = 0,
+): Parcelable
 
 @Suppress("unused")
 @Serializable
@@ -31,6 +41,7 @@ sealed interface ContentCardState<E: Event> {
     val events: MutableSharedFlow<E>
     @Serializable(with = MutableStateFlowSerializer::class)
     val updates: MutableStateFlow<UIUpdate>
+    val scrollPosition: MutableStateFlow<ScrollPosition>
 
     @Serializable
     data class Skyline(
@@ -39,6 +50,7 @@ sealed interface ContentCardState<E: Event> {
             extraBufferCapacity = 10,
             onBufferOverflow = BufferOverflow.DROP_OLDEST),
         override val updates: MutableStateFlow<UIUpdate> = MutableStateFlow(FeedUpdate.Empty),
+        override val scrollPosition: MutableStateFlow<ScrollPosition> = MutableStateFlow(ScrollPosition()),
     ) : ContentCardState<FeedEvent> {
 
     }
@@ -50,6 +62,7 @@ sealed interface ContentCardState<E: Event> {
             extraBufferCapacity = 10,
             onBufferOverflow = BufferOverflow.DROP_OLDEST),
         override val updates: MutableStateFlow<UIUpdate> = MutableStateFlow(UIUpdate.Empty),
+        override val scrollPosition: MutableStateFlow<ScrollPosition> = MutableStateFlow(ScrollPosition()),
         ): ContentCardState<ThreadEvent> {
         override val uri: AtUri = post.uri
         init {
@@ -67,6 +80,7 @@ sealed interface ContentCardState<E: Event> {
             extraBufferCapacity = 10,
             onBufferOverflow = BufferOverflow.DROP_OLDEST),
         override val updates: MutableStateFlow<UIUpdate> = MutableStateFlow(FeedUpdate.Empty),
+        override val scrollPosition: MutableStateFlow<ScrollPosition> = MutableStateFlow(ScrollPosition()),
     ) : ContentCardState<FeedEvent> {
         override val uri: AtUri = when(filter) {
             AuthorFilter.PostsWithReplies -> AtUri.profileRepliesUri(profile.did)
@@ -84,6 +98,7 @@ sealed interface ContentCardState<E: Event> {
             extraBufferCapacity = 10,
             onBufferOverflow = BufferOverflow.DROP_OLDEST),
         override val updates: MutableStateFlow<UIUpdate> = MutableStateFlow(UIUpdate.Empty),
+        override val scrollPosition: MutableStateFlow<ScrollPosition> = MutableStateFlow(ScrollPosition()),
     ): ContentCardState<ListEvent> {
         override val uri: AtUri = when(listsOrFeeds) {
             ListsOrFeeds.Lists -> AtUri.profileUserListsUri(profile.did)
@@ -98,6 +113,7 @@ sealed interface ContentCardState<E: Event> {
             extraBufferCapacity = 10,
             onBufferOverflow = BufferOverflow.DROP_OLDEST),
         override val updates: MutableStateFlow<UIUpdate> = MutableStateFlow(UIUpdate.Empty),
+        override val scrollPosition: MutableStateFlow<ScrollPosition> = MutableStateFlow(ScrollPosition()),
     ): ContentCardState<LabelerEvent>
 
     data class FullProfile(
@@ -112,6 +128,7 @@ sealed interface ContentCardState<E: Event> {
             extraBufferCapacity = 10,
             onBufferOverflow = BufferOverflow.DROP_OLDEST),
         override val updates: MutableStateFlow<UIUpdate> = MutableStateFlow(UIUpdate.Empty),
+        override val scrollPosition: MutableStateFlow<ScrollPosition> = MutableStateFlow(ScrollPosition()),
     ) : ContentCardState<Event> {
         override val uri: AtUri = AtUri.profileUri(profile.did)
     }
@@ -129,6 +146,7 @@ sealed interface ContentCardState<E: Event> {
             extraBufferCapacity = 10,
             onBufferOverflow = BufferOverflow.DROP_OLDEST),
         override val updates: MutableStateFlow<UIUpdate> = MutableStateFlow(UIUpdate.Empty),
+        override val scrollPosition: MutableStateFlow<ScrollPosition> = MutableStateFlow(ScrollPosition()),
     ) : ContentCardState<Event> {
         override val uri: AtUri = AtUri.profileUri(profile.did)
     }
@@ -140,6 +158,7 @@ sealed interface ContentCardState<E: Event> {
             extraBufferCapacity = 10,
             onBufferOverflow = BufferOverflow.DROP_OLDEST),
         override val updates: MutableStateFlow<UIUpdate> = MutableStateFlow(UIUpdate.Empty),
+        override val scrollPosition: MutableStateFlow<ScrollPosition> = MutableStateFlow(ScrollPosition()),
     ) : ContentCardState<E> {
         override val uri: AtUri = list.uri
     }
@@ -151,6 +170,7 @@ sealed interface ContentCardState<E: Event> {
             extraBufferCapacity = 10,
             onBufferOverflow = BufferOverflow.DROP_OLDEST),
         override val updates: MutableStateFlow<UIUpdate> = MutableStateFlow(UIUpdate.Empty),
+        override val scrollPosition: MutableStateFlow<ScrollPosition> = MutableStateFlow(ScrollPosition()),
     ) : ContentCardState<E> {
         override val uri: AtUri = list.uri
     }

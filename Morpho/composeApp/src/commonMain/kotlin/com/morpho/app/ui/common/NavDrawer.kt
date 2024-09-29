@@ -38,7 +38,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import cafe.adriel.voyager.core.model.rememberNavigatorScreenModel
+import cafe.adriel.voyager.koin.koinNavigatorScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.currentOrThrow
@@ -250,7 +250,7 @@ fun ColumnScope.NavDrawerItems(
     NavDrawerItem(HomeTab("home"), drawerState = drawerState, navigator = navigator)
     NavDrawerItem(NotificationsTab, drawerState = drawerState, navigator = navigator,
                     badge = {
-                        val sm = LocalNavigator.currentOrThrow.rememberNavigatorScreenModel { TabbedMainScreenModel() }
+                        val sm = LocalNavigator.currentOrThrow.koinNavigatorScreenModel<TabbedMainScreenModel>()
                         val unread by sm.unreadNotificationsCount().collectAsState(0)
                         if(unread > 0) {
                             Badge(

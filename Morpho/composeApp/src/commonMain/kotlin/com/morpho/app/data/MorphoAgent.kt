@@ -3,27 +3,34 @@ package com.morpho.app.data
 import app.bsky.actor.AdultContentPref
 import app.bsky.actor.PreferencesUnion
 import app.bsky.labeler.LabelerViewDetailed
+import com.morpho.app.model.bluesky.DetailedProfile
+import com.morpho.app.model.bluesky.toProfile
 import com.morpho.app.myLang
-import com.morpho.app.util.morphoSerializersModule
 import com.morpho.butterfly.BskyPreferences
 import com.morpho.butterfly.ButterflyAgent
+import com.morpho.butterfly.Did
 import com.morpho.butterfly.InterpretedLabelDefinition
 import com.morpho.butterfly.LabelValueID
 import com.morpho.butterfly.LabelerID
 import com.morpho.butterfly.Language
+import com.morpho.butterfly.auth.SessionRepository
+import com.morpho.butterfly.auth.UserRepository
 import com.morpho.butterfly.localize
-import com.morpho.butterfly.xrpc.XrpcBlueskyApi
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
-import org.koin.core.component.inject
 
-class MorphoAgent: ButterflyAgent() {
-    val localPrefs: PreferencesRepository by inject()
+class MorphoAgent(
+    val localPrefs: PreferencesRepository,
+    userData: UserRepository,
+    session: SessionRepository,
+): ButterflyAgent(userData, session) {
+    //val localPrefs: PreferencesRepository by inject()
 
     val morphoPrefs: MutableStateFlow<MorphoPreferences> = MutableStateFlow(MorphoPreferences(
         kawaiiMode = true,
@@ -39,43 +46,42 @@ class MorphoAgent: ButterflyAgent() {
     }
 
     init {
-        // Belt and suspenders bc of the super/derived class initialization uncertainty
-        api = XrpcBlueskyApi(atpClient, morphoSerializersModule)
-        if(id != null) {
-            runBlocking {
-                getPreferences()
-            }
-            serviceScope.launch {
-                localPrefs.morphoPrefs(id!!).distinctUntilChanged().collectLatest {
-                    if (it != null && it != MorphoPreferences()) {
-                        morphoPrefs.value = it
+        serviceScope.launch {
+            while(!isLoggedIn) delay(10)
+            if(isLoggedIn) {
+                serviceScope.launch {
+                    localPrefs.morphoPrefs(id!!).distinctUntilChanged().collectLatest {
+                        if (it != null && it != MorphoPreferences()) {
+                            morphoPrefs.value = it
+                        }
                     }
                 }
-            }
-            serviceScope.launch {
-                localPrefs.bskyPrefs(id!!).distinctUntilChanged().collectLatest {
-                    if (it != null && it != BskyPreferences()) {
-                        prefs = it
+                serviceScope.launch {
+                    localPrefs.bskyPrefs(id!!).distinctUntilChanged().collectLatest {
+                        if (it != null && it != BskyPreferences()) {
+                            prefs = it
+                        }
                     }
                 }
-            }
-            serviceScope.launch {
-                localPrefs.bskyPrefs(id!!).distinctUntilChanged().collectLatest {
-                    if (it != null && it != BskyPreferences()) {
-                        bskyPrefs.value = it
+                serviceScope.launch {
+                    localPrefs.bskyPrefs(id!!).distinctUntilChanged().collectLatest {
+                        if (it != null && it != BskyPreferences()) {
+                            bskyPrefs.value = it
+                        }
                     }
                 }
-            }
-            serviceScope.launch {
-                localPrefs.writePreferences(
-                    BskyUserPreferences(
-                        id!!,
-                        prefs,
-                        morphoPrefs.value
+                serviceScope.launch {
+                    localPrefs.writePreferences(
+                        BskyUserPreferences(
+                            id!!,
+                            prefs,
+                            morphoPrefs.value
+                        )
                     )
-                )
+                }
             }
         }
+
     }
 
 
@@ -138,6 +144,18 @@ class MorphoAgent: ButterflyAgent() {
             )
             return@updatePreferences updatedPrefs
         }
+    }
+
+    fun getAccounts(): Flow<List<DetailedProfile>> {
+        return userData.users().map { users ->
+            users.mapNotNull {
+                getProfile(it.id).getOrNull()?.toProfile()
+            }
+        }.distinctUntilChanged()
+    }
+
+    fun removeAccount(did: Did) = serviceScope.launch {
+        userData.removeUser(did)
     }
 
 

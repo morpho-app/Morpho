@@ -2,6 +2,9 @@ package com.morpho.app.ui.thread
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalUriHandler
+import cafe.adriel.voyager.navigator.LocalNavigator
+import cafe.adriel.voyager.navigator.currentOrThrow
 import com.atproto.repo.StrongRef
 import com.morpho.app.model.bluesky.BskyPost
 import com.morpho.app.model.bluesky.ThreadPost
@@ -11,6 +14,8 @@ import com.morpho.app.ui.post.BlockedPostFragment
 import com.morpho.app.ui.post.NotFoundPostFragment
 import com.morpho.app.ui.post.PostFragment
 import com.morpho.app.ui.post.PostFragmentRole
+import com.morpho.app.ui.utils.ItemClicked
+import com.morpho.app.ui.utils.OnItemClicked
 import com.morpho.butterfly.AtIdentifier
 import com.morpho.butterfly.AtUri
 import com.morpho.butterfly.ContentHandling
@@ -22,7 +27,10 @@ inline fun ThreadReply(
     modifier: Modifier = Modifier,
     indentLevel: Int = 1,
     role: PostFragmentRole = PostFragmentRole.ThreadBranchMiddle,
-    crossinline onItemClicked: OnPostClicked = {},
+    onItemClicked: OnItemClicked = ItemClicked(
+        uriHandler = LocalUriHandler.current,
+        navigator = LocalNavigator.currentOrThrow,
+    ),
     crossinline onProfileClicked: (AtIdentifier) -> Unit = {},
     crossinline onReplyClicked: (BskyPost) -> Unit = { },
     crossinline onRepostClicked: (BskyPost) -> Unit = { },
@@ -46,7 +54,7 @@ inline fun ThreadReply(
                 indentLevel = indentLevel,
                 modifier = modifier,
                 elevate = r != PostFragmentRole.ThreadBranchStart,
-                onItemClicked = {onItemClicked(it) },
+                onItemClicked = onItemClicked,
                 onProfileClicked = { onProfileClicked(it) },
                 onUnClicked =  { type,uri-> onUnClicked(type,uri) },
                 onRepostClicked = { onRepostClicked(it) },

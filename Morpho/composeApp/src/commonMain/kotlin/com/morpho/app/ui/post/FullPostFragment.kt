@@ -3,7 +3,15 @@ package com.morpho.app.ui.post
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.text.selection.DisableSelection
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.icons.Icons
@@ -12,7 +20,11 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalUriHandler
@@ -24,13 +36,28 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastAny
 import androidx.compose.ui.util.fastForEach
+import cafe.adriel.voyager.navigator.LocalNavigator
+import cafe.adriel.voyager.navigator.currentOrThrow
 import com.atproto.label.Blurs
 import com.atproto.repo.StrongRef
 import com.morpho.app.model.bluesky.BskyPost
 import com.morpho.app.model.bluesky.FacetType
-import com.morpho.app.ui.elements.*
-import com.morpho.app.util.openBrowser
-import com.morpho.butterfly.*
+import com.morpho.app.ui.elements.ContentHider
+import com.morpho.app.ui.elements.MenuOptions
+import com.morpho.app.ui.elements.OutlinedAvatar
+import com.morpho.app.ui.elements.PostMenu
+import com.morpho.app.ui.elements.RichTextElement
+import com.morpho.app.ui.elements.WrappedColumn
+import com.morpho.app.ui.utils.ItemClicked
+import com.morpho.app.ui.utils.OnFacetClicked
+import com.morpho.app.ui.utils.OnItemClicked
+import com.morpho.app.ui.utils.OnPostClicked
+import com.morpho.butterfly.AtIdentifier
+import com.morpho.butterfly.AtUri
+import com.morpho.butterfly.ContentHandling
+import com.morpho.butterfly.LabelAction
+import com.morpho.butterfly.LabelDescription
+import com.morpho.butterfly.LabelIcon
 import com.morpho.butterfly.model.RecordType
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.datetime.TimeZone
@@ -42,7 +69,10 @@ import org.jetbrains.compose.resources.ExperimentalResourceApi
 fun FullPostFragment(
     post: BskyPost,
     modifier: Modifier = Modifier,
-    onItemClicked: (AtUri) -> Unit = {},
+    onItemClicked: OnItemClicked = ItemClicked(
+        uriHandler = LocalUriHandler.current,
+        navigator = LocalNavigator.currentOrThrow,
+    ),
     onProfileClicked: (AtIdentifier) -> Unit = {},
     onReplyClicked: (BskyPost) -> Unit = { },
     onRepostClicked: (BskyPost) -> Unit = { },
@@ -67,8 +97,13 @@ fun FullPostFragment(
             getContentHandling(post)
         }.toImmutableList()
     }
-    val uriHandler = LocalUriHandler.current
 
+    val onPostClicked: OnPostClicked = remember { { uri ->
+        onItemClicked.onRichTextFacetClicked(uri = uri)
+    } }
+    val onFacetClicked: OnFacetClicked = remember { { facet ->
+        onItemClicked.onRichTextFacetClicked(facet = facet)
+    } }
 
     WrappedColumn(
         modifier
@@ -159,7 +194,7 @@ fun FullPostFragment(
                     text = post.text,
                     facets = post.facets,
                     //modifier = Modifier.padding(bottom = 2.dp).padding(start = 0.dp, end = 6.dp),
-                    onItemClicked = { onItemClicked(post.uri) },
+                    onItemClicked = { onPostClicked(post.uri) },
                     onProfileClicked = onProfileClicked,
                     getContentHandling = getContentHandling
                 )
@@ -169,24 +204,11 @@ fun FullPostFragment(
                     facets = post.facets,
                     onClick = { facetTypes ->
                         if (facetTypes.isEmpty()) {
-                            onItemClicked(post.uri)
+                            onPostClicked(post.uri)
                             return@RichTextElement
                         }
                         facetTypes.fastForEach {
-                            when(it) {
-                                is FacetType.ExternalLink -> {
-                                    openBrowser(it.uri.uri, uriHandler)
-                                }
-                                is FacetType.Tag -> {onItemClicked(post.uri)}
-                                is FacetType.UserDidMention -> {
-                                    onProfileClicked(it.did)
-                                }
-                                is FacetType.UserHandleMention -> {
-                                    onProfileClicked(it.handle)
-                                }
-
-                                else -> {}
-                            }
+                            onFacetClicked(it)
                         }
                     },
                 )

@@ -1,30 +1,35 @@
 package com.morpho.app.screens.main
 
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import app.bsky.actor.SavedFeed
 import cafe.adriel.voyager.core.model.screenModelScope
-import com.morpho.app.model.bluesky.DetailedProfile
+import com.morpho.app.data.ContentLabelService
+import com.morpho.app.data.MorphoAgent
 import com.morpho.app.model.bluesky.FeedSourceInfo
 import com.morpho.app.model.bluesky.toFeedSourceInfo
-import com.morpho.app.model.bluesky.toProfile
 import com.morpho.app.model.uidata.FeedEvent
 import com.morpho.app.model.uidata.FeedPresenter
 import com.morpho.app.model.uistate.ContentCardState
 import com.morpho.app.screens.base.BaseScreenModel
 import com.morpho.butterfly.AtUri
+import com.morpho.butterfly.Did
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.launch
 import org.lighthousegames.logging.logging
 
 
-open class MainScreenModel: BaseScreenModel() {
+open class MainScreenModel(
+    agent: MorphoAgent,
+    labelService: ContentLabelService,
+): BaseScreenModel(
+    agent = agent,
+    labelService = labelService,
+) {
 
-    var userProfile: DetailedProfile? by mutableStateOf(null)
-        protected set
+
 
     val feedSources = mutableStateListOf<FeedSourceInfo>()
     val feedPresenters = mutableMapOf<AtUri, FeedPresenter<FeedEvent>>()
@@ -40,9 +45,16 @@ open class MainScreenModel: BaseScreenModel() {
         val log = logging("MainScreenModel")
     }
 
+    private var presenterJob: Job? = null
+
     init {
-        if(isLoggedIn) screenModelScope.launch {
-            userProfile = userDid?.let { agent.getProfile(it).getOrNull()?.toProfile() }
+        initialize()
+    }
+
+    protected fun initialize() {
+        screenModelScope.launch {
+            while(!isLoggedIn.value) delay(10)
+
             feedSources.addAll(pinnedFeeds.mapNotNull { feed -> feed.toFeedSourceInfo(agent).getOrNull() })
             feedPresenters.putAll(feedSources.map { source ->
                 source.uri to FeedPresenter(source.feedDescriptor)
@@ -52,7 +64,7 @@ open class MainScreenModel: BaseScreenModel() {
             })
 
 
-            screenModelScope.launch {
+            presenterJob = screenModelScope.launch {
                 for(source in feedSources) {
                     val cardState = feedStates[source.uri]?: continue
                     val presenter = feedPresenters[source.uri] ?: continue
@@ -71,6 +83,24 @@ open class MainScreenModel: BaseScreenModel() {
     }
 
 
+    override fun deinit() {
+        super.deinit()
+        feedSources.clear()
+        feedStates.clear()
+        presenterJob?.cancel()
+        initialized = false
+    }
 
+    override fun logout() {
+        super.logout()
+        deinit()
+        initialize()
+    }
+
+    override fun switchUser(did: Did) {
+        super.switchUser(did)
+        deinit()
+        initialize()
+    }
 
 }

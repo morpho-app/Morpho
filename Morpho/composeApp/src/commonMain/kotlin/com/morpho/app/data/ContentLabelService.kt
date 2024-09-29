@@ -28,7 +28,7 @@ import com.morpho.butterfly.MutedWordTarget
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import org.lighthousegames.logging.logging
@@ -63,9 +63,12 @@ class ContentLabelService: KoinComponent {
         private set
 
     init {
-        serviceScope.launch {
-            agent.localizeLabelDefinitions(agent.prefs)
-            agent.getLabelersDetailed(labelers.keys.map { Did(it) })
+        runBlocking {
+            labelDefinitions = agent.getLabelDefinitions(modPrefs)
+            val details = agent.getLabelersDetailed(labelers.keys.map { Did(it) }).getOrNull()?.associateBy {
+                it.creator.did.did
+            }
+            labelerDetails = details ?: emptyMap()
         }
 
     }
@@ -74,39 +77,39 @@ class ContentLabelService: KoinComponent {
         return when (item) {
             is MorphoDataItem.Post -> {
                 item.post.author.mutedByMe
-                    || item.post.author.blocking
-                    || item.post.author.blockedBy
-                    || hiddenPosts.any { uri -> item.containsUri(uri) }
-                    || mutedWords.any {
-                        item.post.text.contains(it.value, ignoreCase = true)
-                    } || if(!modPrefs.adultContentEnabled) {
-                            val adultLabels = item.post.labels.filter { label ->
-                                labelDefinitions[label.creator.did]?.get(label.value)?.flags
-                                    ?.contains(LabelValueDefFlag.Adult) == true
-                            }
-                            adultLabels.isNotEmpty()
-                        } else {
-                            item.post.labels.any { label ->
-                                labels[label.value] == Visibility.HIDE
-                            }
-                        }
+                        || item.post.author.blocking
+                        || item.post.author.blockedBy
+                        || hiddenPosts.any { uri -> item.containsUri(uri) }
+                        || mutedWords.any {
+                    item.post.text.contains(it.value, ignoreCase = true)
+                } || if(!modPrefs.adultContentEnabled) {
+                    val adultLabels = item.post.labels.filter { label ->
+                        labelDefinitions[label.creator.did]?.get(label.value)?.flags
+                            ?.contains(LabelValueDefFlag.Adult) == true
+                    }
+                    adultLabels.isNotEmpty()
+                } else {
+                    item.post.labels.any { label ->
+                        labels[label.value] == Visibility.HIDE
+                    }
+                }
             }
             is MorphoDataItem.Thread -> {
                 item.thread.anyMutedOrBlocked()
-                    || hiddenPosts.any { uri -> item.containsUri(uri) }
-                    || mutedWords.any {
-                        item.thread.containsWord(it.value)
-                    } || if(!modPrefs.adultContentEnabled) {
-                        val adultLabels = item.thread.getLabels().filter { label ->
-                            labelDefinitions[label.creator.did]?.get(label.value)?.flags
-                                ?.contains(LabelValueDefFlag.Adult) == true
-                        }
-                        adultLabels.isNotEmpty()
-                    } else {
-                        item.thread.getLabels().any { label ->
-                            labels[label.value] == Visibility.HIDE
-                        }
+                        || hiddenPosts.any { uri -> item.containsUri(uri) }
+                        || mutedWords.any {
+                    item.thread.containsWord(it.value)
+                } || if(!modPrefs.adultContentEnabled) {
+                    val adultLabels = item.thread.getLabels().filter { label ->
+                        labelDefinitions[label.creator.did]?.get(label.value)?.flags
+                            ?.contains(LabelValueDefFlag.Adult) == true
                     }
+                    adultLabels.isNotEmpty()
+                } else {
+                    item.thread.getLabels().any { label ->
+                        labels[label.value] == Visibility.HIDE
+                    }
+                }
             }
         }
     }
@@ -166,22 +169,31 @@ class ContentLabelService: KoinComponent {
 
             val possibleCauses = filteredPostLabels.mapNotNull { label ->
                 labelDefinitions[label.creator.did]?.get(label.value)?.let { labelDef ->
+                    val localizedDefString = labelDef.allDescriptions.firstOrNull {
+                        it.lang == agent.myLanguage.value
+                    } ?: labelDef.allDescriptions.firstOrNull { it.lang.tag == "en" }
+                    val localLabelDef = labelDef.copy(
+                        localizedName = localizedDefString?.name ?: labelDef.localizedName,
+                        localizedDescription = localizedDefString?.description
+                            ?: labelDef.localizedDescription,
+                    )
+
                     LabelCause.Label(
                         LabelSource.Labeler(labelerDetails[label.creator.did]!!),
                         label.toAtProtoLabel(),
-                        labelDef,
-                        labelDef.whatToHide,
+                        localLabelDef,
+                        localLabelDef.whatToHide,
                         labels[label.value] ?: labelDef.defaultSetting ?: Visibility.IGNORE,
-                        labelDef.behaviours.content,
-                        noOverride = !labelDef.configurable,
-                        priority = when (labelDef.severity) {
+                        localLabelDef.behaviours.content,
+                        noOverride = !localLabelDef.configurable,
+                        priority = when (localLabelDef.severity) {
                             Severity.INFORM -> 5
                             Severity.ALERT -> 2
                             Severity.NONE -> 8
                             Severity.WARN -> 1
                         },
                         downgraded = false,
-                    ) to labelDef.toContentHandling(
+                    ) to localLabelDef.toContentHandling(
                         LabelTarget.Content,
                         avatar = labelerDetails[label.creator.did]?.creator?.avatar
                     )

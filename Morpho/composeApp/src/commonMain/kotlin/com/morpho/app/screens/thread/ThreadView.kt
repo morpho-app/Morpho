@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.core.annotation.ExperimentalVoyagerApi
 import cafe.adriel.voyager.core.model.rememberNavigatorScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
+import cafe.adriel.voyager.koin.koinNavigatorScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.currentOrThrow
@@ -44,6 +45,7 @@ import com.morpho.app.ui.common.RepostQueryDialog
 import com.morpho.app.ui.common.TabbedScreenScaffold
 import com.morpho.app.ui.elements.doMenuOperation
 import com.morpho.app.ui.thread.ThreadFragment
+import com.morpho.app.ui.utils.ItemClicked
 import com.morpho.app.util.ClipboardManager
 import com.morpho.butterfly.AtIdentifier
 import com.morpho.butterfly.AtUri
@@ -65,7 +67,7 @@ fun TabScreen.ThreadViewContent(
     navigator: Navigator = LocalNavigator.currentOrThrow,
 
 ) {
-    val sm = navigator.rememberNavigatorScreenModel { MainScreenModel() }
+    val sm = navigator.koinNavigatorScreenModel<MainScreenModel>()
     val threadState by cardState.updates.filterIsInstance<ThreadUpdate>().collectAsState(ThreadUpdate.Empty)
 
     TabbedScreenScaffold(
@@ -140,31 +142,35 @@ fun ThreadView(
     val clipboard = getKoin().get<ClipboardManager>()
     val scope = rememberCoroutineScope()
     val uriHandler = LocalUriHandler.current
-    ThreadFragment(thread = thread,
-                   contentPadding = insets,
-                   onItemClicked = { navigator.push(ThreadTab(it)) },
-                   onProfileClicked = {
-                       scope.launch {
-                           val did = resolveHandle(it)
-                           if(did != null) navigator.push(ProfileTab(did))
-                       }
-                   },
-                   onUnClicked = {type, uri ->  deleteRecord(type, uri)},
-                   onRepostClicked = {
-                       initialContent = it
-                       repostClicked = true
-                   },
-                   onReplyClicked = {
-                       initialContent = it
-                       composerRole = ComposerRole.Reply
-                       showComposer = true
-                   },
-                   onMenuClicked = { option, post ->
-                       doMenuOperation(option, post,
-                                       clipboardManager = clipboard,
-                                       uriHandler = uriHandler
-                       ) },
-                   onLikeClicked = { createRecord(RecordUnion.Like(it)) },
+    ThreadFragment(
+        thread = thread,
+        contentPadding = insets,
+        onItemClicked = ItemClicked(
+            uriHandler = uriHandler,
+            navigator = navigator,
+        ),
+        onProfileClicked = {
+            scope.launch {
+                val did = resolveHandle(it)
+                if(did != null) navigator.push(ProfileTab(did))
+            }
+        },
+        onUnClicked = { type, uri ->  deleteRecord(type, uri) },
+        onRepostClicked = {
+            initialContent = it
+            repostClicked = true
+        },
+        onReplyClicked = {
+            initialContent = it
+            composerRole = ComposerRole.Reply
+            showComposer = true
+        },
+        onMenuClicked = { option, post ->
+            doMenuOperation(option, post,
+                clipboardManager = clipboard,
+                uriHandler = uriHandler
+            ) },
+        onLikeClicked = { createRecord(RecordUnion.Like(it)) },
     )
     if(repostClicked) {
         RepostQueryDialog(

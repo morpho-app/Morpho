@@ -9,7 +9,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -23,7 +22,6 @@ import coil3.size.Size
 import com.morpho.app.model.bluesky.BskyPostFeature
 import com.morpho.app.ui.elements.RichTextElement
 import com.morpho.app.ui.elements.WrappedColumn
-import com.morpho.app.util.makeBlueskyText
 import org.jetbrains.compose.resources.ExperimentalResourceApi
 
 @OptIn(ExperimentalLayoutApi::class, ExperimentalResourceApi::class)
@@ -69,10 +67,8 @@ fun PostLinkEmbed(
                     modifier = Modifier.padding(8.dp)
                 )
                 if(linkData.description.isNotEmpty()) {
-                    val bskyTxt = remember { makeBlueskyText(linkData.description) }
                     RichTextElement(
-                        text = bskyTxt.text,
-                        facets = bskyTxt.facets,
+                        text = linkData.description,
                         modifier = Modifier.padding(start = 8.dp, end = 8.dp, top = 4.dp, bottom = 8.dp)
                     )
                 }

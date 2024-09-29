@@ -31,11 +31,8 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
-import cafe.adriel.voyager.core.model.rememberNavigatorScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
 import cafe.adriel.voyager.core.screen.ScreenKey
-import cafe.adriel.voyager.navigator.LocalNavigator
-import cafe.adriel.voyager.navigator.currentOrThrow
 import cafe.adriel.voyager.navigator.tab.LocalTabNavigator
 import cafe.adriel.voyager.navigator.tab.Tab
 import cafe.adriel.voyager.navigator.tab.TabOptions
@@ -49,6 +46,7 @@ import kotlinx.serialization.Serializable
 import morpho.composeapp.generated.resources.BlueSkyKawaii
 import morpho.composeapp.generated.resources.Res
 import org.jetbrains.compose.resources.painterResource
+import org.koin.compose.koinInject
 
 @Parcelize
 @Serializable
@@ -63,9 +61,9 @@ data object LoginScreen: Tab, Parcelable {
         val focusManager = LocalFocusManager.current
         val snackbarHostState = remember { SnackbarHostState() }
         val tabNavigator = LocalTabNavigator.current
-        val screenModel = LocalNavigator.currentOrThrow.rememberNavigatorScreenModel { LoginScreenModel() }
+        val screenModel = koinInject<LoginScreenModel>()
 
-        if(screenModel.isLoggedIn) {
+        if(screenModel.isLoggedIn.value) {
             tabNavigator.current = TabbedBaseScreen
         }
 

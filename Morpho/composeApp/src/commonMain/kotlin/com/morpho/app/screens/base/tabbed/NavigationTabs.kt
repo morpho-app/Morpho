@@ -20,15 +20,18 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import cafe.adriel.voyager.core.annotation.ExperimentalVoyagerApi
 import cafe.adriel.voyager.core.lifecycle.LifecycleEffectOnce
-import cafe.adriel.voyager.core.model.rememberNavigatorScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.core.screen.ScreenKey
 import cafe.adriel.voyager.core.screen.uniqueScreenKey
+import cafe.adriel.voyager.koin.koinNavigatorScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.currentOrThrow
+import com.morpho.app.model.bluesky.FeedGenerator
+import com.morpho.app.model.bluesky.UserList
 import com.morpho.app.model.uidata.MyProfilePresenter
+import com.morpho.app.model.uidata.ProfilePresenter
 import com.morpho.app.screens.main.tabbed.TabbedHomeView
 import com.morpho.app.screens.main.tabbed.TabbedMainScreenModel
 import com.morpho.app.screens.notifications.NotificationViewContent
@@ -88,8 +91,8 @@ data class HomeTab(
     @OptIn(ExperimentalVoyagerApi::class)
     @Composable
     override fun Content() {
-        val sm = LocalNavigator.currentOrThrow.rememberNavigatorScreenModel { TabbedMainScreenModel() }
-        TabbedHomeView(sm)
+        val sm = LocalNavigator.currentOrThrow.koinNavigatorScreenModel<TabbedMainScreenModel>()
+        TabbedHomeView(sm = sm)
     }
 
     override val options: TabScreenOptions
@@ -209,20 +212,24 @@ data class ProfileTab(
     @kotlin.jvm.Transient @Transient override val navBar: @Composable (@Contextual Navigator) -> Unit = { n ->
         TabbedNavBar(options.index, n)
     }
-    @OptIn(ExperimentalMaterial3Api::class)
+    @OptIn(ExperimentalMaterial3Api::class, ExperimentalVoyagerApi::class)
     @Composable
     override fun Content() {
-        val sm = LocalNavigator.currentOrThrow.rememberNavigatorScreenModel { TabbedMainScreenModel() }
+        val sm = LocalNavigator.currentOrThrow.koinNavigatorScreenModel<TabbedMainScreenModel>()
         val eventStream = sm.globalEvents
-        val profilePresenter by  sm.getProfilePresenter(id).collectAsState(null)
-        val myProfilePresenter by  sm.getMyProfilePresenter().collectAsState(null)
+        var myProfilePresenter by remember { mutableStateOf<MyProfilePresenter?>(null) }
+        var profilePresenter by remember { mutableStateOf<ProfilePresenter?>(null) }
+        LifecycleEffectOnce {
+            sm.screenModelScope.launch {
+                sm.getMyProfilePresenter().first().also { it -> myProfilePresenter = it.first }
+                sm.getProfilePresenter(id, true).first().also { it -> profilePresenter = it.first }
+            }
+        }
         if(profilePresenter != null && myProfilePresenter != null) {
-            val presenter = profilePresenter!!.first
-            val updates = profilePresenter!!.second
-
-            val myProfileState = myProfilePresenter!!.first.profileState
+            val profileState = profilePresenter!!.profileState
+            val myProfileState = myProfilePresenter!!.profileState
             TabbedProfileContent(
-                profileState = presenter.profileState,
+                profileState = profileState,
                 myProfileState = myProfileState,
                 eventCallback = { eventStream.tryEmit(it) }
             )
@@ -260,7 +267,7 @@ data class ThreadTab(
     @Composable
     override fun Content() {
         val navigator = LocalNavigator.currentOrThrow
-        val sm = navigator.rememberNavigatorScreenModel { TabbedMainScreenModel() }
+        val sm = navigator.koinNavigatorScreenModel<TabbedMainScreenModel>()
         val threadState by sm.getThread(uri).collectAsState(null)
         if(threadState != null) {
             ThreadViewContent(threadState!!, navigator)
@@ -301,7 +308,7 @@ data object MyProfileTab: TabScreen {
     @OptIn(ExperimentalMaterial3Api::class, ExperimentalVoyagerApi::class)
     @Composable
     override fun Content() {
-        val sm = LocalNavigator.currentOrThrow.rememberNavigatorScreenModel { TabbedMainScreenModel() }
+        val sm = LocalNavigator.currentOrThrow.koinNavigatorScreenModel<TabbedMainScreenModel>()
         val eventStream = sm.globalEvents
         var myProfilePresenter by remember { mutableStateOf<MyProfilePresenter?>(null) }
         LifecycleEffectOnce {
@@ -345,7 +352,7 @@ data object SettingsTab: TabScreen {
 
     @Composable
     override fun Content() {
-        val sm = LocalNavigator.currentOrThrow.rememberNavigatorScreenModel { TabbedMainScreenModel() }
+        val sm = LocalNavigator.currentOrThrow.koinNavigatorScreenModel<TabbedMainScreenModel>()
         val navigator = LocalNavigator.currentOrThrow
         Navigator(
             SettingsRootPage,
@@ -366,6 +373,58 @@ data object SettingsTab: TabScreen {
                 icon = { Icon(Icons.Default.Settings, contentDescription = "Settings",
                               tint = MaterialTheme.colorScheme.onBackground) },
                 title = "Settings"
+            )
+        }
+}
+
+data class FeedPageTab(
+    val feed: FeedGenerator,
+): TabScreen {
+    override val key: ScreenKey
+        get() = "FeedPageTab_${uniqueScreenKey}"
+
+    override val navBar: @Composable (@Contextual Navigator) -> Unit = { n ->
+        TabbedNavBar(options.index, n)
+    }
+
+    @Composable
+    override fun Content() {
+        TODO("Not yet implemented")
+    }
+
+    override val options: TabScreenOptions
+        @Composable get() {
+            return TabScreenOptions(
+                index = 6,
+                icon = { Icon(Icons.Default.Settings, contentDescription = "Settings",
+                    tint = MaterialTheme.colorScheme.onBackground) },
+                title = feed.displayName
+            )
+        }
+}
+
+data class UserListPageTab(
+    val list: UserList,
+): TabScreen {
+    override val key: ScreenKey
+        get() = "UserListPageTab_${uniqueScreenKey}"
+
+    override val navBar: @Composable (@Contextual Navigator) -> Unit = { n ->
+        TabbedNavBar(options.index, n)
+    }
+
+    @Composable
+    override fun Content() {
+        TODO("Not yet implemented")
+    }
+
+    override val options: TabScreenOptions
+        @Composable get() {
+            return TabScreenOptions(
+                index = 6,
+                icon = { Icon(Icons.Default.Settings, contentDescription = "Settings",
+                    tint = MaterialTheme.colorScheme.onBackground) },
+                title = list.name
             )
         }
 }

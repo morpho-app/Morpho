@@ -12,6 +12,8 @@ expect fun getPlatform(): Platform
 expect val myLang:String?
 expect val myCountry:String?
 
+expect fun getPlatformStorageDir(baseDir: String = ""): String
+
 // For Android @Parcelize
 @OptIn(ExperimentalMultiplatform::class)
 @OptionalExpectation

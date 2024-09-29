@@ -34,7 +34,7 @@ kotlinx-serialization = "1.6.3"
 kotlinx-datetime = "0.6.0"
 kotlinx-coroutines = "1.8.1"
 kotlinx-immutable = "0.3.7"
-kstore = "0.7.1"
+kstore = "0.8.0"
 pagingCommon = "3.3.0-alpha02-0.5.1"
 pagingComposeCommon = "3.3.0-alpha02-0.5.1"
 pagingRuntime = "3.3.0-alpha02"
@@ -152,6 +152,7 @@ kotlin-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", v
 kotlin-reflect = { module = "org.jetbrains.kotlin:kotlin-reflect", version.ref = "kotlin-reflect" }
 ktor-client-auth = { module = "io.ktor:ktor-client-auth", version.ref = "ktor" }
 ktor-client-okhttp = { module = "io.ktor:ktor-client-okhttp", version.ref = "ktor" }
+ktor-client-encoding = { module = "io.ktor:ktor-client-encoding", version.ref = "ktor" }
 ktor-client-resources = { module = "io.ktor:ktor-client-resources", version.ref = "ktor" }
 ktor-cio = { module = "io.ktor:ktor-client-cio", version.ref = "ktor" }
 ktor-contentnegotiation = { module = "io.ktor:ktor-client-content-negotiation", version.ref = "ktor" }

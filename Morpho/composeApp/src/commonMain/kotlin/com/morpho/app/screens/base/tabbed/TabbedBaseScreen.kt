@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.core.annotation.ExperimentalVoyagerApi
 import cafe.adriel.voyager.core.model.rememberNavigatorScreenModel
 import cafe.adriel.voyager.core.screen.ScreenKey
+import cafe.adriel.voyager.koin.koinNavigatorScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.NavigatorDisposeBehavior
@@ -93,7 +94,7 @@ fun TabNavigationItem(
         icon = {
             when (tab) {
                 is NotificationsTab -> {
-                    val sm = LocalNavigator.currentOrThrow.rememberNavigatorScreenModel { TabbedMainScreenModel() }
+                    val sm = navigator.koinNavigatorScreenModel<TabbedMainScreenModel>()
                     val unread by sm.unreadNotificationsCount().collectAsState(0)
                     BadgedBox(
                         badge = {

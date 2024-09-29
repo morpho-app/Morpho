@@ -9,7 +9,6 @@ import com.morpho.app.model.bluesky.BskyPostThread
 import com.morpho.app.model.bluesky.MorphoDataItem
 import com.morpho.app.model.bluesky.ThreadPost
 import com.morpho.app.model.bluesky.toPost
-import com.morpho.app.model.uidata.ContentLabelService
 import com.morpho.app.model.uidata.Delta
 import com.morpho.app.model.uidata.Moment
 import com.morpho.butterfly.ButterflyAgent

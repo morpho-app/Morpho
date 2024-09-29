@@ -28,6 +28,8 @@ import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import cafe.adriel.voyager.transitions.ScreenTransition
 import cafe.adriel.voyager.transitions.ScreenTransitionContent
+import com.morpho.app.data.ContentLabelService
+import com.morpho.app.data.MorphoAgent
 import com.morpho.app.screens.base.tabbed.SettingsTab
 import com.morpho.app.screens.base.tabbed.TabbedNavBar
 import com.morpho.app.screens.main.tabbed.TabbedMainScreenModel
@@ -42,6 +44,7 @@ import dev.icerock.moko.parcelize.Parcelable
 import dev.icerock.moko.parcelize.Parcelize
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
+import org.koin.compose.koinInject
 
 @Composable
 public fun CurrentSettingsScreen(
@@ -79,7 +82,8 @@ abstract class SettingsScreen: Screen {
     @OptIn(ExperimentalVoyagerApi::class)
     @Composable
     final override fun Content() =
-        Content(TabbedMainScreenModel(), LocalNavigator.currentOrThrow, Modifier)
+        Content(TabbedMainScreenModel(koinInject<MorphoAgent>(), koinInject<ContentLabelService>()),
+            LocalNavigator.currentOrThrow, Modifier)
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -115,9 +119,9 @@ data object SettingsRootPage: SettingsScreen(), Parcelable {
             navBar = { navBar(parentNav) },
             content = { insets, nav ->
                 SettingsFragment(
-                    agent = sm.agent,
                     modifier = Modifier.padding(insets),
-                    navigator = nav!!
+                    navigator = nav!!,
+                    sm = sm,
                 )
             },
             topContent = {
@@ -218,7 +222,7 @@ data object NotificationsSettingsScreen: SettingsScreen(), Parcelable {
             navBar = { navBar(parentNav) },
             content = { insets, nav ->
                 SettingsFragment(
-                    agent = sm.agent,
+                    sm = sm,
                     modifier = Modifier.padding(insets),
                     navigator = nav!!
                 )
@@ -356,7 +360,7 @@ data object ThreadSettingsScreen: SettingsScreen(), Parcelable {
             navBar = { navBar(parentNav) },
             content = { insets, nav ->
                 SettingsFragment(
-                    agent = sm.agent,
+                    sm = sm,
                     modifier = Modifier.padding(insets),
                     navigator = nav!!
                 )

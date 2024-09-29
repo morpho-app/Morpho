@@ -54,15 +54,12 @@ import com.morpho.app.data.DarkModeSetting
 import com.morpho.app.data.MorphoAgent
 import com.morpho.app.data.PreferencesRepository
 import com.morpho.app.di.appModule
-import com.morpho.app.di.dataModule
-import com.morpho.app.di.storageModule
+import com.morpho.app.getPlatformStorageDir
 import com.morpho.app.ui.theme.MorphoTheme
 import com.morpho.butterfly.auth.SessionRepository
 import com.morpho.butterfly.auth.UserRepository
 import morpho.composeapp.generated.resources.Res
 import morpho.composeapp.generated.resources.morpho_icon_transparent
-import net.harawata.appdirs.AppDirsFactory
-import okio.Path.Companion.toPath
 import org.jetbrains.compose.resources.ExperimentalResourceApi
 import org.jetbrains.compose.resources.imageResource
 import org.jetbrains.compose.resources.painterResource
@@ -77,7 +74,6 @@ import org.lighthousegames.logging.VariableLogLevel
 import org.lighthousegames.logging.logging
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import kotlin.io.path.createDirectories
 
 val log = logging("main")
 
@@ -91,20 +87,15 @@ fun main() = application {
     KmLogging.setLoggers(PlatformLogger(VariableLogLevel(LogLevel.Verbose)))
     val koin = startKoin {
         slf4jLogger()
-        modules(appModule, storageModule, dataModule)
+        modules(appModule)//, storageModule, dataModule)
     }.koin
-    val storageDir = AppDirsFactory.getInstance()
-        .getUserDataDir("com.morpho.app", "0.1.0", "Morpho")
-    val path = storageDir.toPath()
-    path.toNioPath().createDirectories()
-    val cacheDir = AppDirsFactory.getInstance()
-        .getUserCacheDir("com.morpho.app", "0.1.0", "Morpho")
-    val cachePath = cacheDir.toPath()
-    cachePath.toNioPath().createDirectories()
-    koin.get<SessionRepository> { parametersOf(storageDir) }
-    koin.get<UserRepository> { parametersOf(storageDir) }
-    koin.get<PreferencesRepository> { parametersOf(storageDir) }
-    val agent = koin.get<MorphoAgent>()
+    val storageDir = getPlatformStorageDir()
+    val sessionRepo = koin.get<SessionRepository> { parametersOf(storageDir) }
+    val userRepo = koin.get<UserRepository> { parametersOf(storageDir) }
+    val prefsRepo = koin.get<PreferencesRepository> { parametersOf(storageDir) }
+    val agent = koin.get<MorphoAgent> {
+        parametersOf(sessionRepo, userRepo, prefsRepo)
+    }
     val morphoPrefs by derivedStateOf { agent.morphoPrefs }
     val (undecorated, tabbed) = remember {
         log.d{ "Morpho Preferences: $morphoPrefs" }

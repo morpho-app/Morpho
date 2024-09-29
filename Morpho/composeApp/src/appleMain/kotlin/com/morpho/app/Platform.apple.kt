@@ -10,3 +10,7 @@ actual val myLang:String?
 
 actual val myCountry:String?
     get() = NSLocale.currentLocale.countryCode
+
+actual fun getPlatformStorageDir(baseDir: String): String {
+    TODO("Not yet implemented")
+}

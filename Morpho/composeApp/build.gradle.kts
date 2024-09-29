@@ -28,9 +28,15 @@ buildkonfig {
 
     defaultConfigs {
         buildConfigField(STRING, "versionString", versionString)
+        buildConfigField(STRING, "packageName", packageString)
+        buildConfigField(STRING, "appName", "Morpho")
+        buildConfigField(STRING, "versionNumber", "0.1.0")
     }
     defaultConfigs("dev") {
         buildConfigField(STRING, "versionString", "${versionString}-dev")
+        buildConfigField(STRING, "packageName", packageString)
+        buildConfigField(STRING, "appName", "Morpho")
+        buildConfigField(STRING, "versionNumber", "0.1.0")
     }
 
     targetConfigs {
@@ -213,6 +219,7 @@ kotlin {
             implementation(libs.ktor.contentnegotiation)
             implementation(libs.ktor.serialization.json)
             implementation(libs.ktor.websockets)
+            implementation(libs.ktor.client.encoding)
             implementation(libs.ktor.client.resources)
             implementation(libs.ktor.client.auth)
 

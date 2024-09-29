@@ -29,6 +29,8 @@ import coil3.request.crossfade
 import com.morpho.app.model.bluesky.BskyFacet
 import com.morpho.app.model.bluesky.FacetType
 import com.morpho.app.model.bluesky.RichTextFormat.*
+import com.morpho.app.util.BlueskyText
+import com.morpho.app.util.makeBlueskyText
 import com.morpho.app.util.utf16FacetIndex
 import kotlinx.collections.immutable.persistentListOf
 import okio.ByteString.Companion.encodeUtf8
@@ -39,12 +41,15 @@ fun RichTextElement(
     text: String,
     modifier: Modifier = Modifier,
     facets: List<BskyFacet> = persistentListOf(),
-    onClick: (List<FacetType>) -> Unit = {},
     maxLines: Int = 20,
+    onClick: (List<FacetType>) -> Unit = {},
 ) {
     val layoutResult = remember { mutableStateOf<TextLayoutResult?>(null) }
-    val utf8Text = text.encodeUtf8()
-    val splitText = text.split("◌").listIterator() // special BlueMoji character
+    val bskyText = if(facets.isEmpty()) {
+        makeBlueskyText(text)
+    } else BlueskyText(text, facets)
+    val utf8Text = bskyText.text.encodeUtf8()
+    val splitText = bskyText.text.split("◌").listIterator() // special BlueMoji character
     val formattedText = buildAnnotatedString {
         pushStyle(SpanStyle(MaterialTheme.colorScheme.onSurface))
         pushStyle(SpanStyle(
@@ -53,7 +58,8 @@ fun RichTextElement(
             fontSize = MaterialTheme.typography.bodyMedium.fontSize,
         ))
         append(splitText.next())
-        facets.fastForEach { facet ->
+
+        bskyText.facets.fastForEach { facet ->
             val bounds = text.utf16FacetIndex(utf8Text, facet.start, facet.end)
             val start = bounds.first
             val end = bounds.second
@@ -173,7 +179,7 @@ fun RichTextElement(
         .pointerInput(onClick) {
 
         detectTapGestures(
-            onLongPress ={
+            onLongPress = {
 
             }
         ) { pos ->

@@ -26,10 +26,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.dp
+import cafe.adriel.voyager.koin.koinNavigatorScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import com.morpho.app.data.MorphoAgent
+import com.morpho.app.screens.main.tabbed.TabbedMainScreenModel
 import com.morpho.app.screens.settings.AccessibilitySettingsScreen
 import com.morpho.app.screens.settings.AppearanceSettingsScreen
 import com.morpho.app.screens.settings.FeedSettingsScreen
@@ -42,15 +44,20 @@ import org.koin.compose.getKoin
 
 @Composable
 fun SettingsFragment(
-    agent: MorphoAgent = getKoin().get(),
-    modifier: Modifier = Modifier,
     navigator: Navigator = LocalNavigator.currentOrThrow,
+    sm: TabbedMainScreenModel = navigator.koinNavigatorScreenModel<TabbedMainScreenModel>(),
+    modifier: Modifier = Modifier,
+
 ) {
     Column(
         modifier = Modifier
             .fillMaxWidth().then(modifier)
 
     ) {
+        UserManagement(sm = sm, navigator = navigator,
+            profiles = sm.agent.getAccounts(),
+            myProfile = sm.userProfile,
+            modifier = Modifier.padding(12.dp))
         Spacer(modifier = Modifier.height(8.dp))
         Text(
             "Basics",

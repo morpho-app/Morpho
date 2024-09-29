@@ -11,8 +11,11 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
+import cafe.adriel.voyager.navigator.LocalNavigator
+import cafe.adriel.voyager.navigator.currentOrThrow
 import com.atproto.repo.StrongRef
 import com.morpho.app.model.bluesky.BskyPost
 import com.morpho.app.model.bluesky.BskyPostThread
@@ -23,6 +26,8 @@ import com.morpho.app.ui.post.BlockedPostFragment
 import com.morpho.app.ui.post.FullPostFragment
 import com.morpho.app.ui.post.NotFoundPostFragment
 import com.morpho.app.ui.post.PostFragmentRole
+import com.morpho.app.ui.utils.ItemClicked
+import com.morpho.app.ui.utils.OnItemClicked
 import com.morpho.butterfly.AtIdentifier
 import com.morpho.butterfly.AtUri
 import com.morpho.butterfly.ContentHandling
@@ -40,7 +45,10 @@ fun ThreadFragment(
             it.hashCode().toLong()
         }
     },
-    onItemClicked: OnPostClicked = {},
+    onItemClicked: OnItemClicked = ItemClicked(
+        uriHandler = LocalUriHandler.current,
+        navigator = LocalNavigator.currentOrThrow,
+    ),
     onProfileClicked: (AtIdentifier) -> Unit = {},
     onReplyClicked: (BskyPost) -> Unit = { },
     onRepostClicked: (BskyPost) -> Unit = { },
@@ -74,7 +82,7 @@ fun ThreadFragment(
                         item(key = threadPost.post.cid) {
                             FullPostFragment(
                                 post = root.post,
-                                onItemClicked = {onItemClicked(it) },
+                                onItemClicked = onItemClicked,
                                 onProfileClicked = { onProfileClicked(it) },
                                 onUnClicked =  { type,uri-> onUnClicked(type,uri) },
                                 onRepostClicked = { onRepostClicked(it) },
@@ -182,7 +190,7 @@ fun ThreadFragment(
                             modifier = Modifier.padding(vertical = 1.dp, horizontal = 3.dp),
                             indentLevel = 1,
                             comparator = comparator,
-                            onItemClicked = {onItemClicked(it) },
+                            onItemClicked = onItemClicked,
                             onProfileClicked = { onProfileClicked(it) },
                             onUnClicked =  { type,uri-> onUnClicked(type,uri) },
                             onRepostClicked = { onRepostClicked(it) },

@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.DrawerState
@@ -32,6 +33,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -39,10 +41,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import app.cash.paging.compose.collectAsLazyPagingItems
 import cafe.adriel.voyager.core.annotation.ExperimentalVoyagerApi
 import cafe.adriel.voyager.core.screen.ScreenKey
 import cafe.adriel.voyager.core.screen.uniqueScreenKey
@@ -56,9 +60,11 @@ import cafe.adriel.voyager.navigator.tab.TabOptions
 import cafe.adriel.voyager.transitions.ScreenTransition
 import cafe.adriel.voyager.transitions.ScreenTransitionContent
 import coil3.annotation.ExperimentalCoilApi
+import com.morpho.app.data.ContentLabelService
+import com.morpho.app.data.MorphoAgent
 import com.morpho.app.model.uidata.Event
-import com.morpho.app.model.uidata.FeedEvent
 import com.morpho.app.model.uistate.ContentCardState
+import com.morpho.app.model.uistate.ScrollPosition
 import com.morpho.app.screens.base.tabbed.TabScreen
 import com.morpho.app.ui.common.LoadingCircle
 import com.morpho.app.ui.common.TabbedScreenScaffold
@@ -67,12 +73,14 @@ import com.morpho.app.ui.elements.AvatarShape
 import com.morpho.app.ui.elements.OutlinedAvatar
 import dev.icerock.moko.parcelize.Parcelable
 import dev.icerock.moko.parcelize.Parcelize
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 import morpho.composeapp.generated.resources.BlueSkyKawaii
 import morpho.composeapp.generated.resources.Res
 import org.jetbrains.compose.resources.ExperimentalResourceApi
 import org.jetbrains.compose.resources.painterResource
+import org.koin.compose.koinInject
 import kotlin.math.max
 import kotlin.math.min
 import cafe.adriel.voyager.navigator.tab.Tab as NavTab
@@ -110,8 +118,9 @@ abstract class SkylineTab: NavTab {
 
     @OptIn(ExperimentalVoyagerApi::class)
     @Composable
-    final override fun Content() =
-        Content<Event>(TabbedMainScreenModel(),PaddingValues(0.dp), null, Modifier)
+    final override fun Content() = Content<Event>(
+        TabbedMainScreenModel(koinInject<MorphoAgent>(), koinInject<ContentLabelService>()),
+        PaddingValues(0.dp), null, Modifier)
 }
 
 
@@ -120,11 +129,10 @@ abstract class SkylineTab: NavTab {
 )
 @Composable
 fun TabScreen.TabbedHomeView(
-    sm: TabbedMainScreenModel = LocalNavigator.currentOrThrow.koinNavigatorScreenModel<TabbedMainScreenModel>()
+    navigator: Navigator = LocalNavigator.currentOrThrow,
+    sm: TabbedMainScreenModel = navigator.koinNavigatorScreenModel<TabbedMainScreenModel>()
 ) {
     //ProvideNavigatorLifecycleKMPSupport {
-        val navigator = LocalNavigator.currentOrThrow
-
 
         var selectedTabIndex by rememberSaveable { mutableIntStateOf(sm.timelineIndex) }
 
@@ -320,18 +328,39 @@ data class HomeSkylineTab @OptIn(ExperimentalVoyagerApi::class) constructor(
         state: ContentCardState<E>?,
         modifier: Modifier
     ) {
-        val presenter = sm.feedPresenters[state?.uri]
-        val desc = presenter?.descriptor
         if(state == null) return
-        desc?.let { FeedEvent.Load(it) }?.let { event -> sm.sendGlobalEvent(event) }
-
-        TabbedSkylineFragment(
-            paddingValues = paddingValues,
-            isProfileFeed = false,
-            uiUpdate = state.updates,
-            eventCallback = { sm.sendGlobalEvent(it) },
-            getContentHandling = { post -> sm.labelService.getContentHandlingForPost(post).map { it.first } },
+        val data = sm.tabPagers[state.uri]?.collectAsLazyPagingItems()
+        val listState = rememberLazyListState(
+            state.scrollPosition.value.index,
+            state.scrollPosition.value.scrollOffset
         )
+
+        LaunchedEffect(listState) {
+            snapshotFlow { listState.firstVisibleItemIndex }
+                .distinctUntilChanged()
+                .collect {
+                    state.scrollPosition.value = ScrollPosition(
+                        index = listState.firstVisibleItemIndex,
+                        scrollOffset = listState.firstVisibleItemScrollOffset
+                    )
+                }
+        }
+
+
+        if(data != null) {
+            TabbedSkylineFragment(
+                paddingValues = paddingValues,
+                isProfileFeed = false,
+                uiUpdate = state.updates,
+                eventCallback = { sm.sendGlobalEvent(it) },
+                getContentHandling = { post -> sm.labelService.getContentHandlingForPost(post).map { it.first } },
+                pager = data,
+                listState = listState,
+                agent = sm.agent,
+            )
+        } else {
+            LoadingCircle()
+        }
 
     }
 

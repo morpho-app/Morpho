@@ -62,7 +62,7 @@ fun SettingsGroup(
 
 
 @Composable
-fun ColumnScope.SettingsItem(
+fun SettingsItem(
     text: AnnotatedString? = null,
     description: AnnotatedString? = null,
     modifier: Modifier = Modifier,

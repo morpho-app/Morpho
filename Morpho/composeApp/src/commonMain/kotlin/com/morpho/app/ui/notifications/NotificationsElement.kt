@@ -1,24 +1,39 @@
 package com.morpho.app.ui.notifications
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconToggleButton
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import cafe.adriel.voyager.navigator.LocalNavigator
+import cafe.adriel.voyager.navigator.currentOrThrow
 import com.atproto.repo.StrongRef
 import com.morpho.app.model.bluesky.BskyNotification
 import com.morpho.app.model.bluesky.BskyPost
 import com.morpho.app.model.bluesky.NotificationsListItem
-import com.morpho.app.ui.common.OnPostClicked
 import com.morpho.app.ui.elements.MenuOptions
 import com.morpho.app.ui.post.PostFragment
+import com.morpho.app.ui.utils.ItemClicked
 import com.morpho.app.util.getFormattedDateTimeSince
 import com.morpho.butterfly.AtIdentifier
 import com.morpho.butterfly.AtUri
@@ -31,7 +46,10 @@ fun NotificationsElement(
     item: NotificationsListItem,
     showPost: Boolean = true,
     getPost: suspend (AtUri) -> BskyPost?,
-    onPostClicked: OnPostClicked,
+    onItemClicked: ItemClicked = ItemClicked(
+        uriHandler = LocalUriHandler.current,
+        navigator = LocalNavigator.currentOrThrow,
+    ),
     onAvatarClicked: (Did) -> Unit = {},
     onReplyClicked: (BskyPost) -> Unit = { },
     onRepostClicked: (BskyPost) -> Unit = { },
@@ -137,10 +155,9 @@ fun NotificationsElement(
 
                     PostFragment(
                         post = post!!, elevate = true,
-                        onItemClicked = {
-                            if(!readOnLoad) markRead(item.notifications.first().uri)
-                            onPostClicked(it)
-                                        },
+                        onItemClicked = onItemClicked.copy(
+                            callbackAlways = { if(!readOnLoad) markRead(item.notifications.first().uri) }
+                        ),
                         onProfileClicked = {
                             if(!readOnLoad) markRead(item.notifications.first().uri)
                             scope.launch {

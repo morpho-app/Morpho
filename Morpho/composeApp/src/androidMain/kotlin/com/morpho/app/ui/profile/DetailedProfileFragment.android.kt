@@ -280,7 +280,11 @@ public actual fun DetailedProfileFragment(
 
                 Spacer(modifier = Modifier.height(10.dp))
                 SelectionContainer {
-                    RichTextElement(profile.description.orEmpty())
+                    RichTextElement(
+                        profile.description.orEmpty()
+                    ) { facetTypes ->
+
+                    }
                 }
             }
 

@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeContent
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBarsPadding
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.icons.Icons
@@ -48,25 +49,39 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
+import app.bsky.actor.Visibility
 import app.cash.paging.LoadStateError
 import app.cash.paging.LoadStateLoading
+import app.cash.paging.compose.LazyPagingItems
 import app.cash.paging.compose.collectAsLazyPagingItems
+import app.cash.paging.compose.itemKey
+import cafe.adriel.voyager.navigator.LocalNavigator
+import cafe.adriel.voyager.navigator.currentOrThrow
 import com.atproto.repo.StrongRef
 import com.morpho.app.model.bluesky.BskyPost
 import com.morpho.app.model.bluesky.MorphoDataItem
+import com.morpho.app.model.bluesky.NotificationsListItem
 import com.morpho.app.model.uidata.AuthorFeedUpdate
 import com.morpho.app.model.uidata.FeedUpdate
 import com.morpho.app.model.uidata.UIUpdate
 import com.morpho.app.ui.elements.MenuOptions
 import com.morpho.app.ui.elements.WrappedLazyColumn
+import com.morpho.app.ui.lists.FeedListEntryFragment
+import com.morpho.app.ui.lists.UserListEntryFragment
 import com.morpho.app.ui.post.PlaceholderSkylineItem
 import com.morpho.app.ui.post.PostFragment
+import com.morpho.app.ui.profile.CompactProfileFragment
+import com.morpho.app.ui.settings.ContentLabelSelector
+import com.morpho.app.ui.utils.ItemClicked
+import com.morpho.app.ui.utils.OnItemClicked
 import com.morpho.butterfly.AtIdentifier
 import com.morpho.butterfly.AtUri
 import com.morpho.butterfly.ContentHandling
 import com.morpho.butterfly.model.RecordType
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.launch
@@ -76,42 +91,27 @@ typealias OnPostClicked = (AtUri) -> Unit
 
 @OptIn(ExperimentalMaterialApi::class, ExperimentalFoundationApi::class)
 @Composable
-inline fun <reified U: UIUpdate> SkylineFragment (
+fun SkylineFragment (
     modifier: Modifier = Modifier,
-    noinline onItemClicked: OnPostClicked,
-    noinline onProfileClicked: (AtIdentifier) -> Unit = {},
-    crossinline onPostButtonClicked: () -> Unit = {},
-    noinline onReplyClicked: (BskyPost) -> Unit = { },
-    noinline onRepostClicked: (BskyPost) -> Unit = { },
-    noinline onLikeClicked: (StrongRef) -> Unit = { },
-    noinline onMenuClicked: (MenuOptions, BskyPost) -> Unit = { _, _ -> },
-    noinline onUnClicked: (type: RecordType, uri: AtUri) -> Unit = { _, _ -> },
-    noinline getContentHandling: (BskyPost) -> List<ContentHandling> = { listOf() },
+    onItemClicked: OnItemClicked = ItemClicked(
+        uriHandler = LocalUriHandler.current,
+        navigator = LocalNavigator.currentOrThrow,
+    ),
+    onPostButtonClicked: () -> Unit = {},
+    onReplyClicked: (BskyPost) -> Unit = { },
+    onRepostClicked: (BskyPost) -> Unit = { },
+    onLikeClicked: (StrongRef) -> Unit = { },
+    onMenuClicked: (MenuOptions, BskyPost) -> Unit = { _, _ -> },
+    onUnClicked: (type: RecordType, uri: AtUri) -> Unit = { _, _ -> },
+    onLabelChoiceSelected: (Visibility) -> Unit = { },
+    getContentHandling: (BskyPost) -> List<ContentHandling> = { listOf() },
     contentPadding: PaddingValues = PaddingValues(0.dp),
     isProfileFeed: Boolean = false,
     debuggable: Boolean = false,
-    feedUpdate: Flow<U>,
+    pager: LazyPagingItems<out MorphoDataItem>,
+    listState: LazyListState = rememberLazyListState(),
+    scope: CoroutineScope = rememberCoroutineScope(),
 ) {
-    val scope = rememberCoroutineScope()
-
-    val listState = rememberLazyListState()
-    val state = feedUpdate.filterIsInstance<U>().collectAsState(
-        when(feedUpdate) {
-            is AuthorFeedUpdate -> AuthorFeedUpdate.Empty
-            is FeedUpdate<*> -> FeedUpdate.Empty
-            else -> UIUpdate.Empty
-        }
-    )
-    val data =  when(state.value) {
-        is AuthorFeedUpdate.Feed -> (state.value as AuthorFeedUpdate.Feed).feed.collectAsLazyPagingItems()
-        is AuthorFeedUpdate.Feeds -> (state.value as AuthorFeedUpdate.Feeds).feed.collectAsLazyPagingItems()
-        is AuthorFeedUpdate.Likes -> (state.value as AuthorFeedUpdate.Likes).feed.collectAsLazyPagingItems()
-        is AuthorFeedUpdate.Lists -> (state.value as AuthorFeedUpdate.Lists).feed.collectAsLazyPagingItems()
-        is FeedUpdate.Feed -> (state.value as FeedUpdate.Feed).feed.collectAsLazyPagingItems()
-        else -> null
-    }
-
-
 
     val scrolledDownSome by remember {
         derivedStateOf {
@@ -127,7 +127,7 @@ inline fun <reified U: UIUpdate> SkylineFragment (
 
 
     val refreshing by remember { mutableStateOf(false) }
-    val refreshState = rememberPullRefreshState(refreshing, {data?.refresh()})
+    val refreshState = rememberPullRefreshState(refreshing, {pager.refresh()})
 
 
     ConstraintLayout(
@@ -185,7 +185,7 @@ inline fun <reified U: UIUpdate> SkylineFragment (
                                 .weight(0.4f)
                         )
                         IconButton(
-                            onClick = {data?.refresh()},
+                            onClick = {pager.refresh()},
                             colors = IconButtonDefaults.iconButtonColors(
                                 containerColor = MaterialTheme.colorScheme.background,
                                 contentColor = MaterialTheme.colorScheme.onSurfaceVariant
@@ -219,29 +219,39 @@ inline fun <reified U: UIUpdate> SkylineFragment (
                     }
                 }
             }
-            when(val loadState = data?.loadState?.refresh) {
-                is LoadStateError -> {
-                    item { Text("Error: ${loadState.error}") }
+            val refreshLoadState = pager.loadState.refresh
+            val appendLoadState = pager.loadState.append
+
+            when {
+                refreshLoadState is LoadStateError || appendLoadState is LoadStateError -> {
+                    item { Text("$refreshLoadState\n$appendLoadState") }
                     item { Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
-                        TextButton(onClick = { data.retry() }) {
+                        TextButton(onClick = { pager.retry() }) {
                             Text("Retry")
                         } } }
                 }
-                is LoadStateLoading -> { item { LoadingCircle() } }
-                else -> { if(data != null) {
+                refreshLoadState is LoadStateLoading  -> { item { LoadingCircle() } }
+                else -> {
                     items(
-                        data.itemCount,
+                        count = pager.itemCount,
+                        key = { pager.itemKey {
+                            it.hashCode()
+                        }},
+                        contentType = {
+                            MorphoDataItem
+                        }
                     ) { index ->
-                        when(val item = data[index]) {
+                        when(val item = pager[index]) {
                             is MorphoDataItem.Thread -> {
                                 SkylineThreadFragment(
                                     thread = item.thread,
-                                    modifier = if(debuggable) Modifier.border(1.dp, Color.White) else Modifier
+                                    modifier = if(debuggable) Modifier.border(1.dp, Color.White)
+                                        else Modifier
                                         .fillMaxWidth()
                                         //.padding(horizontal = 4.dp),
                                         .padding(vertical = 2.dp, horizontal = 4.dp),
                                     onItemClicked = onItemClicked,
-                                    onProfileClicked = onProfileClicked,
+                                    onProfileClicked = { onItemClicked.onProfileClicked(it) },
                                     onUnClicked = onUnClicked,
                                     onRepostClicked = onRepostClicked,
                                     onReplyClicked = onReplyClicked,
@@ -253,13 +263,14 @@ inline fun <reified U: UIUpdate> SkylineFragment (
                             }
                             is MorphoDataItem.Post -> {
                                 PostFragment(
-                                    modifier = if(debuggable) Modifier.border(1.dp, Color.Blue) else Modifier
+                                    modifier = if(debuggable) Modifier.border(1.dp, Color.Blue)
+                                        else Modifier
                                         .fillMaxWidth()
                                         //.padding(horizontal = 4.dp),
                                         .padding(vertical = 2.dp, horizontal = 4.dp),
                                     post = item.post,
                                     onItemClicked = onItemClicked,
-                                    onProfileClicked = onProfileClicked,
+                                    onProfileClicked = { onItemClicked.onProfileClicked(it) },
                                     elevate = true,
                                     onUnClicked = onUnClicked,
                                     onRepostClicked = onRepostClicked,
@@ -269,10 +280,45 @@ inline fun <reified U: UIUpdate> SkylineFragment (
                                     getContentHandling = getContentHandling,
                                 )
                             }
+                            is MorphoDataItem.FeedInfo -> {
+                                FeedListEntryFragment(
+                                    feed = item.feed,
+                                    onFeedClicked = {
+
+                                    },
+                                    likeClicked = { _ , _ -> },
+                                    saveFeedClicked = { _, _ -> },
+                                    hasFeedSaved = false,
+                                )
+
+                            }
+                            is MorphoDataItem.ListInfo -> {
+                                UserListEntryFragment(
+                                    list = item.list,
+                                    onListClicked = { },
+                                    hasListPinned = false,
+                                    muteListClicked = { _, _ -> },
+                                    blockListClicked = { _, _ -> },
+                                )
+                            }
+                            is MorphoDataItem.ModLabel -> {
+                                ContentLabelSelector(
+                                    labelItem = item,
+                                    onSelected = onLabelChoiceSelected
+                                )
+                            }
+                            is MorphoDataItem.ProfileItem -> {
+                                CompactProfileFragment(
+                                    profile = item.profile,
+                                    onProfileClicked = { onItemClicked.onProfileClicked(it) },
+                                    onItemClicked = onItemClicked,
+                                )
+                            }
 
                             else -> {
                                 PlaceholderSkylineItem(
-                                    modifier = if(debuggable) Modifier.border(1.dp, Color.Black) else Modifier
+                                    modifier = if(debuggable) Modifier.border(1.dp, Color.Black)
+                                        else Modifier
                                         .fillMaxWidth()
                                         //.padding(horizontal = 4.dp),
                                         .padding(vertical = 2.dp, horizontal = 4.dp),
@@ -280,10 +326,9 @@ inline fun <reified U: UIUpdate> SkylineFragment (
                                 )
                             }
                         }
-                    } }
+                    }
                 }
             }
-            if (data?.loadState?.append == LoadStateLoading) item { LoadingCircle() }
         }
         if (scrolledDownSome) {
 

@@ -11,14 +11,12 @@ import app.bsky.feed.FeedViewPost
 import com.morpho.app.data.FeedTuner
 import com.morpho.app.data.MorphoAgent
 import com.morpho.app.model.bluesky.AuthorContext
-import com.morpho.app.model.bluesky.BskyLabelDefinition
-import com.morpho.app.model.bluesky.BskyLabelService
 import com.morpho.app.model.bluesky.BskyList
 import com.morpho.app.model.bluesky.BskyPostReason
 import com.morpho.app.model.bluesky.BskyPostThread
+import com.morpho.app.model.bluesky.DetailedProfile
 import com.morpho.app.model.bluesky.FeedGenerator
 import com.morpho.app.model.bluesky.MorphoDataItem
-import com.morpho.app.model.bluesky.Profile
 import com.morpho.app.model.bluesky.ThreadPost
 import com.morpho.app.model.uistate.FeedType
 import com.morpho.butterfly.AtIdentifier
@@ -238,7 +236,7 @@ data class MorphoData<T: MorphoDataItem>(
         fun fromProfileList(
             title: String,
             uri: AtUri,
-            list: List<Profile>,
+            list: List<DetailedProfile>,
             cursor: AtCursor = AtCursor.EMPTY,
         ): MorphoData<MorphoDataItem.ProfileItem> {
             return MorphoData(
@@ -263,33 +261,6 @@ data class MorphoData<T: MorphoDataItem>(
             )
         }
 
-        fun fromModLabelDefs(
-            title: String,
-            uri: AtUri,
-            labels: List<BskyLabelDefinition>,
-            cursor: AtCursor = AtCursor.EMPTY,
-        ): MorphoData<MorphoDataItem.ModLabel> {
-            return MorphoData(
-                title = title,
-                uri = uri,
-                cursor = cursor,
-                items = labels.map { MorphoDataItem.ModLabel(it) }.toMutableList(),
-            )
-        }
-
-        fun fromModServiceDefs(
-            title: String,
-            uri: AtUri,
-            services: List<BskyLabelService>,
-            cursor: AtCursor = AtCursor.EMPTY,
-        ): MorphoData<MorphoDataItem.LabelService> {
-            return MorphoData(
-                title = title,
-                uri = uri,
-                cursor = cursor,
-                items = services.map { MorphoDataItem.LabelService(it) }.toMutableList(),
-            )
-        }
 
     }
 
@@ -332,7 +303,6 @@ data class MorphoData<T: MorphoDataItem>(
                 is MorphoDataItem.ListInfo -> it.list.cid == cid
                 is MorphoDataItem.ModLabel -> false
                 is MorphoDataItem.ProfileItem -> false
-                is MorphoDataItem.LabelService -> it.service.cid == cid
                 else -> {false}
             }
         }
@@ -550,7 +520,6 @@ data class MorphoData<T: MorphoDataItem>(
             is MorphoDataItem.ListInfo -> it.list.uri
             is MorphoDataItem.ModLabel -> it.label.identifier
             is MorphoDataItem.ProfileItem -> it.profile.did
-            is MorphoDataItem.LabelService -> it.service.uri
             else -> {it.hashCode()}
         } }
         return this.copy(items = newList)
@@ -560,11 +529,11 @@ data class MorphoData<T: MorphoDataItem>(
 }
 
 
-fun AtUri.id(api:MorphoAgent): AtIdentifier {
+suspend fun AtUri.id(agent: MorphoAgent): AtIdentifier {
     val idString = atUri.substringAfter("at://").split("/")[0]
-    return if (idString == "me") api.id!! else {
-        // TODO: make this resolve a handle to a DID
-        if (idString.contains("did:")) Did(idString) else Handle(idString)
+    return if (idString == "me") agent.id!! else {
+        if (idString.contains("did:")) Did(idString)
+        else agent.resolveHandle(Handle(idString)).getOrNull() ?: Handle(idString)
     }
 }
 

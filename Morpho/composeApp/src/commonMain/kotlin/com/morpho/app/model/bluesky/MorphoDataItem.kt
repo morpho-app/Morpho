@@ -1,10 +1,12 @@
 package com.morpho.app.model.bluesky
 
 import androidx.compose.runtime.Immutable
+import app.bsky.actor.Visibility
 import app.bsky.feed.*
 import com.morpho.app.CommonParcelize
 import com.morpho.app.util.deserialize
 import com.morpho.butterfly.AtUri
+import com.morpho.butterfly.InterpretedLabelDefinition
 import dev.icerock.moko.parcelize.Parcelable
 import dev.icerock.moko.parcelize.Parcelize
 import kotlinx.serialization.Serializable
@@ -288,7 +290,7 @@ sealed interface MorphoDataItem: Parcelable {
     @Serializable
     @CommonParcelize
     data class ProfileItem(
-        val profile:Profile,
+        val profile: DetailedProfile,
     ): MorphoDataItem
 
     @Immutable
@@ -303,15 +305,10 @@ sealed interface MorphoDataItem: Parcelable {
     @Serializable
     @CommonParcelize
     data class ModLabel(
-        val label: BskyLabelDefinition,
+        val label: InterpretedLabelDefinition,
+        val setting: Visibility,
     ): MorphoDataItem
 
-    @Immutable
-    @Serializable
-    @CommonParcelize
-    data class LabelService(
-        val service: BskyLabelService,
-    ): MorphoDataItem
 
     fun containsUri(uri: AtUri): Boolean {
         return when(this) {
@@ -335,7 +332,6 @@ sealed interface MorphoDataItem: Parcelable {
             is ListInfo -> list.uri == uri
             is ModLabel -> label.identifier == uri.atUri
             is ProfileItem -> false
-            is LabelService -> service.uri == uri
         }
     }
 
@@ -361,7 +357,6 @@ sealed interface MorphoDataItem: Parcelable {
             is ListInfo -> listOf(list.uri)
             is ModLabel -> listOf()
             is ProfileItem -> listOf()
-            is LabelService -> listOf(service.uri)
         }
     }
 
@@ -373,7 +368,6 @@ sealed interface MorphoDataItem: Parcelable {
             is ListInfo -> list.uri
             is ModLabel -> null
             is ProfileItem -> null
-            is LabelService -> service.uri
         }
     }
 

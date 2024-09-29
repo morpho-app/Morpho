@@ -7,8 +7,7 @@ import com.gu.toolargetool.TooLargeTool
 import com.morpho.app.data.MorphoAgent
 import com.morpho.app.data.PreferencesRepository
 import com.morpho.app.di.appModule
-import com.morpho.app.di.dataModule
-import com.morpho.app.di.storageModule
+
 import com.morpho.butterfly.auth.SessionRepository
 import com.morpho.butterfly.auth.UserRepository
 import org.koin.android.annotation.KoinViewModel
@@ -37,11 +36,13 @@ class MorphoApplication : Application() {
         val koin = startKoin {
             androidContext(this@MorphoApplication)
             androidLogger()
-            modules(androidModule, appModule, storageModule, dataModule)
+            modules(androidModule, appModule)//, storageModule, dataModule)
         }.koin
-        koin.get<SessionRepository> { parametersOf(cacheDir.path.toString()) }
-        koin.get<UserRepository> { parametersOf(cacheDir.path.toString()) }
-        koin.get<PreferencesRepository> { parametersOf(cacheDir.path.toString()) }
+
+        val storageDir = getPlatformStorageDir(filesDir.path.toString())
+        koin.get<SessionRepository> { parametersOf(storageDir) }
+        koin.get<UserRepository> { parametersOf(storageDir) }
+        koin.get<PreferencesRepository> { parametersOf(storageDir) }
         koin.get<MorphoAgent>()
         super.onCreate()
     }
