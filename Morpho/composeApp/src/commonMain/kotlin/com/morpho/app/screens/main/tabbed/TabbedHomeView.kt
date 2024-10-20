@@ -149,7 +149,7 @@ fun TabScreen.TabbedHomeView(
                 )
             }
         }
-        val tabsCreated by derivedStateOf { sm.loaded }
+        val tabsCreated by derivedStateOf { sm.loaded && sm.tabs.isNotEmpty() }
         if (tabsCreated) {
             Navigator(
                 tabs.first(),

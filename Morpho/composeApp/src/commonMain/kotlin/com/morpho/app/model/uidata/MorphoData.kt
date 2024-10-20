@@ -394,7 +394,7 @@ data class MorphoData<T: MorphoDataItem>(
                             newReplies.add(ThreadPost.ViewablePost(threadToSplice.thread.post, null, threadToSplice.thread.replies))
                         val newThread = BskyPostThread(
                             post = newEntry.post,
-                            parents = listOf(),
+                            parent = null,
                             replies = newReplies.distinctBy { it.uri },
                         )
                         threads[rootInThreads] = threadToSplice.copy(thread = newThread, isIncompleteThread = false)
@@ -416,7 +416,7 @@ data class MorphoData<T: MorphoDataItem>(
                         newReplies.add(oldReply)
                         val newThread = BskyPostThread(
                             post = newEntry.post,
-                            parents = listOf(newParent),
+                            parent = newParent,
                             replies = newReplies.distinctBy { it.uri },
                         )
                         threads[rootInThreads] = threadToSplice.copy(thread = newThread, isIncompleteThread = false)

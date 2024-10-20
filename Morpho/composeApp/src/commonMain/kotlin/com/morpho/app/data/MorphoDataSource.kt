@@ -1,7 +1,5 @@
 package com.morpho.app.data
 
-import androidx.compose.ui.util.fastAny
-import app.cash.paging.PagingConfig
 import app.cash.paging.PagingSource
 import app.cash.paging.PagingState
 import com.morpho.app.model.bluesky.BskyPostReason
@@ -9,6 +7,7 @@ import com.morpho.app.model.bluesky.BskyPostThread
 import com.morpho.app.model.bluesky.MorphoDataItem
 import com.morpho.app.model.bluesky.ThreadPost
 import com.morpho.app.model.bluesky.toPost
+import com.morpho.app.model.bluesky.toThreadPost
 import com.morpho.app.model.uidata.Delta
 import com.morpho.app.model.uidata.Moment
 import com.morpho.butterfly.ButterflyAgent
@@ -22,13 +21,14 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.datetime.Instant
 import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
+import org.koin.core.component.get
+import org.lighthousegames.logging.logging
 import kotlin.time.Duration
 
 
 abstract class MorphoDataSource<Data:Any>: PagingSource<Cursor, Data>(), KoinComponent {
-    val agent: MorphoAgent by inject()
-    val moderator: ContentLabelService by inject()
+    val agent: MorphoAgent = get<MorphoAgent>()
+    val moderator: ContentLabelService = get<ContentLabelService>()
     //override val keyReuseSupported: Boolean = true
 
     override fun getRefreshKey(state: PagingState<Cursor, Data>): Cursor? {
@@ -58,6 +58,11 @@ data class MorphoFeedSource<Data : MorphoDataItem.FeedItem>(
     val repliesBumpThreads: Boolean = false,
     val collectThreads: Boolean = true,
 ): MorphoDataSource<Data>() {
+
+    companion object {
+        val log = logging("MorphoFeedSource")
+    }
+
     override suspend fun load(
         params: LoadParams<Cursor>
     ): LoadResult<Cursor,Data> {
@@ -71,20 +76,29 @@ data class MorphoFeedSource<Data : MorphoDataItem.FeedItem>(
             return request(loadCursor, limit.toLong()).map {
                 pagedList ->
 
+
                 val tunedList =  when(pagedList) {
                     is PagedResponse.Feed -> {
+//                        val jsonToLog = json.encodeToString(pagedList.copy() as PagedResponse.Feed<MorphoDataItem.FeedItem>)
+//                        log.d {
+//                            "Feed reponse:\n$jsonToLog"
+//                        }
                         var tunedFeed = pagedList.copy(
                             items =  if(collectThreads) {
-                                pagedList.items.filter { !moderator.shouldHideItem(it) }
+                                pagedList.items.filterNot { moderator.shouldHideItem(it) }
                                     .collectThreads(
                                         repliesBumpThreads = repliesBumpThreads,
                                         agent = agent
                                     ).getOrNull() ?: pagedList.items
-                            } else pagedList.items
+                            } else pagedList.items.filterNot { moderator.shouldHideItem(it) }
                         )
                         tuners.forEach { tuner ->
                             tunedFeed = tuner.tune(tunedFeed)
                         }
+//                        val tunedJson = json.encodeToString(tunedFeed.copy() as PagedResponse.Feed<MorphoDataItem.FeedItem>)
+//                        log.d {
+//                            "Feed reponse after tuning:\n$tunedJson"
+//                        }
                         tunedFeed
                     }
                     is PagedResponse.FromRecord -> pagedList.items
@@ -175,29 +189,41 @@ suspend fun <Data: MorphoDataItem> List<Data>.collectThreads(
                 isOrphan = root != null && parent != null,
             )
         }
-        val newReply = replies[index] ?: return@forEachIndexed // Update in case we changed it above
-        val replyRef = newReply.post.reply?.replyRef ?: return@forEachIndexed
+        val newReply = replies[index] // Update in case we changed it above
+        val replyRef = newReply?.post?.reply?.replyRef ?: return@forEachIndexed
         val parent = replyRef.parent.uri
         val root = replyRef.root.uri
-        val inThread = threads.indexOfFirst { it?.containsUri(parent) ?: false  || it?.containsUri(root) ?: false }
+        val inThread = threads.indexOfFirst { it?.containsUri(parent) == true || it?.containsUri(root) == true }
         if (inThread != -1) {
             val thread = threads.getOrNull(inThread) ?: return@forEachIndexed
-            threads[inThread] = thread.addReply(newReply.post)
+            threads[inThread] = thread.addReply(newReply.post).copy(isIncompleteThread = false)
             replies[index] = null
+            return@forEachIndexed
         }
-        val inCandidates = threadCandidates.indexOfFirst {  it?.containsUri(parent) ?: false  || it?.containsUri(root) ?: false }
+        val inCandidates = threadCandidates.indexOfFirst {  it?.containsUri(parent) == false  || it?.containsUri(root) == false }
         if (inCandidates != -1) {
             val thread = threadCandidates.getOrNull(inCandidates) ?: return@forEachIndexed
-            threadCandidates[inCandidates] = thread.addReply(newReply.post)
+            threadCandidates[inCandidates] = thread.addReply(newReply.post).copy(isIncompleteThread = false)
             replies[index] = null
+            return@forEachIndexed
         }
+        threadCandidates.add(MorphoDataItem.Thread(BskyPostThread(
+            post = newReply.post,
+            parent = newReply.post.reply.parentPost?.toThreadPost(),
+            replies = listOf(),
 
+        ), isIncompleteThread = true))
     }
     threadCandidates.forEachIndexed { index, thread ->
         if (thread == null) return@forEachIndexed
-        val rootInThreads = threads.indexOfFirst { t -> t?.containsUri(thread.rootUri) ?: false }
+        val rootInThreads = threads.indexOfFirst { t -> t?.containsUri(thread.rootUri) == true }
         if (rootInThreads == - 1) {
-            val threadToSplice = threads.getOrNull(rootInThreads) ?: return@forEachIndexed
+            val threadToSplice = threads.getOrNull(rootInThreads)
+            if(threadToSplice == null) {
+                threads.add(thread.copy(isIncompleteThread = false))
+                threadCandidates[index] = null
+                return@forEachIndexed
+            }
             if(
                 thread.thread.parents.firstOrNull() is ThreadPost.ViewablePost
                 && threadToSplice.thread.parents.firstOrNull() is ThreadPost.ViewablePost
@@ -214,7 +240,7 @@ suspend fun <Data: MorphoDataItem> List<Data>.collectThreads(
                         newReplies.add(ThreadPost.ViewablePost(threadToSplice.thread.post, threadToSplice.thread.parents.last(),threadToSplice.thread.replies))
                     val newThread = BskyPostThread(
                         post = newEntry.post,
-                        parents = listOf(),
+                        parent = newEntry.parent,
                         replies = newReplies.distinctBy { it.uri },
                     )
                     threads[rootInThreads] = threadToSplice.copy(thread = newThread, isIncompleteThread = false)
@@ -236,7 +262,7 @@ suspend fun <Data: MorphoDataItem> List<Data>.collectThreads(
                     newReplies.add(oldReply)
                     val newThread = BskyPostThread(
                         post = newEntry.post,
-                        parents = listOf(newParent),
+                        parent = newParent,
                         replies = newReplies.distinctBy { it.uri },
                     )
                     threads[rootInThreads] = threadToSplice.copy(thread = newThread, isIncompleteThread = false)
@@ -245,7 +271,7 @@ suspend fun <Data: MorphoDataItem> List<Data>.collectThreads(
 
             }
         } else {
-            val inThreads = threads.indexOfFirst { t -> t?.containsUri(thread.thread.post.uri) ?: false }
+            val inThreads = threads.indexOfFirst { t -> t?.containsUri(thread.thread.post.uri) == true }
             if (inThreads == - 1) {
                 val threadToSplice = threads.getOrNull(index) ?: return@forEachIndexed
                 threads[index] = threadToSplice.addReply(ThreadPost.ViewablePost(thread.thread.post, thread.thread.parents.last(), thread.thread.replies))
@@ -253,29 +279,30 @@ suspend fun <Data: MorphoDataItem> List<Data>.collectThreads(
             }
         }
     }
-    threadCandidates.filterNotNull()
+    threadCandidates.filterNotNull().filterNot { it.isIncompleteThread }
     if (threadCandidates.isNotEmpty()) threads.addAll(threadCandidates)
     val newReplies = replies.filterNotNull()
         .distinctBy { it.getUri() }
         .filterNot { reply ->
-            if(reply.isRepost) return@filterNot false
-            if(reply.isQuotePost) return@filterNot false
-            reply.getUris().any { uri -> threads.any { it?.containsUri(uri) ?: false } }
-        }.sortedByDescending { when(it.reason) {
-            is BskyPostReason.BskyPostRepost -> it.reason.indexedAt
-            else -> it.post.createdAt
-        } }.iterator()
+            if(reply.isRepost) false
+            else if(reply.isQuotePost)  false
+            else reply.getUris().any { uri -> threads.any { it?.containsUri(uri) == true } }
+        }
+//        .sortedByDescending { when(it.reason) {
+//            is BskyPostReason.BskyPostRepost -> it.reason.indexedAt
+//            else -> it.post.createdAt
+//        } }
     var newPosts = posts.toList().filterNotNull()
     newPosts = newPosts.distinctBy { it.getUri() }
     newPosts = newPosts.filterNot { post ->
-        if(post.isRepost) return@filterNot false
-        if(post.isQuotePost) return@filterNot false
-        post.getUris().any { uri -> threads.any { it?.containsUri(uri) ?: false } }
-    }.sortedByDescending { when(it.reason) {
-        is BskyPostReason.BskyPostRepost -> it.reason.indexedAt
-        else -> it.post.createdAt
-    } }
-    val newPostsIter = newPosts.iterator()
+        if(post.isRepost) false
+        else if(post.isQuotePost)  false
+        else post.getUris().any { uri -> threads.any { it?.containsUri(uri) == true } }
+    }
+//    .sortedByDescending { when(it.reason) {
+//        is BskyPostReason.BskyPostRepost -> it.reason.indexedAt
+//        else -> it.post.createdAt
+//    } }
     var newThreads = threads.toList().filterNotNull()
     newThreads = newThreads.sortedByDescending { if(!repliesBumpThreads) {
         it.rootAccessiblePost.createdAt
@@ -291,17 +318,14 @@ suspend fun <Data: MorphoDataItem> List<Data>.collectThreads(
               })
     } }
     newThreads = newThreads.distinctBy { it.getUri() }
-        .filterNot { thread ->
-            thread.getUris().filterNot { uri ->
-                newThreads.fastAny { it.getUri() == uri } }.size > 1
-        }
-    val newThreadsIter = newThreads.iterator()
+//        .filterNot { thread ->
+//            thread.getUris().filterNot { uri ->
+//                newThreads.fastAny { it.getUri() == uri } }.size > 1
+//        }
     val newFeed = mutableListOf<MorphoDataItem.FeedItem>()
-    while(newPostsIter.hasNext() || newThreadsIter.hasNext() || newReplies.hasNext() ) {
-        if(newPostsIter.hasNext()) newFeed.add(newPostsIter.next())
-        if(newThreadsIter.hasNext()) newFeed.add(newThreadsIter.next())
-        if(newReplies.hasNext()) newFeed.add(newReplies.next())
-    }
+    newFeed.addAll(newPosts)
+    newFeed.addAll(newThreads)
+    newFeed.addAll(newReplies)
     val dedupedFeed = newFeed.distinctBy { it.getUri() }
     val sortedFeed = dedupedFeed.sortedByDescending {
         when(it) {

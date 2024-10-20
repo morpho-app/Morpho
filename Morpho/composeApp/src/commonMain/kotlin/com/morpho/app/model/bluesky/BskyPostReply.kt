@@ -61,9 +61,10 @@ fun PostReplyRef.toReplyRef(): BskyPostReplyRef {
 }
 
 fun PostReplyRef.toReply(): BskyPostReply {
+    val replyRef = this.toReplyRef()
     return BskyPostReply(
-        replyRef = this.toReplyRef(),
-        grandParentAuthor = this.grandParentAuthor?.toProfile()
+        replyRef = replyRef,
+        grandParentAuthor = replyRef.grandParentAuthor
     )
 }
 

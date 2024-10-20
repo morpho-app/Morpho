@@ -1,7 +1,6 @@
 package com.morpho.app.model.bluesky
 
 import app.bsky.notification.ListNotificationsReason
-import app.cash.paging.PagingConfig
 import com.morpho.app.data.MorphoDataSource
 import com.morpho.app.model.uistate.NotificationsFilterState
 import com.morpho.butterfly.AtUri
@@ -13,9 +12,9 @@ class NotificationsSource: MorphoDataSource<NotificationsListItem>() {
     companion object {
         val log = logging()
         val defaultConfig = PagingConfig(
-            pageSize = 20,
+            pageSize = 40,
             prefetchDistance = 20,
-            initialLoadSize = 50,
+            initialLoadSize = 80,
             enablePlaceholders = false,
         )
     }
@@ -29,16 +28,15 @@ class NotificationsSource: MorphoDataSource<NotificationsListItem>() {
                 is LoadParams.Refresh -> Cursor.Empty
             }
             return agent.listNotifications(limit.toLong(), loadCursor.value).map { response ->
-                val newCursor = response.cursor
                 val items = response.items.map { it.toBskyNotification()}.collectNotifications()
                 LoadResult.Page(
                     data = items,
                     prevKey = when(params) {
                         is LoadParams.Append -> loadCursor
-                        is LoadParams.Prepend -> Cursor.Empty
+                        is LoadParams.Prepend -> null
                         is LoadParams.Refresh -> Cursor.Empty
                     },
-                    nextKey = newCursor,
+                    nextKey = response.cursor,
                 )
             }.onFailure {
                 return LoadResult.Error(it)

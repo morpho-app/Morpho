@@ -41,7 +41,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -56,17 +55,12 @@ import app.bsky.actor.Visibility
 import app.cash.paging.LoadStateError
 import app.cash.paging.LoadStateLoading
 import app.cash.paging.compose.LazyPagingItems
-import app.cash.paging.compose.collectAsLazyPagingItems
 import app.cash.paging.compose.itemKey
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import com.atproto.repo.StrongRef
 import com.morpho.app.model.bluesky.BskyPost
 import com.morpho.app.model.bluesky.MorphoDataItem
-import com.morpho.app.model.bluesky.NotificationsListItem
-import com.morpho.app.model.uidata.AuthorFeedUpdate
-import com.morpho.app.model.uidata.FeedUpdate
-import com.morpho.app.model.uidata.UIUpdate
 import com.morpho.app.ui.elements.MenuOptions
 import com.morpho.app.ui.elements.WrappedLazyColumn
 import com.morpho.app.ui.lists.FeedListEntryFragment
@@ -77,13 +71,10 @@ import com.morpho.app.ui.profile.CompactProfileFragment
 import com.morpho.app.ui.settings.ContentLabelSelector
 import com.morpho.app.ui.utils.ItemClicked
 import com.morpho.app.ui.utils.OnItemClicked
-import com.morpho.butterfly.AtIdentifier
 import com.morpho.butterfly.AtUri
 import com.morpho.butterfly.ContentHandling
 import com.morpho.butterfly.model.RecordType
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.launch
 
 typealias OnPostClicked = (AtUri) -> Unit
@@ -335,7 +326,7 @@ fun SkylineFragment (
             OutlinedIconButton(
                 onClick = {
                     scope.launch {
-                        //refreshPull()
+                        pager.refresh()
                         if (scrolledDownLots) {
                             listState.scrollToItem(0)
                         } else {

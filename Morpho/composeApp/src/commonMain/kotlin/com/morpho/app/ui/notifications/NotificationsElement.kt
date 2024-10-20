@@ -1,5 +1,7 @@
 package com.morpho.app.ui.notifications
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -13,6 +15,7 @@ import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconToggleButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -88,6 +91,12 @@ fun NotificationsElement(
             else -> {}
         }
     }
+    var unread by remember { mutableStateOf(item.notifications.any { !it.isRead }) }
+    val markAsRead: (AtUri) -> Unit = remember { { uri ->
+        markRead(uri)
+        unread = false
+    } }
+
     remember {
         if (!readOnLoad) return@remember
         // We just mark the first notification as read,
@@ -102,7 +111,12 @@ fun NotificationsElement(
         }
     }
     val number = remember { item.notifications.size }
-    Column {
+    Column(
+        modifier = if(unread) Modifier
+            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.5f))
+            .clickable { markAsRead(item.notifications.first().uri) }
+            else Modifier.clickable { markAsRead(item.notifications.first().uri) }
+    ) {
         Row(
         ) {
             Column(
@@ -122,7 +136,7 @@ fun NotificationsElement(
                         checked = expand,
                         onCheckedChange = {
                             expand = it
-                            markRead(item.notifications.first().uri)
+                            markAsRead(item.notifications.first().uri)
                         },
                     ) {
                         if (expand) {
@@ -156,34 +170,36 @@ fun NotificationsElement(
                     PostFragment(
                         post = post!!, elevate = true,
                         onItemClicked = onItemClicked.copy(
-                            callbackAlways = { if(!readOnLoad) markRead(item.notifications.first().uri) }
+                            callbackAlways = {
+                                if(!readOnLoad) markAsRead(item.notifications.first().uri)
+                            }
                         ),
                         onProfileClicked = {
-                            if(!readOnLoad) markRead(item.notifications.first().uri)
+                            if(!readOnLoad) markAsRead(item.notifications.first().uri)
                             scope.launch {
                                 resolveHandle(it)?.let { did -> onAvatarClicked(did) }
                             }
                         },
                         onUnClicked = { type, uri ->
-                            if(!readOnLoad) markRead(item.notifications.first().uri)
+                            if(!readOnLoad) markAsRead(item.notifications.first().uri)
                             onUnClicked(type, uri)
                         },
                         onRepostClicked = {
                             onRepostClicked(it)
-                            if(!readOnLoad) markRead(item.notifications.first().uri)
+                            if(!readOnLoad) markAsRead(item.notifications.first().uri)
                         },
                         onReplyClicked = {
                             onReplyClicked(it)
-                            if(!readOnLoad) markRead(item.notifications.first().uri)
+                            if(!readOnLoad) markAsRead(item.notifications.first().uri)
                         },
                         onMenuClicked = { option, p ->
                             onMenuClicked(option, p)
-                            if(!readOnLoad) markRead(item.notifications.first().uri)
+                            if(!readOnLoad) markAsRead(item.notifications.first().uri)
                         },
                         onLikeClicked = {
                             onLikeClicked(it)
-                            if(!readOnLoad) markRead(item.notifications.first().uri)
-                                        },
+                            if(!readOnLoad) markAsRead(item.notifications.first().uri)
+                        },
                     )
                 }
             }

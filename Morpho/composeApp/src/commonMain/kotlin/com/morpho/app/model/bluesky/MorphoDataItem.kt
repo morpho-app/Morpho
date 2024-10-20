@@ -29,123 +29,7 @@ sealed interface MorphoDataItem: Parcelable {
     @Serializable
     @CommonParcelize
     sealed interface FeedItem: MorphoDataItem {
-        companion object {
-            fun fromFeedViewPost(feedPost: FeedViewPost): FeedItem {
-                val items = mutableListOf<PostView>()
-                val reason = feedPost.reason
-                val post = feedPost.post
-                val reply = feedPost.reply
-                var isIncompleteThread = false
-                var isOrphan = false
-                if (reply == null) {
-                    val newPost = post.toPost()
-                    return Post(newPost, newPost.reason, isOrphan = true)
-                }
-                if (reason != null) {
-                    return Post(post.toPost(reply.toReply(), reason.toReason()), reason.toReason())
-                }
-                var isRootBlocked = false
-                var isRootNotFound = false
-                val root = reply.root
-                val rootUri = when(root) {
-                    is ReplyRefRootUnion.BlockedPost -> {
-                        isRootBlocked = true
-                        (reply.root as ReplyRefRootUnion.BlockedPost).value.uri
-                    }
-                    is ReplyRefRootUnion.NotFoundPost -> {
-                        isRootNotFound = true
-                        (reply.root as ReplyRefRootUnion.NotFoundPost).value.uri
-                    }
-                    is ReplyRefRootUnion.PostView -> {
-                        (reply.root as ReplyRefRootUnion.PostView).value.uri
-                    }
-                }
-                val parent = when(val parent = reply.parent) {
-                    is ReplyRefParentUnion.BlockedPost -> {
-                        null
-                    }
-                    is ReplyRefParentUnion.NotFoundPost -> {
-                        null
-                    }
-                    is ReplyRefParentUnion.PostView -> {
-                        (parent as ReplyRefParentUnion.PostView).value
-                    }
-                }
-                items.add(feedPost.post)
-                val grandparent = if (!isRootBlocked && !isRootNotFound
-                    && when(reply.parent) {
-                        is ReplyRefParentUnion.BlockedPost -> {
-                            false
-                        }
-                        is ReplyRefParentUnion.NotFoundPost -> {
-                            false
-                        }
-                        is ReplyRefParentUnion.PostView -> {
-                            val parentRef = reply.parent as ReplyRefParentUnion.PostView
-                            val parentPost = try {
-                                app.bsky.feed.Post.serializer().deserialize(parentRef.value.record)
-                            } catch (e: Exception) {
-                                null
-                            }
-                            parentPost?.reply?.parent?.uri == rootUri
-                        }
-                    }) {
-                    root
-                } else null
-                var isGrandParentBlocked = false
-                var isGrandParentNotFound = false
-                when(grandparent) {
-                    is ReplyRefRootUnion.BlockedPost -> isGrandParentBlocked = true
-                    is ReplyRefRootUnion.NotFoundPost -> isGrandParentNotFound = true
-                    is ReplyRefRootUnion.PostView -> {}
-                    null -> isGrandParentNotFound = true
-                }
-                if(parent != null) items.add(0, parent)
-                if (isGrandParentBlocked && isGrandParentNotFound) isOrphan = true
-                if (isRootBlocked || isRootNotFound) {
-                    return Post(post.toPost(reply.toReply(),null), null, isOrphan = true)
-                }
-                if (rootUri == parent?.uri) {
-                    return if (items.size == 1) {
-                         Post(post.toPost(reply.toReply(), null), null, isOrphan = isOrphan)
-                    } else {
-                        val parents = items.map {
-                            ThreadPost.ViewablePost(it.toPost(), null, listOf())
-                        }
-                        Thread(
-                            BskyPostThread(
-                                post = post.toPost(reply.toReply(), null),
-                                parents = parents,
-                                replies = listOf()
-                            ),
-                            null,
-                            isIncompleteThread = isIncompleteThread,
-                        )
-                    }
-                }
-                if(root is ReplyRefRootUnion.PostView) items.add(0, root.value)
-                if (grandparent != null && grandparent is ReplyRefRootUnion.PostView) {
-                    items.add(0, grandparent.value)
-                    isIncompleteThread = true
-                }
-                return if (items.size == 1) {
-                    Post(post.toPost(reply.toReply(), null), null, isOrphan = isOrphan)
-                } else {
-                    val parents = items.map {
-                        ThreadPost.ViewablePost(it.toPost(), null,listOf())
-                    }
-                    Thread(
-                        BskyPostThread(
-                            post = post.toPost(reply.toReply(), null),
-                            parents = parents,
-                            replies = listOf()
-                        ),
-                        null,
-                        isIncompleteThread = true,
-                    )
-                }
-            }
-        }
+
         fun getAuthors(): AuthorContext? {
             return when(this) {
                 is Post -> {
@@ -250,6 +134,85 @@ sealed interface MorphoDataItem: Parcelable {
                 is Post -> post.likeCount
                 is Thread -> thread.post.likeCount
             }
+
+        companion object {
+            fun fromFeedViewPost(feedPost: FeedViewPost): FeedItem {
+                val items = mutableListOf<PostView>()
+                val reason = feedPost.reason
+                val post = feedPost.post
+                val reply = feedPost.reply
+                var isIncompleteThread = false
+                var isOrphan = false
+                if (reply == null) {
+                    val newPost = post.toPost()
+                    return Post(newPost, newPost.reason, isOrphan = isOrphan)
+                }
+                if (reason != null) {
+                    return Post(post.toPost(reply.toReply(), reason.toReason()), isOrphan = isOrphan)
+                }
+
+                val rootUri = reply.root.getRootStatus()?.second ?: post.uri
+                val rootStatus = reply.root.getRootStatus()?.first ?: PostStatus.NotFound
+                val root = reply.root.postView()
+                val parent = reply.parent.postView()
+                items.add(feedPost.post)
+                val grandparent = if(rootStatus == PostStatus.Viewable && when(reply.parent) {
+                        is ReplyRefParentUnion.BlockedPost -> false
+                        is ReplyRefParentUnion.NotFoundPost -> false
+                        is ReplyRefParentUnion.PostView -> {
+                            val parentRef = reply.parent as ReplyRefParentUnion.PostView
+                            val parentPost = try {
+                                app.bsky.feed.Post.serializer().deserialize(parentRef.value.record)
+                            } catch (e: Exception) {
+                                null
+                            }
+                            parentPost?.reply?.parent?.uri == rootUri
+                        }
+                    }) { root } else null
+
+                if(parent != null) items.add(0, parent)
+                if (grandparent == null) isOrphan = true
+                if (rootStatus != PostStatus.Viewable) {
+                    return Post(post.toPost(reply.toReply(), feedPost.reason?.toReason()), null, isOrphan = true)
+                }
+                if (rootUri == parent?.uri) {
+                    return if (items.size == 1) {
+                        Post(post.toPost(reply.toReply(),  feedPost.reason?.toReason()), null, isOrphan = isOrphan)
+                    } else {
+                        Thread(
+                            BskyPostThread(
+                                post = post.toPost(reply.toReply(), null),
+
+                                replies = listOf()
+                            ),
+                            null,
+                            isIncompleteThread = isIncompleteThread,
+                        )
+                    }
+                }
+                if(root != null) items.add(0, root)
+                if (grandparent != null) {
+                    items.add(0, grandparent)
+                    isIncompleteThread = true
+                }
+                return if (items.size == 1) {
+                    Post(post.toPost(reply.toReply(),  feedPost.reason?.toReason()),  feedPost.reason?.toReason(), isOrphan = isOrphan)
+                } else {
+
+                    val thread = BskyPostThread(
+                        post = post.toPost(reply.toReply(), null),
+                        parent = parent?.toThreadPost(items),
+                        replies = listOf()
+                    )
+
+                    Thread(
+                        thread,
+                        null,
+                        isIncompleteThread = isIncompleteThread,
+                    )
+                }
+            }
+        }
     }
 
     @Immutable
@@ -382,3 +345,74 @@ data class AuthorContext(
     val grandParentAuthor: Profile? = null,
     val rootAuthor: Profile? = null,
 )
+
+fun PostView.parentOrNull(posts: List<PostView>): ThreadPost? {
+    val post = this.toPost()
+    val parentUri = post.reply?.replyRef?.parent?.uri
+    return if(parentUri != null) (posts.firstOrNull { it.uri == parentUri })?.toPost()?.let { bskyPost ->
+        val recParent = parentOrNull(posts.filterNot { it.uri == parentUri })
+        ThreadPost.ViewablePost(bskyPost, recParent, listOf(
+            ThreadPost.ViewablePost(post, ThreadPost.ViewablePost(bskyPost, recParent, listOf()), listOf())
+        ))
+    } else null
+}
+
+fun PostView.toThreadPost(posts: List<PostView>): ThreadPost {
+    val parent = this.parentOrNull(posts.filterNot { it.uri == this.uri })
+    return ThreadPost.ViewablePost(this.toPost(), parent, listOf())
+}
+
+fun BskyPost.toThreadPost(reply: BskyPost? = null): ThreadPost {
+    val parent = this.reply?.parentPost
+    return ThreadPost.ViewablePost(this, parent?.toThreadPost(),
+        reply?.let { listOf(it.toThreadPost())} ?: listOf())
+}
+
+fun FeedViewPost.toThreadPost(reply: BskyPost? = null): ThreadPost {
+    val post = this.toPost()
+    val parent = post.reply?.parentPost
+    return ThreadPost.ViewablePost(post, parent?.toThreadPost(post),
+        reply?.let { listOf(it.toThreadPost())} ?: listOf())
+}
+
+enum class PostStatus {
+    Viewable,
+    NotFound,
+    Blocked,
+}
+
+inline fun ReplyRefParentUnion?.getParentStatus(): Pair<PostStatus, AtUri>? {
+    return when(this) {
+        is ReplyRefParentUnion.BlockedPost -> PostStatus.Blocked to this.value.uri
+        is ReplyRefParentUnion.NotFoundPost -> PostStatus.NotFound to this.value.uri
+        is ReplyRefParentUnion.PostView -> PostStatus.Viewable to this.value.uri
+        null -> null
+    }
+}
+
+inline fun ReplyRefParentUnion?.postView(): PostView? {
+    return when(this) {
+        is ReplyRefParentUnion.BlockedPost -> null
+        is ReplyRefParentUnion.NotFoundPost -> null
+        is ReplyRefParentUnion.PostView -> this.value
+        null -> null
+    }
+}
+
+inline fun ReplyRefRootUnion?.getRootStatus(): Pair<PostStatus, AtUri>? {
+    return when(this) {
+        is ReplyRefRootUnion.BlockedPost -> PostStatus.Blocked to this.value.uri
+        is ReplyRefRootUnion.NotFoundPost -> PostStatus.NotFound to this.value.uri
+        is ReplyRefRootUnion.PostView -> PostStatus.Viewable to this.value.uri
+        null -> null
+    }
+}
+
+inline fun ReplyRefRootUnion?.postView(): PostView? {
+    return when(this) {
+        is ReplyRefRootUnion.BlockedPost -> null
+        is ReplyRefRootUnion.NotFoundPost -> null
+        is ReplyRefRootUnion.PostView -> this.value
+        null -> null
+    }
+}

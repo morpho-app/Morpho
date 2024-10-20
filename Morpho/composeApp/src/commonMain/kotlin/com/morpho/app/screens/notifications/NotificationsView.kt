@@ -27,6 +27,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -81,9 +82,8 @@ fun TabScreen.NotificationViewContent(
 
 ) {
     val sm = navigator.koinNavigatorScreenModel<TabbedMainScreenModel>()
-    val numberUnread = sm.unreadNotificationsCount().value
     var showSettings by remember { mutableStateOf(false) }
-    val hasUnread = remember(numberUnread) { numberUnread > 0 }
+    val hasUnread by sm.hasUnreadNotifications().collectAsState(initial = false)
     val listState = rememberLazyListState()
     val scope = rememberCoroutineScope()
     val uriHandler = LocalUriHandler.current

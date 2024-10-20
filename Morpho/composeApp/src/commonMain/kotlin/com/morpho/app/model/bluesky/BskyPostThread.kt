@@ -13,7 +13,6 @@ import com.morpho.butterfly.Cid
 import dev.icerock.moko.parcelize.Parcelable
 import dev.icerock.moko.parcelize.Parcelize
 import kotlinx.collections.immutable.persistentListOf
-import kotlinx.collections.immutable.toImmutableList
 import kotlinx.serialization.Serializable
 
 
@@ -22,9 +21,11 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class BskyPostThread(
     val post: BskyPost,
-    val parents: List<ThreadPost>,
+    val parent: ThreadPost? = null,
     val replies: List<ThreadPost>,
 ):  Parcelable {
+    val parents: List<ThreadPost> = if(parent != null) listOf(parent) + parent.parents() else listOf()
+
     operator fun contains(other: Any?) : Boolean {
         when(other) {
             null -> return false
@@ -32,13 +33,7 @@ data class BskyPostThread(
             is AtUri -> return other == post.uri
             is BskyPost -> return other.cid == post.cid
             else -> {
-                parents.map {
-                    return when(it) {
-                        is BlockedPost -> false
-                        is NotFoundPost -> false
-                        is ViewablePost -> it.contains(other)
-                    }
-                }
+
                 replies.map {
                     return when(it) {
                         is BlockedPost -> false
@@ -74,10 +69,10 @@ data class BskyPostThread(
     }
 
     fun filterReplies(filter: (ThreadPost) -> Boolean): BskyPostThread {
-        val threadReplies = this.replies.toMutableList()
+        val threadReplies: MutableList<ThreadPost?> = this.replies.toMutableList()
         threadReplies.fastForEachIndexed { index, reply ->
-            if (filter(reply)) {
-                threadReplies.removeAt(index)
+            if (reply != null && filter(reply)) {
+                threadReplies[index] = null
             } else {
                 if (reply is ViewablePost) {
                     threadReplies[index] = reply.copy(
@@ -88,39 +83,28 @@ data class BskyPostThread(
         }
         return BskyPostThread(
             post = post,
-            parents = parents,
-            replies = threadReplies
+            parent = parent,
+            replies = threadReplies.filterNotNull()
         )
     }
 
-    fun addReply(reply: ThreadPost.ViewablePost): BskyPostThread {
+    fun addReply(reply: ViewablePost): BskyPostThread {
         if(reply.uri == post.uri) return BskyPostThread(
             post = post,
-            parents = parents.distinctBy { it.uri }.filterNot { it.uri == reply.uri || it.uri == post.uri },
+            parent = if(reply.parent is ViewablePost && parent !is ViewablePost)
+                reply.parent else parent,
             replies = replies.distinctBy { it.uri }.filterNot { it.uri == reply.uri || it.uri == post.uri },
         )
-        val parent = reply.post.reply?.parentPost?.uri ?: return this
-        val root = reply.post.reply.rootPost?.uri ?: return this
-        val newParents = this.parents.toMutableList()
+        reply.post.reply?.parentPost?.uri ?: return this
+        reply.post.reply.rootPost?.uri ?: return this
         val threadReplies = this.replies.toMutableList()
-        val inParents = this.parents.indexOfFirst {
-            it.uri == parent || it.uri == root
-        }
-        val inReplies = this.replies.indexOfFirst {
-            it.uri == parent || it.uri == root
-        }
-        if (inParents != -1) {
-            val replyParent = parents[inParents]
-            replyParent.addReply(reply)
-            newParents[inParents] = replyParent
-        } else if (inReplies != -1) {
-            val replyParent = threadReplies[inReplies]
-            replyParent.addReply(reply)
-            threadReplies[inReplies] = replyParent
-        }
+        val inParents = this.parents.any { it.uri == reply.uri }
+        val inReplies = this.replies.firstOrNull { it.uri == reply.uri }
         return BskyPostThread(
             post = post,
-            parents = newParents.distinctBy { it.uri }.filterNot { it.uri == reply.uri || it.uri == post.uri },
+            parent = if (!inParents) parent else if (inReplies != null) {
+                if (inReplies is ViewablePost) parent?.addReply(inReplies) else parent
+            } else parent,
             replies = threadReplies.distinctBy { it.uri }.filterNot { it.uri == reply.uri || it.uri == post.uri },
         )
     }
@@ -128,56 +112,29 @@ data class BskyPostThread(
     fun addReply(reply: BskyPost): BskyPostThread {
         if(reply.uri == post.uri) return BskyPostThread(
             post = post,
-            parents = parents.distinctBy { it.uri }.filterNot { it.uri == reply.uri || it.uri == post.uri },
+            parent = parent,
             replies = replies.distinctBy { it.uri }.filterNot { it.uri == reply.uri || it.uri == post.uri },
         )
-        val parent = reply.reply?.parentPost?.uri ?: return this
-        val root = reply.reply.rootPost?.uri ?: return this
-        val newParents = this.parents.toMutableList()
+        reply.reply?.parentPost?.uri ?: return this
+        reply.reply.rootPost?.uri ?: return this
         val threadReplies = this.replies.toMutableList()
-        val inParents = this.parents.indexOfFirst {
-            it.uri == parent || it.uri == root
+        val inParents = this.parents.any { it.uri == reply.uri }
+        val inReplies = this.replies.any { it.uri == reply.uri }
+        val inAnyParentReplies = this.parents.any {
+            if(it is ViewablePost) it.replies.any { it.uri == reply.uri } else false
         }
-        val inReplies = this.replies.indexOfFirst {
-            it.uri == parent
+        if(!inReplies && !inParents && !inAnyParentReplies) {
+            threadReplies.add(reply.toThreadPost())
+        } else if(!inParents && inAnyParentReplies) {
+            parent?.addReply(reply)
         }
-        if (inParents != -1) {
-            val replyParent = parents[inParents]
-            replyParent.addReply(reply)
-            newParents[inParents] = replyParent
-        } else if (inReplies != -1) {
-            val replyParent = threadReplies[inReplies]
-            replyParent.addReply(reply)
-            threadReplies[inReplies] = replyParent
-        }
-        return BskyPostThread(
+        val newThread = BskyPostThread(
             post = post,
-            parents = newParents.distinctBy { it.uri }.filterNot { it.uri == reply.uri || it.uri == post.uri },
-            replies = threadReplies.distinctBy { it.uri }.filterNot { it.uri == reply.uri || it.uri == post.uri },
+            parent = parent,
+            replies = threadReplies.distinctBy { it.uri },
         )
+        return newThread
     }
-}
-
-fun List<ThreadPost>.inParentOrder(): List<ThreadPost> {
-    val newList = this.toMutableList()
-    this.forEachIndexed { index, threadPost ->
-        when(threadPost) {
-            is ViewablePost -> {
-                val parentUri = threadPost.post.reply?.replyRef?.parent?.uri
-                if (threadPost.post.reply == null) {
-                    newList.add(0, threadPost)
-                    return@forEachIndexed
-                }
-                val parentIndex = newList.indexOfFirst { it.uri == parentUri }
-                if (parentIndex != -1 && parentIndex != index - 1) {
-                    newList.add(parentIndex+1, threadPost)
-                    return@forEachIndexed
-                }
-            }
-            else -> return@forEachIndexed
-        }
-    }
-    return newList.distinctBy { it.uri }
 }
 
 @Parcelize
@@ -203,7 +160,6 @@ sealed interface ThreadPost:Parcelable {
                 else -> other.hashCode() == this.hashCode()
             }
         }
-
 
 
         operator fun contains(other: Any?) : Boolean {
@@ -265,6 +221,15 @@ sealed interface ThreadPost:Parcelable {
             }
             return result
         }
+    }
+
+    fun parents(): List<ThreadPost> {
+        val parent = when(this) {
+            is ViewablePost -> this.parent
+            is BlockedPost -> null
+            is NotFoundPost -> null
+        }
+        return if(parent != null) listOf(parent) + parent.parents() else listOf()
     }
 
     @Immutable
@@ -333,6 +298,14 @@ sealed interface ThreadPost:Parcelable {
         }
     }
 
+    fun addParentReply(reply: BskyPost): ThreadPost {
+        return if(this !is ViewablePost) this
+        else if(this.parent == null) this
+        else if(reply.reply?.parentPost?.uri == this.parent.uri) {
+            this.parent.addReply(reply)
+        } else this.parent.addParentReply(reply)
+    }
+
 
     fun addReply(reply: BskyPost): ThreadPost {
         return addReply(ViewablePost(reply))
@@ -356,38 +329,25 @@ sealed interface ThreadPost:Parcelable {
 }
 
 fun ThreadViewPost.toThread(): BskyPostThread {
-    val parents = when(parent) {
-        is ThreadViewPostParentUnion.ThreadViewPost -> {
-            (parent as ThreadViewPostParentUnion.ThreadViewPost).value.findParentChain()
-        }
-        else -> persistentListOf()
-    }
-    if (parents.isEmpty()) {
-        return BskyPostThread(
-            post = post.toPost(),
-            parents = persistentListOf(),
-            replies = replies.mapImmutable { it.toThreadPost() }
-        )
-    } else {
-        val rootPost = parents.last().toPost()
-        val entryPost = this.post.toPost(BskyPostReply(parents.first().toPost(), rootPost, parents.first().toPost().reply?.parentPost?.author), null)
-        return BskyPostThread(
-            post = entryPost,
-            parents = parents.mapIndexed { index, post ->
-                post.toThreadPost(
-                    if(index == parents.lastIndex) {
-                        post.toPost()
-                    } else {
-                        parents[index + 1].toPost()
-                    },
-                )
-            }.reversed().toImmutableList(),
-            replies = replies.mapImmutable { reply -> reply.toThreadPost() },
-        )
-    }
+    val entryPost = this.post.toPost()
+    val newParent = parent?.toThreadPost()
+    val rootPost = parent?.getRoot()
+    val parentPost = if(newParent is ThreadPost.ViewablePost) newParent else null
+    val grandParent = if(parentPost?.parent is ThreadPost.ViewablePost) parentPost.parent else null
+    val postReply = BskyPostReply(
+        rootPost = rootPost?.toPost(),
+        parentPost = parentPost?.post,
+        grandParentAuthor = grandParent?.post?.author,
+        replyRef = entryPost.reply?.replyRef
+    )
+    return BskyPostThread(
+        post = entryPost.copy(reply = postReply),
+        parent = newParent,
+        replies = replies.map { it.toThreadPost() }
+    )
 }
 
-fun ThreadViewPost.toThreadPost( root: BskyPost): ThreadPost {
+fun ThreadViewPost.toThreadPost(): ThreadPost {
     val post = post.toPost(null, null)
     return ViewablePost(
         post = post,
@@ -422,6 +382,12 @@ fun ThreadViewPostParentUnion.toThreadPost(): ThreadPost = when (this) {
     is ThreadViewPostParentUnion.BlockedPost -> BlockedPost(value.uri)
 }
 
-
+fun ThreadViewPostParentUnion.getRoot(): ThreadViewPost? {
+    return when(this) {
+        is ThreadViewPostParentUnion.ThreadViewPost -> this.value.parent?.getRoot()
+        is ThreadViewPostParentUnion.NotFoundPost -> null
+        is ThreadViewPostParentUnion.BlockedPost -> null
+    }
+}
 
 

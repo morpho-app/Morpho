@@ -30,11 +30,11 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.runBlocking
 import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
+import org.koin.core.component.get
 import org.lighthousegames.logging.logging
 
 class ContentLabelService: KoinComponent {
-    val agent: MorphoAgent by inject()
+    val agent: MorphoAgent = get<MorphoAgent>()
     val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     companion object {
         val log = logging("ContentLabelService")
@@ -106,7 +106,7 @@ class ContentLabelService: KoinComponent {
                     }
                     adultLabels.isNotEmpty()
                 } else {
-                    item.thread.getLabels().any { label ->
+                    item.thread.getLabels().all { label ->
                         labels[label.value] == Visibility.HIDE
                     }
                 }

@@ -21,7 +21,6 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.core.annotation.ExperimentalVoyagerApi
-import cafe.adriel.voyager.core.model.rememberNavigatorScreenModel
 import cafe.adriel.voyager.core.screen.ScreenKey
 import cafe.adriel.voyager.koin.koinNavigatorScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
@@ -95,7 +94,7 @@ fun TabNavigationItem(
             when (tab) {
                 is NotificationsTab -> {
                     val sm = navigator.koinNavigatorScreenModel<TabbedMainScreenModel>()
-                    val unread by sm.unreadNotificationsCount().collectAsState(0)
+                    val unread by sm.unreadNotificationsCount.collectAsState(0)
                     BadgedBox(
                         badge = {
                             if (unread > 0) {

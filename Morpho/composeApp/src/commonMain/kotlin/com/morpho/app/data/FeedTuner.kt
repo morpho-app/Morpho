@@ -222,55 +222,6 @@ data class FeedTuner<Data: MorphoDataItem.FeedItem>(val tuners: List<TunerFuncti
         }
     }
     fun tune(
-        feed: MorphoData<Data>
-    ): MorphoData<Data> {
-        var workingFeed = feed.items
-        tuners.forEach { tuner ->
-            workingFeed = tuner(workingFeed, this)
-        }
-        workingFeed = workingFeed.map { item ->
-            if(seenKeys.contains(item.key)) return@map null
-            else if(item is MorphoDataItem.Thread) {
-                val itemUris = item.getUris()
-                val seenInThisThread = itemUris.filter { seenUris.contains(it) }
-                if(seenInThisThread.isNotEmpty()) {
-                    if(seenInThisThread.size == itemUris.size) {
-                        return@map null
-                    } else {
-                        val newParents = item.thread.parents.filter { parent ->
-                            when(parent) {
-                                is ThreadPost.ViewablePost -> parent.post.uri in seenInThisThread
-                                is ThreadPost.BlockedPost -> false
-                                is ThreadPost.NotFoundPost -> false
-                            }
-                        }
-                        val newThread = item.copy(thread = item.thread.filterReplies { reply ->
-                            when(reply) {
-                                is ThreadPost.ViewablePost -> reply.post.uri in seenInThisThread
-                                is ThreadPost.BlockedPost -> false
-                                is ThreadPost.NotFoundPost -> false
-                            }
-                        }.copy(parents = newParents))
-                        seenUris.addAll(itemUris)
-                        if(newThread.thread.replies.isEmpty() && newThread.thread.parents.isEmpty()) {
-                            return@map null
-                        } else {
-                            return@map newThread
-                        }
-                    }
-                } else {
-                    seenUris.addAll(itemUris)
-                    item
-                }
-            } else {
-                val disableDedub = item.isReply && item.isRepost
-                if(!disableDedub) seenKeys.add(item.key)
-                item
-            }
-        }.filterNotNull() as List<Data>
-        return feed.copy(items = workingFeed)
-    }
-    fun tune(
         feed: PagedResponse.Feed<Data>
     ): PagedResponse.Feed<Data> {
         var workingFeed = feed.items
@@ -286,7 +237,7 @@ data class FeedTuner<Data: MorphoDataItem.FeedItem>(val tuners: List<TunerFuncti
                     if(seenInThisThread.size == itemUris.size) {
                         return@map null
                     } else {
-                        val newParents = item.thread.parents.filter { parent ->
+                        item.thread.parents.filter { parent ->
                             when(parent) {
                                 is ThreadPost.ViewablePost -> parent.post.uri in seenInThisThread
                                 is ThreadPost.BlockedPost -> false
@@ -299,7 +250,7 @@ data class FeedTuner<Data: MorphoDataItem.FeedItem>(val tuners: List<TunerFuncti
                                 is ThreadPost.BlockedPost -> false
                                 is ThreadPost.NotFoundPost -> false
                             }
-                        }.copy(parents = newParents))
+                        }.copy(parent = item.thread.parent))
                         seenUris.addAll(itemUris)
                         if(newThread.thread.replies.isEmpty() && newThread.thread.parents.isEmpty()) {
                             return@map null

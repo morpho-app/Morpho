@@ -3,7 +3,6 @@ package com.morpho.app.screens.base
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import app.cash.paging.Pager
 import app.cash.paging.cachedIn
 import cafe.adriel.voyager.core.model.ScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
@@ -27,12 +26,12 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import org.lighthousegames.logging.logging
 
@@ -146,15 +145,20 @@ open class BaseScreenModel(
         }
     }.distinctUntilChanged() as Flow<Pair<MyProfilePresenter, MutableStateFlow<UIUpdate>>>
 
+    private val _unreadNotificationsCount = MutableStateFlow(0L)
+    val unreadNotificationsCount: StateFlow<Long> = _unreadNotificationsCount.asStateFlow()
 
+    fun hasUnreadNotifications(): Flow<Boolean> = unreadNotificationsCount.map { it > 0 }
 
     fun unreadNotificationsCount() = notificationsTick.t.map {
-        agent.unreadNotificationsCount().getOrDefault(0)
-    }.distinctUntilChanged()
-        .stateIn(screenModelScope, SharingStarted.WhileSubscribed(), 0L)
+        val count = agent.unreadNotificationsCount().getOrDefault(0)
+        _unreadNotificationsCount.value = count
+        count
+    }
 
     fun updateSeenNotifications() = screenModelScope.launch {
         agent.updateSeenNotifications()
+        _unreadNotificationsCount.value = 0
         globalEvents.emit(Event.UpdateSeenNotifications())
     }
 
