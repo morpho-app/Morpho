@@ -11,7 +11,7 @@ import org.lighthousegames.logging.logging
 class NotificationsSource: MorphoDataSource<NotificationsListItem>() {
     companion object {
         val log = logging()
-        val defaultConfig = PagingConfig(
+        val defaultConfig = app.cash.paging.PagingConfig(
             pageSize = 40,
             prefetchDistance = 20,
             initialLoadSize = 80,
