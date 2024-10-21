@@ -228,14 +228,14 @@ data class FeedTuner<Data: MorphoDataItem.FeedItem>(val tuners: List<TunerFuncti
         tuners.forEach { tuner ->
             workingFeed = tuner(workingFeed, this)
         }
-        workingFeed = workingFeed.map { item ->
-            if(seenKeys.contains(item.key)) return@map null
+        workingFeed = workingFeed.mapNotNull { item ->
+            if(seenKeys.contains(item.key)) null
             else if(item is MorphoDataItem.Thread) {
                 val itemUris = item.getUris()
                 val seenInThisThread = itemUris.filter { seenUris.contains(it) }
                 if(seenInThisThread.isNotEmpty()) {
                     if(seenInThisThread.size == itemUris.size) {
-                        return@map null
+                        null
                     } else {
                         item.thread.parents.filter { parent ->
                             when(parent) {
@@ -253,9 +253,9 @@ data class FeedTuner<Data: MorphoDataItem.FeedItem>(val tuners: List<TunerFuncti
                         }.copy(parent = item.thread.parent))
                         seenUris.addAll(itemUris)
                         if(newThread.thread.replies.isEmpty() && newThread.thread.parents.isEmpty()) {
-                            return@map null
+                            null
                         } else {
-                            return@map newThread
+                            newThread
                         }
                     }
                 } else {
@@ -263,12 +263,13 @@ data class FeedTuner<Data: MorphoDataItem.FeedItem>(val tuners: List<TunerFuncti
                     item
                 }
             } else {
-                val disableDedub = item.isReply && item.isRepost
-                if(!disableDedub) seenKeys.add(item.key)
+                val disableDedup = item.isReply || item.isRepost
+                if(!disableDedup) seenKeys.add(item.key)
                 item
             }
-        }.filterNotNull() as List<Data>
-        return feed.copy(items = workingFeed)
+            //item
+        } as List<Data>
+        return feed.copy(items = workingFeed.ifEmpty { feed.items.distinctBy { it.getUri() } })
     }
 
 

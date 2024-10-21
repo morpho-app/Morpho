@@ -100,7 +100,8 @@ inline fun SkylineThreadFragment(
                                 if(parents.size > 3) {
                                     ThreadItem(
                                         item = thread.parents[0],
-                                        modifier = if(debuggable) Modifier.border(1.dp, Color.Green) else Modifier,
+                                        modifier = if(debuggable) Modifier.border(1.dp, Color.Green)
+                                            else Modifier.padding(vertical = 2.dp),
                                         role = PostFragmentRole.ThreadBranchStart,
                                         indentLevel = 1,
                                         elevate = true,
@@ -171,7 +172,8 @@ inline fun SkylineThreadFragment(
                                                 ThreadItem(
                                                     item = post,
                                                     role = role,
-                                                    modifier = if(debuggable) Modifier.border(1.dp, Color.White) else Modifier,
+                                                    modifier = if(debuggable) Modifier.border(1.dp, Color.White)
+                                                        else Modifier.padding(vertical = 2.dp),
                                                     indentLevel = 1,
                                                     reason = reason,
                                                     elevate = true,
@@ -195,7 +197,7 @@ inline fun SkylineThreadFragment(
                                             modifier = if (debuggable) Modifier.border(
                                                 1.dp,
                                                 Color.Yellow
-                                            ) else Modifier,
+                                            ) else Modifier.padding(vertical = 2.dp),
                                             elevate = true,
                                             onItemClicked = onItemClicked,
                                             onProfileClicked = onProfileClicked,
@@ -231,7 +233,8 @@ inline fun SkylineThreadFragment(
                                             ThreadItem(
                                                 item = post,
                                                 role = role,
-                                                modifier = if(debuggable) Modifier.border(1.dp, Color.Red) else Modifier,
+                                                modifier = if(debuggable) Modifier.border(1.dp, Color.Red)
+                                                    else Modifier.padding(vertical = 2.dp),
                                                 indentLevel = 1,
                                                 reason = reason,
                                                 elevate = true,
@@ -260,8 +263,8 @@ inline fun SkylineThreadFragment(
                                     role = role,
                                     reason = null,
                                     elevate = true,
-                                    modifier = if(debuggable) Modifier.border(1.dp, Color.Magenta) else Modifier,
-                                        //.padding(4.dp),
+                                    modifier = if(debuggable) Modifier.border(1.dp, Color.Magenta)
+                                        else Modifier.padding(vertical = 2.dp),
                                     onItemClicked = onItemClicked,
                                     onProfileClicked = onProfileClicked,
                                     onUnClicked = onUnClicked,
@@ -292,7 +295,7 @@ inline fun SkylineThreadFragment(
                     reason = null,
                     elevate = true,
                     modifier = if(debuggable) Modifier.border(1.dp, Color.Blue) else Modifier
-                        .padding(4.dp),
+                        .padding(top = 4.dp).padding(horizontal = 4.dp),
                     onItemClicked = onItemClicked,
                     onProfileClicked = onProfileClicked,
                     onUnClicked = onUnClicked,
@@ -314,7 +317,7 @@ inline fun SkylineThreadFragment(
 
                     Column(
                         modifier = modifier
-                            .padding(4.dp),
+                            //.padding(4.dp),
                     ) {
                         if(threadPost.replies.size > 2) {
                             TextButton(
@@ -347,7 +350,7 @@ inline fun SkylineThreadFragment(
                                     if (post.replies.isNotEmpty() && replies.size > 1) {
                                         ThreadTree(
                                             reply = post, indentLevel = 1,
-                                            modifier = Modifier.padding(4.dp),
+                                            modifier = Modifier.padding(start = 4.dp, end = 1.dp, bottom = 2.dp),
                                             onItemClicked = onItemClicked,
                                             onProfileClicked = { onProfileClicked(it) },
                                             onUnClicked =  { type,uri-> onUnClicked(type,uri) },
@@ -362,7 +365,7 @@ inline fun SkylineThreadFragment(
                                             item = post,
                                             role = PostFragmentRole.ThreadEnd,
                                             indentLevel = 1,
-                                            modifier = Modifier.padding(4.dp),
+                                            modifier = Modifier.padding(start = 4.dp, end = 1.dp, bottom = 2.dp),
                                             onItemClicked = onItemClicked,
                                             onProfileClicked = onProfileClicked,
                                             onUnClicked = onUnClicked,

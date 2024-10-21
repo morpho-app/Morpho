@@ -42,7 +42,7 @@ abstract class MorphoDataSource<Data:Any>: PagingSource<Cursor, Data>(), KoinCom
     }
 
     companion object {
-        val defaultConfig = PagingConfig(
+        val defaultConfig = app.cash.paging.PagingConfig(
             pageSize = 50,
             prefetchDistance = 20,
             initialLoadSize = 100,
@@ -282,7 +282,7 @@ suspend fun <Data: MorphoDataItem> List<Data>.collectThreads(
     threadCandidates.filterNotNull().filterNot { it.isIncompleteThread }
     if (threadCandidates.isNotEmpty()) threads.addAll(threadCandidates)
     val newReplies = replies.filterNotNull()
-        .distinctBy { it.getUri() }
+        //.distinctBy { it.getUri() }
         .filterNot { reply ->
             if(reply.isRepost) false
             else if(reply.isQuotePost)  false
@@ -293,7 +293,7 @@ suspend fun <Data: MorphoDataItem> List<Data>.collectThreads(
 //            else -> it.post.createdAt
 //        } }
     var newPosts = posts.toList().filterNotNull()
-    newPosts = newPosts.distinctBy { it.getUri() }
+    //newPosts = newPosts.distinctBy { it.getUri() }
     newPosts = newPosts.filterNot { post ->
         if(post.isRepost) false
         else if(post.isQuotePost)  false
@@ -317,7 +317,7 @@ suspend fun <Data: MorphoDataItem> List<Data>.collectThreads(
                   maxOf(acc, postTime)
               })
     } }
-    newThreads = newThreads.distinctBy { it.getUri() }
+ //   newThreads = newThreads.distinctBy { it.getUri() }
 //        .filterNot { thread ->
 //            thread.getUris().filterNot { uri ->
 //                newThreads.fastAny { it.getUri() == uri } }.size > 1
@@ -326,8 +326,7 @@ suspend fun <Data: MorphoDataItem> List<Data>.collectThreads(
     newFeed.addAll(newPosts)
     newFeed.addAll(newThreads)
     newFeed.addAll(newReplies)
-    val dedupedFeed = newFeed.distinctBy { it.getUri() }
-    val sortedFeed = dedupedFeed.sortedByDescending {
+    val sortedFeed = newFeed.sortedByDescending {
         when(it) {
             is MorphoDataItem.Post -> when(it.reason) {
                 is BskyPostReason.BskyPostFeedPost -> it.post.createdAt

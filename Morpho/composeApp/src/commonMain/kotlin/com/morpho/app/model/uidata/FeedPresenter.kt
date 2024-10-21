@@ -3,6 +3,7 @@ package com.morpho.app.model.uidata
 import app.bsky.feed.GetAuthorFeedFilter
 import app.bsky.feed.GetFeedQuery
 import app.bsky.feed.GetListFeedQuery
+import app.cash.paging.InvalidatingPagingSourceFactory
 import app.cash.paging.Pager
 import app.cash.paging.cachedIn
 import com.morpho.app.data.FeedTuner
@@ -25,13 +26,14 @@ class FeedPresenter<E: FeedEvent>(
     var descriptor: FeedDescriptor? = null,
 ): PagedPresenter<MorphoDataItem.FeedItem, E>() {
 
-    private var dataSource: MorphoFeedSource<MorphoDataItem.FeedItem> =
+    private var pagerFactory = InvalidatingPagingSourceFactory<Cursor, MorphoDataItem.FeedItem> {
         descriptor?.getDataSource(agent) ?: getTimelineDataSource(agent)
+    }
 
     override var pager: Pager<Cursor, MorphoDataItem.FeedItem> = run {
         val pagingConfig = MorphoDataSource.defaultConfig
         Pager(pagingConfig) {
-            dataSource
+            pagerFactory.invoke()
         }
     }
 
