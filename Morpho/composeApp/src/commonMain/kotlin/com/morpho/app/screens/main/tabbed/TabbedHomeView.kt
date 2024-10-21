@@ -85,6 +85,7 @@ import kotlin.math.max
 import kotlin.math.min
 import cafe.adriel.voyager.navigator.tab.Tab as NavTab
 
+
 @Composable
 public fun <T: Event>CurrentSkylineScreen(
     sm: TabbedMainScreenModel,
@@ -136,20 +137,14 @@ fun TabScreen.TabbedHomeView(
 
         var selectedTabIndex by rememberSaveable { mutableIntStateOf(sm.timelineIndex) }
 
-        val tabs = remember(
-            sm.tabs, sm.loaded, sm.tabs.size
-        ) {
-
-            List(sm.tabs.size) { index ->
-
+        val tabs by derivedStateOf {
+            sm.tabs.mapIndexed { index, tab ->
                 HomeSkylineTab(
-                    index = index.toUShort(),
-                    title = sm.tabs[index].title,
-                    avatar = sm.tabs[index].avatar,
+                    index = index.toUShort(), title = tab.title, avatar = tab.avatar
                 )
             }
         }
-        val tabsCreated by derivedStateOf { sm.loaded && sm.tabs.isNotEmpty() }
+        val tabsCreated by derivedStateOf { sm.loaded && sm.tabs.isNotEmpty() && sm.isLoggedIn.value }
         if (tabsCreated) {
             Navigator(
                 tabs.first(),

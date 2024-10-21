@@ -85,21 +85,23 @@ open class MainScreenModel(
 
     override fun deinit() {
         super.deinit()
+        presenterJob?.cancel()
         feedSources.clear()
         feedStates.clear()
-        presenterJob?.cancel()
         initialized = false
     }
 
     override fun logout() {
-        super.logout()
         deinit()
+        super.logout()
+
         initialize()
     }
 
     override fun switchUser(did: Did) {
-        super.switchUser(did)
         deinit()
+        super.switchUser(did)
+
         initialize()
     }
 

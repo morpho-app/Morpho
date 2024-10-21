@@ -91,24 +91,24 @@ open class BaseScreenModel(
     }
 
     open fun logout() {
-        agent.logout().invokeOnCompletion {
-            deinit()
-            isLoggedIn.value = false
-            userDid = null
-            userProfile = null
-
-        }
+        deinit()
+        isLoggedIn.value = false
+        userDid = null
+        userProfile = null
+        agent.logout()
     }
 
     open fun switchUser(did: Did) {
         screenModelScope.launch {
             deinit()
             agent.switchUser(did)
-            userDid = did
             userProfile = agent.getProfile(did).getOrNull()?.toProfile()
+        }.invokeOnCompletion {
+            userDid = did
             notifJob = screenModelScope.launch {
                 notificationsTick.tick(true)
             }
+            isLoggedIn.value = agent.isLoggedIn
         }
 
     }

@@ -62,15 +62,18 @@ fun UserManagement(
     distinguish: Boolean = false,
     topLevel: Boolean = false,
 ) {
-    val users = profiles.collectAsState(initial = if(myProfile != null) listOf(myProfile) else listOf())
-    val loggedInUser = remember { users.value.firstOrNull { it.did == sm.agent.id } }
-    val otherUsers = remember { users.value.filter { it.did != sm.agent.id } }
+    val users = profiles.collectAsState(initial = listOf())
+    val loggedInUser = users.value.firstOrNull { it.did == sm.agent.id }
+    val otherUsers = users.value.filterNot { it.did == loggedInUser?.did }
     val mainNav = remember {
         when (navigator.level) {
             0 -> navigator
             else -> navigator.parent!!
         }
     }
+    println("Users: $users")
+    println("Logged in user: $loggedInUser")
+    println("Other users: $otherUsers")
     val rootNav = LocalTabNavigator.current
     val menuOptionClicked: (AccountMenuOption, Did) -> Unit = remember {
         { option, did ->
@@ -96,14 +99,15 @@ fun UserManagement(
         modifier = modifier.fillMaxWidth(),
         distinguish = distinguish,
     ) {
-        if(loggedInUser != null) {
+        if(loggedInUser != null || myProfile != null) {
+            val profile = loggedInUser ?: myProfile!!
             Text(
-                text = "Logged in as ${loggedInUser.displayName ?: loggedInUser.handle.handle}",
+                text = "Logged in as ${profile.displayName ?: profile.handle.handle}",
                 style = MaterialTheme.typography.titleMedium,
                 modifier = Modifier.padding(12.dp)
             )
             AccountItem(
-                profile = loggedInUser,
+                profile = profile,
                 onClick = {
                     mainNav.push(MyProfileTab)
                 },
@@ -118,7 +122,10 @@ fun UserManagement(
         otherUsers.forEach { profile ->
             AccountItem(
                 profile = profile,
-                onClick = { sm.switchUser(profile.did) },
+                onClick = {
+                    sm.switchUser(profile.did)
+                    mainNav.popUntilRoot()
+                },
                 onMenuClicked = menuOptionClicked
             )
         }

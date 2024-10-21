@@ -34,7 +34,9 @@ class TabbedMainScreenModel(
     agent: MorphoAgent, labelService: ContentLabelService,
 ) : MainScreenModel(agent, labelService) {
 
-    val tabs = mutableStateListOf<ContentCardMapEntry>()
+    private val _tabs = mutableListOf<ContentCardMapEntry>()
+    val tabs: List<ContentCardMapEntry>
+        get() = _tabs.toList()
     val tabPagers = mutableStateMapOf<AtUri, Flow<PagingData<MorphoDataItem>>>()
 
     val timelineIndex: Int
@@ -55,7 +57,7 @@ class TabbedMainScreenModel(
         screenModelScope.launch {
             while(!initialized) delay(10)
             feedSources.filter { it.pinned == true }.forEach { info ->
-                tabs.add(info.toContentCardMapEntry())
+                _tabs.add(info.toContentCardMapEntry())
                 (feedPresenters[info.uri]?.pager?.flow?.cachedIn(screenModelScope)
                         as Flow<PagingData<MorphoDataItem>>).let {
                     tabPagers[info.uri] = it
@@ -88,21 +90,21 @@ class TabbedMainScreenModel(
     override fun deinit() {
         super.deinit()
         tabPagers.clear()
-        tabs.clear()
+        _tabs.clear()
         loaded = false
     }
 
 
     override fun logout() {
-        super.logout()
         deinit()
+        super.logout()
         initialize()
         initializeTabs()
     }
 
     override fun switchUser(did: Did) {
-        super.switchUser(did)
         deinit()
+        super.switchUser(did)
         initialize()
         initializeTabs()
     }
