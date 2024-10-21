@@ -40,7 +40,7 @@ actual fun MorphoTheme(
 
     MaterialTheme(
         colorScheme = colorScheme,
-        typography = Typography,
+        typography = MorphoTypography(),
         content = content
     )
 }

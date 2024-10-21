@@ -1,7 +1,14 @@
 
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.DisableSelection
 import androidx.compose.foundation.window.WindowDraggableArea
@@ -10,76 +17,89 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.outlined.Rectangle
-import androidx.compose.material3.*
+import androidx.compose.material3.FilledTonalIconButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.*
+import androidx.compose.ui.window.DialogState
+import androidx.compose.ui.window.Window
+import androidx.compose.ui.window.WindowPlacement
+import androidx.compose.ui.window.WindowScope
+import androidx.compose.ui.window.WindowState
+import androidx.compose.ui.window.application
+import androidx.compose.ui.window.rememberDialogState
+import androidx.compose.ui.window.rememberWindowState
+import cafe.adriel.voyager.core.annotation.ExperimentalVoyagerApi
 import ch.qos.logback.classic.LoggerContext
 import ch.qos.logback.core.util.StatusPrinter2
+import com.github.tkuenneth.nativeparameterstoreaccess.MacOSDefaults.getDefaultsEntry
+import com.github.tkuenneth.nativeparameterstoreaccess.NativeParameterStoreAccess.IS_MACOS
+import com.github.tkuenneth.nativeparameterstoreaccess.NativeParameterStoreAccess.IS_WINDOWS
+import com.github.tkuenneth.nativeparameterstoreaccess.WindowsRegistry.getWindowsRegistryEntry
 import com.morpho.app.App
+import com.morpho.app.data.DarkModeSetting
+import com.morpho.app.data.MorphoAgent
 import com.morpho.app.data.PreferencesRepository
 import com.morpho.app.di.appModule
-import com.morpho.app.di.dataModule
-import com.morpho.app.di.storageModule
+import com.morpho.app.getPlatformStorageDir
 import com.morpho.app.ui.theme.MorphoTheme
-import com.morpho.butterfly.Butterfly
 import com.morpho.butterfly.auth.SessionRepository
 import com.morpho.butterfly.auth.UserRepository
-import kotlinx.coroutines.flow.firstOrNull
-import kotlinx.coroutines.runBlocking
 import morpho.composeapp.generated.resources.Res
 import morpho.composeapp.generated.resources.morpho_icon_transparent
-import net.harawata.appdirs.AppDirsFactory
-import okio.Path.Companion.toPath
 import org.jetbrains.compose.resources.ExperimentalResourceApi
 import org.jetbrains.compose.resources.imageResource
 import org.jetbrains.compose.resources.painterResource
 import org.koin.core.annotation.KoinExperimentalAPI
 import org.koin.core.context.startKoin
-import org.koin.core.logger.Level
 import org.koin.core.parameter.parametersOf
-import org.lighthousegames.logging.*
+import org.koin.logger.slf4jLogger
+import org.lighthousegames.logging.KmLogging
+import org.lighthousegames.logging.LogLevel
+import org.lighthousegames.logging.PlatformLogger
+import org.lighthousegames.logging.VariableLogLevel
+import org.lighthousegames.logging.logging
+import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import kotlin.io.path.createDirectories
 
 val log = logging("main")
 
-@OptIn(KoinExperimentalAPI::class, ExperimentalResourceApi::class)
+fun getLogger(): Logger = LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME)
+
+fun getLogger(name: String): Logger = LoggerFactory.getLogger(name)
+
+@OptIn(KoinExperimentalAPI::class, ExperimentalResourceApi::class, ExperimentalVoyagerApi::class)
 fun main() = application {
     StatusPrinter2().print(LoggerFactory.getILoggerFactory() as LoggerContext)
     KmLogging.setLoggers(PlatformLogger(VariableLogLevel(LogLevel.Verbose)))
     val koin = startKoin {
-        printLogger(Level.DEBUG)
-        modules(appModule, storageModule, dataModule)
+        slf4jLogger()
+        modules(appModule)//, storageModule, dataModule)
     }.koin
-    val storageDir = AppDirsFactory.getInstance()
-        .getUserDataDir("com.morpho.app", "0.1.0", "Morpho")
-    val path = storageDir.toPath()
-    path.toNioPath().createDirectories()
-    val cacheDir = AppDirsFactory.getInstance()
-        .getUserCacheDir("com.morpho.app", "0.1.0", "Morpho")
-    val cachePath = cacheDir.toPath()
-    cachePath.toNioPath().createDirectories()
-    koin.get<SessionRepository> { parametersOf(storageDir) }
-    koin.get<UserRepository> { parametersOf(storageDir) }
-    val api = koin.get<Butterfly>()
-    val prefs = koin.get<PreferencesRepository> { parametersOf(storageDir) }
-
-
-    val morphoPrefs = runBlocking {
-        prefs.prefs.firstOrNull()?.firstOrNull()?.morphoPrefs
+    val storageDir = getPlatformStorageDir()
+    val sessionRepo = koin.get<SessionRepository> { parametersOf(storageDir) }
+    val userRepo = koin.get<UserRepository> { parametersOf(storageDir) }
+    val prefsRepo = koin.get<PreferencesRepository> { parametersOf(storageDir) }
+    val agent = koin.get<MorphoAgent> {
+        parametersOf(sessionRepo, userRepo, prefsRepo)
     }
-    val (undecorated, tabbed) = if (morphoPrefs != null) {
+    val morphoPrefs by derivedStateOf { agent.morphoPrefs }
+    val (undecorated, tabbed) = remember {
         log.d{ "Morpho Preferences: $morphoPrefs" }
-        morphoPrefs.tabbed to morphoPrefs.undecorated
-    } else {
-        log.d {"No Morpho Preferences found, using defaults" }
-        true to true
+        (morphoPrefs.value.tabbed == true) to (morphoPrefs.value.undecorated == true)
     }
     val windowState = rememberWindowState(
         placement = WindowPlacement.Floating,
@@ -88,10 +108,11 @@ fun main() = application {
 
     Window(
         onCloseRequest = {
-            runBlocking {
-                api.refreshSession().join()
+            // possible hack to catch the exception on exit
+            try { (::exitApplication)() } catch (e: Exception) {
+                e.printStackTrace()
+
             }
-            (::exitApplication)()
         },
         state = windowState,
         title = "Morpho",
@@ -99,15 +120,21 @@ fun main() = application {
         transparent = undecorated,
         icon = painterResource(Res.drawable.morpho_icon_transparent)
     ) {
-        MorphoTheme(darkTheme = isSystemInDarkTheme()) {
+        val darkTheme by derivedStateOf { when(morphoPrefs.value.darkMode){
+            DarkModeSetting.SYSTEM -> isSystemInDarkTheme()
+            DarkModeSetting.LIGHT -> false
+            DarkModeSetting.DARK -> true
+            null -> isSystemInDarkTheme()
+        } }
+        MorphoTheme(darkTheme = darkTheme) {
             if(undecorated) {
                 MorphoWindow(
                     windowState = windowState,
                     onCloseRequest = {
-                        runBlocking {
-                            api.refreshSession().join()
+                        try { (::exitApplication)() } catch (e: Exception) {
+                            e.printStackTrace()
+
                         }
-                        (::exitApplication)()
                     }
                 ) {
                     App()
@@ -118,9 +145,10 @@ fun main() = application {
         }
 
     }
+
 }
 
-/*
+
 fun isSystemInDarkTheme(): Boolean {
     return when {
         IS_WINDOWS -> {
@@ -140,7 +168,7 @@ fun isSystemInDarkTheme(): Boolean {
             // just default to dark mode for now
         }
     }
-}*/
+}
 
 @OptIn(ExperimentalResourceApi::class)
 @Composable

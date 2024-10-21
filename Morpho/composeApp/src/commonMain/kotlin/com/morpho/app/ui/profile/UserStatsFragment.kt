@@ -43,7 +43,7 @@ public fun UserStatsFragment(
                 color = MaterialTheme.colorScheme.onSurface,
             )
             Text(
-                text = " Followers",
+                text = " followers",
                 fontSize = MaterialTheme.typography.labelMedium.fontSize.times(0.9),
                 fontWeight = FontWeight.Normal,
                 color = MaterialTheme.colorScheme.onSurface,
@@ -64,7 +64,7 @@ public fun UserStatsFragment(
                 color = MaterialTheme.colorScheme.onSurface,
             )
             Text(
-                text = " Following",
+                text = " following",
                 fontSize = MaterialTheme.typography.labelMedium.fontSize.times(0.9),
                 fontWeight = FontWeight.Normal,
                 color = MaterialTheme.colorScheme.onSurface,
@@ -86,7 +86,7 @@ public fun UserStatsFragment(
                 textAlign = TextAlign.Start
             )
             Text(
-                text = " Posts",
+                text = " posts",
                 fontSize = MaterialTheme.typography.labelMedium.fontSize.times(0.9),
                 fontWeight = FontWeight.Normal,
                 color = MaterialTheme.colorScheme.onSurface,

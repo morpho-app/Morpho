@@ -15,11 +15,12 @@ import com.morpho.app.model.bluesky.BskyLabel
 @Composable
 fun ProfileLabel(
     modifier: Modifier = Modifier,
-    label: BskyLabel
+    label: BskyLabel,
+    onClick: (BskyLabel) -> Unit = {},
 ) {
     InputChip(
         selected = true,
-        onClick = { /*TODO*/ },
+        onClick = { onClick(label) },
         label = {
             Text(
                 text = label.value,

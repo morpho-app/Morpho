@@ -10,11 +10,13 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.max
 import com.morpho.app.ui.elements.WrappedColumn
 import com.morpho.butterfly.AtUri
 import morpho.app.ui.utils.indentLevel
+
 
 @Composable
 fun NotFoundPostFragment(
@@ -40,9 +42,48 @@ fun NotFoundPostFragment(
                 SelectionContainer {
                     Text(
                         text = "Post deleted or not found",
-                        style = MaterialTheme.typography.titleMedium,
+                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.ExtraLight),
                         modifier = Modifier
                             .padding(12.dp)
+                            .align(Alignment.CenterHorizontally)
+                    )
+                }
+            }
+        }
+    }
+}
+
+
+
+@Composable
+fun PlaceholderSkylineItem(
+    modifier: Modifier = Modifier,
+    elevate: Boolean = false,
+    indentLevel: Int = 0,
+    role: PostFragmentRole = PostFragmentRole.Solo,
+) {
+
+    WrappedColumn(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(2.dp)
+    ) {
+        Surface(
+            shadowElevation = max((indentLevel - 1).dp, 0.dp),
+            tonalElevation = indentLevel.dp,
+            shape = MaterialTheme.shapes.small,
+            modifier = Modifier
+                .fillMaxWidth(indentLevel(indentLevel.toFloat()))
+
+        ) {
+            Column {
+                SelectionContainer {
+                    Text(
+                        text = "Post Loading",
+                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Light),
+                        color = MaterialTheme.colorScheme.outline,
+                        modifier = Modifier
+                            .padding(50.dp)
                             .align(Alignment.CenterHorizontally)
                     )
                 }

@@ -13,6 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastAny
 import androidx.compose.ui.util.fastFold
@@ -24,11 +25,11 @@ import com.morpho.app.data.stripPollOptionCharacters
 import com.morpho.app.model.bluesky.BskyFacet
 import com.morpho.app.model.bluesky.BskyPost
 import com.morpho.app.model.bluesky.FacetType
-import com.morpho.app.model.uidata.ContentHandling
 import com.morpho.app.ui.elements.RichTextElement
 import com.morpho.app.util.openBrowser
 import com.morpho.app.util.utf8Slice
 import com.morpho.butterfly.AtIdentifier
+import com.morpho.butterfly.ContentHandling
 import com.morpho.butterfly.Uri
 import kotlinx.coroutines.launch
 import org.koin.compose.getKoin
@@ -51,6 +52,7 @@ fun ColumnScope.PollBlueOption(
          is FacetType.PollBlueOption -> type.number
          else -> throw IllegalArgumentException("Expected PollBlueOption, got $type")
     } }
+
     Row(
         horizontalArrangement = Arrangement.Start,
         verticalAlignment = Alignment.CenterVertically,
@@ -133,6 +135,7 @@ fun PollBluePost(
     ) }
     var optionChosen by remember { mutableStateOf(pollBlueService.lookupPollBlueVote(pollId)) }
     val scope = rememberCoroutineScope()
+    val uriHandler = LocalUriHandler.current
     DisableSelection {
         Column(
             horizontalAlignment = Alignment.Start,
@@ -149,7 +152,7 @@ fun PollBluePost(
                     facetTypes.fastForEach {
                         when(it) {
                             is FacetType.ExternalLink -> {
-                                openBrowser(it.uri.uri)
+                                openBrowser(it.uri.uri, uriHandler)
                             }
                             is FacetType.Tag -> {}
                             is FacetType.UserDidMention -> {
@@ -233,7 +236,7 @@ fun PollBluePost(
                     color = MaterialTheme.colorScheme.tertiary,
                     style = MaterialTheme.typography.labelSmall,
                     modifier = Modifier.padding(top = 4.dp)
-                        .clickable { openBrowser("https://poll.blue/post") }
+                        .clickable { openBrowser("https://poll.blue/post", uriHandler) }
                 )
             }
         }

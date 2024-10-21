@@ -4,63 +4,107 @@ import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBackIosNew
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.unit.dp
-import cafe.adriel.voyager.koin.getNavigatorScreenModel
+import cafe.adriel.voyager.core.annotation.ExperimentalVoyagerApi
+import cafe.adriel.voyager.core.model.rememberNavigatorScreenModel
+import cafe.adriel.voyager.core.model.screenModelScope
+import cafe.adriel.voyager.koin.koinNavigatorScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import com.atproto.repo.StrongRef
+import com.morpho.app.data.MorphoAgent
 import com.morpho.app.model.bluesky.BskyPost
 import com.morpho.app.model.bluesky.BskyPostThread
 import com.morpho.app.model.bluesky.DraftPost
+import com.morpho.app.model.uidata.ThreadUpdate
 import com.morpho.app.model.uistate.ContentCardState
 import com.morpho.app.screens.base.tabbed.ProfileTab
 import com.morpho.app.screens.base.tabbed.TabScreen
 import com.morpho.app.screens.base.tabbed.ThreadTab
 import com.morpho.app.screens.main.MainScreenModel
-import com.morpho.app.ui.common.*
+import com.morpho.app.ui.common.BottomSheetPostComposer
+import com.morpho.app.ui.common.ComposerRole
+import com.morpho.app.ui.common.LoadingCircle
+import com.morpho.app.ui.common.RepostQueryDialog
+import com.morpho.app.ui.common.TabbedScreenScaffold
 import com.morpho.app.ui.elements.doMenuOperation
 import com.morpho.app.ui.thread.ThreadFragment
+import com.morpho.app.ui.utils.ItemClicked
 import com.morpho.app.util.ClipboardManager
+import com.morpho.butterfly.AtIdentifier
 import com.morpho.butterfly.AtUri
-import com.morpho.butterfly.Butterfly
+import com.morpho.butterfly.Did
 import com.morpho.butterfly.model.RecordType
 import com.morpho.butterfly.model.RecordUnion
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
-import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.launch
 import org.koin.compose.getKoin
 
-@OptIn(ExperimentalAnimationApi::class, ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalAnimationApi::class, ExperimentalMaterial3Api::class,
+       ExperimentalVoyagerApi::class
+)
 @Composable
 fun TabScreen.ThreadViewContent(
-    threadState: StateFlow<ContentCardState.PostThread>,
-    navigator:Navigator = LocalNavigator.currentOrThrow,
-    sm:MainScreenModel = navigator.getNavigatorScreenModel<MainScreenModel>()
+    cardState: ContentCardState.PostThread,
+    navigator: Navigator = LocalNavigator.currentOrThrow,
+
 ) {
-    val thread by threadState.value.thread.collectAsState()
+    val sm = navigator.koinNavigatorScreenModel<MainScreenModel>()
+    val threadState by cardState.updates.filterIsInstance<ThreadUpdate>().collectAsState(ThreadUpdate.Empty)
+
     TabbedScreenScaffold(
         navBar = { navBar(navigator) },
+        content = { insets, state ->
+            when(state) {
+                is ThreadUpdate.Empty -> {
+                    LoadingCircle()
+                }
+
+                is ThreadUpdate.Error -> {
+                    Text("Error: ${state.error}")
+                }
+
+                is ThreadUpdate.Thread -> {
+                    ThreadView(
+                        thread = state.results,
+                        insets = insets,
+                        navigator = navigator,
+                        createRecord = { sm.screenModelScope.launch { sm.agent.createRecord(it) } },
+                        deleteRecord = { type, uri -> sm.screenModelScope.launch {
+                            sm.agent.deleteRecord(type, uri)
+                        } },
+                        resolveHandle = { handle -> sm.agent.resolveHandle(handle).getOrNull() }
+                    )
+                }
+                else -> {
+                    Text("Unknown state: $state")
+                }
+            }
+
+        },
         topContent = {
             ThreadTopBar(navigator = navigator)
         },
-        content = { insets ->
-            if(thread != null) {
-                ThreadView(
-                    thread!!,
-                    insets = insets,
-                    navigator = navigator,
-                    createRecord = { sm.createRecord(it) },
-                    deleteRecord = { type, uri -> sm.deleteRecord(type, uri) }
-                )
-            } else {
-                LoadingCircle()
-            }
-
-        }
+        state = threadState,
+        modifier = Modifier,
     )
 }
 
@@ -85,6 +129,7 @@ fun ThreadView(
     navigator: Navigator = LocalNavigator.currentOrThrow,
     createRecord: (RecordUnion) -> Unit = {  },
     deleteRecord: (RecordType, AtUri) -> Unit = { _, _ ->  },
+    resolveHandle: suspend (AtIdentifier) -> Did?,
 ) {
     var repostClicked by remember { mutableStateOf(false)}
     var initialContent: BskyPost? by remember { mutableStateOf(null) }
@@ -96,22 +141,36 @@ fun ThreadView(
     var draft by remember{ mutableStateOf(DraftPost()) }
     val clipboard = getKoin().get<ClipboardManager>()
     val scope = rememberCoroutineScope()
-    ThreadFragment(thread = thread,
-                   contentPadding = insets,
-                   onItemClicked = { navigator.push(ThreadTab(it)) },
-                   onProfileClicked = { navigator.push(ProfileTab(it)) },
-                   onUnClicked = {type, uri ->  deleteRecord(type, uri)},
-                   onRepostClicked = {
-                       initialContent = it
-                       repostClicked = true
-                   },
-                   onReplyClicked = {
-                       initialContent = it
-                       composerRole = ComposerRole.Reply
-                       showComposer = true
-                   },
-                   onMenuClicked = { option, post -> doMenuOperation(option, post, clipboardManager = clipboard) },
-                   onLikeClicked = { createRecord(RecordUnion.Like(it)) },
+    val uriHandler = LocalUriHandler.current
+    ThreadFragment(
+        thread = thread,
+        contentPadding = insets,
+        onItemClicked = ItemClicked(
+            uriHandler = uriHandler,
+            navigator = navigator,
+        ),
+        onProfileClicked = {
+            scope.launch {
+                val did = resolveHandle(it)
+                if(did != null) navigator.push(ProfileTab(did))
+            }
+        },
+        onUnClicked = { type, uri ->  deleteRecord(type, uri) },
+        onRepostClicked = {
+            initialContent = it
+            repostClicked = true
+        },
+        onReplyClicked = {
+            initialContent = it
+            composerRole = ComposerRole.Reply
+            showComposer = true
+        },
+        onMenuClicked = { option, post ->
+            doMenuOperation(option, post,
+                clipboardManager = clipboard,
+                uriHandler = uriHandler
+            ) },
+        onLikeClicked = { createRecord(RecordUnion.Like(it)) },
     )
     if(repostClicked) {
         RepostQueryDialog(
@@ -121,7 +180,6 @@ fun ThreadView(
             },
             onRepost = {
                 repostClicked = false
-                composerRole = ComposerRole.QuotePost
                 initialContent?.let { post ->
                     RecordUnion.Repost(
                         StrongRef(post.uri,post.cid)
@@ -129,13 +187,14 @@ fun ThreadView(
                 }?.let { createRecord(it) }
             },
             onQuotePost = {
+                composerRole = ComposerRole.QuotePost
                 showComposer = true
                 repostClicked = false
             }
         )
     }
     if(showComposer) {
-        val api = getKoin().get<Butterfly>()
+        val agent = getKoin().get<MorphoAgent>()
         BottomSheetPostComposer(
             onDismissRequest = { showComposer = false },
             sheetState = sheetState,
@@ -149,7 +208,7 @@ fun ThreadView(
             },
             onSend = { finishedDraft ->
                 scope.launch(Dispatchers.IO) {
-                    val post = finishedDraft.createPost(api)
+                    val post = finishedDraft.createPost(agent)
                     createRecord(RecordUnion.MakePost(post))
                 }
                 showComposer = false

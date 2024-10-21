@@ -3,7 +3,6 @@ package com.morpho.app.model.bluesky
 import androidx.compose.runtime.Immutable
 import app.bsky.feed.Like
 import app.bsky.feed.Post
-import app.bsky.feed.PostReplyRef
 import app.bsky.feed.Repost
 import app.bsky.graph.Follow
 import app.bsky.notification.ListNotificationsNotification
@@ -207,6 +206,3 @@ fun ListNotificationsNotification.toBskyNotification() : BskyNotification {
     }
 }
 
-fun PostReplyRef.toReply() {
-
-}

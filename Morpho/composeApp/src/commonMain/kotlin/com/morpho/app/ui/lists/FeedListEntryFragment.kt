@@ -12,6 +12,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -38,6 +39,7 @@ fun FeedListEntryFragment(
     var saved by remember { mutableStateOf(hasFeedSaved) }
     var liked by remember { mutableStateOf(feed.likedByMe) }
     var numLikes by remember { mutableStateOf(feed.likeCount)}
+    val uriHandler = LocalUriHandler.current
     Surface (
         shadowElevation = 1.dp,
         tonalElevation =  4.dp,
@@ -138,7 +140,9 @@ fun FeedListEntryFragment(
                     }
                     facetTypes.fastForEach { facetType ->
                         when (facetType) {
-                            is FacetType.ExternalLink -> { openBrowser(facetType.uri.uri) }
+                            is FacetType.ExternalLink -> {
+                                openBrowser(facetType.uri.uri, uriHandler)
+                            }
                             is FacetType.Format -> {  }
                             is FacetType.PollBlueOption -> {}
                             is FacetType.Tag -> { }

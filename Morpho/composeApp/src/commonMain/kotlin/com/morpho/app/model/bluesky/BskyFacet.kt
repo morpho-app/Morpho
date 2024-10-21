@@ -1,5 +1,6 @@
 package com.morpho.app.model.bluesky
 
+import androidx.compose.runtime.Immutable
 import app.bsky.richtext.*
 import com.atproto.label.SelfLabels
 import com.morpho.app.util.didCidToImageLink
@@ -8,53 +9,66 @@ import com.morpho.butterfly.Did
 import com.morpho.butterfly.Handle
 import com.morpho.butterfly.Uri
 import com.morpho.butterfly.model.ReadOnlyList
+import dev.icerock.moko.parcelize.Parcelable
+import dev.icerock.moko.parcelize.Parcelize
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.serialization.Serializable
 
-
+@Parcelize
+@Immutable
 @Serializable
 data class BskyFacet(
     val start: Int,
     val end: Int,
     val facetType: List<FacetType>,
-)
+): Parcelable
 
+
+@Parcelize
+@Immutable
 @Serializable
-sealed interface FacetType {
+sealed interface FacetType: Parcelable {
+    @Immutable
     @Serializable
     data class UserHandleMention(
         val handle: Handle,
     ) : FacetType
 
+    @Immutable
     @Serializable
     data class UserDidMention(
         val did: Did,
     ) : FacetType
 
+    @Immutable
     @Serializable
     data class ExternalLink(
         val uri: Uri,
     ) : FacetType
 
-
+    @Immutable
     @Serializable
     data class Tag(
         val tag: String,
     ) : FacetType
 
+    @Immutable
     @Serializable
     data class PollBlueOption(
         val number: Int,
     ) : FacetType
 
+    @Immutable
     @Serializable
     data object PollBlueQuestion : FacetType
 
+    @Immutable
     @Serializable
     data class Format(
         val format: RichTextFormat
     ) : FacetType
 
+    @Immutable
     @Serializable
     data class BlueMoji(
         val did: Did,
@@ -65,6 +79,7 @@ sealed interface FacetType {
         val labels: List<BskyLabel>? = null,
     ) : FacetType
 
+    @Immutable
     @Serializable
     data class UnknownFacet(
         val value: String,
@@ -72,22 +87,32 @@ sealed interface FacetType {
 
 }
 
+@Parcelize
+@Immutable
 @Serializable
-sealed interface BlueMojiImageLink {
+sealed interface BlueMojiImageLink: Parcelable {
     val url: String
     val apng: Boolean
     val lottie: Boolean
 
+    @Immutable
+    @Serializable
     data class Png(
         override val url: String,
         override val apng: Boolean = false,
         override val lottie: Boolean = false
     ) : BlueMojiImageLink
+
+    @Immutable
+    @Serializable
     data class Webp(
         override val url: String,
         override val apng: Boolean = false,
         override val lottie: Boolean = false
     ) : BlueMojiImageLink
+
+    @Immutable
+    @Serializable
     data class Gif(
         override val url: String,
         override val apng: Boolean = false,
@@ -96,6 +121,8 @@ sealed interface BlueMojiImageLink {
 
 }
 
+
+@Immutable
 @Serializable
 enum class RichTextFormat {
     BOLD,
