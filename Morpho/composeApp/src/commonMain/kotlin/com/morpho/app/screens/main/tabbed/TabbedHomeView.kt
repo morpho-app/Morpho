@@ -265,13 +265,13 @@ fun HomeTabRow(
             SecondaryScrollableTabRow(
                 selectedTabIndex = selectedTabIndex,
                 edgePadding = 10.dp,
-                indicator = { tabPositions ->
-                    if(tabPositions.isNotEmpty()) {
-                        TabRowDefaults.SecondaryIndicator(
-                            Modifier.tabIndicatorOffset(tabPositions[max(0, min(selectedTabIndex, tabs.lastIndex))])
-                        )
-                    }
-                },
+//                indicator = { tabPositions ->
+//                    if(tabPositions.isNotEmpty()) {
+//                        TabRowDefaults.SecondaryIndicator(
+//                            Modifier.tabIndicatorOffset(tabPositions[max(0, min(selectedTabIndex, tabs.lastIndex))])
+//                        )
+//                    }
+//                },
                 divider = {},
                 //modifier = Modifier.offset(y = 8.dp),
             ) {

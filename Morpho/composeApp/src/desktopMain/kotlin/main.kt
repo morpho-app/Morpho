@@ -25,6 +25,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -58,6 +59,8 @@ import com.morpho.app.getPlatformStorageDir
 import com.morpho.app.ui.theme.MorphoTheme
 import com.morpho.butterfly.auth.SessionRepository
 import com.morpho.butterfly.auth.UserRepository
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.mapLatest
 import morpho.composeapp.generated.resources.Res
 import morpho.composeapp.generated.resources.morpho_icon_transparent
 import org.jetbrains.compose.resources.ExperimentalResourceApi
@@ -81,7 +84,9 @@ fun getLogger(): Logger = LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME)
 
 fun getLogger(name: String): Logger = LoggerFactory.getLogger(name)
 
-@OptIn(KoinExperimentalAPI::class, ExperimentalResourceApi::class, ExperimentalVoyagerApi::class)
+@OptIn(KoinExperimentalAPI::class, ExperimentalResourceApi::class, ExperimentalVoyagerApi::class,
+    ExperimentalCoroutinesApi::class
+)
 fun main() = application {
     StatusPrinter2().print(LoggerFactory.getILoggerFactory() as LoggerContext)
     KmLogging.setLoggers(PlatformLogger(VariableLogLevel(LogLevel.Verbose)))
@@ -108,11 +113,7 @@ fun main() = application {
 
     Window(
         onCloseRequest = {
-            // possible hack to catch the exception on exit
-            try { (::exitApplication)() } catch (e: Exception) {
-                e.printStackTrace()
-
-            }
+            (::exitApplication)()
         },
         state = windowState,
         title = "Morpho",
@@ -120,21 +121,25 @@ fun main() = application {
         transparent = undecorated,
         icon = painterResource(Res.drawable.morpho_icon_transparent)
     ) {
-        val darkTheme by derivedStateOf { when(morphoPrefs.value.darkMode){
+        val darkTheme by morphoPrefs.mapLatest {
+            when(it.darkMode){
+                DarkModeSetting.SYSTEM -> isSystemInDarkTheme()
+                DarkModeSetting.LIGHT -> false
+                DarkModeSetting.DARK -> true
+                null -> isSystemInDarkTheme()
+            }
+        }.collectAsState(when(morphoPrefs.value.darkMode){
             DarkModeSetting.SYSTEM -> isSystemInDarkTheme()
             DarkModeSetting.LIGHT -> false
             DarkModeSetting.DARK -> true
             null -> isSystemInDarkTheme()
-        } }
-        MorphoTheme(darkTheme = darkTheme) {
+        })
+        MorphoTheme(darkTheme = darkTheme, dynamicColor = false) {
             if(undecorated) {
                 MorphoWindow(
                     windowState = windowState,
                     onCloseRequest = {
-                        try { (::exitApplication)() } catch (e: Exception) {
-                            e.printStackTrace()
-
-                        }
+                        (::exitApplication)()
                     }
                 ) {
                     App()

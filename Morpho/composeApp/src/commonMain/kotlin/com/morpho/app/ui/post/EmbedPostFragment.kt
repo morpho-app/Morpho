@@ -2,6 +2,7 @@ package com.morpho.app.ui.post
 
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
@@ -22,7 +23,6 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
 import com.morpho.app.model.bluesky.*
-import com.morpho.app.ui.elements.MorphoHighlightIndication
 import com.morpho.app.ui.elements.OutlinedAvatar
 import com.morpho.app.ui.elements.RichTextElement
 import com.morpho.app.ui.elements.WrappedColumn
@@ -47,7 +47,7 @@ fun EmbedPostFragment(
     var hidePost by rememberSaveable { mutableStateOf(post.author.mutedByMe) }
     val muted = rememberSaveable { post.author.mutedByMe }
     val interactionSource = remember { MutableInteractionSource() }
-    val indication = remember { MorphoHighlightIndication() }
+    val indication = LocalIndication.current
     val uriHandler = LocalUriHandler.current
     WrappedColumn(
         modifier

@@ -16,6 +16,7 @@ package com.morpho.app.ui.elements
  * limitations under the License.
  */
 
+import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
@@ -75,7 +76,7 @@ fun OutlinedAvatar(
         AvatarShape.Corner -> roundedTopLBotR.small
     }
     val interactionSource = remember { MutableInteractionSource() }
-    val indication = remember { MorphoHighlightIndication() }
+    val indication = LocalIndication.current
     val pxSize = LocalDensity.current.run { (size-outlineSize).toPx()*2 }.toInt()
     val sB = when(avatarShape) {
         AvatarShape.Circle -> CircleShape.createOutline(

@@ -62,7 +62,7 @@ inline fun BottomSheetPostComposer(
                 if (!sheetState.isVisible) { onDismissRequest() } } },
         containerColor = MaterialTheme.colorScheme.background,
         sheetState = sheetState,
-        windowInsets = WindowInsets.navigationBars.union(WindowInsets.ime),
+        contentWindowInsets = { WindowInsets.navigationBars.union(WindowInsets.ime) },
 
         ){
         PostComposer(

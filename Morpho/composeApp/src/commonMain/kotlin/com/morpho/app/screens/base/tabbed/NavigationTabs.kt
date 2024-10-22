@@ -342,6 +342,9 @@ data object MyProfileTab: TabScreen {
 
 }
 
+@Parcelize
+@Immutable
+@Serializable
 data object SettingsTab: TabScreen {
     override val key: ScreenKey
         get() = "SettingsTab${uniqueScreenKey}"
@@ -377,6 +380,9 @@ data object SettingsTab: TabScreen {
         }
 }
 
+@Parcelize
+@Immutable
+@Serializable
 data class FeedPageTab(
     val feed: FeedGenerator,
 ): TabScreen {
@@ -403,6 +409,9 @@ data class FeedPageTab(
         }
 }
 
+@Parcelize
+@Immutable
+@Serializable
 data class UserListPageTab(
     val list: UserList,
 ): TabScreen {

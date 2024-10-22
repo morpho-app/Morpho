@@ -71,13 +71,13 @@ fun SkylineTopBar(
                 selectedTabIndex = selectedTab,
                 modifier = modifier.offset(y = (-8).dp, x = 4.dp ),
                 edgePadding = 10.dp,
-                indicator = { tabPositions ->
-                    if(tabPositions.isNotEmpty()) {
-                        TabRowDefaults.SecondaryIndicator(
-                            Modifier.tabIndicatorOffset(tabPositions[max(0, min(selectedTab, tabList.lastIndex))])
-                        )
-                    }
-                },
+//                indicator = { tabPositions ->
+//                    if(tabPositions.isNotEmpty()) {
+//                        TabRowDefaults.SecondaryIndicator(
+//                            Modifier.tabIndicatorOffset(tabPositions[max(0, min(selectedTab, tabList.lastIndex))])
+//                        )
+//                    }
+//                },
             ) {
                 tabList.forEachIndexed { index, tab ->
                     Tab(selected = selectedTab == index,

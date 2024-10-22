@@ -12,8 +12,8 @@ androidx-espresso-core = "3.6.1"
 androidx-material = "1.12.0"
 androidx-test-junit = "1.2.1"
 appdirs = "1.2.2"
-compose = "1.6.8"
-compose-plugin = "1.6.11"
+compose = "1.6.7"
+compose-plugin = "1.7.0"
 constraintlayoutComposeMultiplatform = "0.4.0"
 datastorePreferencesCore = "1.1.1"
 imageLoader = "1.7.8"
@@ -71,7 +71,7 @@ androidx-paging-runtime = { module = "androidx.paging:paging-runtime", version.r
 androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "androidx-espresso-core" }
 androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "androidx-appcompat" }
 androidx-material = { group = "com.google.android.material", name = "material", version.ref = "androidx-material" }
-androidx-material3 = { group = "com.google.android.material3", name = "material" }
+androidx-material3 = { group = "com.google.android.material3", name = "material", version.ref = "androidx-material" }
 androidx-constraintlayout = { group = "androidx.constraintlayout", name = "constraintlayout", version.ref = "androidx-constraintlayout" }
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "androidx-activityCompose" }
 appdirs = { module = "net.harawata:appdirs", version.ref = "appdirs" }

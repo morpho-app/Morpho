@@ -1,5 +1,6 @@
 package com.morpho.app.ui.profile
 
+import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Column
@@ -28,7 +29,6 @@ import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import com.morpho.app.model.bluesky.DetailedProfile
 import com.morpho.app.ui.elements.AvatarShape
-import com.morpho.app.ui.elements.MorphoHighlightIndication
 import com.morpho.app.ui.elements.OutlinedAvatar
 import com.morpho.app.ui.elements.RichTextElement
 import com.morpho.app.ui.elements.WrappedColumn
@@ -48,7 +48,7 @@ fun CompactProfileFragment(
     ),
 ) {
     val interactionSource = remember { MutableInteractionSource() }
-    val indication = remember { MorphoHighlightIndication() }
+    val indication = LocalIndication.current
     WrappedColumn(modifier = modifier.fillMaxWidth()) {
         Surface (
             shadowElevation = if (elevate ) 2.dp else 0.dp,

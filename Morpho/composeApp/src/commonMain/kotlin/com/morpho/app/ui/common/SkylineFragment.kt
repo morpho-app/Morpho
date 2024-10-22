@@ -225,9 +225,9 @@ fun SkylineFragment (
                 else -> {
                     items(
                         count = pager.itemCount,
-                        key = { pager.itemKey {
+                        key = pager.itemKey {
                             it.hashCode()
-                        }},
+                        },
                         contentType = {
                             MorphoDataItem
                         }

@@ -90,7 +90,7 @@ fun TabScreen.NotificationViewContent(
     val pager = sm.notifications.collectAsLazyPagingItems()
     var uiState by rememberSaveable { mutableStateOf(NotificationsUIState()) }
     val toMarkRead = mutableStateListOf<AtUri>()
-
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     TabbedScreenScaffold(
         navBar = { navBar(navigator) },
@@ -109,7 +109,7 @@ fun TabScreen.NotificationViewContent(
             var initialContent: BskyPost? by remember { mutableStateOf(null) }
             var showComposer by remember { mutableStateOf(false)}
             var composerRole by remember { mutableStateOf(ComposerRole.StandalonePost)}
-            val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
             // Probably pull this farther up,
             //      but this means if you don't explicitly cancel you don't lose the post
             var draft by remember{ mutableStateOf(DraftPost()) }
@@ -170,9 +170,9 @@ fun TabScreen.NotificationViewContent(
 
                             items(
                                 count = pager.itemCount,
-                                key = { pager.itemKey {
+                                key =  pager.itemKey {
                                     it.hashCode()
-                                }},
+                                },
                                 contentType = {
                                     NotificationsListItem
                                 }

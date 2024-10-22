@@ -2,6 +2,7 @@ package com.morpho.app.ui.post
 
 
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -52,7 +53,6 @@ import com.morpho.app.ui.common.OnPostClicked
 import com.morpho.app.ui.elements.AvatarShape
 import com.morpho.app.ui.elements.ContentHider
 import com.morpho.app.ui.elements.MenuOptions
-import com.morpho.app.ui.elements.MorphoHighlightIndication
 import com.morpho.app.ui.elements.OutlinedAvatar
 import com.morpho.app.ui.elements.RichTextElement
 import com.morpho.app.ui.elements.WrappedColumn
@@ -119,7 +119,7 @@ fun PostFragment(
         }}
 
         val interactionSource = remember { MutableInteractionSource() }
-        val indication = remember { MorphoHighlightIndication() }
+        val indication = LocalIndication.current
         val bgColor = if (role == PostFragmentRole.PrimaryThreadRoot) {
             MaterialTheme.colorScheme.background
         } else {
