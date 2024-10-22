@@ -14,6 +14,7 @@ plugins {
     alias(libs.plugins.kotlinParcelize).apply(false)
     alias(libs.plugins.androidApplication).apply(false)
     alias(libs.plugins.androidLibrary).apply(false)
+    id("com.codingfeline.buildkonfig") version "0.15.2" apply false
 
 }
 

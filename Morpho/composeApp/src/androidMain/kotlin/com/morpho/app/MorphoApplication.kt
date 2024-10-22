@@ -3,12 +3,11 @@ package com.morpho.app
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.DefaultLifecycleObserver
+import com.gu.toolargetool.TooLargeTool
+import com.morpho.app.data.MorphoAgent
 import com.morpho.app.data.PreferencesRepository
 import com.morpho.app.di.appModule
-import com.morpho.app.di.dataModule
-import com.morpho.app.di.storageModule
-import com.morpho.butterfly.AtIdentifier
-import com.morpho.butterfly.Butterfly
+
 import com.morpho.butterfly.auth.SessionRepository
 import com.morpho.butterfly.auth.UserRepository
 import org.koin.android.annotation.KoinViewModel
@@ -27,29 +26,24 @@ class AndroidMainViewModel(app: Application): AndroidViewModel(app), DefaultLife
     val sessionRepository = app.getKoin().get<SessionRepository>()
     val userRepository = app.getKoin().get<UserRepository>()
 
-    val api = app.getKoin().get<Butterfly>()
+    val agent = app.getKoin().get<MorphoAgent>()
 }
 
 class MorphoApplication : Application() {
     override fun onCreate() {
-
+        TooLargeTool.startLogging(this);
 
         val koin = startKoin {
             androidContext(this@MorphoApplication)
             androidLogger()
-            modules(androidModule, appModule, storageModule, dataModule)
+            modules(androidModule, appModule)//, storageModule, dataModule)
         }.koin
-        val sessionRepository = koin.get<SessionRepository> { parametersOf(cacheDir.path.toString()) }
-        val userRepository = koin.get<UserRepository> { parametersOf(cacheDir.path.toString()) }
-        val prefs = koin.get<PreferencesRepository> { parametersOf(cacheDir.path.toString()) }
-        val id: AtIdentifier? = if(sessionRepository.auth?.did != null) {
-            sessionRepository.auth?.did
-        } else if (sessionRepository.auth?.handle != null) {
-            sessionRepository.auth?.handle
-        } else {
-            userRepository.firstUser()?.id
-        }
-        val api = koin.get<Butterfly> { parametersOf(id) }
+
+        val storageDir = getPlatformStorageDir(filesDir.path.toString())
+        koin.get<SessionRepository> { parametersOf(storageDir) }
+        koin.get<UserRepository> { parametersOf(storageDir) }
+        koin.get<PreferencesRepository> { parametersOf(storageDir) }
+        koin.get<MorphoAgent>()
         super.onCreate()
     }
 }

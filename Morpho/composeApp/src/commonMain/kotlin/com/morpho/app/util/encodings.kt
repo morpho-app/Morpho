@@ -36,7 +36,7 @@ fun Byte.isSingleByte(): Boolean {
 }
 
 fun String.utf16FacetIndex(utf8: ByteString, start: Int, end: Int): Pair<Int, Int> {
-    val utf8FacetText = utf8.substring(start, end)
+    val utf8FacetText = utf8.substring(max(0, start), min(utf8.size-1, end))
     //println("utf8FacetText: '${utf8FacetText.utf8()}'")
     //println("utf8Start: ${utf8.indexOf(utf8FacetText)}, utf8End: ${utf8.indexOf(utf8FacetText) + utf8FacetText.size}")
     val utf16FacetText = utf8FacetText.utf8()
@@ -48,7 +48,7 @@ fun String.utf16FacetIndex(utf8: ByteString, start: Int, end: Int): Pair<Int, In
 
 fun String.utf16FacetIndex(start: Int, end: Int): Pair<Int, Int> {
     val utf8 = this.encodeUtf8()
-    val utf8FacetText = utf8.substring(start, end-1)
+    val utf8FacetText = utf8.substring(max(0, start), min(utf8.size-1, end))
     //println("utf8FacetText: '${utf8FacetText.utf8()}'")
     //println("utf8Start: ${utf8.indexOf(utf8FacetText)}, utf8End: ${utf8.indexOf(utf8FacetText) + utf8FacetText.size}")
     val utf16FacetText = utf8FacetText.utf8()

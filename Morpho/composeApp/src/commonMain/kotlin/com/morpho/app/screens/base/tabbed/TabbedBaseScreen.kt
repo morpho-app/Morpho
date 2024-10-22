@@ -1,7 +1,15 @@
 package com.morpho.app.screens.base.tabbed
 
 import androidx.compose.foundation.layout.size
-import androidx.compose.material3.*
+import androidx.compose.foundation.layout.systemBarsPadding
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.PrimaryTabRow
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRowDefaults
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -12,36 +20,42 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import cafe.adriel.voyager.core.annotation.ExperimentalVoyagerApi
 import cafe.adriel.voyager.core.screen.ScreenKey
+import cafe.adriel.voyager.koin.koinNavigatorScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.Navigator
+import cafe.adriel.voyager.navigator.NavigatorDisposeBehavior
 import cafe.adriel.voyager.navigator.currentOrThrow
 import cafe.adriel.voyager.navigator.tab.Tab
 import cafe.adriel.voyager.navigator.tab.TabNavigator
 import cafe.adriel.voyager.navigator.tab.TabOptions
-import com.morpho.app.model.uidata.BskyDataService
-import com.morpho.app.model.uidata.BskyNotificationService
-import com.morpho.app.screens.main.tabbed.SlideTabTransition
+import com.morpho.app.screens.main.tabbed.TabbedMainScreenModel
+import com.morpho.app.ui.common.SlideTabTransition
 import com.morpho.app.ui.theme.roundedTopR
+import dev.icerock.moko.parcelize.Parcelable
+import dev.icerock.moko.parcelize.Parcelize
 import io.ktor.util.reflect.instanceOf
-import org.koin.compose.koinInject
+import kotlinx.serialization.Serializable
 import kotlin.math.min
 
-
-data object TabbedBaseScreen: Tab {
+@Parcelize
+@Serializable
+data object TabbedBaseScreen: Tab, Parcelable {
 
     override val key: ScreenKey = "TabbedBaseScreen_${hashCode()}"
 
-    @OptIn(ExperimentalMaterial3Api::class)
+    @OptIn(ExperimentalMaterial3Api::class, ExperimentalVoyagerApi::class)
     @Composable
     override fun Content() {
         Navigator(
             HomeTab("startHome"),
+            disposeBehavior = NavigatorDisposeBehavior(
+                disposeNestedNavigators = false
+            )
         ) { navigator ->
-            /*LaunchedEffect(Unit) { navigator.replaceAll(HomeTab("startHome2")) }*/
             SlideTabTransition(navigator)
         }
-
     }
 
     override val options: TabOptions
@@ -72,14 +86,15 @@ fun TabNavigationItem(
             when {
                 nav.lastItem.key == tab.key -> return@Tab
                 newIndex == 0 -> nav.replaceAll(tab)
+                nav.items.contains(tab) -> nav.popUntil { it == tab }
                 else -> nav.push(tab)
             }
         },
         icon = {
             when (tab) {
                 is NotificationsTab -> {
-                    val notifService = koinInject<BskyNotificationService>()
-                    val unread by notifService.unreadCountFlow().collectAsState(0)
+                    val sm = navigator.koinNavigatorScreenModel<TabbedMainScreenModel>()
+                    val unread by sm.unreadNotificationsCount.collectAsState(0)
                     BadgedBox(
                         badge = {
                             if (unread > 0) {
@@ -100,11 +115,9 @@ fun TabNavigationItem(
                 }
 
                 is HomeTab -> {
-                    val dataService = koinInject<BskyDataService>()
-                    val hasNew by dataService.checkIfNewTimeline().collectAsState(false)
                     BadgedBox(
                         badge = {
-                            if (hasNew) {
+                            if (false) { /// TODO: put this back in later
                                 Badge(
                                     modifier = Modifier.size(4.dp),
                                     containerColor = MaterialTheme.colorScheme.secondary
@@ -133,7 +146,7 @@ fun TabbedNavBar(
         selectedTabIndex = min(selectedTab, 4),
         modifier = Modifier.clip(
             roundedTopR.medium
-        ),
+        ).systemBarsPadding(),
         indicator = {
             if (selectedTab <= 4) {
                 TabRowDefaults.PrimaryIndicator(

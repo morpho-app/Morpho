@@ -5,6 +5,8 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Immutable
+import androidx.compose.ui.platform.UriHandler
 import com.morpho.app.model.bluesky.BskyPost
 import com.morpho.app.ui.common.sharePost
 import com.morpho.app.util.ClipboardManager
@@ -12,8 +14,10 @@ import com.morpho.app.util.json
 import com.morpho.app.util.openBrowser
 import com.morpho.butterfly.AtUri
 import com.morpho.butterfly.Language
+import kotlinx.serialization.Serializable
 
-
+@Immutable
+@Serializable
 enum class MenuOptions(val text: String) {
     Translate("Translate"),
     Share("Share"),
@@ -42,10 +46,14 @@ inline fun doMenuOperation(
     reportCallback: (AtUri) -> Unit = {},
     muteCallback: (AtUri) -> Unit = {},
     clipboardManager: ClipboardManager,
+    uriHandler: UriHandler,
 ) {
     when(options) {
         MenuOptions.Translate -> run {
-            openBrowser("https://translate.google.com/?sl=auto&tl=${language}&text=${post.text}&op=translate")
+            openBrowser(
+                "https://translate.google.com/?sl=auto&tl=${language}&text=${post.text}&op=translate",
+                uriHandler
+            )
         }
         MenuOptions.Share -> { sharePost(post) }
         MenuOptions.MuteThread -> {

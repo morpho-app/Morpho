@@ -4,6 +4,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import cafe.adriel.voyager.core.model.screenModelScope
+import com.morpho.app.data.ContentLabelService
+import com.morpho.app.data.MorphoAgent
 import com.morpho.app.model.uistate.AuthState
 import com.morpho.app.model.uistate.LoginState
 import com.morpho.app.model.uistate.UiLoadingState
@@ -15,7 +17,10 @@ import com.morpho.butterfly.auth.Server
 import kotlinx.coroutines.launch
 import org.lighthousegames.logging.logging
 
-class LoginScreenModel: BaseScreenModel() {
+class LoginScreenModel(
+    agent: MorphoAgent,
+    labelService: ContentLabelService,
+): BaseScreenModel(agent, labelService) {
     var loginState: LoginState by mutableStateOf(LoginState())
 
     var email by mutableStateOf("")
@@ -39,7 +44,7 @@ class LoginScreenModel: BaseScreenModel() {
             if(checkValidUrl(service) != null) Server.CustomServer(service) else Server.BlueskySocial
         }
         screenModelScope.launch {
-            api.makeLoginRequest(credentials, server).onSuccess {
+            agent.login(credentials, server).onSuccess {
                 loginState = loginState.copy(
                     loadingState = UiLoadingState.Idle,
                     authState = AuthState.Success(it)

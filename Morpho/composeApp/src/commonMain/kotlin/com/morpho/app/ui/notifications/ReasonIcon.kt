@@ -2,10 +2,7 @@ package com.morpho.app.ui.notifications
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Reply
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.PersonAdd
-import androidx.compose.material.icons.filled.Repeat
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -45,6 +42,11 @@ fun ReasonIcon(
         ListNotificationsReason.QUOTE -> Icon(
             imageVector = Icons.Default.Repeat,
             contentDescription = "Quote",
+            modifier = modifier
+        )
+        ListNotificationsReason.PLACEHOLDER -> Icon(
+            imageVector = Icons.Default.Download,
+            contentDescription = "Placeholder",
             modifier = modifier
         )
     }

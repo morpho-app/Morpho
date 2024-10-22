@@ -87,6 +87,55 @@ fun PostActions(
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+fun DummyPostActions(
+    modifier: Modifier = Modifier,
+    showMenu: Boolean = true,
+) {
+    var menuExpanded by remember { mutableStateOf(false) }
+    Row(
+        horizontalArrangement = Arrangement.SpaceEvenly
+    ) {
+        PostAction(
+            parameter = 0,
+            iconNormal = Icons.Outlined.ChatBubbleOutline,
+            contentDescription = "Reply ",
+
+            onUnClicked = {  },
+        )
+        PostAction(
+            parameter = 0,
+            iconNormal = Icons.Outlined.Repeat,
+            contentDescription = "Repost ",
+            active = false
+        )
+        PostAction(
+            parameter = 0,
+            iconNormal = Icons.Outlined.FavoriteBorder,
+            iconActive = Icons.Default.Favorite,
+            contentDescription = "Like ",
+            activeColor = Color(0xFFEC7B9E),
+            active = false
+        )
+        if (showMenu) {
+
+            PostAction(
+                parameter = -1,
+                iconNormal = Icons.Default.MoreHoriz,
+                contentDescription = "More ",
+                onClicked = {
+                    menuExpanded = true
+                },
+                onUnClicked = {
+                    menuExpanded = true
+                },
+            )
+        }
+
+    }
+}
+
 
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -103,7 +152,7 @@ inline fun PostAction(
     active: Boolean = false,
 ) {
     var clicked by rememberSaveable { mutableStateOf(active) }
-    val inactiveColor = MaterialTheme.colorScheme.onSurface
+    val inactiveColor = MaterialTheme.colorScheme.onSurfaceVariant
     var num by rememberSaveable { mutableLongStateOf(parameter) }
     val color = remember { mutableStateOf(if (clicked) activeColor else inactiveColor) }
     val icon = remember { mutableStateOf(if (clicked) iconActive else iconNormal) }
@@ -123,8 +172,8 @@ inline fun PostAction(
                 onUnClicked()
             }
         },
-        modifier = Modifier
-            .padding(0.dp),
+        shape = MaterialTheme.shapes.small,
+        modifier = modifier,
         contentPadding = PaddingValues(0.dp)
     ) {
         Icon(
@@ -135,10 +184,11 @@ inline fun PostAction(
                 .size(20.dp)
                 .padding(0.dp)
         )
+
         Text(
-            text =  if (num > 0) num.toString() else "",
+            text =  if (num > 0) "$num" else "",
             color = color.value,
-            modifier = Modifier.padding(start = 6.dp)//.offset(y=(-1).dp)
+            modifier = Modifier.padding(start = 6.dp)
         )
     }
 }

@@ -5,12 +5,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.text.InlineTextContent
 import androidx.compose.foundation.text.appendInlineContent
-import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.PointerIcon
+import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.*
 import androidx.compose.ui.text.font.FontStyle
@@ -28,6 +29,8 @@ import coil3.request.crossfade
 import com.morpho.app.model.bluesky.BskyFacet
 import com.morpho.app.model.bluesky.FacetType
 import com.morpho.app.model.bluesky.RichTextFormat.*
+import com.morpho.app.util.BlueskyText
+import com.morpho.app.util.makeBlueskyText
 import com.morpho.app.util.utf16FacetIndex
 import kotlinx.collections.immutable.persistentListOf
 import okio.ByteString.Companion.encodeUtf8
@@ -38,16 +41,25 @@ fun RichTextElement(
     text: String,
     modifier: Modifier = Modifier,
     facets: List<BskyFacet> = persistentListOf(),
-    onClick: (List<FacetType>) -> Unit = {},
     maxLines: Int = 20,
-
-    ) {
-    val utf8Text = text.encodeUtf8()
-    val splitText = text.split("◌").listIterator() // special BlueMoji character
+    onClick: (List<FacetType>) -> Unit = {},
+) {
+    val layoutResult = remember { mutableStateOf<TextLayoutResult?>(null) }
+    val bskyText = if(facets.isEmpty()) {
+        makeBlueskyText(text)
+    } else BlueskyText(text, facets)
+    val utf8Text = bskyText.text.encodeUtf8()
+    val splitText = bskyText.text.split("◌").listIterator() // special BlueMoji character
     val formattedText = buildAnnotatedString {
         pushStyle(SpanStyle(MaterialTheme.colorScheme.onSurface))
+        pushStyle(SpanStyle(
+            fontStyle = MaterialTheme.typography.bodyMedium.fontStyle,
+            fontWeight = MaterialTheme.typography.bodyMedium.fontWeight,//FontWeight(275),
+            fontSize = MaterialTheme.typography.bodyMedium.fontSize,
+        ))
         append(splitText.next())
-        facets.fastForEach { facet ->
+
+        bskyText.facets.fastForEach { facet ->
             val bounds = text.utf16FacetIndex(utf8Text, facet.start, facet.end)
             val start = bounds.first
             val end = bounds.second
@@ -56,7 +68,7 @@ fun RichTextElement(
                     is FacetType.ExternalLink -> {
                         addStringAnnotation(tag = "Link", facetType.uri.uri, start, end)
                         addStyle(
-                            style = SpanStyle(MaterialTheme.colorScheme.tertiary),
+                            style = SpanStyle(MaterialTheme.colorScheme.tertiary, fontWeight = FontWeight.Normal),
                             start = start,
                             end = end
                         )
@@ -64,7 +76,7 @@ fun RichTextElement(
                     is FacetType.PollBlueOption -> {
                         addStringAnnotation(tag = "PollBlue", facetType.number.toString(), start, end)
                         addStyle(
-                            style = SpanStyle(MaterialTheme.colorScheme.tertiary),
+                            style = SpanStyle(MaterialTheme.colorScheme.tertiary, fontWeight = FontWeight.Normal),
                             start = start,
                             end = end
                         )
@@ -73,7 +85,7 @@ fun RichTextElement(
                     is FacetType.Tag -> {
                         addStringAnnotation(tag = "Tag", facetType.tag, start, end)
                         addStyle(
-                            style = SpanStyle(MaterialTheme.colorScheme.tertiary),
+                            style = SpanStyle(MaterialTheme.colorScheme.tertiary, fontWeight = FontWeight.Normal),
                             start = start,
                             end = end
                         )
@@ -81,7 +93,7 @@ fun RichTextElement(
                     is FacetType.UserDidMention -> {
                         addStringAnnotation(tag = "Mention", facetType.did.did, start, end)
                         addStyle(
-                            style = SpanStyle(MaterialTheme.colorScheme.tertiary),
+                            style = SpanStyle(MaterialTheme.colorScheme.tertiary, fontWeight = FontWeight.Normal),
                             start = start,
                             end = end
                         )
@@ -89,7 +101,7 @@ fun RichTextElement(
                     is FacetType.UserHandleMention -> {
                         addStringAnnotation(tag = "Mention", facetType.handle.handle, start, end)
                         addStyle(
-                            style = SpanStyle(MaterialTheme.colorScheme.tertiary),
+                            style = SpanStyle(MaterialTheme.colorScheme.tertiary, fontWeight = FontWeight.Normal),
                             start = start,
                             end = end
                         )
@@ -151,7 +163,7 @@ fun RichTextElement(
 
                     else -> {
                         Pair("", InlineTextContent(
-                            Placeholder(1.sp, 1.sp, PlaceholderVerticalAlign.TextCenter)
+                            Placeholder(0.sp, 0.sp, PlaceholderVerticalAlign.TextCenter)
                         ){})
                     }
                 }
@@ -160,30 +172,40 @@ fun RichTextElement(
         }.flatten().filter { it.first.isNotEmpty() }.toMap()
 
     }
-    SelectionContainer(
-        modifier = Modifier.padding(vertical = 6.dp, horizontal = 2.dp)
-    ) {
-        val layoutResult = remember { mutableStateOf<TextLayoutResult?>(null) }
-        val pressIndicator = Modifier.pointerInput(onClick) {
-            detectTapGestures { pos ->
-                layoutResult.value?.let { layoutResult ->
-                    val offset = layoutResult.getOffsetForPosition(pos)
-                    facets.forEach {
-                        if (it.start <= offset && offset <= it.end) {
-                            return@detectTapGestures onClick(it.facetType)
-                        }
+
+
+    val pressIndicator = Modifier
+        .pointerHoverIcon(PointerIcon.Hand)
+        .pointerInput(onClick) {
+
+        detectTapGestures(
+            onLongPress = {
+
+            }
+        ) { pos ->
+            layoutResult.value?.let { layoutResult ->
+                val offset = layoutResult.getOffsetForPosition(pos)
+                facets.forEach {
+                    val extents = formattedText.text.utf16FacetIndex(it.start, it.end)
+                    val start = extents.first
+                    val end = extents.second
+                    if (offset in start..end) {
+                        return@detectTapGestures onClick(it.facetType)
                     }
-                    onClick(listOf())
                 }
+                onClick(listOf())
             }
         }
-        BasicText(
-            text = formattedText,
-            inlineContent = inlineContentMap,
-            maxLines = maxLines, // Sorry @retr0.id, no more 200 line posts.
-            overflow = TextOverflow.Ellipsis,
-            modifier = modifier.then(pressIndicator),
-        )
     }
+    BasicText(
+        text = formattedText,
+        inlineContent = inlineContentMap,
+        maxLines = maxLines, // Sorry @retr0.id, no more 200 line posts.
+        overflow = TextOverflow.Ellipsis,
+        onTextLayout = { layoutResult.value = it },
+        modifier = modifier.then(pressIndicator)
+            .padding(vertical = 6.dp, horizontal = 2.dp),
+    )
+
 
 }

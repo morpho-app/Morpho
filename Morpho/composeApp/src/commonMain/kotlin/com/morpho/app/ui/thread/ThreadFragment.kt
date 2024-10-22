@@ -11,21 +11,26 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
+import cafe.adriel.voyager.navigator.LocalNavigator
+import cafe.adriel.voyager.navigator.currentOrThrow
 import com.atproto.repo.StrongRef
 import com.morpho.app.model.bluesky.BskyPost
 import com.morpho.app.model.bluesky.BskyPostThread
 import com.morpho.app.model.bluesky.ThreadPost
-import com.morpho.app.model.uidata.ContentHandling
 import com.morpho.app.ui.common.OnPostClicked
 import com.morpho.app.ui.elements.MenuOptions
 import com.morpho.app.ui.post.BlockedPostFragment
 import com.morpho.app.ui.post.FullPostFragment
 import com.morpho.app.ui.post.NotFoundPostFragment
 import com.morpho.app.ui.post.PostFragmentRole
+import com.morpho.app.ui.utils.ItemClicked
+import com.morpho.app.ui.utils.OnItemClicked
 import com.morpho.butterfly.AtIdentifier
 import com.morpho.butterfly.AtUri
+import com.morpho.butterfly.ContentHandling
 import com.morpho.butterfly.model.RecordType
 
 
@@ -40,7 +45,10 @@ fun ThreadFragment(
             it.hashCode().toLong()
         }
     },
-    onItemClicked: OnPostClicked = {},
+    onItemClicked: OnItemClicked = ItemClicked(
+        uriHandler = LocalUriHandler.current,
+        navigator = LocalNavigator.currentOrThrow,
+    ),
     onProfileClicked: (AtIdentifier) -> Unit = {},
     onReplyClicked: (BskyPost) -> Unit = { },
     onRepostClicked: (BskyPost) -> Unit = { },
@@ -51,7 +59,7 @@ fun ThreadFragment(
     listState: LazyListState = rememberLazyListState(),
     contentPadding: PaddingValues = PaddingValues(0.dp)
 ) {
-    val threadPost = remember { ThreadPost.ViewablePost(thread.post, thread.replies) }
+    val threadPost = remember { ThreadPost.ViewablePost(thread.post, null, thread.replies) }
     val hasReplies = rememberSaveable { threadPost.replies.isNotEmpty()}
     val rootIndex = remember { thread.parents.size }
 
@@ -74,7 +82,7 @@ fun ThreadFragment(
                         item(key = threadPost.post.cid) {
                             FullPostFragment(
                                 post = root.post,
-                                onItemClicked = {onItemClicked(it) },
+                                onItemClicked = onItemClicked,
                                 onProfileClicked = { onProfileClicked(it) },
                                 onUnClicked =  { type,uri-> onUnClicked(type,uri) },
                                 onRepostClicked = { onRepostClicked(it) },
@@ -105,6 +113,7 @@ fun ThreadFragment(
                                     indentLevel = 1,
                                     reason = reason,
                                     elevate = true,
+                                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp),
                                     onItemClicked = onItemClicked,
                                     onProfileClicked = onProfileClicked,
                                     onUnClicked = onUnClicked,
@@ -119,6 +128,7 @@ fun ThreadFragment(
                         item {
                             ThreadItem(
                                 item = threadPost,
+                                indentLevel = 1,
                                 role = PostFragmentRole.PrimaryThreadRoot,
                                 reason = thread.post.reason,
                                 onItemClicked = onItemClicked,
@@ -159,7 +169,7 @@ fun ThreadFragment(
                     item = threadPost,
                     role = PostFragmentRole.PrimaryThreadRoot,
                     reason = thread.post.reason,
-                    modifier = Modifier.padding(vertical = 4.dp),
+                    modifier = Modifier.padding(vertical = 2.dp),
                     onItemClicked = onItemClicked,
                     onProfileClicked = onProfileClicked,
                     onUnClicked = onUnClicked,
@@ -173,39 +183,40 @@ fun ThreadFragment(
         }
         if (hasReplies){
             replies.fastForEach { reply ->
-                    if (reply.replies.isNotEmpty()) {
-                        item {
-                            ThreadTree(
-                                reply = reply, modifier = Modifier.padding(4.dp),
-                                indentLevel = 1,
-                                comparator = comparator,
-                                onItemClicked = {onItemClicked(it) },
-                                onProfileClicked = { onProfileClicked(it) },
-                                onUnClicked =  { type,uri-> onUnClicked(type,uri) },
-                                onRepostClicked = { onRepostClicked(it) },
-                                onReplyClicked = { onReplyClicked(it) },
-                                onMenuClicked = { option, post -> onMenuClicked(option, post) },
-                                onLikeClicked = { onLikeClicked(it) },
-                                getContentHandling = { getContentHandling(it) }
-                            )
-                        }
-                    } else {
-                        item {
-                            ThreadItem(
-                                item = reply, role = PostFragmentRole.Solo, indentLevel = 1,
-                                modifier = Modifier.padding(4.dp),
-                                onItemClicked = onItemClicked,
-                                onProfileClicked = onProfileClicked,
-                                onUnClicked = onUnClicked,
-                                onRepostClicked = onRepostClicked,
-                                onReplyClicked = onReplyClicked,
-                                onMenuClicked = onMenuClicked,
-                                onLikeClicked = onLikeClicked,
-                                getContentHandling = getContentHandling
-                            )
-                        }
+                if (reply.replies.isNotEmpty()) {
+                    item {
+                        ThreadTree(
+                            reply = reply,
+                            modifier = Modifier.padding(vertical = 1.dp, horizontal = 3.dp),
+                            indentLevel = 1,
+                            comparator = comparator,
+                            onItemClicked = onItemClicked,
+                            onProfileClicked = { onProfileClicked(it) },
+                            onUnClicked =  { type,uri-> onUnClicked(type,uri) },
+                            onRepostClicked = { onRepostClicked(it) },
+                            onReplyClicked = { onReplyClicked(it) },
+                            onMenuClicked = { option, post -> onMenuClicked(option, post) },
+                            onLikeClicked = { onLikeClicked(it) },
+                            getContentHandling = { getContentHandling(it) }
+                        )
                     }
-
+                } else {
+                    item {
+                        ThreadItem(
+                            item = reply, role = PostFragmentRole.Solo, indentLevel = 0,
+                            elevate = true,
+                            modifier = Modifier.padding(horizontal = 3.dp, vertical = 1.dp),
+                            onItemClicked = onItemClicked,
+                            onProfileClicked = onProfileClicked,
+                            onUnClicked = onUnClicked,
+                            onRepostClicked = onRepostClicked,
+                            onReplyClicked = onReplyClicked,
+                            onMenuClicked = onMenuClicked,
+                            onLikeClicked = onLikeClicked,
+                            getContentHandling = getContentHandling
+                        )
+                    }
+                }
             }
         }
     }

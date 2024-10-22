@@ -6,16 +6,21 @@ import app.bsky.graph.ListView
 import app.bsky.graph.ListViewBasic
 import app.bsky.graph.ListViewerState
 import com.morpho.app.model.uidata.Moment
+import com.morpho.app.model.uidata.MomentParceler
 import com.morpho.app.util.mapImmutable
 import com.morpho.butterfly.*
 import com.morpho.butterfly.model.ReadOnlyList
+import dev.icerock.moko.parcelize.Parcelable
+import dev.icerock.moko.parcelize.Parcelize
+import dev.icerock.moko.parcelize.TypeParceler
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.datetime.Clock
 import kotlinx.serialization.Serializable
 
+@Parcelize
 @Serializable
 @Immutable
-sealed interface BskyList {
+sealed interface BskyList: Parcelable {
     val uri: AtUri
     val cid: Cid
     val purpose: ListType
@@ -28,7 +33,7 @@ sealed interface BskyList {
 
 
 
-
+@Parcelize
 @Serializable
 @Immutable
 data class UserList(
@@ -42,6 +47,7 @@ data class UserList(
     override val avatar: String? = null,
     override val viewerMuted: Boolean,
     override val viewerBlocked: AtUri? = null,
+    @TypeParceler<Moment, MomentParceler>()
     override val indexedAt: Moment,
     val labels: List<BskyLabel> = listOf(),
     val listItems: List<Profile> =  listOf(),
@@ -86,6 +92,7 @@ data class UserListBasic(
     override val avatar: String? = null,
     override val viewerMuted: Boolean,
     override val viewerBlocked: AtUri? = null,
+    @TypeParceler<Moment, MomentParceler>()
     override val indexedAt: Moment,
 ): BskyList {
     override fun equals(other: Any?) : Boolean {

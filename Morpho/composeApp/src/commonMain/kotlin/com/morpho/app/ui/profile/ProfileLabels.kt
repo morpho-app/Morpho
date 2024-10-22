@@ -10,7 +10,8 @@ import com.morpho.app.model.bluesky.BskyLabel
 @Composable
 fun ProfileLabels(
     modifier: Modifier = Modifier,
-    labels: List<BskyLabel>
+    labels: List<BskyLabel>,
+    onLabelClicked: (BskyLabel) -> Unit = {},
 ) {
     FlowRow(
         modifier = modifier
@@ -19,8 +20,9 @@ fun ProfileLabels(
             ProfileLabel(
                 label = it,
                 modifier = modifier
-
-            )
+            ) { label ->
+                onLabelClicked(label)
+            }
         }
     }
 }

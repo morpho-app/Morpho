@@ -1,4 +1,6 @@
+import com.codingfeline.buildkonfig.compiler.FieldSpec.Type.STRING
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
+import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
@@ -9,13 +11,69 @@ plugins {
     alias(libs.plugins.compose.compiler)
 
     alias(libs.plugins.androidApplication)
+    id("com.codingfeline.buildkonfig")
     id("kotlin-parcelize")
+    //id("kotlin-kapt")
 
     //id("com.rickclephas.kmp.nativecoroutines") version "1.0.0-ALPHA-27"
 }
 
+val versionString = "1.0.0-alpha_1"
+val packageString = "com.morpho.app"
+
+buildkonfig {
+    packageName = packageString
+    // objectName = "YourAwesomeConfig"
+    // exposeObjectWithName = "YourAwesomePublicConfig"
+
+    defaultConfigs {
+        buildConfigField(STRING, "versionString", versionString)
+        buildConfigField(STRING, "packageName", packageString)
+        buildConfigField(STRING, "appName", "Morpho")
+        buildConfigField(STRING, "versionNumber", "0.1.0")
+    }
+    defaultConfigs("dev") {
+        buildConfigField(STRING, "versionString", "${versionString}-dev")
+        buildConfigField(STRING, "packageName", packageString)
+        buildConfigField(STRING, "appName", "Morpho")
+        buildConfigField(STRING, "versionNumber", "0.1.0")
+    }
+
+    targetConfigs {
+        create("android") {
+            buildConfigField(STRING, "versionString", "android-${versionString}")
+        }
+        create("desktop") {
+            buildConfigField(STRING, "versionString", "desktop-${versionString}")
+        }
+        create("ios") {
+            buildConfigField(STRING, "versionString", "ios-${versionString}")
+        }
+
+    }
+    targetConfigs("dev") {
+        create("android") {
+            buildConfigField(STRING, "versionString", "android-${versionString}-dev")
+        }
+        create("desktop") {
+            buildConfigField(STRING, "versionString", "desktop-${versionString}-dev")
+        }
+        create("ios") {
+            buildConfigField(STRING, "versionString", "ios-${versionString}-dev")
+        }
+
+    }
+}
+
 kotlin {
     androidTarget {
+        @OptIn(ExperimentalKotlinGradlePluginApi::class)
+        compilerOptions {
+            freeCompilerArgs.addAll(
+                "-P",
+                "plugin:org.jetbrains.kotlin.parcelize:additionalAnnotation=com.morpho.app.CommonParcelize",
+            )
+        }
         compilations.all {
             kotlinOptions {
                 jvmTarget = "11"
@@ -74,11 +132,27 @@ kotlin {
             implementation(libs.ktor.client.android)
 
             implementation(libs.kotlin.jwt)
+
+            implementation(libs.androidx.paging.runtime)
+            implementation(libs.androidx.paging.compose)
+
+
+            //implementation(libs.logkmpanion)
         }
 
         commonMain.dependencies {
             implementation("com.morpho:shared")
 
+            implementation("com.russhwolf:multiplatform-settings:1.2.0")
+            implementation("com.russhwolf:multiplatform-settings-serialization:1.2.0")
+            implementation("com.russhwolf:multiplatform-settings-coroutines:1.2.0")
+            implementation("com.russhwolf:multiplatform-settings-datastore:1.2.0")
+            implementation("com.russhwolf:multiplatform-settings-no-arg:1.2.0")
+            implementation("androidx.datastore:datastore-preferences-core:1.1.1")
+            implementation("androidx.datastore:datastore-core:1.1.1")
+
+            implementation(libs.paging.common)
+            implementation(libs.paging.compose.common)
 
             implementation(compose.runtime)
             implementation(compose.foundation)
@@ -116,9 +190,6 @@ kotlin {
             implementation(libs.kotlinx.serialization.cbor)
             implementation(libs.kotlinx.serialization.json)
 
-
-
-
             implementation(kotlin("reflect"))
 
             api(libs.logging)
@@ -133,6 +204,7 @@ kotlin {
             implementation(libs.koin.core.coroutines)
             implementation(libs.koin.annotations)
             implementation(libs.koin.compose)
+            implementation("io.insert-koin:koin-logger-slf4j:3.5.3")
 
 
             // Enables FileKit without Compose dependencies
@@ -147,6 +219,7 @@ kotlin {
             implementation(libs.ktor.contentnegotiation)
             implementation(libs.ktor.serialization.json)
             implementation(libs.ktor.websockets)
+            implementation(libs.ktor.client.encoding)
             implementation(libs.ktor.client.resources)
             implementation(libs.ktor.client.auth)
 
@@ -155,6 +228,7 @@ kotlin {
             implementation(libs.voyager.navigator)
             // Screen Model
             implementation(libs.voyager.screenmodel)
+            implementation(libs.voyager.lifecycle.kmp)
             // BottomSheetNavigator
             implementation(libs.voyager.bottom.sheet.navigator)
             // TabNavigator
@@ -169,9 +243,12 @@ kotlin {
             implementation(libs.slf4j.api)
             //implementation(libs.slf4j.simple)
 
+            implementation(libs.toolargetool)
+            api(libs.parcelize)
+
         }
         nativeMain.dependencies {
-
+            implementation(libs.paging.runtime.uikit)
         }
         desktopMain.dependencies {
             implementation(compose.desktop.currentOs)
@@ -182,17 +259,28 @@ kotlin {
             implementation(libs.logback.classic)
             implementation(libs.nativeparameterstoreaccess)
             implementation(libs.kotlin.jwt)
+
+
+            //implementation(libs.logkmpanion)
         }
 
         commonTest.dependencies {
             implementation(libs.kotlin.test)
             @OptIn(org.jetbrains.compose.ExperimentalComposeLibrary::class)
             implementation(compose.uiTest)
+            implementation(libs.paging.testing)
+
+
         }
         val desktopTest by getting {
             dependencies {
                 implementation(compose.desktop.uiTestJUnit4)
                 implementation(compose.desktop.currentOs)
+            }
+        }
+        getByName("commonMain") {
+            dependencies {
+                implementation(libs.kotlinx.coroutines)
             }
         }
     }
@@ -207,11 +295,11 @@ android {
     sourceSets["main"].resources.srcDirs("src/commonMain/resources")
 
     defaultConfig {
-        applicationId = "com.morpho.app"
+        applicationId = packageString
         minSdk = libs.versions.android.minSdk.get().toInt()
         targetSdk = libs.versions.android.targetSdk.get().toInt()
         versionCode = 1
-        versionName = "1.0"
+        versionName = versionString
     }
     packaging {
         resources {
@@ -231,7 +319,9 @@ android {
             applicationIdSuffix = ".debug"
         }
     }
+
     compileOptions {
+
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
@@ -265,8 +355,9 @@ compose.desktop {
                 TargetFormat.AppImage,
                 TargetFormat.Pkg
             )
-            packageName = "com.morpho.app"
-            packageVersion = "1.0.0"
+            packageName = packageString
+
+            packageVersion = versionString.split("-")[0]
         }
     }
 }

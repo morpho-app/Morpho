@@ -2,8 +2,7 @@ package com.morpho.app.data
 
 import androidx.compose.ui.graphics.ImageBitmap
 import app.bsky.embed.AspectRatio
-import com.morpho.app.util.deserialize
-import com.morpho.butterfly.Butterfly
+import com.morpho.butterfly.ButterflyAgent
 import com.morpho.butterfly.model.Blob
 import io.github.vinceglb.filekit.core.PlatformFile
 import io.ktor.util.encodeBase64
@@ -56,10 +55,9 @@ constructor(override val descriptor: SerialDescriptor = PrimitiveSerialDescripto
 
 }
 
-suspend fun imageToBlob(image: SharedImage, api: Butterfly): Blob? {
+suspend fun imageToBlob(image: SharedImage, agent: ButterflyAgent): Blob? {
     val byteArray = image.toByteArray(targetSize = MAX_SIZE) ?: return null
-    val resp = api.api.uploadBlob(byteArray, image.mimeType).getOrNull() ?: return null
-    return Blob.serializer().deserialize(resp.blob)
+    return agent.uploadBlob(byteArray, image.mimeType).getOrNull()
 }
 
 fun fileExtToMimeType(filename: String): String {
